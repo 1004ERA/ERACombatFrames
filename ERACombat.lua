@@ -444,14 +444,18 @@ ERACombatFrames_PseudoResourceBar = {}
 ERACombatFrames_PseudoResourceBar.__index = ERACombatFrames_PseudoResourceBar
 setmetatable(ERACombatFrames_PseudoResourceBar, { __index = ERACombatModule })
 
-function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y, length, thickness, margin, spec)
+function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y, length, thickness, margin, anchor, showText, spec)
     self:construct(cFrame, -1, 0.1, false, spec)
 
     self.length = length
 
     self.frame = CreateFrame("Frame", nil, UIParent, nil)
     self.frame:SetSize(length, thickness)
-    self.frame:SetPoint("TOPRIGHT", UIParent, "CENTER", x, y)
+    if (anchor == 1) then
+        self.frame:SetPoint("RIGHT", UIParent, "CENTER", x, y)
+    else
+        self.frame:SetPoint("LEFT", UIParent, "CENTER", x, y)
+    end
     self.frame:Hide()
 
     self.background = self.frame:CreateTexture(nil, "BACKGROUND")
@@ -460,15 +464,30 @@ function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y,
 
     self.bar = self.frame:CreateTexture(nil, "ARTWORK")
     self.bar:SetColorTexture(1, 0, 0, 1)
-    self.bar:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", 0, -margin)
-    self.bar:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, margin)
+    if (anchor == 1) then
+        self.bar:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT", 0, -margin)
+        self.bar:SetPoint("BOTTOMRIGHT", self.frame, "BOTTOMRIGHT", 0, margin)
+    else
+        self.bar:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 0, -margin)
+        self.bar:SetPoint("BOTTOMLEFT", self.frame, "BOTTOMLEFT", 0, margin)
+    end
     self.bar:SetWidth(0)
 
     self.text = self.frame:CreateFontString(nil, "OVERLAY")
     ERALIB_SetFont(self.text, 16)
-    self.text:SetPoint("RIGHT", self.frame, "RIGHT", -2, 0)
+    if (anchor == 1) then
+        self.text:SetPoint("RIGHT", self.frame, "RIGHT", -2, 0)
+    else
+        self.text:SetPoint("LEFT", self.frame, "LEFT", 2, 0)
+    end
 
+    self.rB = 1.0
+    self.gB = 0.0
+    self.bB = 0.0
+
+    self.showText = showText
     self.value = -1
+    self.max = 0
 end
 
 function ERACombatFrames_PseudoResourceBar:SpecInactive(wasActive)
@@ -493,10 +512,26 @@ end
 
 function ERACombatFrames_PseudoResourceBar:UpdateCombat(t)
     local val = self:GetValue(t)
-    if (self.value ~= val) then
+    local max = self:GetMax(t)
+    if (self.value ~= val or self.max ~= max) then
         self.value = val
-        self.text:SetText(math.floor(val))
-        self.bar:SetWidth(self.length * val / self:GetMax(t))
+        self.max = max
+        if (self.showText) then
+            self.text:SetText(math.floor(val))
+        end
+        self.bar:SetWidth(self.length * val / max)
+    end
+    self:Updated(t)
+end
+function ERACombatFrames_PseudoResourceBar:Updated(t)
+end
+
+function ERACombatFrames_PseudoResourceBar:SetBarColor(r, g, b)
+    if (r ~= self.rB or g ~= self.gB or b ~= self.bB) then
+        self.rB = r
+        self.gB = g
+        self.bB = b
+        self.bar:SetColorTexture(r, g, b, 1)
     end
 end
 
@@ -537,7 +572,6 @@ function ERACombatEnemies:SpecInactive(wasActive)
 end
 
 function ERACombatEnemies:EnterCombat()
-    self.playerGUID = UnitGUID("player")
     self.enemies = {}
     self.eCount = 0
 end
@@ -550,7 +584,7 @@ end
 function ERACombatEnemies:CLEU(t)
     local _, evt, _, sourceGUY, _, _, _, targetGUY = CombatLogGetCurrentEventInfo()
     if (evt == "SPELL_DAMAGE" or evt == "SWING_DAMAGE" or evt == "SPELL_PERIODIC_DAMAGE" or evt == "SWING_MISSED" or evt == "SPELL_MISSED") then
-        if (sourceGUY == self.playerGUID) then
+        if (sourceGUY == self.cFrame.playerGUID) then
             local already = self.enemies[targetGUY]
             if (not already) then
                 self.eCount = self.eCount + 1

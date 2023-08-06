@@ -3,7 +3,7 @@ function ERACombatFrames_EvokerSetup(cFrame)
     local preservationActive = 2
     local augmentationActive = 3
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 128, 16, 0, true, 0.4, 0.4, 0.8, false, devastationActive, preservationActive, augmentationActive)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -101, 128, 16, 0, true, 0.4, 0.4, 0.8, false, devastationActive, preservationActive, augmentationActive)
 
     local essence = ERACombatEvokerEssence:create(cFrame, -111, -98, 0, devastationActive, augmentationActive)
 
@@ -29,8 +29,8 @@ end
 ERACombatFrames_EvokerDPS_secondY = -1.5
 ERACombatFrames_EvokerDPS_firstColumnOffset = -0.5
 
-function ERACombatFrames_EvokerDPSSetup(cFrame, spec)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, 4, 1.5, spec)
+function ERACombatFrames_EvokerDPSSetup(cFrame, spec, firebreath_alternative_talent)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, 4, 1.5, false, spec)
     timers.offsetIconsX = 16
     timers.offsetIconsY = -8
 
@@ -38,8 +38,10 @@ function ERACombatFrames_EvokerDPSSetup(cFrame, spec)
     timers:AddCooldownIcon(timers:AddTrackedCooldown(358267), nil, -1, ERACombatFrames_EvokerDPS_secondY, true, true)
     timers:AddAuraBar(timers:AddTrackedBuff(358267), nil, 1, 1, 1)
 
-    local fireBreathCooldown = timers:AddTrackedCooldown(382266)
-
+    local firebreath_alternative = {}
+    firebreath_alternative.id = 382266
+    firebreath_alternative.talent = firebreath_alternative_talent
+    local fireBreathCooldown = timers:AddTrackedCooldown(357208, nil, firebreath_alternative)
     -- leaping flame
     local leapingBuff = timers:AddTrackedBuff(370901, ERALIBTalent:Create(115657))
     local leapingBar = timers:AddAuraBar(leapingBuff, nil, 1, 0.7, 0)
@@ -51,7 +53,7 @@ function ERACombatFrames_EvokerDPSSetup(cFrame, spec)
         end
     end
 
-    return timers, fireBreathCooldown, leapingBuff
+    return timers, fireBreathCooldown, leapingBuff, firebreath_alternative
 end
 
 function ERACombatFrames_EvokerMakeUtility(cFrame, includeEmbrace, ...)
@@ -125,12 +127,21 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
     local talent_firestorm = ERALIBTalent:Create(115585)
     local talent_dragonrage = ERALIBTalent:Create(115643)
     local talent_not_dragonrage = ERALIBTalent:CreateNotTalent(115643)
+    local talent_animosity = ERALIBTalent:Create(115642) -- ? change ID of Dragonrage ? : 375087 -> 375797 ou 375088 ?
+    local talent_not_animosity = ERALIBTalent:CreateNotTalent(115642)
     local talent_shattering = ERALIBTalent:Create(115627)
     local talent_everburning = ERALIBTalent:Create(115622)
+    local talent_not_everburning = ERALIBTalent:CreateNotTalent(115622)
     local talent_quell = ERALIBTalent:Create(115620)
     local talent_tip = ERALIBTalent:Create(115665)
+    local talent_big_empower = ERALIBTalent:Create(115586)
+    local talent_iridescence = ERALIBTalent:Create(115633)
 
-    local timers, fireBreathCooldown, leapingBuff = ERACombatFrames_EvokerDPSSetup(cFrame, 1)
+    local timers, fireBreathCooldown, leapingBuff, firebreath_alternative = ERACombatFrames_EvokerDPSSetup(cFrame, 1, talent_big_empower)
+
+    local surge_alternative = {}
+    surge_alternative.id = 382411
+    surge_alternative.talent = talent_big_empower
 
     timers:AddChannelInfo(356995, 0.75)
 
@@ -140,7 +151,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
 
     local burstTimer = timers:AddTrackedBuff(359618)
 
-    local surgeCooldown = timers:AddTrackedCooldown(382411, talent_surge)
+    local surgeCooldown = timers:AddTrackedCooldown(359073, talent_surge, surge_alternative)
     local surgeCooldownIcon = timers:AddCooldownIcon(surgeCooldown, nil, -3, 0, true, true)
 
     local shatterCooldown = timers:AddTrackedCooldown(370452, talent_shattering)
@@ -165,7 +176,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
     timers:AddKick(351338, ERACombatFrames_EvokerDPS_firstColumnOffset, 3, talent_quell)
 
     local instaflameTimer = timers:AddTrackedBuff(375802, ERALIBTalent:Create(115624))
-    local instaflameBar = timers:AddAuraBar(instaflameTimer, nil, 1, 0, 0)
+    local instaflameBar = timers:AddAuraBar(instaflameTimer, nil, 0, 1, 0)
     function instaflameBar:GetRemDurationOr0IfInvisible(t)
         if (instaflameTimer.remDuration <= 3 or instaflameTimer.stacks > 1) then
             return self.aura.remDuration
@@ -192,12 +203,16 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
 
     timers:AddCooldownIcon(timers:AddTrackedCooldown(375087, talent_dragonrage), nil, -3, ERACombatFrames_EvokerDPS_secondY, true, true)
     local rageTimer = timers:AddTrackedBuff(375087, talent_dragonrage)
-    timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_everburning)
+    timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_dragonrage)
 
     local tipCooldown = timers:AddTrackedCooldown(370553, talent_tip)
     timers:AddCooldownIcon(tipCooldown, nil, -3, ERACombatFrames_EvokerDPS_secondY, true, true, talent_not_dragonrage)
     timers:AddCooldownIcon(tipCooldown, nil, -4, ERACombatFrames_EvokerDPS_secondY, true, true, talent_dragonrage)
 
+    local iriRedTimer = timers:AddTrackedBuff(386353, talent_iridescence)
+    timers:AddAuraBar(iriRedTimer, nil, 1, 0, 0).showStacks = true
+    local iriBlueTimer = timers:AddTrackedBuff(386399, talent_iridescence)
+    timers:AddAuraBar(iriBlueTimer, nil, 0, 0, 1).showStacks = true
 
     -- UTILITY --
 
@@ -207,11 +222,11 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
     utility:AddTrinket2Cooldown(-5, 0, nil)
 
     local out_of_combat_info = ERACombatUtilityFrame:Create(cFrame, -128, 0, 1)
-    out_of_combat_info:AddCooldown(0, 0, 382266, nil, false)       -- fire breath
-    out_of_combat_info:AddCooldown(-1, 0, 382411, nil, false, talent_surge)
-    out_of_combat_info:AddCooldown(-2, 0, 355913, nil, false)      -- blossom
+    out_of_combat_info:AddCooldown(0, 0, 357208, nil, false, nil, firebreath_alternative) -- fire breath
+    out_of_combat_info:AddCooldown(-1, 0, 359073, nil, false, talent_surge, surge_alternative)
+    out_of_combat_info:AddCooldown(-2, 0, 355913, nil, false)                             -- blossom
     out_of_combat_info:AddCooldown(0, -1, 368847, nil, false, talent_firestorm)
-    out_of_combat_info:AddCooldown(-1, -1, 357210, 4622450, false) -- deep breath
+    out_of_combat_info:AddCooldown(-1, -1, 357210, 4622450, false)                        -- deep breath
     out_of_combat_info:AddCooldown(-2, -1, 375087, nil, false, talent_dragonrage)
     out_of_combat_info:AddCooldown(-3, -1, 370553, nil, false, talent_tip)
 
@@ -379,7 +394,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame)
     local combatHealth = ERACombatHealth:Create(cFrame, -8, -121, 141, 16, 2)
     ERACombatPower:Create(cFrame, -8, -144, 141, 16, 0, true, 0.2, 0.1, 1, 2)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -144, -88, 1.5, 2)
+    local timers = ERACombatTimersGroup:Create(cFrame, -144, -88, 1.5, false, 2)
     timers.offsetIconsX = 16
     timers.offsetIconsY = 16
 
@@ -473,10 +488,20 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ---- AUGMENTATION ------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
+function ERACombatFrames_EvokerAugmentation_EruptionCastTime(timers, talent_short_eruption, talent_burst_eruption, burstTimer)
+    local mult
+    if (talent_burst_eruption:PlayerHasTalent() and burstTimer.remDuration > timers.occupied) then
+        mult = 0.6
+    else
+        mult = 1
+    end
+    if (talent_short_eruption:PlayerHasTalent()) then
+        mult = mult * 0.8
+    end
+    return mult * 2.5 / timers.haste
+end
 
 function ERACombatFrames_EvokerAugmentationSetup(cFrame, essence, enemies, combatHealth)
-    local timers, fireBreathCooldown, leapingBuff = ERACombatFrames_EvokerDPSSetup(cFrame, 3)
-
     local talent_prescience = ERALIBTalent:Create(115675)
     local talent_not_prescience = ERALIBTalent:CreateNotTalent(115675)
     local talent_blistering = ERALIBTalent:Create(115508)
@@ -490,15 +515,23 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, essence, enemies, comba
     local talent_cheap_eruption = ERALIBTalent:Create(115505)
     local talent_long_eruption = ERALIBTalent:CreateNotTalent(115621)
     local talent_short_eruption = ERALIBTalent:Create(115621)
+    local talent_burst_eruption = ERALIBTalent:Create(115531)
+    local talent_big_empower = ERALIBTalent:Create(115506)
 
     -- TIMER --
+
+    local timers, fireBreathCooldown, leapingBuff, firebreath_alternative = ERACombatFrames_EvokerDPSSetup(cFrame, 3, talent_big_empower)
+
+    local uph_alternative = {}
+    uph_alternative.id = 408092
+    uph_alternative.talent = talent_big_empower
 
     timers:AddKick(351338, ERACombatFrames_EvokerDPS_firstColumnOffset, 2, talent_quell)
 
     local mightCooldown = timers:AddTrackedCooldown(395152)
     local mightCooldownCooldownIcon = timers:AddCooldownIcon(mightCooldown, nil, -2, 0, true, true)
 
-    local uphCooldown = timers:AddTrackedCooldown(408092)
+    local uphCooldown = timers:AddTrackedCooldown(396286, nil, uph_alternative)
     local uphCooldownIcon = timers:AddCooldownIcon(uphCooldown, nil, -3, 0, true, true)
 
     local fireBreathCooldownIcon = timers:AddCooldownIcon(fireBreathCooldown, nil, -4, 0, true, true)
@@ -539,18 +572,30 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, essence, enemies, comba
     local paradoxTimer = timers:AddTrackedBuff(406732, talent_paradox)
     timers:AddAuraBar(paradoxTimer, nil, 1, 0.9, 0.7)
 
-    local mightTimer = timers:AddTrackedBuff(395296)
-    timers:AddAuraBar(mightTimer, nil, 0.7, 0.6, 0.2)
+    --local burstTimer = timers:AddTrackedBuff(359618)
+    local burstTimer = timers:AddTrackedBuff(392268)
 
-    local burstTimer = timers:AddTrackedBuff(359618)
-
-    local shortEruptionMarker = timers:AddMarker(0.9, 0.6, 0.5, talent_short_eruption)
-    function shortEruptionMarker:computeTimeOr0IfInvisible(haste)
-        return 0.8 * 2.5 / haste
+    local eruptionMarker = timers:AddMarker(0.9, 0.6, 0.5)
+    function eruptionMarker:computeTimeOr0IfInvisible(haste)
+        return ERACombatFrames_EvokerAugmentation_EruptionCastTime(timers, talent_short_eruption, talent_burst_eruption, burstTimer)
     end
-    local longEruptionMarker = timers:AddMarker(0.9, 0.6, 0.5, talent_long_eruption)
-    function longEruptionMarker:computeTimeOr0IfInvisible(haste)
-        return 2.5 / haste
+
+    local mightTimer = timers:AddTrackedBuff(395296)
+    local mightLongBar = timers:AddAuraBar(mightTimer, nil, 0.7, 0.6, 0.2)
+    function mightLongBar:GetRemDurationOr0IfInvisible(t)
+        if (self.aura.remDuration > 0.05 + self.group.occupied + ERACombatFrames_EvokerAugmentation_EruptionCastTime(self.group, talent_short_eruption, talent_burst_eruption, burstTimer)) then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
+    local mightShortBar = timers:AddAuraBar(mightTimer, nil, 0.4, 0.4, 0.4)
+    function mightShortBar:GetRemDurationOr0IfInvisible(t)
+        if (self.aura.remDuration <= 0.05 + self.group.occupied + ERACombatFrames_EvokerAugmentation_EruptionCastTime(self.group, talent_short_eruption, talent_burst_eruption, burstTimer)) then
+            return self.aura.remDuration
+        else
+            return 0
+        end
     end
 
     -- UTILITY --
@@ -564,12 +609,12 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, essence, enemies, comba
     utility:AddMissingBuffAnyCaster(5199623, -1, -1.5, ERALIBTalent:Create(115518), 403264, 403265) -- attunement
 
     local out_of_combat_info = ERACombatUtilityFrame:Create(cFrame, -128, 0, 3)
-    out_of_combat_info:AddCooldown(0, 0, 395152, nil, false)      -- might
-    out_of_combat_info:AddCooldown(-1, 0, 408092, nil, false)     -- uph
-    out_of_combat_info:AddCooldown(-2, 0, 382266, nil, false)     -- fire breath
-    out_of_combat_info:AddCooldown(-3, 0, 355913, nil, false)     -- blossom
+    out_of_combat_info:AddCooldown(0, 0, 395152, nil, false)                               -- might
+    out_of_combat_info:AddCooldown(-1, 0, 396286, nil, false, nil, uph_alternative)        -- uph
+    out_of_combat_info:AddCooldown(-2, 0, 357208, nil, false, nil, firebreath_alternative) -- fire breath
+    out_of_combat_info:AddCooldown(-3, 0, 355913, nil, false)                              -- blossom
     --out_of_combat_info:AddCooldown(0, 0, 406732, nil, false, talent_paradox)      -- paradox
-    out_of_combat_info:AddCooldown(0, -1, 403631, 5199622, false) -- deep breath
+    out_of_combat_info:AddCooldown(0, -1, 403631, 5199622, false)                          -- deep breath
     out_of_combat_info:AddCooldown(-1, -1, 409311, nil, false, talent_prescience)
     out_of_combat_info:AddCooldown(-2, -1, 360827, nil, false, talent_blistering)
     out_of_combat_info:AddCooldown(-3, -1, 370553, nil, false, talent_tip)

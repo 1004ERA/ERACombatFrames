@@ -91,7 +91,7 @@ end
 
 function ERACombatDOTracker:CLEU(t)
     local _, evt, _, sourceGUY, _, _, _, targetGUY, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-    if (evt == "SPELL_AURA_APPLIED" or evt == "SPELL_AURA_REFRESH" and sourceGUY == self.enemiesTracker.playerGUID) then
+    if (evt == "SPELL_AURA_APPLIED" or evt == "SPELL_AURA_REFRESH" and sourceGUY == self.enemiesTracker.cFrame.playerGUID) then
         local def = self.activeDOTsByID[spellID]
         if (def ~= nil) then
             local enemy = self.enemiesTracker:analyzeTargetSourceIsPlayer(t, targetGUY)

@@ -19,8 +19,6 @@ function ERACombatEnemiesTracker:Create(cFrame, updateCombat, ...)
     et.frame = CreateFrame("Frame", nil, cFrame.frame, nil)
     et:construct(cFrame, -1, updateCombat, true, ...)
 
-    et.playerGUID = UnitGUID("player")
-
     et.unassigned_plates_from_GUID = {}
     et.unassigned_GUID_to_time = {}
     et.enemiesByGUID = {}
@@ -92,7 +90,7 @@ end
 function ERACombatEnemiesTracker:CLEU(t)
     local _, evt, _, sourceGUY, _, _, _, targetGUY, _, _, _, spellID = CombatLogGetCurrentEventInfo()
     if (evt == "SPELL_CAST_SUCCESS" or evt == "SPELL_DAMAGE" or evt == "SWING_DAMAGE" or evt == "RANGE_DAMAGE" or evt == "SWING_MISSED" or evt == "SPELL_MISSED") then
-        if (sourceGUY == self.playerGUID) then
+        if (sourceGUY == self.cFrame.playerGUID) then
             self:analyzeTargetSourceIsPlayer(t, targetGUY)
         end
     elseif (evt == "UNIT_DIED" or evt == "UNIT_DESTROYED" or evt == "UNIT_DISSIPATES") then

@@ -68,8 +68,8 @@ function ERACombatTimersGroup:AddTrackedDebuffOnPlayer(spellID, talent)
     return b
 end
 
-function ERACombatTimersGroup:AddTrackedCooldown(spellID, talent)
-    return ERACombatCooldown:create(self, spellID, talent)
+function ERACombatTimersGroup:AddTrackedCooldown(spellID, talent, ...)
+    return ERACombatCooldown:create(self, spellID, talent, ...)
 end
 
 function ERACombatTimersGroup:AddAuraBar(aura, iconID, r, g, b, talent)
@@ -198,7 +198,7 @@ end
 ---- TIMERS GROUP --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
-function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, ...)
+function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, ...)
     local group = {}
     setmetatable(group, ERACombatTimersGroup)
 
@@ -224,9 +224,15 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, ...)
     group.minGCD = 1
     group.baseGCD = baseGCD
     group.remGCD = 0
+    group.haste = 1
     group.channelInfo = {}
     group.channelTicks = {}
     group.channelTickCount = 0
+    group.lastEmpowerStageTotal = 0
+    group.lastEmpowerStartMS = 0
+    group.lastEmpowerEndMS = 0
+    group.lastEmpowerEndAfterHold = 0
+    group.lastEmpowerID = 0
 
     -- contenu
     group.timers = {}
@@ -254,9 +260,32 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, ...)
     --group.castBar:SetColorTexture(0.2, 0.6, 0.7, 0.55)
     group.castBar:SetColorTexture(0.2, 0.8, 0.6, 0.66)
 
+    -- events
+    group.events = {}
+
+    function group.events:UNIT_SPELLCAST_EMPOWER_STOP(unit)
+        if (unit == "player") then
+            self:resetEmpower()
+        end
+    end
+    function group.events:UNIT_SPELLCAST_EMPOWER_UPDATE(unit)
+        if (unit == "player") then
+            self:resetEmpower()
+        end
+    end
+    function group.events:UNIT_SPELLCAST_STOP(unit)
+        if (unit == "player") then
+            self:resetEmpower()
+        end
+    end
+    function group.events:UNIT_SPELLCAST_SUCCEEDED(unit)
+        if (unit == "player") then
+            self:resetEmpower()
+        end
+    end
+
     -- perte de contrôle
     group.loc = {}
-    group.events = {}
     --[[
     local loc_root = ERACombatTimerLOCBar:create(group, "ROOT", "ROOT", 136113, "Interface\\MINIMAP\\HumanUITile-TimeIndicator")
     group.loc["ROOT"] = loc_root
@@ -286,19 +315,28 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, ...)
     function group.events:LOSS_OF_CONTROL_UPDATE()
         -- hum, on ne fait rien car on recalcule toujours dans ERACombatTimerLOCBar:GetRemDurationOr0IfInvisible
     end
-    group.frame:SetScript(
-        "OnEvent",
-        function(self, event, ...)
-            group.events[event](self, ...)
-        end
-    )
     for k, v in pairs(group.loc) do
         table.insert(group.bars, v)
         table.insert(group.activeBars, v)
     end
     ]]
-    group:construct(cFrame, -1, 0.02, false, ...)
+
+    group.frame:SetScript(
+        "OnEvent",
+        function(self, event, ...)
+            group.events[event](group, ...)
+        end
+    )
+    group:construct(cFrame, -1, 0.02, requiresCLEU, ...)
     return group
+end
+
+function ERACombatTimersGroup:resetEmpower()
+    self.lastEmpowerStageTotal = 0
+    self.lastEmpowerEndAfterHold = 0
+    self.lastEmpowerStartMS = 0
+    self.lastEmpowerEndMS = 0
+    self.lastEmpowerID = 0
 end
 
 function ERACombatTimersGroup:EnterCombat()
@@ -326,6 +364,9 @@ function ERACombatTimersGroup:ResetToIdle()
     for k, v in pairs(self.events) do
         self.frame:RegisterEvent(k)
     end
+    self:OnResetToIdle()
+end
+function ERACombatTimersGroup:OnResetToIdle()
 end
 
 function ERACombatTimersGroup:SpecInactive(wasActive)
@@ -511,6 +552,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
     end
 
     local haste = 1 + GetHaste() / 100
+    self.haste = haste
     local started, duration = GetSpellCooldown(61304)
     if (self.baseGCD <= self.minGCD) then
         self.totGCD = self.minGCD
@@ -534,8 +576,21 @@ function ERACombatTimersGroup:UpdateCombat(t)
         self.castingSpellID = spellID
         self.channelingSpellID = nil
         self.castingOrChannelingSpellID = spellID
+        self:resetEmpower()
     else
-        local _, _, castTexture, startTimeMS, endCastMS, _, _, spellID, _, stageTotal = WeakAuras.UnitChannelInfo("player")
+        local _, _, castTexture, startTimeMS, endCastMS, _, _, spellID, _, stageTotal = UnitChannelInfo("player")
+        local recordEmpowerInfo
+        if (stageTotal and stageTotal > 0) then
+            recordEmpowerInfo = true
+        else
+            recordEmpowerInfo = false
+            if (self.lastEmpowerEndAfterHold > t) then
+                startTimeMS = self.lastEmpowerStartMS
+                endCastMS = self.lastEmpowerEndMS
+                spellID = self.lastEmpowerID
+                stageTotal = self.lastEmpowerStageTotal
+            end
+        end
         if (endCastMS) then
             self.channelingSpellID = spellID
             self.castingOrChannelingSpellID = spellID
@@ -577,13 +632,22 @@ function ERACombatTimersGroup:UpdateCombat(t)
                 for s = stageTotal + 2, #self.empowerLevels do
                     self.empowerLevels[s]:SetNotUsed()
                 end
+                if (recordEmpowerInfo) then
+                    self.lastEmpowerStageTotal = stageTotal
+                    self.lastEmpowerStartMS = startTimeMS
+                    self.lastEmpowerEndMS = endCastMS
+                    self.lastEmpowerEndAfterHold = channelEnd
+                    self.lastEmpowerID = spellID
+                end
             else
+                self:resetEmpower()
                 channelEnd = endCastMS / 1000
                 self.remCast = channelEnd - t
                 self.totCast = (endCastMS - startTimeMS) / 1000
                 tickInfo = self.channelInfo[spellID]
             end
         else
+            self:resetEmpower()
             self.remCast = 0
             self.totCast = 0
             self.castingSpellID = nil
@@ -685,6 +749,8 @@ function ERACombatTimersGroup:UpdateCombat(t)
     if (self.nestedModule) then
         nestedHeight = self.nestedModule:updateAsNested_returnHeightForTimerOverlay(t) + self.nestedModule.offsetY
     end
+
+    self:DataUpdated(t)
 
     -------------------
     -- màj affichage --
@@ -796,6 +862,8 @@ end
 
 function ERACombatTimersGroup:PreUpdateCombat(t)
 end
+function ERACombatTimersGroup:DataUpdated(t)
+end
 
 --------------------------------------------------------------------------------------------------------------------------------
 ---- TIMERS --------------------------------------------------------------------------------------------------------------------
@@ -846,13 +914,36 @@ ERACombatCooldown = {}
 ERACombatCooldown.__index = ERACombatCooldown
 setmetatable(ERACombatCooldown, { __index = ERACombatTimer })
 
-function ERACombatCooldown:create(group, spellID, talent)
+function ERACombatCooldown:create(group, spellID, talent, ...)
     local t = {}
     setmetatable(t, ERACombatCooldown)
     t:constructTimer(group, talent)
+    t.mainSpellID = spellID
     t.spellID = spellID
-    t:updateKind()
+    t.additionalIDs = { ... }
+    ERACombatCooldown_UpdateKind(t)
     return t
+end
+
+function ERACombatCooldown_UpdateKind(cd)
+    local resultingID = cd.mainSpellID
+    for _, info in ipairs(cd.additionalIDs) do
+        if (info.talent:PlayerHasTalent()) then
+            resultingID = info.id
+            break
+        end
+    end
+    cd.spellID = resultingID
+    local currentCharges, maxCharges = GetSpellCharges(resultingID)
+    if (maxCharges and maxCharges > 1) then
+        cd.currentCharges = currentCharges
+        cd.maxCharges = maxCharges
+        cd.hasCharges = true
+    else
+        cd.currentCharges = 0
+        cd.maxCharges = 1
+        cd.hasCharges = false
+    end
 end
 
 function ERACombatCooldown_Update(cd, t, totGCD)
@@ -908,33 +999,20 @@ end
 
 function ERACombatCooldown:updateDurations(t)
     if (self.mustAlwaysUpdateKind) then
-        self:updateKind()
+        ERACombatCooldown_UpdateKind(self)
     end
     ERACombatCooldown_Update(self, t, self.group.totGCD)
 end
 
 function ERACombatCooldown:TalentCheck()
-    self:updateKind()
+    ERACombatCooldown_UpdateKind(self)
     if (not self.talentActive) then
         self.currentCharges = 0
     end
 end
 
-function ERACombatCooldown:updateKind()
-    local currentCharges, maxCharges = GetSpellCharges(self.spellID)
-    if (maxCharges and maxCharges > 1) then
-        self.currentCharges = currentCharges
-        self.maxCharges = maxCharges
-        self.hasCharges = true
-    else
-        self.currentCharges = 0
-        self.maxCharges = 1
-        self.hasCharges = false
-    end
-end
-
 function ERACombatCooldown:updateAfterReset(t)
-    self:updateKind()
+    ERACombatCooldown_UpdateKind(self)
 end
 
 -- aura
@@ -1091,7 +1169,7 @@ function ERACombatTimerMarker:update(haste, timerHeight)
         if (px ~= self.pixel or timerHeight ~= self.height) then
             self.pixel = px
             self.height = timerHeight
-            self.line:SetStartPoint("CENTER", self.group.frameOverlay, px, 0) ---ERACombat_TimerIconCooldownSize)
+            self.line:SetStartPoint("CENTER", self.group.frameOverlay, px, -ERACombat_TimerIconCooldownSize / 2) --0)
             self.line:SetEndPoint("CENTER", self.group.frameOverlay, px, timerHeight)
         end
         self:show()
@@ -1982,10 +2060,13 @@ end
 function ERACombatTimersHintIcon:checkTalent()
     if (self.talent and not self.talent:PlayerHasTalent()) then
         self.icon:Hide()
+        self:talentIncactive()
         return false
     else
         return true
     end
+end
+function ERACombatTimersHintIcon:talentIncactive()
 end
 
 function ERACombatTimersHintIcon:update(t)

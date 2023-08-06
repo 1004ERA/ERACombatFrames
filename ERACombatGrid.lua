@@ -251,6 +251,7 @@ function ERACombatGrid:UpdateIdle(t)
 end
 function ERACombatGrid:UpdateCombat(t)
     self:update(t)
+    self:UpdatedInCombat(t)
 end
 function ERACombatGrid:update(t)
     for i, x in ipairs(self.activeTrackedBuffsArray) do
@@ -264,6 +265,8 @@ function ERACombatGrid:update(t)
     for _, u in pairs(self.unitsByID) do
         u:update(t)
     end
+end
+function ERACombatGrid:UpdatedInCombat(t)
 end
 
 --------------------------------------------------------------------------------------------------------------------------------

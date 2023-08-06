@@ -177,7 +177,6 @@ function ERACombatFrames_PaladinProtectionShieldOrWOG:create(cFrame, x, y, healt
 
     -- calculs
 
-    sow.playerGUID = UnitGUID("player")
     sow.playerLevel = UnitLevel("player")
     sow.shieldArmourTimer = shieldArmourTimer
     sow.health = health
@@ -249,7 +248,7 @@ function ERACombatFrames_PaladinProtectionShieldOrWOG:CLEU(t)
     if (evt == "SPELL_CAST_SUCCESS" and sourceGUY == self.playerGUID and dmgIfSwing_spellIDIfSpell == 19750) then
         self.lastFlashHeal = t
     end
-    if (destGUY == self.playerGUID) then
+    if (destGUY == self.cFrame.playerGUID) then
         local damage
         if (evt == "SWING_DAMAGE") then
             if (schoolIfSwing_spellSchoolIfSpell == 1) then

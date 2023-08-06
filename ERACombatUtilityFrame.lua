@@ -10,8 +10,8 @@ ERACombatUtilityFrame = {}
 ERACombatUtilityFrame.__index = ERACombatUtilityFrame
 setmetatable(ERACombatUtilityFrame, { __index = ERACombatModule })
 
-function ERACombatUtilityFrame:AddCooldown(x, y, spellID, iconID, showInCombat, talent)
-    return ERACombatUtilityCooldown:create(self, x, y, spellID, iconID, showInCombat, talent)
+function ERACombatUtilityFrame:AddCooldown(x, y, spellID, iconID, showInCombat, talent, ...)
+    return ERACombatUtilityCooldown:create(self, x, y, spellID, iconID, showInCombat, talent, ...)
 end
 
 function ERACombatUtilityFrame:AddTrinket1Cooldown(x, y, iconID)
@@ -386,15 +386,17 @@ function ERACombatUtilityFrame:updateData(t)
                 end
                 for f = 1, friendsCount do
                     local unit = prefix .. f
-                    if (UnitInRange(unit) and not UnitIsUnit("player", unit)) then
-                        self.isInGroup = true
-                        local role = UnitGroupRolesAssigned(unit)
-                        if (role == "TANK") then
-                            self.hasTankInGroup = true
-                        elseif (role == "HEALER") then
-                            self.hasHealerInGroup = true
-                        else
-                            self.hasDPSInGroup = true
+                    if (not UnitIsUnit("player", unit)) then
+                        if (UnitInRange(unit)) then
+                            self.isInGroup = true
+                            local role = UnitGroupRolesAssigned(unit)
+                            if (role == "TANK") then
+                                self.hasTankInGroup = true
+                            elseif (role == "HEALER") then
+                                self.hasHealerInGroup = true
+                            else
+                                self.hasDPSInGroup = true
+                            end
                         end
                         for i = 1, 40 do
                             local _, _, _, _, _, expirationTime, _, _, _, spellID = UnitBuff(unit, i, "PLAYER")
@@ -561,21 +563,23 @@ ERACombatUtilityCooldownBase = {}
 ERACombatUtilityCooldownBase.__index = ERACombatUtilityCooldownBase
 setmetatable(ERACombatUtilityCooldownBase, { __index = ERACombatUtilityIcon })
 
-function ERACombatUtilityCooldownBase:constructBase(owner, x, y, spellID, iconID, showInCombat, talent)
+function ERACombatUtilityCooldownBase:constructBase(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     self.iconID = iconID
     if (not iconID) then
         _, _, iconID = GetSpellInfo(spellID)
     end
     self:construct(owner, x, y, iconID, 0, showInCombat, talent)
     self.spellID = spellID
+    self.mainSpellID = spellID
+    self.additionalIDs = { ... }
     self.totDuration = 1
     self.remDuration = 0
     self.isAvailable = false
-    self:updateKind()
+    ERACombatCooldown_UpdateKind(self)
 end
 
 function ERACombatUtilityCooldownBase:updateAfterReset(t)
-    self:updateKind()
+    ERACombatCooldown_UpdateKind(self)
     self:updateIconCooldownTexture()
 end
 
@@ -587,22 +591,8 @@ function ERACombatUtilityCooldownBase:updateIconCooldownTexture()
 end
 
 function ERACombatUtilityCooldownBase:talentOK()
-    self:updateKind()
+    ERACombatCooldown_UpdateKind(self)
     self:updateIconCooldownTexture()
-end
-
-function ERACombatUtilityCooldownBase:updateKind()
-    local currentCharges, maxCharges = GetSpellCharges(self.spellID)
-    if (maxCharges and maxCharges > 1) then
-        self.currentCharges = currentCharges
-        self.maxCharges = maxCharges
-        self.hasCharges = true
-    else
-        self.icon:SetSecondaryText(nil)
-        self.currentCharges = 0
-        self.maxCharges = 1
-        self.hasCharges = false
-    end
 end
 
 -- normal cd
@@ -611,10 +601,10 @@ ERACombatUtilityCooldown = {}
 ERACombatUtilityCooldown.__index = ERACombatUtilityCooldown
 setmetatable(ERACombatUtilityCooldown, { __index = ERACombatUtilityCooldownBase })
 
-function ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCombat, talent)
+function ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     local c = {}
     setmetatable(c, ERACombatUtilityCooldown)
-    c:constructBase(owner, x, y, spellID, iconID, showInCombat, talent)
+    c:constructBase(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     c.alphaWhenOffCooldown = 0.9
     c.alphaWhenOnShortCooldown = 1.0
     c.alphaWhenOnLongCooldown = 0.5
@@ -707,10 +697,10 @@ ERACombatUtilityDefensiveDispellCooldown = {}
 ERACombatUtilityDefensiveDispellCooldown.__index = ERACombatUtilityDefensiveDispellCooldown
 setmetatable(ERACombatUtilityDefensiveDispellCooldown, { __index = ERACombatUtilityCooldownBase })
 
-function ERACombatUtilityDefensiveDispellCooldown:create(owner, x, y, spellID, iconID, talent)
+function ERACombatUtilityDefensiveDispellCooldown:create(owner, x, y, spellID, iconID, talent, ...)
     local c = {}
     setmetatable(c, ERACombatUtilityDefensiveDispellCooldown)
-    c:constructBase(owner, x, y, spellID, iconID, true, talent)
+    c:constructBase(owner, x, y, spellID, iconID, true, talent, ...)
     return c
 end
 
@@ -847,6 +837,7 @@ function ERACombatUtilityInventoryCooldown:update(t)
             self.icon:SetOverlayValue(0)
             self.icon:SetMainText(nil)
             self.icon:SetAlpha(self.alphaWhenOffCooldown)
+            self.icon:SetDesaturated(false)
         end
     else
         self.remDuration = 0
@@ -1010,7 +1001,7 @@ function ERACombatUtilityBagItem:create(utility, x, y, itemID, iconID, warningIf
     s.bagID = -1
     s.slot = -1
     table.insert(utility.bagItems, s)
-    return c
+    return s
 end
 
 function ERACombatUtilityBagItem:bagUpdateOrReset()

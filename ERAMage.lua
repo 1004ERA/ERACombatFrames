@@ -14,7 +14,7 @@ function ERACombatFrames_MageSetup(cFrame)
     enemies.lastRuneCast = 0
     enemies.lastManaCast = 0
     enemies.AdditionalCLEU = function(t, evt, sourceGUY, targetGUY, spellID)
-        if (evt == "SPELL_CAST_SUCCESS" and sourceGUY == enemies.playerGUID) then
+        if (evt == "SPELL_CAST_SUCCESS" and sourceGUY == enemies.cFrame.playerGUID) then
             if (spellID == 116011 or spellID == 12042 or spellID == 190319 or spellID == 12472) then
                 enemies.lastRuneCast = t
             elseif (spellID == 1449 or spellID == 30449) then

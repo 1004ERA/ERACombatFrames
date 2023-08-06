@@ -43,7 +43,6 @@ function ERACombatTankWindow:Create(timers, height, spec, windowDuration, x, y, 
     end
 
     -- dégâts
-    w.playerGUID = UnitGUID("player")
     w.link = ERACombatTankWindowDamageEvent:create(nil, w)
     local current = w.link
     for i = 2, ERACombatTankWindow_DECount do
@@ -82,7 +81,7 @@ end
 
 function ERACombatTankWindow:CLEU(t)
     local _, evt, _, _, _, _, _, destGUY, _, _, _, dmgIfSwing, _, _, dmgIfSpell, absIfSwing, _, _, _, absIfSpell = CombatLogGetCurrentEventInfo()
-    if (destGUY == self.playerGUID) then
+    if (destGUY == self.cFrame.playerGUID) then
         local dmg
         if (evt == "SWING_DAMAGE") then
             if (absIfSwing) then

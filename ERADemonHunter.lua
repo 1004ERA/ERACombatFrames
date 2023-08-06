@@ -25,7 +25,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 
 function ERACombatFrames_DemonHunterHavocSetup(cFrame, enemies)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, 1)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, 1)
     timers.watchDispellableMagic = true
     timers.offsetIconsX = 8
     timers.offsetIconsY = 16
@@ -397,7 +397,7 @@ setmetatable(ERACombatSoulFragments, { __index = ERACombatPoints })
 function ERACombatSoulFragments:Create(cFrame, x, y, souls)
     local p = {}
     setmetatable(p, ERACombatSoulFragments)
-    p:ConstructPoints(cFrame, x, y, 5, 0.0, 0.7, 0.0, 0.4, 0.0, 1.0, nil, 2)
+    p:ConstructPoints(cFrame, x, y, 5, 0.0, 0.7, 0.0, 0.4, 0.0, 1.0, nil, 2, 2)
     p.souls = souls
     return p
 end
@@ -411,7 +411,7 @@ function ERACombatSoulFragments:GetCurrentPoints(t)
 end
 
 function ERACombatFrames_DemonHunterVengeanceSetup(cFrame, enemies)
-    local timers = ERACombatTimersGroup:Create(cFrame, -123, -11, 1.5, 2)
+    local timers = ERACombatTimersGroup:Create(cFrame, -123, -11, 1.5, false, 2)
     timers.offsetIconsX = 8
     timers.offsetIconsY = -16
     timers.watchDispellableMagic = true
@@ -440,7 +440,7 @@ function ERACombatFrames_DemonHunterVengeanceSetup(cFrame, enemies)
     local combatHealth = ERACombatHealth:Create(cFrame, -224, -60, 177, 26, 2)
 
     local pukeTimer = timers:AddTrackedCooldown(212084, ERALIBTalent:CreateLevel(11))
-    local spikBuffTimer = timers:AddTrackedBuff(203720)
+    local spikBuffTimer = timers:AddTrackedBuff(203819)
     local spikCooldownTimer = timers:AddTrackedCooldown(203720)
     local frailtyDebuff = timers:AddTrackedDebuff(247456)
     local metamTimer = timers:AddTrackedBuff(187827)
@@ -457,7 +457,7 @@ function ERACombatFrames_DemonHunterVengeanceSetup(cFrame, enemies)
         return pukeTimer.remDuration <= 5
     end
     function pukeConsumer:ComputeIconVisibility()
-        if (pukeTimer.remDuration + 0.1 <= timers.remGCD) then
+        if (pukeTimer.remDuration <= 0 or pukeTimer.remDuration + 0.05 <= timers.occupied) then
             self.icon:SetDesaturated(false)
         else
             self.icon:SetDesaturated(true)
@@ -465,7 +465,7 @@ function ERACombatFrames_DemonHunterVengeanceSetup(cFrame, enemies)
         return true
     end
 
-    ERACombatSoulFragments:Create(cFrame, -200, -88, souls)
+    ERACombatSoulFragments:Create(cFrame, -161, -99, souls)
 
     -- TIMER --
 

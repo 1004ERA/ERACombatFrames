@@ -6,7 +6,7 @@ function ERACombatFrames_WarlockSetup(cFrame)
     ERACombatHealth:Create(cFrame, 0, -88, 128, 22, affliActive, demonoActive, destroActive)
     ERACombatHealth:Create(cFrame, 0, -111, 128, 16, affliActive, demonoActive, destroActive):SetUnitID("pet")
 
-    ERACombatPointsUnitPower:Create(cFrame, -32, -32, 7, 5, 0.1, 0.6, 0.1, 1.0, 0.0, 1.0, nil, affliActive, demonoActive).idlePoints = 3
+    ERACombatPointsUnitPower:Create(cFrame, -32, -32, 7, 5, 0.1, 0.6, 0.1, 1.0, 0.0, 1.0, nil, 1, affliActive, demonoActive).idlePoints = 3
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -101, 128, 16, -1, true, 0.0, 0.0, 0.0, true, affliActive, demonoActive, destroActive)
 
@@ -22,7 +22,7 @@ function ERACombatFrames_WarlockSetup(cFrame)
 end
 
 function ERACombatFrames_WarlockModulesSetup(cFrame, ...)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, ...)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, ...)
     timers.offsetIconsX = 8
     timers.offsetIconsY = 16
 
@@ -43,15 +43,49 @@ function ERACombatFrames_WarlockModulesSetup(cFrame, ...)
     utility:AddDefensiveDispellCooldown(3.5, 4.9, 89808, nil, nil, "Magic").showOnlyIfPetSpellKnown = true -- imp dispell
     utility:AddCooldown(3, 3, 48020, nil, true, talent_tp)                                                 -- teleport circle
     utility:AddWarlockPortal(4, 3)
-    utility:AddCooldown(3, 2, 6789, nil, true, ERALIBTalent:Create(914457))                                -- coil
-    utility:AddCooldown(3, 2, 5484, nil, true, ERALIBTalent:Create(914458))                                -- howl
-    utility:AddCooldown(4, 2, 30283, nil, true, ERALIBTalent:Create(914452))                               -- shadowfury
-    utility:AddCooldown(3, 1, 384069, nil, true, ERALIBTalent:Create(914450))                              -- shadowflame
-    utility:AddCooldown(4, 1, 328774, nil, true, ERALIBTalent:Create(914442))                              -- amplify
+    utility:AddCooldown(3, 2, 6789, nil, true, ERALIBTalent:Create(91457))                                 -- coil
+    utility:AddCooldown(3, 2, 5484, nil, true, ERALIBTalent:Create(91458))                                 -- howl
+    utility:AddCooldown(4, 2, 30283, nil, true, ERALIBTalent:Create(91452))                                -- shadowfury
+    utility:AddCooldown(3, 1, 384069, nil, true, ERALIBTalent:Create(91450))                               -- shadowflame
+    utility:AddCooldown(4, 1, 328774, nil, true, ERALIBTalent:Create(91442))                               -- amplify
+
+    ERACombatWarlockRush:create(utility, 0, 6)
 
     ERACombatWarlockCurses:create(cFrame, 256, 128, timers, ...)
 
     return timers, utility
+end
+
+--------------------------------------------------------------------------------------------------------------------------------
+---- RUSH --------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
+ERACombatWarlockRush = {}
+ERACombatWarlockRush.__index = ERACombatWarlockRush
+setmetatable(ERACombatWarlockRush, { __index = ERACombatUtilityIcon })
+
+function ERACombatWarlockRush:create(group, x, y)
+    local mi = {}
+    setmetatable(mi, ERACombatWarlockRush)
+    local talent = nil
+    mi.aura = group:AddTrackedBuff(111400, talent)
+    mi:construct(group, x, y, 538043, 1, true, talent)
+    mi.icon:Beam()
+    return mi
+end
+
+function ERACombatWarlockRush:updateIdle(t)
+    self:update(t)
+end
+function ERACombatWarlockRush:doUpdateCombat(t)
+    self:update(t)
+end
+function ERACombatWarlockRush:update(t)
+    if ((self.aura.remDuration > 0 or self.aura.stacks > 0) and not IsPlayerMoving()) then
+        self.icon:Show()
+    else
+        self.icon:Hide()
+    end
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -121,6 +155,13 @@ function ERACombatFrames_WarlockAffliSetup(cFrame)
         end
     end
     timers:AddStacksProgressIcon(draindemiseTimer, nil, first_column_X, 1, 50)
+
+    -- out of combat
+    utility:AddCooldown(-2, 3, 48181, nil, false, talent_haunt)
+    utility:AddCooldown(-3, 3, 278350, nil, false, talent_taint)
+    utility:AddCooldown(-3, 3, 205179, nil, false, talent_singularity)
+    utility:AddCooldown(-2, 2, 386997, nil, false, talent_rot)
+    utility:AddCooldown(-3, 2, 205180, nil, false, talent_glare)
 
     -- DOT TRACKER --
 
@@ -340,7 +381,7 @@ function ERACombatFrames_WarlockDemonoSetup(cFrame)
     local timers, utility = ERACombatFrames_WarlockModulesSetup(cFrame, 2)
     local first_column_X = 0
 
-    ERACombatFrames_WarlockDemonologyImps:create(cFrame, -128, -128)
+    ERACombatFrames_WarlockDemonologyImps:create(cFrame, -128, -136)
 
     local talent_doom = ERALIBTalent:Create(91548)
     local talent_soulstrike = ERALIBTalent:Create(91537)
@@ -397,6 +438,16 @@ function ERACombatFrames_WarlockDemonoSetup(cFrame)
 
     utility:AddCooldown(-3, 0, 111898, nil, true, ERALIBTalent:Create(91531)) -- felguard
     utility:AddCooldown(-4, 0, 267217, nil, true, talent_portal)              -- portal
+
+    -- out of combat
+    utility:AddCooldown(-2, 4, 264057, nil, false, talent_soulstrike)
+    utility:AddCooldown(-2, 4, 264119, nil, false, talent_vilefiend)
+    utility:AddCooldown(-3, 4, 386833, nil, false, talent_guillotine)
+    utility:AddCooldown(-2, 3, 104316, nil, false) -- stalkers
+    utility:AddCooldown(-3, 3, 267171, nil, false, talent_strength)
+    utility:AddCooldown(-3, 3, 267211, nil, false, talent_bilescourge)
+    utility:AddCooldown(-2, 2, 264130, nil, false, talent_siphon)
+    utility:AddCooldown(-3, 2, 265187, nil, false, talent_tyrant)
 
     local enemies = ERACombatEnemies:Create(cFrame, 2)
 
@@ -468,7 +519,7 @@ setmetatable(ERACombatFrames_WarlockDemonologyImps, { __index = ERACombatFrames_
 function ERACombatFrames_WarlockDemonologyImps:create(cFrame, x, y)
     local imps = {}
     setmetatable(imps, ERACombatFrames_WarlockDemonologyImps)
-    imps:constructPseudoResource(cFrame, x, y, 100, 20, 2, 2)
+    imps:constructPseudoResource(cFrame, x, y, 100, 20, 2, 1, true, 2)
 
     imps:updateSlot()
 
@@ -509,9 +560,6 @@ function ERACombatWarlockDestru_boltCastTime(haste, timers, backdraftTimer, ruin
         mult = 0.7
     else
         mult = 1.0
-    end
-    if (backdraftTimer.remDuration > timers.occupied) then
-        mult = mult * 0.8
     end
     if (ruinTimer.remDuration > timers.occupied) then
         mult = mult * 0.5
@@ -618,11 +666,19 @@ function ERACombatFrames_WarlockDestroSetup(cFrame)
         return ERACombatWarlockDestru_boltCastTime(haste, timers, backdraftTimer, ruinTimer, azjaqirBoltTimer, talent_azjaqir)
     end
 
+    local enemies = ERACombatEnemies:Create(cFrame, 3)
     ERACombatWarlockDestruHavocBar:create(timers, embers, backdraftTimer, ruinTimer, azjaqirBoltTimer, talent_azjaqir)
 
     utility:AddCooldown(-3, 0, 1122, nil, true, ERALIBTalent:Create(91502)) -- infernal
 
-    local enemies = ERACombatEnemies:Create(cFrame, 3)
+    -- out of combat
+    utility:AddCooldown(-2, 4, 80240, nil, false, talent_havoc)
+    utility:AddCooldown(-1, 4, 17877, nil, false, talent_shadowburn)
+    utility:AddCooldown(-1, 3, 17962, nil, false, talent_conflagrate)
+    utility:AddCooldown(-2, 3, 6353, nil, false, talent_soulfire)
+    utility:AddCooldown(-3, 3, 196447, nil, false, talent_demonfire)
+    utility:AddCooldown(-2, 2, 152108, nil, false, talent_cataclysm)
+    utility:AddCooldown(-3, 2, 387976, nil, false, talent_rift)
 
     --[[
 
@@ -768,7 +824,6 @@ function ERACombatWarlockDestruEmbers:create(cFrame)
     e.embersValue = -1
     e.idleStable = -1
 
-    e.playerGUID = UnitGUID("player")
     e.lastHavoc = 0
 
     e.frame:Hide()
@@ -777,7 +832,7 @@ end
 
 function ERACombatWarlockDestruEmbers:CLEU(t)
     local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-    if (evt == "SPELL_AURA_APPLIED" and sourceGUY == self.playerGUID and spellID == 80240) then
+    if (evt == "SPELL_AURA_APPLIED" and sourceGUY == self.cFrame.playerGUID and spellID == 80240) then
         self.lastHavoc = t
     end
 end
