@@ -25,7 +25,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 
 function ERACombatFrames_DemonHunterHavocSetup(cFrame, enemies)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, 1)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, false, 1)
     timers.watchDispellableMagic = true
     timers.offsetIconsX = 8
     timers.offsetIconsY = 16
@@ -411,7 +411,7 @@ function ERACombatSoulFragments:GetCurrentPoints(t)
 end
 
 function ERACombatFrames_DemonHunterVengeanceSetup(cFrame, enemies)
-    local timers = ERACombatTimersGroup:Create(cFrame, -123, -11, 1.5, false, 2)
+    local timers = ERACombatTimersGroup:Create(cFrame, -123, -11, 1.5, false, false, 2)
     timers.offsetIconsX = 8
     timers.offsetIconsY = -16
     timers.watchDispellableMagic = true

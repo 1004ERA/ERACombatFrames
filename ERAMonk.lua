@@ -102,13 +102,14 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     local talent_charred = ERALIBTalent:Create(101465)
     local talent_celestial_flames = ERALIBTalent:Create(101465)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -88, 42, 1, false, 1)
+    local timers = ERACombatTimersGroup:Create(cFrame, -88, 42, 1, false, false, 1)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -36
     local first_column_X = 0.5
     ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
 
     local kegCooldown = timers:AddTrackedCooldown(121253)
+    local purifCooldown = timers:AddTrackedCooldown(119582, talent_purifying)
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 1)
 
@@ -117,27 +118,34 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
 
     local health = ERACombatHealth:Create(cFrame, barX, 26, barWidth, 22, 1)
 
-    ERACombatStagger:Create(cFrame, barX, 3, barWidth, 11)
+    ERACombatStagger:Create(cFrame, barX, 3, barWidth, 11, purifCooldown)
 
     local nrg = ERACombatPower:Create(cFrame, barX, -6, barWidth, 16, 3, false, 1.0, 1.0, 0.0, 1)
     nrg:AddConsumer(25, 606551)
     nrg:AddConsumer(65, 606551)
     local kegConsumer = nrg:AddConsumer(40, 594274)
     function kegConsumer:ComputeVisibility()
-        return kegCooldown.remDuration <= 3
+        if (kegCooldown.hasCharges) then
+            return kegCooldown.currentCharges > 0
+        else
+            return kegCooldown.remDuration <= 3
+        end
     end
     function kegConsumer:ComputeIconVisibility()
-        if (kegCooldown.remDuration <= 0 or kegCooldown.remDuration + 0.05 <= timers.occupied) then
+        if (kegCooldown.hasCharges) then
             self.icon:SetDesaturated(false)
         else
-            self.icon:SetDesaturated(true)
+            if (kegCooldown.remDuration <= 0 or kegCooldown.remDuration + 0.05 <= timers.occupied) then
+                self.icon:SetDesaturated(false)
+            else
+                self.icon:SetDesaturated(true)
+            end
         end
         return true
     end
 
     timers:AddKick(116705, first_column_X, 3, ERALIBTalent:Create(101504))
 
-    local purifCooldown = timers:AddTrackedCooldown(119582, talent_purifying)
     local purifIcon = timers:AddCooldownIcon(purifCooldown, nil, -4.5, 1, true, true)
 
     local bokAlternative = {}
@@ -348,7 +356,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     local kegchargedPrio = timers:AddPriority(594274)
     function kegchargedPrio:computePriority(t)
         if (kegCooldown.hasCharges and 0 < kegCooldown.currentCharges and kegCooldown.currentCharges < kegCooldown.maxCharges) then
-            self.icon:SetDesaturated(kegCooldown.remDuration >2)
+            self.icon:SetDesaturated(kegCooldown.remDuration > 2)
             if (kegCooldown.remDuration < 3) then
                 return 5
             else
@@ -431,13 +439,14 @@ ERACombatStagger = {}
 ERACombatStagger.__index = ERACombatStagger
 setmetatable(ERACombatStagger, { __index = ERACombatModule })
 
-function ERACombatStagger:Create(cFrame, x, y, barWidth, barHeight)
+function ERACombatStagger:Create(cFrame, x, y, barWidth, barHeight, purifyingCooldown)
     local bar = {}
     setmetatable(bar, ERACombatStagger)
     bar.frame = CreateFrame("Frame", nil, UIParent, nil)
     bar.frame:SetPoint("TOP", UIParent, "CENTER", x, y)
     bar.frame:SetSize(barWidth, barHeight)
     bar.bar = ERACombatStatusBar:create(bar.frame, 0, 0, barWidth, barHeight, 1.0, 0.0, 0.0)
+    bar.purifCooldown = purifyingCooldown
     bar:construct(cFrame, -1, 0.05, false, 1)
     return bar
 end
@@ -465,6 +474,23 @@ function ERACombatStagger:exit()
 end
 
 function ERACombatStagger:UpdateCombat(t)
+    if (self.purifCooldown.hasCharges) then
+        if (self.purifCooldown.currentCharges > 0) then
+            if (self.purifCooldown.currentCharges >= self.purifCooldown.maxCharges) then
+                self.bar:SetMainColor(1.0, 0.0, 1.0)
+            else
+                self.bar:SetMainColor(1.0, 0.0, 0.5)
+            end
+        else
+            self.bar:SetMainColor(1.0, 0.0, 0.0)
+        end
+    else
+        if (self.purifCooldown.remDuration > 0) then
+            self.bar:SetMainColor(0.8, 0.0, 0.0)
+        else
+            self.bar:SetMainColor(1.0, 0.0, 0.5)
+        end
+    end
     self.bar:SetAll(UnitHealthMax("player"), UnitStagger("player"), 0, 0, 0)
 end
 
@@ -507,12 +533,19 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     local talent_normal_detox = ERALIBTalent:CreateNotTalent(102627)
     local talent_better_detox = ERALIBTalent:Create(102627)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -144, -101, 1.5, true, 2)
+    --[[
+    local timers = ERACombatTimersGroup:Create(cFrame, -144, -101, 1.5, true, true, 2)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -36
+    --]]
+    local timers = ERACombatTimersGroup:Create(cFrame, -144, -44, 1.5, true, true, 2)
+    timers.offsetIconsX = -32
+    timers.offsetIconsY = -93
     local first_column_X = 0.5
     local first_column_Y = 2
     ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
+
+    timers:AddChannelInfo(115175, 1.0)
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 0, true, 0.0, 0.0, 1.0, false, 2)
 
@@ -922,7 +955,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
     local health = ERACombatHealth:Create(cFrame, 0, -77, 144, 22, 3)
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 3)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -88, 32, 1, false, 3)
+    local timers = ERACombatTimersGroup:Create(cFrame, -88, 32, 1, false, false, 3)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -22
     local first_column_X = 0.5

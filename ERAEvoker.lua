@@ -30,7 +30,7 @@ ERACombatFrames_EvokerDPS_secondY = -1.5
 ERACombatFrames_EvokerDPS_firstColumnOffset = -0.5
 
 function ERACombatFrames_EvokerDPSSetup(cFrame, spec, firebreath_alternative_talent)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, 4, 1.5, false, spec)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, 4, 1.5, false, false, spec)
     timers.offsetIconsX = 16
     timers.offsetIconsY = -8
 
@@ -394,9 +394,10 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame)
     local combatHealth = ERACombatHealth:Create(cFrame, -8, -121, 141, 16, 2)
     ERACombatPower:Create(cFrame, -8, -144, 141, 16, 0, true, 0.2, 0.1, 1, 2)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -144, -88, 1.5, false, 2)
+    local timers = ERACombatTimersGroup:Create(cFrame, -144, -32, 1.5, false, true, 2)
     timers.offsetIconsX = 16
-    timers.offsetIconsY = 16
+    timers.offsetIconsY = -40
+    timers:AddChannelInfo(356995, 0.75)
 
     local talent_spiritbloom = ERALIBTalent:Create(115546)
     local talent_dilation = ERALIBTalent:Create(115650)

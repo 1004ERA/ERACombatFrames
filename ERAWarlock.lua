@@ -22,7 +22,7 @@ function ERACombatFrames_WarlockSetup(cFrame)
 end
 
 function ERACombatFrames_WarlockModulesSetup(cFrame, ...)
-    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, ...)
+    local timers = ERACombatTimersGroup:Create(cFrame, -101, -11, 1.5, false, false, ...)
     timers.offsetIconsX = 8
     timers.offsetIconsY = 16
 
@@ -640,6 +640,7 @@ function ERACombatFrames_WarlockDestroSetup(cFrame)
     table.insert(cataIcons, timers:AddCooldownIcon(cataclysmCooldown, nil, -3.5, -0.9, true, true, talent_havoc))
 
     local ruinTimer = timers:AddTrackedBuff(387157)
+    timers:AddAuraBar(ruinTimer, nil, 0.4, 1.0, 0.0)
     local impendingTimer = timers:AddTrackedBuff(387158)
     local impendingIcons = {}
     table.insert(impendingIcons, timers:AddStacksProgressIcon(impendingTimer, nil, first_column_X, 3, 15, talent_not_ritualist))

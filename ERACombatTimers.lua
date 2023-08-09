@@ -198,11 +198,12 @@ end
 ---- TIMERS GROUP --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
-function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, ...)
+function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, reversed, ...)
     local group = {}
     setmetatable(group, ERACombatTimersGroup)
 
     -- affichage
+    group.reversed = reversed
     group.frame = CreateFrame("Frame", nil, UIParent, "ERACombatTimersFrame")
     group.frame:SetPoint("CENTER", UIParent, "CENTER", x, y)
     group.timerHeight = 0
@@ -253,12 +254,16 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, ...)
 
     -- cast bar
     group.castBackground = group.frame:CreateTexture(nil, "BACKGROUND")
-    group.castBackground:SetPoint("BOTTOMRIGHT", group.frame, "CENTER", 0, -ERACombat_TimerIconCooldownSize)
     group.castBackground:SetColorTexture(0.0, 0.0, 0.0, 0.66)
     group.castBar = group.frame:CreateTexture(nil, "BORDER")
-    group.castBar:SetPoint("BOTTOMRIGHT", group.frame, "CENTER", 0, -ERACombat_TimerIconCooldownSize)
-    --group.castBar:SetColorTexture(0.2, 0.6, 0.7, 0.55)
     group.castBar:SetColorTexture(0.2, 0.8, 0.6, 0.66)
+    if (reversed) then
+        group.castBackground:SetPoint("TOPRIGHT", group.frame, "CENTER", 0, ERACombat_TimerIconCooldownSize)
+        group.castBar:SetPoint("TOPRIGHT", group.frame, "CENTER", 0, ERACombat_TimerIconCooldownSize)
+    else
+        group.castBackground:SetPoint("BOTTOMRIGHT", group.frame, "CENTER", 0, -ERACombat_TimerIconCooldownSize)
+        group.castBar:SetPoint("BOTTOMRIGHT", group.frame, "CENTER", 0, -ERACombat_TimerIconCooldownSize)
+    end
 
     -- events
     group.events = {}
@@ -448,8 +453,12 @@ function ERACombatTimersGroup:Pack()
     end
 
     self.gcdBar = self.frameOverlay:CreateTexture(nil, "BACKGROUND")
-    self.gcdBar:SetPoint("BOTTOMRIGHT", self.frameOverlay, "CENTER", 0, ERACombat_TimerBarSpacing)
     self.gcdBar:SetColorTexture(1.0, 1.0, 1.0, 0.8)
+    if (self.reversed) then
+        self.gcdBar:SetPoint("TOPRIGHT", self.frameOverlay, "CENTER", 0, -ERACombat_TimerBarSpacing)
+    else
+        self.gcdBar:SetPoint("BOTTOMRIGHT", self.frameOverlay, "CENTER", 0, ERACombat_TimerBarSpacing)
+    end
     for _, icon in ipairs(self.icons) do
         icon:createOverlayDisplay()
     end
@@ -758,7 +767,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
 
     local barsHeight = ERACombat_TimerBarSpacing
     for i, b in ipairs(self.activeBars) do
-        barsHeight = b:drawOrHide(barsHeight, self.timerStandardDuration)
+        barsHeight = b:drawOrHide(barsHeight, self.timerStandardDuration, self.reversed)
     end
     if (barsHeight <= ERACombat_TimerBarSpacing + 0.01) then
         barsHeight = ERACombat_TimerBarDefaultSize + 2 * ERACombat_TimerBarSpacing
@@ -766,8 +775,11 @@ function ERACombatTimersGroup:UpdateCombat(t)
     if (self.barsHeight ~= barsHeight) then
         self.barsHeight = barsHeight
         if (self.nestedModule) then
-            self.nestedModule.frame:SetPoint(self.nestedModule.anchor, self.frame, "CENTER", self.nestedModule.offsetX,
-                barsHeight + self.nestedModule.offsetY)
+            if (self.reversed) then
+                self.nestedModule.frame:SetPoint(self.nestedModule.anchor, self.frame, "CENTER", self.nestedModule.offsetX, -barsHeight - self.nestedModule.offsetY)
+            else
+                self.nestedModule.frame:SetPoint(self.nestedModule.anchor, self.frame, "CENTER", self.nestedModule.offsetX, barsHeight + self.nestedModule.offsetY)
+            end
         end
     end
     local timerHeight = barsHeight + nestedHeight
@@ -775,15 +787,18 @@ function ERACombatTimersGroup:UpdateCombat(t)
         self.timerHeight = timerHeight
         for i, g in ipairs(self.gcdTicks) do
             local x = 0 - (i - 1) * (ERACombat_TimerWidth / ERACombat_TimerGCDCount)
-            --g:SetStartPoint("CENTER", self.frameOverlay, x, 0)
-            g:SetEndPoint("CENTER", self.frameOverlay, x, timerHeight)
+            if (self.reversed) then
+                g:SetEndPoint("CENTER", self.frameOverlay, x, -timerHeight)
+            else
+                g:SetEndPoint("CENTER", self.frameOverlay, x, timerHeight)
+            end
         end
     end
 
     self.visiblePriorityIcons = {}
     prv = nil
     for _, icon in ipairs(self.activeIcons) do
-        icon:drawOnTimer(timerHeight, self.timerStandardDuration, prv)
+        icon:drawOnTimer(timerHeight, self.timerStandardDuration, prv, self.reversed)
         if (icon.priorityObject.priority > 0) then
             table.insert(self.visiblePriorityIcons, icon.priorityObject)
         end
@@ -797,17 +812,29 @@ function ERACombatTimersGroup:UpdateCombat(t)
     end
     table.sort(self.visiblePriorityIcons, ERACombatTimerPriorityIcon_comparePriority)
     for avIconIndex, icon in ipairs(self.visiblePriorityIcons) do
-        icon:draw(avIconIndex)
+        icon:draw(avIconIndex, self.reversed)
     end
 
     if (self.remGCD > 0) then
-        self.gcdBar:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remGCD),
-            timerHeight - ERACombat_TimerBarSpacing)
+        if (self.reversed) then
+            self.gcdBar:SetPoint("BOTTOMLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remGCD), ERACombat_TimerBarSpacing - timerHeight)
+        else
+            self.gcdBar:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remGCD), timerHeight - ERACombat_TimerBarSpacing)
+        end
     else
-        self.gcdBar:SetPoint("TOPLEFT", self.frame, "CENTER", 0, timerHeight - ERACombat_TimerBarSpacing)
+        if (self.reversed) then
+            self.gcdBar:SetPoint("BOTTOMLEFT", self.frame, "CENTER", 0, ERACombat_TimerBarSpacing - timerHeight)
+        else
+            self.gcdBar:SetPoint("TOPLEFT", self.frame, "CENTER", 0, timerHeight - ERACombat_TimerBarSpacing)
+        end
     end
-    self.castBackground:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.totCast), timerHeight)
-    self.castBar:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remCast), timerHeight)
+    if (self.reversed) then
+        self.castBackground:SetPoint("BOTTOMLEFT", self.frame, "CENTER", self:calcTimerPixel(self.totCast), -timerHeight)
+        self.castBar:SetPoint("BOTTOMLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remCast), -timerHeight)
+    else
+        self.castBackground:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.totCast), timerHeight)
+        self.castBar:SetPoint("TOPLEFT", self.frame, "CENTER", self:calcTimerPixel(self.remCast), timerHeight)
+    end
 
     if (tickInfo and tickInfo > 0) then
         tickInfo = tickInfo / haste
@@ -824,7 +851,11 @@ function ERACombatTimersGroup:UpdateCombat(t)
             end
             local x = self:calcTimerPixel(t_channelTick - t)
             tickLine:SetStartPoint("CENTER", self.frameOverlay, x, 0)
-            tickLine:SetEndPoint("CENTER", self.frameOverlay, x, timerHeight)
+            if (self.reversed) then
+                tickLine:SetEndPoint("CENTER", self.frameOverlay, x, -timerHeight)
+            else
+                tickLine:SetEndPoint("CENTER", self.frameOverlay, x, timerHeight)
+            end
             t_channelTick = t_channelTick - tickInfo
         end
         for j = self.channelTickCount + 1, i do
@@ -843,7 +874,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
 
     if (empowerLevel >= 0) then
         for _, lvl in ipairs(self.empowerLevels) do
-            lvl:Draw(self, self.frameOverlay, timerHeight)
+            lvl:Draw(self, self.frameOverlay, timerHeight, self.reversed)
         end
     else
         for _, lvl in ipairs(self.empowerLevels) do
@@ -852,7 +883,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
     end
 
     for _, m in ipairs(self.activeMarkers) do
-        m:update(haste, timerHeight)
+        m:update(haste, timerHeight, self.reversed)
     end
 end
 
@@ -1066,8 +1097,12 @@ function ERACombatTimerPriorityIcon:construct()
 
 end
 
-function ERACombatTimerPriorityIcon:draw(index)
-    self.icon:Draw(0, -index * ERACombat_TimerIconCooldownSize, true)
+function ERACombatTimerPriorityIcon:draw(index, reversed)
+    if (reversed) then
+        self.icon:Draw(0, index * ERACombat_TimerIconCooldownSize, true)
+    else
+        self.icon:Draw(0, -index * ERACombat_TimerIconCooldownSize, true)
+    end
 end
 
 function ERACombatTimerPriorityIcon_comparePriority(i1, i2)
@@ -1162,15 +1197,20 @@ function ERACombatTimerMarker:checkTalentsOrHide()
     end
 end
 
-function ERACombatTimerMarker:update(haste, timerHeight)
+function ERACombatTimerMarker:update(haste, timerHeight, reversed)
     local t = self:computeTimeOr0IfInvisible(haste)
     if (t > 0) then
         local px = self.group:calcTimerPixel(t)
         if (px ~= self.pixel or timerHeight ~= self.height) then
             self.pixel = px
             self.height = timerHeight
-            self.line:SetStartPoint("CENTER", self.group.frameOverlay, px, -ERACombat_TimerIconCooldownSize / 2) --0)
-            self.line:SetEndPoint("CENTER", self.group.frameOverlay, px, timerHeight)
+            if (reversed) then
+                self.line:SetStartPoint("CENTER", self.group.frameOverlay, px, ERACombat_TimerIconCooldownSize / 2) --0)
+                self.line:SetEndPoint("CENTER", self.group.frameOverlay, px, -timerHeight)
+            else
+                self.line:SetStartPoint("CENTER", self.group.frameOverlay, px, -ERACombat_TimerIconCooldownSize / 2) --0)
+                self.line:SetEndPoint("CENTER", self.group.frameOverlay, px, timerHeight)
+            end
         end
         self:show()
     else
@@ -1262,7 +1302,7 @@ function ERACombatTimerIcon:updateIcon(t, timerStandardDuration)
     end
 end
 
-function ERACombatTimerIcon:drawOnTimer(timerHeight, timerStandardDuration, prvIcon)
+function ERACombatTimerIcon:drawOnTimer(timerHeight, timerStandardDuration, prvIcon, reversed)
     if (self.showOnTimer) then
         if (self.timerDuration > 0) then
             if (self.timerDuration <= timerStandardDuration) then
@@ -1284,9 +1324,15 @@ function ERACombatTimerIcon:drawOnTimer(timerHeight, timerStandardDuration, prvI
                     self.iconTimerLayer = 1
                     yOffset = 0
                 end
-                self.iconTimer:Draw(self.tickpos, yOffset - ERACombat_TimerIconCooldownSize / 2, false)
-                self.line:SetStartPoint("CENTER", self.group.frameOverlay, self.tickpos, yOffset)
-                self.line:SetEndPoint("CENTER", self.group.frameOverlay, self.tickpos, timerHeight)
+                if (reversed) then
+                    self.iconTimer:Draw(self.tickpos, ERACombat_TimerIconCooldownSize / 2 - yOffset, false)
+                    self.line:SetStartPoint("CENTER", self.group.frameOverlay, self.tickpos, -yOffset)
+                    self.line:SetEndPoint("CENTER", self.group.frameOverlay, self.tickpos, -timerHeight)
+                else
+                    self.iconTimer:Draw(self.tickpos, yOffset - ERACombat_TimerIconCooldownSize / 2, false)
+                    self.line:SetStartPoint("CENTER", self.group.frameOverlay, self.tickpos, yOffset)
+                    self.line:SetEndPoint("CENTER", self.group.frameOverlay, self.tickpos, timerHeight)
+                end
                 self.priorityObject.priority = 0
             else
                 self.iconTimerLayer = 0
@@ -1623,9 +1669,9 @@ end
 
 -- abstract function ERACombatTimerStatusBar:GetRemDurationOr0IfInvisible()
 
-function ERACombatTimerStatusBar:drawOrHide(y, timerStandardDuration)
+function ERACombatTimerStatusBar:drawOrHide(y, timerStandardDuration, reversed)
     if (self.remDuration > 0) then
-        self.view:draw(y, self.remDuration, timerStandardDuration)
+        self.view:draw(y, self.remDuration, timerStandardDuration, reversed)
         return y + self.view.height + ERACombat_TimerBarSpacing
     else
         self:hide()
@@ -1862,7 +1908,7 @@ function ERACombatTimersEmpowerLevel:SetNotUsed()
     self.isUsed = false
 end
 
-function ERACombatTimersEmpowerLevel:Draw(group, frameOverlay, timerHeight)
+function ERACombatTimersEmpowerLevel:Draw(group, frameOverlay, timerHeight, reversed)
     if (self.isUsed) then
         self.isUsed = false
         if (self.isPast) then
@@ -1879,8 +1925,13 @@ function ERACombatTimersEmpowerLevel:Draw(group, frameOverlay, timerHeight)
             end
             local endPixel = group:calcTimerPixel(self.endsIn)
             self.text:SetPoint("LEFT", frameOverlay, "CENTER", 8, 0)
-            self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, -ERACombat_TimerIconCooldownSize)
-            self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, timerHeight)
+            if (reversed) then
+                self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, ERACombat_TimerIconCooldownSize)
+                self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, -timerHeight)
+            else
+                self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, -ERACombat_TimerIconCooldownSize)
+                self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, timerHeight)
+            end
             self:show()
         elseif (self.isFuture) then
             self.isFuture = false
@@ -1893,9 +1944,15 @@ function ERACombatTimersEmpowerLevel:Draw(group, frameOverlay, timerHeight)
             end
             local startPixel = group:calcTimerPixel(self.startsIn)
             local endPixel = group:calcTimerPixel(self.endsIn)
-            self.text:SetPoint("CENTER", frameOverlay, "CENTER", (startPixel + endPixel) / 2, -ERACombat_TimerIconCooldownSize / 2)
-            self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, -ERACombat_TimerIconCooldownSize)
-            self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, timerHeight)
+            if (reversed) then
+                self.text:SetPoint("CENTER", frameOverlay, "CENTER", (startPixel + endPixel) / 2, ERACombat_TimerIconCooldownSize / 2)
+                self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, ERACombat_TimerIconCooldownSize)
+                self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, -timerHeight)
+            else
+                self.text:SetPoint("CENTER", frameOverlay, "CENTER", (startPixel + endPixel) / 2, -ERACombat_TimerIconCooldownSize / 2)
+                self.tick:SetStartPoint("CENTER", frameOverlay, endPixel, -ERACombat_TimerIconCooldownSize)
+                self.tick:SetEndPoint("CENTER", frameOverlay, endPixel, timerHeight)
+            end
             self:show()
         end
     else
@@ -2021,7 +2078,7 @@ function ERACombatTimersBar:SetText(text)
     end
 end
 
-function ERACombatTimersBar:draw(y, value, max)
+function ERACombatTimersBar:draw(y, value, max, reversed)
     local wasVisible = self.currentlyVisible
     if (not self.currentlyVisible) then
         self.currentlyVisible = true
@@ -2035,18 +2092,31 @@ function ERACombatTimersBar:draw(y, value, max)
     end
     if (wasVisible) then
         if (self.lastY ~= y) then
-            self.translation:SetOffset(0, y - self.lastY)
+            if (reversed) then
+                self.translation:SetOffset(0, self.lastY - y)
+            else
+                self.translation:SetOffset(0, y - self.lastY)
+            end
             self.anim:Play()
         end
     else
-        self.sBar:SetPoint("BOTTOMRIGHT", self.parentFrame, self.parentAnchor, 0, y)
+        if (reversed) then
+            self.sBar:SetPoint("TOPRIGHT", self.parentFrame, self.parentAnchor, 0, -y)
+        else
+            self.sBar:SetPoint("BOTTOMRIGHT", self.parentFrame, self.parentAnchor, 0, y)
+        end
     end
+    self.lastReversed = reversed
     self.lastY = y
     return self.height
 end
 
 function ERACombatTimersBar:endAnimate()
-    self.sBar:SetPoint("BOTTOMRIGHT", self.parentFrame, self.parentAnchor, 0, self.lastY)
+    if (self.lastReversed) then
+        self.sBar:SetPoint("TOPRIGHT", self.parentFrame, self.parentAnchor, 0, -self.lastY)
+    else
+        self.sBar:SetPoint("BOTTOMRIGHT", self.parentFrame, self.parentAnchor, 0, self.lastY)
+    end
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
