@@ -2,6 +2,16 @@ function ERALIB_SetFont(fs, size)
     fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICKOUTLINE")
 end
 
+function ERALIB_GetSpellSlot(spellID)
+    for s = 1, 96 do
+        local actionType, id = GetActionInfo(s)
+        if (actionType == "spell" and id == spellID) then
+            return s
+        end
+    end
+    return -1
+end
+
 --------------------------------------------------------------------------------------------------------------------------------
 -- TALENTS ---------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------

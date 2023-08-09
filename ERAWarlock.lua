@@ -529,14 +529,7 @@ function ERACombatFrames_WarlockDemonologyImps:OnResetToIdle()
     self:updateSlot()
 end
 function ERACombatFrames_WarlockDemonologyImps:updateSlot()
-    self.slot = -1
-    for s = 1, 72 do
-        local actionType, id = GetActionInfo(s)
-        if (actionType == "spell" and id == 196277) then
-            self.slot = s
-            break
-        end
-    end
+    self.slot = ERALIB_GetSpellSlot(196277)
 end
 
 function ERACombatFrames_WarlockDemonologyImps:GetMax(t)
@@ -722,10 +715,15 @@ function ERACombatFrames_WarlockDestroSetup(cFrame)
     end
 
     function conflagCooldownIcon:computeAvailablePriority()
-        if (self.cd.currentCharges == self.cd.maxCharges or (self.cd.currentCharges + 1 >= self.cd.maxCharges and self.cd.remDuration <= timers.occupied)) then
-            return 4
-        else
+        return 4
+    end
+    local conflagchargedPrio = timers:AddPriority(135807)
+    function conflagchargedPrio:computePriority(t)
+        if (conflagCooldown.hasCharges and 0 < conflagCooldown.currentCharges and conflagCooldown.currentCharges < conflagCooldown.maxCharges) then
+            self.icon:SetDesaturated(true)
             return 9
+        else
+            return 0
         end
     end
 

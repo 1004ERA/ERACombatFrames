@@ -457,6 +457,7 @@ function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y,
         self.frame:SetPoint("LEFT", UIParent, "CENTER", x, y)
     end
     self.frame:Hide()
+    self.visible = false
 
     self.background = self.frame:CreateTexture(nil, "BACKGROUND")
     self.background:SetColorTexture(0, 0, 0, 0.5)
@@ -490,12 +491,25 @@ function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y,
     self.max = 0
 end
 
+function ERACombatFrames_PseudoResourceBar:Show(wasActive)
+    if (not self.visible) then
+        self.visible = true
+        self.frame:Show()
+    end
+end
+function ERACombatFrames_PseudoResourceBar:Hide(wasActive)
+    if (self.visible) then
+        self.visible = false
+        self.frame:Hide()
+    end
+end
+
 function ERACombatFrames_PseudoResourceBar:SpecInactive(wasActive)
-    self.frame:Hide()
+    self:Hide()
 end
 
 function ERACombatFrames_PseudoResourceBar:ResetToIdle()
-    self.frame:Hide()
+    self:Hide()
     self:OnResetToIdle()
 end
 
@@ -503,11 +517,11 @@ function ERACombatFrames_PseudoResourceBar:OnResetToIdle()
 end
 
 function ERACombatFrames_PseudoResourceBar:EnterCombat(fromIdle)
-    self.frame:Show()
+    self:Show()
 end
 
 function ERACombatFrames_PseudoResourceBar:ExitCombat(toIdle)
-    self.frame:Hide()
+    self:Hide()
 end
 
 function ERACombatFrames_PseudoResourceBar:UpdateCombat(t)

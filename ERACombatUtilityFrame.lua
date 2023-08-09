@@ -616,6 +616,7 @@ function ERACombatUtilityCooldown:updateIdle(t)
         self.icon:Hide()
     else
         ERACombatCooldown_Update(self, t, 2)
+        self.icon:StopHighlight()
         if (self.hasCharges) then
             if (self.currentCharges > 0) then
                 if (self.remDuration <= 0 or self.currentCharges >= self.maxCharges) then
@@ -671,14 +672,30 @@ function ERACombatUtilityCooldown:doUpdateCombat(t)
             if (self.currentCharges > 0) then
                 self.icon:SetOverlayValue(self.remDuration / self.totDuration)
                 ERACombatCooldownIcon_SetSaturatedAndChargesText(self, self)
+                if (IsSpellOverlayed(self.spellID)) then
+                    self.icon:Highlight()
+                else
+                    self.icon:StopHighlight()
+                end
             else
+                self.icon:StopHighlight()
                 self.icon:SetDesaturated(true)
                 self.icon:SetOverlayValue(self.remDuration / self.totDuration)
                 self.icon:SetSecondaryText(nil)
                 self.icon:SetMainText(math.floor(self.remDuration))
             end
         else
-            self.icon:SetDesaturated(self.remDuration > 30)
+            if (self.remDuration > 30) then
+                self.icon:SetDesaturated(true)
+                self.icon:StopHighlight()
+            else
+                self.icon:SetDesaturated(false)
+                if (IsSpellOverlayed(self.spellID)) then
+                    self.icon:Highlight()
+                else
+                    self.icon:StopHighlight()
+                end
+            end
             if (self.remDuration > 0) then
                 self.icon:SetOverlayValue(self.remDuration / self.totDuration)
                 self.icon:SetMainText(math.floor(self.remDuration))

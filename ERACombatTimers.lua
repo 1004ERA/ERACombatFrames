@@ -1422,26 +1422,31 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
             self.icon:SetOverlayValue(dur / self.cd.totDuration)
             if (self.cd.currentCharges > 0) then
                 ERACombatCooldownIcon_SetSaturatedAndChargesText(self, self.cd)
-                if (self.cd.currentCharges + 1 >= self.cd.maxCharges) then
-                    if (self:OverrideTimerVisibility()) then
-                        if (dur >= timerStandardDuration) then
-                            self.timerDuration = 0
-                        else
-                            self.timerDuration = dur
-                        end
-                    else
-                        self.timerDuration = -1
+                if (self:OverrideTimerVisibility()) then
+                    if (self.iconTimer) then
+                        self.iconTimer:SetDesaturated(self.cd.currentCharges + 1 < self.cd.maxCharges)
                     end
+                    self.timerDuration = dur
                 else
-                    self.timerDuration = 0
+                    self.timerDuration = -1
                 end
             else
                 self.icon:SetDesaturated(true)
                 self.icon:SetSecondaryText(nil)
                 self.icon:SetMainText(math.floor(dur))
-                self.timerDuration = -1
+                if (self:OverrideTimerVisibility()) then
+                    self.timerDuration = dur
+                    if (self.iconTimer) then
+                        self.iconTimer:SetDesaturated(true)
+                    end
+                else
+                    self.timerDuration = -1
+                end
             end
         else
+            if (self.iconTimer) then
+                self.iconTimer:SetDesaturated(false)
+            end
             if (self.overrideSecondaryText) then
                 self.icon:SetSecondaryText(self.overrideSecondaryText())
             else
@@ -1493,10 +1498,12 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
                 self.previousDur = dur
             end
         end
-        if (IsSpellOverlayed(self.cd.spellID)) then
-            self.icon:Highlight()
-        else
-            self.icon:StopHighlight()
+        if (not self:OverrideHighlight()) then
+            if (IsSpellOverlayed(self.cd.spellID)) then
+                self.icon:Highlight()
+            else
+                self.icon:StopHighlight()
+            end
         end
     end
 end
@@ -1507,6 +1514,10 @@ end
 
 function ERACombatCooldownIcon:OverrideTimerVisibility()
     return true
+end
+
+function ERACombatCooldownIcon:OverrideHighlight()
+    return false
 end
 
 -- aura
@@ -2215,7 +2226,6 @@ end
 function ERACombatTimersStacksProgress:ComputeIsVisible(t)
     local s = self.aura.stacks
     if (s > 0) then
-        local s = self.aura.stacks
         if (self.stacks ~= s) then
             self.stacks = s
             self.icon:SetMainText(self.stacks)
@@ -2233,5 +2243,5 @@ function ERACombatTimersStacksProgress:ComputeIsVisible(t)
 end
 
 function ERACombatTimersStacksProgress:ShouldHighlight(t)
-    return self.highlightWhenFull
+    return self.highlightWhenFull and self.stacks >= self.maxStacks
 end
