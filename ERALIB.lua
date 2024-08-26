@@ -12,6 +12,8 @@ function ERALIB_GetSpellSlot(spellID)
     return -1
 end
 
+--/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
+
 --------------------------------------------------------------------------------------------------------------------------------
 -- TALENTS ---------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
@@ -21,50 +23,95 @@ ERALIBTalent_all_talents = {}
 ERALIBTalent = {}
 ERALIBTalent.__index = ERALIBTalent
 
+---@class ERALIBTalent
+---@field PlayerHasTalent fun():boolean
+
+---comment
+---@param talentID number
+---@return ERALIBTalent
 function ERALIBTalent:Create(talentID)
     return ERALIBTalentYes:create(talentID)
 end
 
+---comment
+---@param talentID number
+---@param rank number
+---@return ERALIBTalent
 function ERALIBTalent:CreateRank(talentID, rank)
     return ERALIBTalentRank:create(talentID, rank)
 end
 
+---comment
+---@param lvl number
+---@return ERALIBTalent
 function ERALIBTalent:CreateLevel(lvl)
     return ERALIBTalentLevel:create(lvl)
 end
 
+---comment
+---@param iid number
+---@return ERALIBTalent
 function ERALIBTalent:CreateInstance(iid)
     return ERALIBTalentInstance:create(iid)
 end
 
+---comment
+---@param talentID number
+---@param lvl number | nil
+---@return ERALIBTalent
 function ERALIBTalent:CreateNotTalent(talentID, lvl)
     return ERALIBTalentNotTalent:create(talentID, lvl)
 end
 
+---comment
+---@param cdt ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateNot(cdt)
     return ERALIBTalentNot:create(cdt)
 end
 
+---comment
+---@param ... ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateAnd(...)
     return ERALIBTalentAnd:create(...)
 end
 
+---comment
+---@param ... ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateOr(...)
     return ERALIBTalentOr:create(...)
 end
 
+---comment
+---@param count number
+---@param ... ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateCount(count, ...)
     return ERALIBTalentCount:create(count, ...)
 end
 
+---comment
+---@param t1 ERALIBTalent
+---@param t2 ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateXOR(t1, t2)
     return ERALIBTalentXOR:create(t1, t2)
 end
 
+---comment
+---@param t1 ERALIBTalent
+---@param t2 ERALIBTalent
+---@return ERALIBTalent
 function ERALIBTalent:CreateNOR(t1, t2)
     return ERALIBTalentNOR:create(t1, t2)
 end
 
+---comment
+---@param t1 ERALIBTalent | nil
+---@param t2 ERALIBTalent| nil
+---@return ERALIBTalent | nil
 function ERALIBTalent_MakeAnd(t1, t2)
     if (t1) then
         if (t2) then

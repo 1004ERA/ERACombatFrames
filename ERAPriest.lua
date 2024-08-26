@@ -78,7 +78,7 @@ function ERACombatFrames_PriestDisciplineSetup(cFrame, kyrian_talent)
     end
 
     local utility = ERACombatFrames_PriestUtility(cFrame, 128, -128, 1, nil)
-    utility:AddDefensiveDispellCooldown(0.5, 0.9, 527, nil, ERALIBTalent:CreateLevel(18), "Magic", "Disease")
+    utility:AddDefensiveDispellCooldown(0.5, 0.9, 527, nil, ERALIBTalent:CreateLevel(18), "magic", "disease")
     utility:AddCooldown(-0.5, 0.9, 204263, nil, true, ERALIBTalent:Create(4, 3)).alphaWhenOffCooldown = 0.4
     utility:AddCooldown(-2, 0, 121536, nil, true, ERALIBTalent:Create(2, 3)).alphaWhenOffCooldown = 0.4
 
@@ -208,7 +208,7 @@ function ERACombatFrames_PriestShadowSetup(cFrame, kyrian_talent)
     end
     ]]
     local utility = ERACombatFrames_PriestUtility(cFrame, 111, -144, 3, talent_not_mindbomb)
-    utility:AddDefensiveDispellCooldown(1.5, 0.9, 213634, nil, ERALIBTalent:CreateLevel(18), "Disease")
+    utility:AddDefensiveDispellCooldown(1.5, 0.9, 213634, nil, ERALIBTalent:CreateLevel(18), "disease")
     utility:AddCooldown(0, 0, 205369, nil, true, talent_mindbomb).alphaWhenOffCooldown = 0.4
     utility:AddCooldown(0.5, 0.9, 64044, nil, true, ERALIBTalent:Create(4, 3)).alphaWhenOffCooldown = 0.4
     utility:AddCooldown(-0.5, 0.9, 47585, nil, true, ERALIBTalent:CreateLevel(16)).alphaWhenOffCooldown = 0.4 -- dispersion

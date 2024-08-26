@@ -74,7 +74,9 @@ end
 
 function ERACombatTimersGroup:AddAuraBar(aura, iconID, r, g, b, talent)
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(aura.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     return ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
 end
@@ -93,21 +95,27 @@ end
 
 function ERACombatTimersGroup:AddMissingAura(aura, iconID, x, y, beam, talent)
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(aura.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     return ERACombatTimersMissingAura:create(aura, iconID, x, y, beam, talent)
 end
 
 function ERACombatTimersGroup:AddProc(aura, iconID, x, y, beam, showStacks, talent)
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(aura.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     return ERACombatTimersProc:create(aura, iconID, x, y, beam, showStacks, talent)
 end
 
 function ERACombatTimersGroup:AddStacksProgressIcon(aura, iconID, x, y, maxStacks, talent)
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(aura.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     return ERACombatTimersStacksProgress:create(aura, iconID, x, y, maxStacks, talent)
 end
@@ -222,7 +230,11 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, revers
     group.targetCast = 0
 
     -- mécanique
-    group.minGCD = 1
+    if (baseGCD > 1) then
+        group.minGCD = 0.75
+    else
+        group.minGCD = 1
+    end
     group.baseGCD = baseGCD
     group.remGCD = 0
     group.haste = 1
@@ -483,14 +495,20 @@ function ERACombatTimersGroup:updateAura(aura, t, stacks, durAura, expirationTim
     aura:auraFound(auraRemDuration, durAura, stacks)
 end
 
+---comment
+---@param t number
 function ERACombatTimersGroup:UpdateCombat(t)
     if (self.hasTrackedDebuffsOnPlayer) then
         for i = 1, 40 do
+            --[[
+            CHANGE 11
             local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff("player", i)
-            if (spellID) then
-                local td = self.trackedDebuffsOnPlayer[spellID]
+            ]] --
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i)
+            if (auraInfo) then
+                local td = self.trackedDebuffsOnPlayer[auraInfo.spellId]
                 if (td ~= nil) then
-                    self:updateAura(td, t, stacks, durAura, expirationTime)
+                    self:updateAura(td, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
                 end
             else
                 break
@@ -498,22 +516,30 @@ function ERACombatTimersGroup:UpdateCombat(t)
         end
     end
     for i = 1, 40 do
+        --[[
+            CHANGE 11
         local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff("target", i, "PLAYER")
-        if (spellID) then
-            local td = self.trackedDebuffs[spellID]
+        ]] --
+        local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
+        if (auraInfo) then
+            local td = self.trackedDebuffs[auraInfo.spellId]
             if (td ~= nil) then
-                self:updateAura(td, t, stacks, durAura, expirationTime)
+                self:updateAura(td, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
             end
         else
             break
         end
     end
     for i = 1, 40 do
+        --[[
+            CHANGE 11
         local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff("player", i, "PLAYER")
-        if (spellID) then
-            local tb = self.trackedBuffs[spellID]
+        ]] --
+        local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
+        if (auraInfo) then
+            local tb = self.trackedBuffs[auraInfo.spellId]
             if (tb ~= nil) then
-                self:updateAura(tb, t, stacks, durAura, expirationTime)
+                self:updateAura(tb, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
             end
         else
             break
@@ -525,16 +551,19 @@ function ERACombatTimersGroup:UpdateCombat(t)
         self.targetDispellableMagic = false
         self.targetDispellableRage = false
         for i = 1, 40 do
+            --[[
+            CHANGE 11
             local _, _, _, buffType, _, _, _, canStealOrPurge, _, spellID = UnitBuff("target", i)
-            if (spellID) then
-                if (canStealOrPurge) then
+            ]] --
+            local auraInfo = C_UnitAuras.GetBuffDataByIndex("target", i)
+            if (auraInfo) then
+                if (auraInfo.isStealable) then
                     self.targetDispellable = true
                 end
-                -- blizzard bug, Enrage is an empty string.
-                buffType = (buffType == "" and "Enrage") or buffType
-                if (buffType == "Magic") then
+                -- BEFORE 11 : blizzard bug, Enrage is an empty string.
+                if (auraInfo.dispelName == "magic") then
                     self.targetDispellableMagic = true
-                elseif (buffType == "Enrage") then
+                elseif (auraInfo.dispelName == "enrage") then
                     self.targetDispellableRage = true
                 end
             else
@@ -542,34 +571,37 @@ function ERACombatTimersGroup:UpdateCombat(t)
             end
         end
     end
-    self.targetCast = 0
 
-    local name, text, _, _, endTargetCastMS, _, _, notInterruptible, spellCastID = UnitCastingInfo("target")
-    if (spellCastID and not notInterruptible) then
-        self.targetCast = endTargetCastMS / 1000 - t
-        if (self.targetCastBar) then
-            self.targetCastBar.view:SetText(name)
-        end
-    else
-        name, text, _, _, endTargetCastMS, _, notInterruptible, spellCastID = UnitChannelInfo("target")
+    self.targetCast = 0
+    if (UnitIsEnemy("player", "target")) then
+        local name, text, _, _, endTargetCastMS, _, _, notInterruptible, spellCastID = UnitCastingInfo("target")
         if (spellCastID and not notInterruptible) then
             self.targetCast = endTargetCastMS / 1000 - t
             if (self.targetCastBar) then
                 self.targetCastBar.view:SetText(name)
+            end
+        else
+            name, text, _, _, endTargetCastMS, _, notInterruptible, spellCastID = UnitChannelInfo("target")
+            if (spellCastID and not notInterruptible) then
+                self.targetCast = endTargetCastMS / 1000 - t
+                if (self.targetCastBar) then
+                    self.targetCastBar.view:SetText(name)
+                end
             end
         end
     end
 
     local haste = 1 + GetHaste() / 100
     self.haste = haste
-    local started, duration = GetSpellCooldown(61304)
+    -- CHANGE 11 local started, duration = GetSpellCooldown(61304)
+    local cdInfo = C_Spell.GetSpellCooldown(61304)
     if (self.baseGCD <= self.minGCD) then
         self.totGCD = self.minGCD
     else
         self.totGCD = math.max(self.minGCD, self.baseGCD / haste)
     end
-    if (duration and duration > 0) then
-        self.remGCD = duration - (t - started)
+    if (cdInfo and cdInfo.startTime and cdInfo.startTime > 0) then
+        self.remGCD = cdInfo.duration - (t - cdInfo.startTime)
     else
         self.remGCD = 0
     end
@@ -685,28 +717,32 @@ function ERACombatTimersGroup:UpdateCombat(t)
         end
         local locData = C_LossOfControl.GetActiveLossOfControlData(i)
         local remDurLoc
-        if (locData.timeRemaining and locData.timeRemaining > 0) then
+        local iconTexture
+        local typeDescription
+        if (locData and locData.timeRemaining and locData.timeRemaining > 0) then
             --elseif (locData.startTime and locData.duration) then
             --remDurLoc = locData.startTime + locData.duration - t
             remDurLoc = locData.timeRemaining
+            typeDescription = locData.locType
+            if (typeDescription == "SCHOOL_INTERRUPT") then
+                local school = locData.lockoutSchool
+                if (school and school ~= 0) then
+                    typeDescription = "ø " .. C_Spell.GetSchoolString(school) -- CHANGE 11 GetSchoolString(shcool)
+                else
+                    typeDescription = "INTERRUPT"
+                end
+            elseif (typeDescription == "STUN_MECHANIC") then
+                typeDescription = "STUN"
+            elseif (typeDescription == "FEAR_MECHANIC") then
+                typeDescription = "FEAR"
+            end
         else
             remDurLoc = 1024
-        end
-        local typeDescription = locData.locType
-        if (typeDescription == "SCHOOL_INTERRUPT") then
-            local shcool = locData.lockoutSchool
-            if (shcool and shcool ~= 0) then
-                typeDescription = "ø " .. GetSchoolString(shcool)
-            else
-                typeDescription = "INTERRUPT"
-            end
-        elseif (typeDescription == "STUN_MECHANIC") then
-            typeDescription = "STUN"
-        elseif (typeDescription == "FEAR_MECHANIC") then
-            typeDescription = "FEAR"
+            iconTexture = nil
+            typeDescription = nil
         end
         --locData.displayText
-        locBar:foundActive(typeDescription, remDurLoc, locData.iconTexture)
+        locBar:foundActive(typeDescription, remDurLoc, iconTexture)
     end
 
     for _, tim in ipairs(self.activeTimers) do
@@ -965,10 +1001,11 @@ function ERACombatCooldown_UpdateKind(cd)
         end
     end
     cd.spellID = resultingID
-    local currentCharges, maxCharges = GetSpellCharges(resultingID)
-    if (maxCharges and maxCharges > 1) then
-        cd.currentCharges = currentCharges
-        cd.maxCharges = maxCharges
+    -- CHANGE 11 local currentCharges, maxCharges = GetSpellCharges(resultingID)
+    local chargesInfo = C_Spell.GetSpellCharges(resultingID)
+    if (chargesInfo and chargesInfo.maxCharges > 1) then
+        cd.currentCharges = chargesInfo.currentCharges
+        cd.maxCharges = chargesInfo.maxCharges
         cd.hasCharges = true
     else
         cd.currentCharges = 0
@@ -977,30 +1014,36 @@ function ERACombatCooldown_UpdateKind(cd)
     end
 end
 
+---comment
+---@param cd any
+---@param t number
+---@param totGCD number
 function ERACombatCooldown_Update(cd, t, totGCD)
     if (cd.hasCharges) then
-        local currentCharges, maxCharges, cooldownStart, cooldownDuration = GetSpellCharges(cd.spellID)
-        if (maxCharges) then
-            cd.currentCharges = currentCharges
-            cd.maxCharges = maxCharges
-            cd.totDuration = cooldownDuration
-            if (currentCharges >= maxCharges) then
+        -- CHANGE 11 local currentCharges, maxCharges, cooldownStart, cooldownDuration = GetSpellCharges(cd.spellID)
+        local chargesInfo = C_Spell.GetSpellCharges(cd.spellID)
+        if (chargesInfo) then
+            cd.currentCharges = chargesInfo.currentCharges
+            cd.maxCharges = chargesInfo.maxCharges
+            cd.totDuration = chargesInfo.cooldownDuration
+            if (cd.currentCharges >= cd.maxCharges) then
                 cd.remDuration = 0
                 cd.isAvailable = true
             else
-                cd.remDuration = cooldownDuration - (t - cooldownStart)
-                cd.isAvailable = currentCharges > 0
+                cd.remDuration = chargesInfo.cooldownDuration - (t - chargesInfo.cooldownStartTime)
+                cd.isAvailable = cd.currentCharges > 0
             end
             cd.lastGoodUpdate = t
             cd.lastGoodDuration = cd.remDuration
             return
         end
     end
-    local started, duration = GetSpellCooldown(cd.spellID)
-    if (started and started > 0) then
+    -- CHANGE 11 local started, duration = GetSpellCooldown(cd.spellID)
+    local cdInfo = C_Spell.GetSpellCooldown(cd.spellID)
+    if (cdInfo and cdInfo.startTime and cdInfo.startTime > 0) then
         cd.currentCharges = 0
-        local remDur = duration - (t - started)
-        if (duration <= totGCD + 0.5) then
+        local remDur = cdInfo.duration - (t - cdInfo.startTime)
+        if (cdInfo.duration <= totGCD + 0.5) then
             if (cd.lastGoodUpdate) then
                 cd.isAvailable = true
                 -- cd.totDuration reste inchangé
@@ -1014,13 +1057,17 @@ function ERACombatCooldown_Update(cd, t, totGCD)
             end
         end
         cd.isAvailable = false
-        cd.totDuration = duration
+        cd.totDuration = cdInfo.duration
         cd.remDuration = remDur
         cd.lastGoodUpdate = t
         cd.lastGoodDuration = cd.remDuration
     else
         cd.isAvailable = true
-        cd.totDuration = duration or 1
+        if (cdInfo) then
+            cd.totDuration = cdInfo.duration or 1
+        else
+            cd.totDuration = 1
+        end
         cd.remDuration = 0
         cd.currentCharges = 1
         cd.lastGoodUpdate = t
@@ -1388,7 +1435,9 @@ function ERACombatCooldownIcon:create(cd, x, y, iconID, showOnTimer, availableIf
     setmetatable(i, ERACombatCooldownIcon)
     i.iconID = iconID
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(cd.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(cd.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(cd.spellID)
+        iconID = spellInfo.iconID
     end
     i:construct(cd.group, x, y, iconID, showOnTimer)
     i.cd = cd
@@ -1425,7 +1474,9 @@ end
 function ERACombatCooldownIcon:updateIconCooldownTexture()
     local iconID = self.iconID
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(self.cd.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(self.cd.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(self.cd.spellID)
+        iconID = spellInfo.iconID
     end
     self.icon:SetIconTexture(iconID, true)
     return iconID
@@ -1576,7 +1627,9 @@ function ERACombatAuraIcon:create(aura, x, y, iconID, talent)
     local i = {}
     setmetatable(i, ERACombatAuraIcon)
     if (not iconID) then
-        _, _, iconID = GetSpellInfo(aura.spellID)
+        -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     i:construct(aura.group, x, y, iconID, false)
     i.aura = aura
@@ -1590,7 +1643,9 @@ function ERACombatAuraIcon:checkTalentsOrHide()
     if (self.aura.talentActive and ((not self.talent) or self.talent:PlayerHasTalent())) then
         local iconID = self.iconID
         if (not iconID) then
-            _, _, iconID = GetSpellInfo(self.cd.spellID)
+            -- CHANGE 11 _, _, iconID = GetSpellInfo(self.cd.spellID)
+            local spellInfo = C_Spell.GetSpellInfo(self.cd.spellID)
+            iconID = spellInfo.iconID
         end
         self.icon:SetIconTexture(iconID, true)
         return true
@@ -1821,12 +1876,26 @@ end
 function ERACombatTimerTargetCastBar:GetRemDurationOr0IfInvisible(t)
     local c = self.group.targetCast
     if (c > 0) then
+        local couldKick = false
+        local canKick = false
         for _, k in ipairs(self.group.kicks) do
             if (k.talentActive and c > 0.1 + k.cd.remDuration and ((not k.displayOnlyIfSpellPetKnown) or IsSpellKnown(k.cd.spellID, true))) then
-                return c
+                couldKick = true
+                if (k.cd.remDuration <= 0 or (k.cd.hasCharges and k.cd.currentCharges > 0)) then
+                    canKick = true
+                end
             end
         end
-        return 0
+        if (couldKick) then
+            if (canKick) then
+                self.view:SetColor(1.0, 1.0, 1.0)
+            else
+                self.view:SetColor(0.8, 0.0, 0.0)
+            end
+            return c
+        else
+            return 0
+        end
     else
         return 0
     end

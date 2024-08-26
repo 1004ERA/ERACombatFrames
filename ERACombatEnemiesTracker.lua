@@ -1,6 +1,6 @@
 ERACombatEnemiesTracker = {}
 ERACombatEnemiesTracker.__index = ERACombatEnemiesTracker
-setmetatable(ERACombatEnemiesTracker, {__index = ERACombatModule})
+setmetatable(ERACombatEnemiesTracker, { __index = ERACombatModule })
 
 function ERACombatEnemiesTracker:GetEnemiesCount()
     return self.enemiesCount
@@ -32,12 +32,14 @@ function ERACombatEnemiesTracker:Create(cFrame, updateCombat, ...)
     et.events = {}
     function et.events:NAME_PLATE_UNIT_ADDED(unitToken)
         local guid = UnitGUID(unitToken)
-        local t = et.unassigned_GUID_to_time[guid]
-        if (t ~= nil) then
-            et.unassigned_plates_from_GUID[guid] = nil
-            et:addEnemy(guid, unitToken, GetTime())
-        else
-            et.unassigned_plates_from_GUID[guid] = unitToken
+        if (guid ~= nil) then -- CHANGE 11
+            local t = et.unassigned_GUID_to_time[guid]
+            if (t ~= nil) then
+                et.unassigned_plates_from_GUID[guid] = nil
+                et:addEnemy(guid, unitToken, GetTime())
+            else
+                et.unassigned_plates_from_GUID[guid] = unitToken
+            end
         end
     end
     function et.events:NAME_PLATE_UNIT_REMOVED(unitToken)
@@ -130,12 +132,13 @@ function ERACombatEnemiesTracker:addEnemy(guid, plateID, t)
     return tar
 end
 
-function ERACombatEnemiesTracker:removeEnemy(t, nameplateRemoved)
-    self.enemiesByGUID[t.guid] = nil
-    self.enemiesByNameplate[t.plateID] = nil
+function ERACombatEnemiesTracker:removeEnemy(tar, nameplateRemoved)
+    self.enemiesByGUID[tar.guid] = nil
+    self.enemiesByNameplate[tar.plateID] = nil
     self.enemiesCount = self.enemiesCount - 1
     for _, f in ipairs(self.onEnemyRemoved) do
-        f(tar, t)
+        -- CHANGE 11 f(tar, t)
+        f(tar, GetTime())
     end
 end
 

@@ -19,7 +19,12 @@ function ERACombatDOTracker:AddDOT(
     gNotOnCurrentTarget,
     bNotOnCurrentTarget)
     if (not iconID) then
+        --[[
+        CHANGE 11 GetNumRaidMembers()
         _, _, iconID = GetSpellInfo(auraID)
+        ]] --
+        local cdInfo = C_Spell.GetSpellInfo(auraID)
+        iconID = cdInfo.iconID
     end
     local d =
         ERACombatDOTDefinition:create(
@@ -126,20 +131,25 @@ function ERACombatDOTracker:updateAsNested_returnHeightForTimerOverlay(t)
         end
     else
         for i = 1, 40 do
+            --[[
+            CHANGE 11
             local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff("target", i, "PLAYER")
-            if (spellID) then
-                local def = self.activeDOTsByID[spellID]
+            ]] --
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
+            if (auraInfo) then
+                local def = self.activeDOTsByID[auraInfo.spellId]
                 if (def ~= nil) then
                     local auraRemDuration
-                    if (expirationTime and expirationTime > 0) then
-                        auraRemDuration = expirationTime - t
+                    if (auraInfo.expirationTime and auraInfo.expirationTime > 0) then
+                        auraRemDuration = auraInfo.expirationTime - t
                     else
                         auraRemDuration = 4096
                     end
+                    local stacks = auraInfo.applications
                     if (not (stacks and stacks > 0)) then
                         stacks = 1
                     end
-                    def:auraFoundParsingCurrentTarget(auraRemDuration, durAura, stacks)
+                    def:auraFoundParsingCurrentTarget(auraRemDuration, auraInfo.duration, stacks)
                 end
             else
                 break
@@ -180,20 +190,25 @@ end
 
 function ERACombatDOTarget:updateDOT(t)
     for i = 1, 40 do
+        --[[
+        CHANGE 11
         local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff(self.plateID, i, "PLAYER")
-        if (spellID) then
-            local def = self.dotracker.activeDOTsByID[spellID]
+        ]] --
+        local auraInfo = C_UnitAuras.GetDebuffDataByIndex(self.plateID, i, "PLAYER")
+        if (auraInfo) then
+            local def = self.dotracker.activeDOTsByID[auraInfo.spellId]
             if (def ~= nil) then
                 local auraRemDuration
-                if (expirationTime and expirationTime > 0) then
-                    auraRemDuration = expirationTime - t
+                if (auraInfo.expirationTime and auraInfo.expirationTime > 0) then
+                    auraRemDuration = auraInfo.expirationTime - t
                 else
                     auraRemDuration = 4096
                 end
+                local stacks = auraInfo.applications
                 if (not (stacks and stacks > 0)) then
                     stacks = 1
                 end
-                self.dots[def.index]:auraFound(auraRemDuration, durAura, stacks)
+                self.dots[def.index]:auraFound(auraRemDuration, auraInfo.duration, stacks)
             end
         else
             break

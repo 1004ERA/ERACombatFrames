@@ -6,6 +6,17 @@ ERACombatUtilityFrame_IconSize = 55
 ERACombatUtilityFrame_IconSpacing = 4
 ERACombatUtilityFrame_LongCooldownThreshold = 30
 
+---@class ERACombatUtilityFrame
+---@field AddCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, showInCombat:boolean, talent:ERALIBTalent | nil, ...:integer)
+---@field AddTrinket1Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
+---@field AddTrinket2Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
+---@field AddCloakCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
+---@field AddBeltCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
+---@field AddWarlockHealthStone fun(this:ERACombatUtilityFrame, x:number, y:number)
+---@field AddRacial fun(this:ERACombatUtilityFrame, x:number, y:number)
+---@field AddWarlockPortal fun(this:ERACombatUtilityFrame, x:number, y:number)
+---@field AddDefensiveDispellCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, talent:ERALIBTalent|nil, ...:string)
+
 ERACombatUtilityFrame = {}
 ERACombatUtilityFrame.__index = ERACombatUtilityFrame
 setmetatable(ERACombatUtilityFrame, { __index = ERACombatModule })
@@ -168,6 +179,12 @@ function ERACombatUtilityFrame:AddBagItem(x, y, itemID, iconID, warningIfMissing
     return ERACombatUtilityBagItem:create(self, x, y, itemID, iconID, warningIfMissing, talent)
 end
 
+---comment
+---@param cFrame any
+---@param x number
+---@param y number
+---@param ... number
+---@return ERACombatUtilityFrame
 function ERACombatUtilityFrame:Create(cFrame, x, y, ...)
     local f = {}
     setmetatable(f, ERACombatUtilityFrame)
@@ -301,10 +318,14 @@ function ERACombatUtilityFrame:updateData(t)
 
     if (self.watchDefensiveDispell) then
         for i = 1, 40 do
+            --[[
+            CHANGE 11
             local _, _, _, debuffType, _, _, _, canStealOrPurge, _, spellID = UnitDebuff("player", i)
-            if (spellID) then
-                if (debuffType) then
-                    local c = self.defensiveDispells[debuffType]
+            ]] --
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i)
+            if (auraInfo) then
+                if (auraInfo.dispelName) then
+                    local c = self.defensiveDispells[auraInfo.dispelName]
                     if (c ~= nil) then
                         for _, dd in ipairs(c) do
                             dd.playerDispellable = true
@@ -319,11 +340,15 @@ function ERACombatUtilityFrame:updateData(t)
 
     if (self.hasTrackedDebuffsAny) then
         for i = 1, 40 do
+            --[[
+            -- CHANGE 11
             local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff("player", i)
-            if (spellID) then
-                local b = self.activeDebuffsAny[spellID]
+            ]] --
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i)
+            if (auraInfo) then
+                local b = self.activeDebuffsAny[auraInfo.spellId]
                 if (b ~= nil) then
-                    ERACombatUtilityFrame_updateAura(b, t, stacks, durAura, expirationTime)
+                    ERACombatUtilityFrame_updateAura(b, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
                 end
             else
                 break
@@ -335,11 +360,15 @@ function ERACombatUtilityFrame:updateData(t)
     end
     if (self.hasTrackedBuffs) then
         for i = 1, 40 do
+            --[[
+            -- CHANGE 11
             local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff("player", i, "PLAYER")
-            if (spellID) then
-                local b = self.activeBuffs[spellID]
+            ]] --
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i, "PLAYER")
+            if (auraInfo) then
+                local b = self.activeBuffs[auraInfo.spellId]
                 if (b ~= nil) then
-                    ERACombatUtilityFrame_updateAura(b, t, stacks, durAura, expirationTime)
+                    ERACombatUtilityFrame_updateAura(b, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
                 end
             else
                 break
@@ -354,9 +383,13 @@ function ERACombatUtilityFrame:updateData(t)
             self.updatingMissingBuffsAny = true
             self.last_calc_missing_buff_any = t
             for i = 1, 40 do
+                --[[
+                -- CHANGE 11
                 local _, _, _, _, _, expirationTime, _, _, _, spellID = UnitBuff("player", i)
-                if (spellID) then
-                    local b = self.trackedMissingBuffsAny[spellID]
+                ]] --
+                local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i)
+                if (auraInfo) then
+                    local b = self.trackedMissingBuffsAny[auraInfo.spellId]
                     if (b ~= nil) then
                         b.found = true
                     end
@@ -399,9 +432,13 @@ function ERACombatUtilityFrame:updateData(t)
                             end
                         end
                         for i = 1, 40 do
+                            --[[
+                            -- CHANGE 11
                             local _, _, _, _, _, expirationTime, _, _, _, spellID = UnitBuff(unit, i, "PLAYER")
-                            if (spellID) then
-                                local b = self.trackedMissingBuffOnGroupMember[spellID]
+                            ]] --
+                            local auraInfo = C_UnitAuras.GetBuffDataByIndex(unit, i, "PLAYER")
+                            if (auraInfo) then
+                                local b = self.trackedMissingBuffOnGroupMember[auraInfo.spellId]
                                 if (b ~= nil) then
                                     b.found = true
                                 end
@@ -566,7 +603,12 @@ setmetatable(ERACombatUtilityCooldownBase, { __index = ERACombatUtilityIcon })
 function ERACombatUtilityCooldownBase:constructBase(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     self.iconID = iconID
     if (not iconID) then
+        --[[
+        -- CHANGE 11
         _, _, iconID = GetSpellInfo(spellID)
+        ]] --
+        local spellInfo = C_Spell.GetSpellInfo(spellID)
+        iconID = spellInfo.iconID
     end
     self:construct(owner, x, y, iconID, 0, showInCombat, talent)
     self.spellID = spellID
@@ -585,8 +627,12 @@ end
 
 function ERACombatUtilityCooldownBase:updateIconCooldownTexture()
     if (not self.iconID) then
+        --[[
+        -- CHANGE 11
         local _, _, iconID = GetSpellInfo(self.spellID)
-        self.icon:SetIconTexture(iconID, true)
+        ]] --
+        local spellInfo = C_Spell.GetSpellInfo(self.spellID)
+        self.icon:SetIconTexture(spellInfo.iconID, true)
     end
 end
 
@@ -612,7 +658,7 @@ function ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCom
 end
 
 function ERACombatUtilityCooldown:updateIdle(t)
-    if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not IsUsableSpell(self.spellID)) then
+    if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not C_Spell.IsSpellUsable(self.spellID)) then -- CHANGE 11 IsUsableSpell(self.spellID)
         self.icon:Hide()
     else
         ERACombatCooldown_Update(self, t, 2)
@@ -664,7 +710,7 @@ function ERACombatUtilityCooldown:IconUpdatedAndShown(t)
 end
 
 function ERACombatUtilityCooldown:doUpdateCombat(t)
-    if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not IsUsableSpell(self.spellID)) then
+    if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not C_Spell.IsSpellUsable(self.spellID)) then -- CHANGE 11 IsUsableSpell(self.spellID)
         self.icon:Hide()
     else
         ERACombatCooldown_Update(self, t, 2)
@@ -880,7 +926,12 @@ setmetatable(ERACombatUtilityAura, { __index = ERACombatUtilityIcon })
 
 function ERACombatUtilityAura:constructAura(aura, iconID, x, y, showInCombat, talent)
     if (not iconID) then
+        --[[
+        -- CHANGE 11
         _, _, iconID = GetSpellInfo(aura.spellID)
+        ]] --
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     if (talent) then
         if (aura.talent) then
@@ -955,7 +1006,7 @@ function ERACombatUtilityDebuffAnyCaster:create(aura, iconID, x, y, showInCombat
 end
 
 function ERACombatUtilityDebuffAnyCaster:update(t)
-    if (self.ShouldShowDebuffIcon()) then
+    if (self.ShouldShowDebuffIcon(t)) then
         if (self.aura.remDuration > 0) then
             self.lastPresent = t
             self.lastDuration = self.aura.totDuration
@@ -992,7 +1043,7 @@ function ERACombatUtilityDebuffAnyCaster:update(t)
         self.icon:Hide()
     end
 end
-function ERACombatUtilityDebuffAnyCaster:ShouldShowDebuffIcon()
+function ERACombatUtilityDebuffAnyCaster:ShouldShowDebuffIcon(t)
     return true
 end
 
@@ -1102,7 +1153,7 @@ function ERACombatUtilityBagItem:updateDurations(t)
             self.remDuration = 0
             self.totDuration = duration
         end
-        self.stacks = GetItemCount(self.itemID, false, true)
+        self.stacks = C_Item.GetItemCount(self.itemID, false, true) -- CHANGE 11 GetItemCount(self.itemID, false, true)
     else
         self.remDuration = 0
         self.totDuration = 1
@@ -1134,7 +1185,12 @@ function ERACombatUtilityMissingAura:create(aura, iconID, x, y, showInCombat, be
     local mi = {}
     setmetatable(mi, ERACombatUtilityMissingAura)
     if (not iconID) then
+        --[[
+        -- CHANGE 11
         _, _, iconID = GetSpellInfo(aura.spellID)
+        ]] --
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
     end
     mi:construct(aura.owner, x, y, iconID, 1, showInCombat, talent)
     mi.aura = aura

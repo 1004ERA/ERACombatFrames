@@ -260,8 +260,12 @@ function ERACombatGrid:update(t)
     for i, x in ipairs(self.activeTrackedDebuffsArray) do
         x:prepareUpdate()
     end
+    --[[
+    CHANGE 11
     local started, duration = GetSpellCooldown(self.dispellID)
-    self.dispellOnCD = started and duration and duration >= 2
+    ]] --
+    local cdInfo = C_Spell.GetSpellCooldown(self.dispellID)
+    self.dispellOnCD = cdInfo.startTime and cdInfo.duration and cdInfo.duration >= 2
     for _, u in pairs(self.unitsByID) do
         u:update(t)
     end
@@ -294,7 +298,8 @@ function ERACombatGrid_initialConfigFunction(gridframe, unitframe)
         --unitframe:SetFrameStrata("MEDIUM")
 
         --unitframe.mainFrame = CreateFrame("Frame", nil, unitframe, BackdopTemplateMixin and "BackdropTemplate")
-        unitframe.mainFrame = CreateFrame("Frame", nil, unitframe, "BackdropTemplate")
+        -- CHANGE 11 unitframe.mainFrame = CreateFrame("Frame", nil, unitframe, "BackdropTemplate")
+        unitframe.mainFrame = CreateFrame("Frame", nil, unitframe)
         unitframe.mainFrame:SetFrameStrata("LOW")
         unitframe.mainFrame:SetBackdrop(
             {
@@ -613,11 +618,15 @@ function ERACombatGridUnitPrototype:update(t)
 
     local dispellable = false
     for i = 1, 40 do
+        --[[
+        CHANGE 11
         local _, _, stacks, type, durAura, expirationTime, _, isStealable, _, spellID = UnitDebuff(self.unit, i)
-        if (spellID) then
-            local td = self.grid.activeTrackedDebuffsFetcher[spellID]
+        ]] --
+        local auraInfo = C_UnitAuras.GetDebuffDataByIndex(self.unit, i)
+        if (auraInfo) then
+            local td = self.grid.activeTrackedDebuffsFetcher[auraInfo.spellId]
             if (td ~= nil) then
-                ERACombatGridUnitPrototype_updateAura(t, expirationTime, durAura, stacks, td, self.activeDebuffs)
+                ERACombatGridUnitPrototype_updateAura(t, auraInfo.expirationTime, auraInfo.duration, auraInfo.applications, td, self.activeDebuffs)
             end
             if (not dispellable) then
                 for i, dis in ipairs(self.grid.dispells) do
@@ -663,11 +672,15 @@ function ERACombatGridUnitPrototype:update(t)
     end
 
     for i = 1, 40 do
+        --[[
+        CHANGE 11
         local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff(self.unit, i, "PLAYER")
-        if (spellID) then
-            local tb = self.grid.activeTrackedBuffsFetcher[spellID]
+        ]] --
+        local auraInfo = C_UnitAuras.GetBuffDataByIndex(self.unit, i, "PLAYER")
+        if (auraInfo) then
+            local tb = self.grid.activeTrackedBuffsFetcher[auraInfo.spellId]
             if (tb ~= nil) then
-                ERACombatGridUnitPrototype_updateAura(t, expirationTime, durAura, stacks, tb, self.activeBuffs)
+                ERACombatGridUnitPrototype_updateAura(t, auraInfo.expirationTime, auraInfo.duration, auraInfo.applications, tb, self.activeBuffs)
             end
         else
             break

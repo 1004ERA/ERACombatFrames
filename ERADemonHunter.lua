@@ -1,5 +1,4 @@
 -- TODO
--- unifier fury et pain pour Shadowlands
 
 function ERACombatFrames_DemonHunterSetup(cFrame)
     ERACombatGlobals_SpecID1 = 557
@@ -54,6 +53,7 @@ function ERACombatFrames_DemonHunterHavocSetup(cFrame, enemies)
     local talent_nova = ERALIBTalent:Create(112911)
     local talent_misery = ERALIBTalent:Create(112859)
     local talent_hunt = ERALIBTalent:Create(112837)
+    local talent_netherwalk = ERALIBTalent:Create(115247)
 
     local danceTimer = timers:AddTrackedCooldown(188499, ERALIBTalent:CreateLevel(12))
     local eyesbTimer = timers:AddTrackedCooldown(198013, ERALIBTalent:CreateLevel(11))
@@ -189,6 +189,9 @@ function ERACombatFrames_DemonHunterHavocSetup(cFrame, enemies)
         return (glaiveTimer.currentCharges > 0 or glaiveTimer.remDuration <= self.group.remGCD + 0.05)
     end
 
+    timers:AddAuraBar(timers:AddTrackedBuff(212800), nil, 0.1, 0.2, 0.9) -- blur
+    timers:AddAuraBar(timers:AddTrackedBuff(196555, talent_netherwalk), nil, 0.5, 0.0, 0.8)
+
     local eyesbMarker = timers:AddMarker(0.2, 1.0, 0.5, nil)
     function eyesbMarker:computeTimeOr0IfInvisible(haste)
         local x = eyesbTimer.remDuration
@@ -228,7 +231,7 @@ function ERACombatFrames_DemonHunterHavocSetup(cFrame, enemies)
 
     utility:AddCooldown(1, 0, 198589, nil, true, ERALIBTalent:CreateLevel(18))                                -- blur
     utility:AddCooldown(2, 0, 196718, nil, true, ERALIBTalent:Create(112921))                                 -- darkness
-    utility:AddCooldown(3, 0, 196555, nil, true, ERALIBTalent:Create(115247))                                 -- netherwalk
+    utility:AddCooldown(3, 0, 196555, nil, true, talent_netherwalk)
 
     utility:AddCooldown(0.5, -0.9, 217832, nil, true, ERALIBTalent:Create(112927)).alphaWhenOffCooldown = 0.5 -- prison
     utility:AddWarlockHealthStone(1.5, -0.9)

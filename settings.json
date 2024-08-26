@@ -1,0 +1,6 @@
+{
+    "Lua.diagnostics.global": [
+        "ERACombatFrameMain",
+        "ERACombatOptionsFrame"
+    ]
+}

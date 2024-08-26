@@ -485,9 +485,9 @@ function ERACombatFrames_Paladin_common_stuff(
     utility:AddCooldown(0.5, 0, defenseID, nil, true, ERALIBTalent:CreateLevel(26)) -- defense
     utility:AddCooldown(1.5, 0, 6940, nil, true, ERALIBTalent:CreateLevel(32)) -- sacrifice
     if (includeDispellMagic) then
-        utility:AddDefensiveDispellCooldown(2, -0.9, dispellID, nil, ERALIBTalent:CreateLevel(12), "Magic", "Poison", "Disease")
+        utility:AddDefensiveDispellCooldown(2, -0.9, dispellID, nil, ERALIBTalent:CreateLevel(12), "magic", "poison", "disease")
     else
-        utility:AddDefensiveDispellCooldown(2, -0.9, dispellID, nil, ERALIBTalent:CreateLevel(12), "Poison", "Disease")
+        utility:AddDefensiveDispellCooldown(2, -0.9, dispellID, nil, ERALIBTalent:CreateLevel(12), "poison", "disease")
     end
     local forebearance = utility:AddDebuffAnyCasterIcon(utility:AddTrackedDebuffAnyCaster(25771), 132358, -2, -0.9, true, nil)
     forebearance.reverse = true

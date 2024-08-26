@@ -161,9 +161,10 @@ function ERACombatFrame_updateComputeTalents()
                             if (rank > 0) then
                                 selectedTalentsById[talentId] = rank
                             end
-                            --[[
-                            if (not ERA_TALENTS_PRINTED) then
-                                table.insert(ERA_TALENTS_TO_PRINT, { talentId = talentId, name = GetSpellInfo(definitionInfo.spellID) })
+                            ----[[
+                            if (definitionInfo.spellID and not ERA_TALENTS_PRINTED) then
+                                local spellInfo = C_Spell.GetSpellInfo(definitionInfo.spellID)
+                                table.insert(ERA_TALENTS_TO_PRINT, { talentId = talentId, name = spellInfo.name })
                             end
                             --]]
                         end
@@ -172,20 +173,23 @@ function ERACombatFrame_updateComputeTalents()
             end
         end
     end
-    --[[
-    if (not ERA_TALENTS_PRINTED) then
+
+    if (ERA_TALENTS_DO_PRINT_N > 0 and not ERA_TALENTS_PRINTED) then
         ERA_TALENTS_PRINTED = true
         table.sort(ERA_TALENTS_TO_PRINT, ERAPrintTalents_sort)
-        for _, t in ipairs(ERA_TALENTS_TO_PRINT) do
-            print(t.talentId, t.name)
+        for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
+            if (i < ERA_TALENTS_DO_PRINT_N) then
+                print(t.talentId, t.name)
+            end
         end
     end
-    --]]
+
     for _, t in ipairs(ERALIBTalent_all_talents) do
         t:update(selectedTalentsById)
     end
 end
---[[
+
+ERA_TALENTS_DO_PRINT_N = 0
 ERA_TALENTS_PRINTED = false
 ERA_TALENTS_TO_PRINT = {}
 function ERAPrintTalents_sort(t1, t2)
@@ -199,7 +203,6 @@ function ERAPrintTalents_sort(t1, t2)
         return true
     end
 end
---]]
 
 
 function ERACombatFrame:resetToIdle(fullReset)
@@ -207,6 +210,20 @@ function ERACombatFrame:resetToIdle(fullReset)
     self.activeModules = {}
     self.cleuModules = {}
     local specID = GetSpecialization()
+    if (self.hideAlertsForSpec) then
+        local hideA = false
+        for _, hfs in ipairs(self.hideAlertsForSpec) do
+            if (hfs == specID) then
+                hideA = true
+                break
+            end
+        end
+        if (hideA) then
+            SetCVar("displaySpellActivationOverlays", 0)
+        else
+            SetCVar("displaySpellActivationOverlays", 1)
+        end
+    end
     for _, m in ipairs(self.modules) do
         m:updateSpec(specID, fullReset)
         if (m.specActive) then
@@ -461,7 +478,7 @@ function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y,
 
     self.background = self.frame:CreateTexture(nil, "BACKGROUND")
     self.background:SetColorTexture(0, 0, 0, 0.5)
-    self.background:SetAllPoints(true)
+    self.background:SetAllPoints() -- CHANGE 11 GetNumRaidMembers()SetAllPoints(true)
 
     self.bar = self.frame:CreateTexture(nil, "ARTWORK")
     self.bar:SetColorTexture(1, 0, 0, 1)
@@ -531,7 +548,7 @@ function ERACombatFrames_PseudoResourceBar:UpdateCombat(t)
         self.value = val
         self.max = max
         if (self.showText) then
-            self.text:SetText(math.floor(val))
+            self.text:SetText(tostring(math.floor(val)))
         end
         self.bar:SetWidth(self.length * val / max)
     end
@@ -646,7 +663,7 @@ function ERACombatFriends:updateGroupType(t)
     self.lastGroupType = t
     if (IsInRaid()) then
         self.prefix = "raid"
-        self.maxFriends = GetNumRaidMembers()
+        self.maxFriends = GetNumGroupMembers() -- CHANGE 11 GetNumRaidMembers()
     elseif (IsInGroup()) then
         self.prefix = "party"
         self.maxFriends = GetNumGroupMembers()

@@ -6,8 +6,6 @@ function ERACombatFrames_WarlockSetup(cFrame)
     ERACombatHealth:Create(cFrame, 0, -88, 128, 22, affliActive, demonoActive, destroActive)
     ERACombatHealth:Create(cFrame, 0, -111, 128, 16, affliActive, demonoActive, destroActive):SetUnitID("pet")
 
-    ERACombatPointsUnitPower:Create(cFrame, -32, -32, 7, 5, 0.1, 0.6, 0.1, 1.0, 0.0, 1.0, nil, 1, affliActive, demonoActive).idlePoints = 3
-
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -101, 128, 16, -1, true, 0.0, 0.0, 0.0, true, affliActive, demonoActive, destroActive)
 
     if (affliActive) then
@@ -40,7 +38,7 @@ function ERACombatFrames_WarlockModulesSetup(cFrame, ...)
     utility:AddCooldown(3, 0, 17767, nil, true).showOnlyIfPetSpellKnown = true                             --  voidwalker
     utility:AddRacial(0.5, -0.9).alphaWhenOffCooldown = 0.4
     utility:AddCooldown(3.5, 3.9, 48018, nil, true, talent_tp).alphaWhenOffCooldown = 0.1                  -- place circle
-    utility:AddDefensiveDispellCooldown(3.5, 4.9, 89808, nil, nil, "Magic").showOnlyIfPetSpellKnown = true -- imp dispell
+    utility:AddDefensiveDispellCooldown(3.5, 4.9, 89808, nil, nil, "magic").showOnlyIfPetSpellKnown = true -- imp dispell
     utility:AddCooldown(3, 3, 48020, nil, true, talent_tp)                                                 -- teleport circle
     utility:AddWarlockPortal(4, 3)
     utility:AddCooldown(3, 2, 6789, nil, true, ERALIBTalent:Create(91457))                                 -- coil
@@ -277,6 +275,9 @@ function ERACombatFrames_WarlockAffliSetup(cFrame)
         talent_siphon
     )
 
+    ERACombatFrames_WarlockRapture:create(cFrame, dotracker, talent_infinite_corruption, -77, -66, 88, 20)
+    ERACombatPointsUnitPower:Create(cFrame, -32, -44, 7, 5, 0.1, 0.6, 0.1, 1.0, 0.0, 1.0, nil, 1, 1).idlePoints = 3
+
     --[[
 
     PRIO
@@ -373,6 +374,51 @@ function ERACombatFrames_WarlockAffliSetup(cFrame)
     end
 end
 
+ERACombatFrames_WarlockRapture = {}
+ERACombatFrames_WarlockRapture.__index = ERACombatFrames_WarlockRapture
+setmetatable(ERACombatFrames_WarlockRapture, {__index = ERACombatFrames_PseudoResourceBar})
+
+function ERACombatFrames_WarlockRapture:create(cFrame, dotracker, eternalTalent, x, y, length, thickness)
+    local ig = {}
+    setmetatable(ig, ERACombatFrames_WarlockRapture)
+    ig:constructPseudoResource(cFrame, x, y, length, thickness, 2, 0, true, 1)
+
+    ig.dotracker = dotracker
+    ig.eternalTalent = eternalTalent
+
+    return ig
+end
+
+function ERACombatFrames_WarlockRapture:GetMax(t)
+    return 9
+end
+function ERACombatFrames_WarlockRapture:GetValue(t)
+    local cpt = 0
+    for _, d in pairs(self.dotracker.activeDOTsByID) do
+        for _, i in ipairs(d.instances) do
+            if (i.remDuration >= 1.5) then
+                cpt = cpt + 1
+            end
+        end
+    end
+    if (self.eternalTalent:PlayerHasTalent()) then
+        for _, e in pairs(self.dotracker.enemiesTracker.enemiesByGUID) do
+            for i = 1, 40 do
+                local _, _, _, _, _, expirationTime, _, _, _, spellID = UnitDebuff(e.plateID, i, "PLAYER")
+                if (spellID) then
+                    if (spellID == 146739) then
+                        cpt = cpt + 1
+                        break
+                    end
+                else
+                    break
+                end
+            end
+        end
+    end
+    return cpt
+end
+
 ------------------------------------------------------------------------------------------------------------------------
 ---- DEMONOLOGY --------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -380,6 +426,8 @@ end
 function ERACombatFrames_WarlockDemonoSetup(cFrame)
     local timers, utility = ERACombatFrames_WarlockModulesSetup(cFrame, 2)
     local first_column_X = 0
+
+    ERACombatPointsUnitPower:Create(cFrame, -32, -32, 7, 5, 0.1, 0.6, 0.1, 1.0, 0.0, 1.0, nil, 1, 2).idlePoints = 3
 
     ERACombatFrames_WarlockDemonologyImps:create(cFrame, -128, -136)
 
@@ -427,7 +475,7 @@ function ERACombatFrames_WarlockDemonoSetup(cFrame)
     local tyrantCooldown = timers:AddTrackedCooldown(265187, talent_tyrant)
     local tyrantIcons = {}
     for i = 0, 2 do
-        table.insert(tyrantIcons, timers:AddCooldownIcon(tyrantCooldown, nil, -2 - i, 0, true, true, ERALIBTalent:CreateCount(i, talent_strength, talent_siphon)))
+        table.insert(tyrantIcons, timers:AddCooldownIcon(tyrantCooldown, nil, -2 - i, -1, true, true, ERALIBTalent:CreateCount(i, talent_strength, talent_siphon)))
     end
 
     local doomTimer = timers:AddTrackedDebuff(603, talent_doom)

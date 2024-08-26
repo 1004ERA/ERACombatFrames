@@ -1,7 +1,30 @@
 -- TODO
--- AuraBar Weapons of Order
+-- rien
+
+---@class DisruptTimerIconParams
+---@field kickX number
+---@field kickY number
+---@field paraX number
+---@field paraY number
+
+---@class MonkCommonTalents
+---@field diffuse ERALIBTalent
+---@field fortify ERALIBTalent
+---@field clash ERALIBTalent
+---@field lust ERALIBTalent
+---@field transcendence ERALIBTalent
+---@field torpedo ERALIBTalent
+---@field roll ERALIBTalent
+---@field paralysis ERALIBTalent
+---@field disenrage ERALIBTalent
+---@field rop ERALIBTalent
+---@field sleep ERALIBTalent
+---@field detox ERALIBTalent
+---@field kick ERALIBTalent
 
 function ERACombatFrames_MonkSetup(cFrame)
+    cFrame.hideAlertsForSpec = { 1 }
+
     ERACombatGlobals_SpecID1 = 268
     ERACombatGlobals_SpecID2 = 270
     ERACombatGlobals_SpecID3 = 269
@@ -14,20 +37,32 @@ function ERACombatFrames_MonkSetup(cFrame)
     local mwActive = ERACombatOptions_IsSpecActive(2)
     local wwActive = ERACombatOptions_IsSpecActive(3)
 
-    local talent_diffuse = ERALIBTalent:Create(101515)
-    local talent_dampen = ERALIBTalent:Create(101522)
-    local talent_fortify = ERALIBTalent:Create(101496)
+    ---@type MonkCommonTalents
+    local monkTalents = {}
+    monkTalents.diffuse = ERALIBTalent:Create(124959)
+    monkTalents.fortify = ERALIBTalent:Create(124968)
+    monkTalents.clash = ERALIBTalent:Create(124945)
+    monkTalents.lust = ERALIBTalent:Create(124937)
+    monkTalents.transcendence = ERALIBTalent:Create(124962)
+    monkTalents.torpedo = ERALIBTalent:Create(124981)
+    monkTalents.roll = ERALIBTalent:CreateNotTalent(124981)
+    monkTalents.paralysis = ERALIBTalent:Create(124932)
+    monkTalents.disenrage = ERALIBTalent:Create(124931)
+    monkTalents.rop = ERALIBTalent:Create(124926)
+    monkTalents.sleep = ERALIBTalent:Create(124925)
+    monkTalents.detox = ERALIBTalent:Create(124941)
+    monkTalents.kick = ERALIBTalent:Create(124943)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1, 3)
 
     if (bmActive) then
-        ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
+        --ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
     end
     if (mwActive) then
-        ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_dampen, talent_fortify)
+        --ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_dampen, talent_fortify)
     end
     if (wwActive) then
-        ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
+        ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 end
 
@@ -35,43 +70,116 @@ end
 ---- COMMON ------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, talent_diffuse, talent_dampen, talent_fortify)
+---comment
+---@param cFrame any
+---@param spec number
+---@param includeDetox boolean
+---@param monkTalents MonkCommonTalents
+---@return table
+function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
     local utility = ERACombatUtilityFrame:Create(cFrame, -16, -212, spec)
 
     utility:AddTrinket2Cooldown(-3, 0, nil)
     utility:AddTrinket1Cooldown(-2, 0, nil)
-    utility:AddCooldown(-1, 0, 388686, nil, true, ERALIBTalent:Create(101519)) -- tiger statue
-    utility:AddCooldown(0, 0, 115203, nil, true, talent_fortify)
+    utility:AddCooldown(0, 0, 115203, nil, true, monkTalents.fortify)
     utility:AddWarlockHealthStone(-0.5, -0.9)
-    utility:AddCooldown(1, 0, 122278, nil, true, talent_dampen)
-    utility:AddCooldown(2, 0, 122783, nil, true, talent_diffuse)
+    utility:AddCooldown(2, 0, 122783, nil, true, monkTalents.diffuse)
+    utility:AddBeltCooldown(3, 0, nil)
+    utility:AddCloakCooldown(4, 0, nil)
     utility:AddRacial(3, 1)
-    utility:AddCooldown(4, 1, 115078, nil, true, ERALIBTalent:Create(101506))                            -- paralysis
-    utility:AddCooldown(3, 2, 119381, nil, true)                                                         -- sweep
-    utility:AddCooldown(4, 2, 116844, nil, true, ERALIBTalent:Create(101516))                            -- rop
-    utility:AddCooldown(4, 2, 198898, nil, true, ERALIBTalent:Create(101464))                            -- song
-    utility:AddCooldown(3, 3, 119996, nil, true, ERALIBTalent:Create(101512))                            -- do transfer
-    utility:AddCooldown(4, 3, 101643, nil, true, ERALIBTalent:Create(101512)).alphaWhenOffCooldown = 0.2 -- put transfer
-    utility:AddWarlockPortal(5, 3)
-    utility:AddCooldown(3, 4, 109132, 574574, true, ERALIBTalent:CreateNotTalent(101502))                -- roll
-    utility:AddCooldown(3, 4, 115008, 607849, true, ERALIBTalent:Create(101502))                         -- torpedo
-    utility:AddCooldown(4, 4, 116841, nil, true, ERALIBTalent:Create(101507))                            -- lust
+    utility:AddCooldown(4, 1, 115078, nil, true, monkTalents.paralysis)
+    utility:AddCooldown(3, 2, 119381, nil, true) -- sweep
+    utility:AddCooldown(4, 2, 116844, nil, true, monkTalents.rop)
+    utility:AddCooldown(4, 2, 198898, nil, true, monkTalents.sleep)
+    utility:AddCooldown(3, 3, 324312, nil, true, monkTalents.clash)
+    utility:AddCooldown(4, 3, 119996, nil, true, monkTalents.transcendence)
+    utility:AddCooldown(5, 3, 101643, nil, true, monkTalents.transcendence).alphaWhenOffCooldown = 0.1
+    utility:AddCooldown(3, 4, 109132, 574574, true, monkTalents.roll)
+    utility:AddCooldown(3, 4, 115008, 607849, true, monkTalents.torpedo)
+    utility:AddCooldown(4, 4, 116841, nil, true, monkTalents.lust)
     if (includeDetox) then
-        utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, ERALIBTalent:Create(101416), "Poison", "Disease")
+        utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, monkTalents.detox, "poison", "disease")
     end
-    utility:AddCooldown(4, 5, 115546, nil, true).alphaWhenOffCooldown = 0.2                              -- taunt
-    utility:AddCooldown(5, 5, 115315, nil, true, ERALIBTalent:Create(101535)).alphaWhenOffCooldown = 0.2 -- ox statue
-    utility:AddCooldown(3, 0, 115313, nil, true, ERALIBTalent:Create(101532)).alphaWhenOffCooldown = 0.2 -- serpent statue
+    utility:AddCooldown(4, 5, 115546, nil, true).alphaWhenOffCooldown = 0.2
+    utility:AddWarlockPortal(5, 5)
+
 
     return utility
 end
 
-function ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
-    timers:AddAuraBar(timers:AddTrackedBuff(122783, talent_diffuse), nil, 0.7, 0.6, 1.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(122278, talent_dampen), nil, 0.6, 0.6, 0.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(120954, talent_fortify), nil, 0.8, 0.8, 0.0)
+---comment
+---@param timers any
+---@param talents MonkCommonTalents
+---@param disrupt DisruptTimerIconParams
+function ERACombatFrames_MonkTimerBars(timers, talents, disrupt)
+    timers:AddChannelInfo(115175, 1.0) -- soothing mist
+    timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
+
+    timers:AddAuraBar(timers:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
+    timers:AddAuraBar(timers:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
+
+    timers:AddKick(116705, disrupt.kickX, disrupt.kickY, talents.kick, false)
+    timers:AddOffensiveDispellIcon(629534, disrupt.paraX, disrupt.paraX, true, talents.disenrage, "enrage")
 end
 
+-- recurring
+
+ERACombatFrames_MonkRecurringIcon = {}
+ERACombatFrames_MonkRecurringIcon.__index = ERACombatFrames_MonkRecurringIcon
+setmetatable(ERACombatFrames_MonkRecurringIcon, { __index = ERACombatTimerIcon })
+
+function ERACombatFrames_MonkRecurringIcon:create(group, iconID, talent, buffAlready)
+    local i = {}
+    setmetatable(i, ERACombatFrames_MonkRecurringIcon)
+    i.iconID = iconID
+    i:construct(group, 0, 0, iconID, true)
+    i.talent = talent
+    i.buffAlready = buffAlready
+    return i
+end
+
+function ERACombatFrames_MonkRecurringIcon:checkTalentsOrHide()
+    if ((not self.talent) or self.talent:PlayerHasTalent()) then
+        self.talentActive = true
+        return true
+    else
+        self:hide()
+        self.talentActive = false
+        return false
+    end
+end
+
+function ERACombatFrames_MonkRecurringIcon:updateIconCooldownTexture()
+    return self.iconID
+end
+
+function ERACombatFrames_MonkRecurringIcon:updateAfterReset(t)
+    self:updateIconCooldownTexture()
+end
+
+function ERACombatFrames_MonkRecurringIcon:updateTimerDurationAndMainIconVisibility(t, timerStandardDuration)
+    self.shouldShowMainIcon = false
+    local last, dur = self:getLastAndDuration()
+    if (last > 0) then
+        local elapsed = t - last
+        self.timerDuration = dur - (elapsed - dur * math.floor(elapsed / dur))
+        if (self.buffAlready) then
+            self.iconTimer:SetDesaturated(self.buffAlready.remDuration <= 0)
+        end
+    else
+        self.timerDuration = -1
+    end
+end
+function ERACombatFrames_MonkRecurringIcon:getLastAndDuration()
+    return 0, 1
+end
+
+function ERACombatFrames_MonkRecurringIcon_instaVivify(timers, talent, instaVivifyTimer)
+    local i = ERACombatFrames_MonkRecurringIcon:create(timers, 1360980, talent, instaVivifyTimer)
+    function i:getLastAndDuration()
+        return self.group.lastInstaVivify, 10
+    end
+end
 ------------------------------------------------------------------------------------------------------------------------
 ---- BM ----------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -101,12 +209,16 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     local talent_zenmed = ERALIBTalent:Create(101547)
     local talent_charred = ERALIBTalent:Create(101465)
     local talent_celestial_flames = ERALIBTalent:Create(101465)
+    local talent_insta_vivify = ERALIBTalent:Create(101513)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -88, 42, 1, false, false, 1)
+    local timers = ERACombatTimersGroup:Create(cFrame, -88, 42, 1, true, false, 1)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -36
     local first_column_X = 0.5
     ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
+
+    timers:AddChannelInfo(115175, 1.0) -- soothing mist
+    timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
 
     local kegCooldown = timers:AddTrackedCooldown(121253)
     local purifCooldown = timers:AddTrackedCooldown(119582, talent_purifying)
@@ -224,11 +336,21 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     timers:AddAuraBar(timers:AddTrackedBuff(325190, talent_celestial_flames), nil, 1.0, 0.0, 0.0)
     timers:AddAuraBar(timers:AddTrackedBuff(386963, talent_charred), nil, 0.7, 0.3, 0.0)
 
-    local instaVivifyTimer = timers:AddTrackedBuff(392883, ERALIBTalent:Create(101513))
+    local instaVivifyTimer = timers:AddTrackedBuff(392883, talent_insta_vivify)
+    ERACombatFrames_MonkRecurringIcon_instaVivify(timers, talent_insta_vivify, instaVivifyTimer)
+
+    timers.lastInstaVivify = 0
+    function timers:CLEU(t)
+        local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if (sourceGUY == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED" and spellID == 392883) then
+            self.lastInstaVivify = t
+        end
+    end
 
     timers.ehSlot = -1
     function timers:OnResetToIdle()
         self.ehSlot = ERALIB_GetSpellSlot(322101)
+        self.lastInstaVivify = 0
     end
 
     function timers:DataUpdated(t)
@@ -314,7 +436,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     ]]
 
     function ehIcon:computeAvailablePriority()
-        local u, nomana = IsUsableSpell(322109)
+        -- CHANGE 11 u et nomana n'étaient pas utilisés local u, nomana = IsUsableSpell(322109)
         if (timers.healthPercent < 0.4) then
             return 1
         elseif (timers.healthPercent < 0.8) then
@@ -341,7 +463,8 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
 
     for _, i in ipairs(todIcons) do
         function i:computeAvailablePriority()
-            local u, nomana = IsUsableSpell(322109)
+            -- CHANGE 11 local u, nomana = IsUsableSpell(322109)
+            local u, nomana = C_Spell.IsSpellUsable(322109)
             if (u or nomana) then
                 return 4
             else
@@ -528,6 +651,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     local talent_cocoon = ERALIBTalent:Create(101390)
     local talent_stronger_vivify_1 = ERALIBTalent:Create(101510)
     local talent_stronger_vivify_2 = ERALIBTalent:Create(101357)
+    local talent_insta_vivify = ERALIBTalent:Create(101513)
     local talent_ancient_teachings = ERALIBTalent:Create(101408)
     local talent_ancient_concordance = ERALIBTalent:Create(101371)
     local talent_normal_detox = ERALIBTalent:CreateNotTalent(102627)
@@ -542,10 +666,12 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     timers.offsetIconsX = -32
     timers.offsetIconsY = -93
     local first_column_X = 0.5
+    local first_column_X_delta = -0.1
     local first_column_Y = 2
     ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
 
-    timers:AddChannelInfo(115175, 1.0)
+    timers:AddChannelInfo(115175, 1.0) -- soothing mist
+    timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 0, true, 0.0, 0.0, 1.0, false, 2)
 
@@ -554,14 +680,14 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
 
     local sheilunBar = ERACombatFrames_MonkSheilunBar:create(cFrame, -72, -104, 144, 8, health, talent_sheilun) --(cFrame, x, y, length, thickness, combatHealth, talent_sheilun)
 
-    local grid = ERACombatGrid:Create(cFrame, -133, -16, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
+    local grid = ERACombatGrid:Create(cFrame, -151, -16, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
 
     timers:AddAuraBar(timers:AddTrackedBuff(197908, talent_manatea), nil, 0.2, 0.2, 1.0)
     ERACombatTimerMonkInvokeBar:create(timers, 574571, 0.0, 1.0, 0.2, talent_yulon, talent_short_invoke)
     ERACombatTimerMonkInvokeBar:create(timers, 877514, 1.0, 0.2, 0.0, talent_chiji, talent_short_invoke)
 
-
-    local instaVivifyTimer = timers:AddTrackedBuff(392883, ERALIBTalent:Create(101513))
+    local instaVivifyTimer = timers:AddTrackedBuff(392883, talent_insta_vivify)
+    ERACombatFrames_MonkRecurringIcon_instaVivify(timers, talent_insta_vivify, instaVivifyTimer)
 
     timers:AddKick(116705, first_column_X + 1.8, first_column_Y + 3, ERALIBTalent:Create(101504))
 
@@ -635,11 +761,21 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     timers:AddAuraBar(timers:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
 
     timers.lastInvoke = 0
+    timers.lastInstaVivify = 0
     function timers:CLEU(t)
         local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if (evt == "SPELL_CAST_SUCCESS" and sourceGUY == self.cFrame.playerGUID and (spellID == 322118 or spellID == 325197)) then
-            self.lastInvoke = t
+        if (sourceGUY == self.cFrame.playerGUID) then
+            if (evt == "SPELL_AURA_APPLIED") then
+                if (spellID == 392883) then
+                    self.lastInstaVivify = t
+                end
+            elseif (evt == "SPELL_CAST_SUCCESS" and (spellID == 322118 or spellID == 325197)) then
+                self.lastInvoke = t
+            end
         end
+    end
+    function timers:OnResetToIdle()
+        self.lastInstaVivify = 0
     end
 
     local rskIcon = timers:AddCooldownIcon(timers:AddTrackedCooldown(107428, talent_rsk), nil, 0, 0, true, true)
@@ -658,7 +794,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
 
     local todPrio = timers:AddPriority(606552)
     function todPrio:computePriority(t)
-        local u, nomana = IsUsableSpell(322109)
+        local u, nomana = C_Spell.IsSpellUsable(322109) -- CHANGE 11 IsUsableSpell(322109)
         if (u or nomana) then
             return 1
         else
@@ -704,8 +840,8 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     ERACombatFrames_MonkInvigoratingBar:create(cFrame, -64, -32, 100, 20, grid, instaVivifyTimer, talent_invigorating)
 
     local utility = ERACombatFrames_MonkUtility(cFrame, 2, false, talent_diffuse, talent_dampen, talent_fortify)
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "Magic", "Poison", "Disease")
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "Magic")
+    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "magic", "poison", "disease")
+    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "magic")
     utility:AddCooldown(-1.5, 0.9, 116849, nil, true, talent_cocoon)
     utility:AddCooldown(-2.5, 0.9, 322118, nil, true, talent_yulon)
     utility:AddCooldown(-2.5, 0.9, 325197, nil, true, talent_chiji)
@@ -915,7 +1051,7 @@ function ERACombatFrames_MonkSheilunIcon:updateTimerDurationAndMainIconVisibilit
             dur = 8
         end
         local elapsed = t - self.sheilunBar.lastGain
-        self.timerDuration = dur - (elapsed - dur * math.floor(elapsed / 8))
+        self.timerDuration = dur - (elapsed - dur * math.floor(elapsed / dur))
     else
         self.timerDuration = -1
     end
@@ -925,44 +1061,64 @@ end
 ---- WW ----------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
-    local talent_whirling = ERALIBTalent:Create(101474)
-    local talent_not_whirling = ERALIBTalent:CreateNotTalent(101474)
-    local talent_windlord = ERALIBTalent:Create(101491)
-    local talent_rjw = ERALIBTalent:Create(101436)
-    local talent_fae = ERALIBTalent:Create(101488)
-    local talent_chib = ERALIBTalent:Create(101527)
-    local talent_chiw = ERALIBTalent:Create(101528)
-    local talent_chi_b_or_w = ERALIBTalent:CreateOr(talent_chib, talent_chiw)
-    local talent_chi_b_nor_w = ERALIBTalent:CreateNOR(talent_chib, talent_chiw)
-    local talent_sef = ERALIBTalent:Create(101429)
-    local talent_serenity = ERALIBTalent:Create(101428)
-    local talent_or_sef_serenity = ERALIBTalent:CreateOr(talent_sef, talent_serenity)
-    local talent_nor_sef_serenity = ERALIBTalent:CreateNOR(talent_sef, talent_serenity)
-    local talent_bonedust = ERALIBTalent:Create(101485)
-    local talent_power_strikes = ERALIBTalent:Create(101424)
-    local talent_several_blackout = ERALIBTalent:Create(101435)
-    local talent_karma = ERALIBTalent:Create(101420)
-    local talent_spinning_ignition = ERALIBTalent:Create(101417)
-    local talent_capacitor = ERALIBTalent:Create(101480)
-    local talent_fae_exposure = ERALIBTalent:Create(101487)
+---comment
+---@param cFrame any
+---@param enemies any
+---@param monkTalents MonkCommonTalents
+function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
+    local talent_whirling = ERALIBTalent:Create(125011)
+    local talent_not_whirling = ERALIBTalent:CreateNotTalent(125011)
+    local talent_windlord = ERALIBTalent:Create(125022)
+    local talent_fae_active = ERALIBTalent:Create(126026)
+    local talent_fae_passive = ERALIBTalent:Create(124816)
+    local talent_fae_any = ERALIBTalent:CreateOr(talent_fae_active, talent_fae_passive)
+    local talent_chib = ERALIBTalent:Create(124952)
+    local talent_sef = ERALIBTalent:Create(124826)
+    local talent_inner_peace = ERALIBTalent:Create(125021)
+    local talent_capacitor = ERALIBTalent:Create(124832)
+    local talent_insta_vivify = ERALIBTalent:Create(124935)
+    local talent_spinning_ignition = ERALIBTalent:Create(124822)
+    local talent_combat_wisdom = ERALIBTalent:Create(125025)
 
     local points = ERACombatPointsUnitPower:Create(cFrame, -101, 6, 12, 5, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil, 2, 3)
+    points.talentedIdlePoints = 2
+    points.talentIdle = talent_combat_wisdom
 
     local nrg = ERACombatPower:Create(cFrame, -161, -6, 121, 16, 3, false, 1.0, 1.0, 0.0, 3)
-    local tigerPalmConsumer = nrg:AddConsumer(50, 606551)
+    local tigerPalmConsumer60 = nrg:AddConsumer(60, 606551, ERALIBTalent:CreateNot(talent_inner_peace))
+    local tigerPalmConsumer55 = nrg:AddConsumer(55, 606551, talent_inner_peace)
 
     local health = ERACombatHealth:Create(cFrame, 0, -77, 144, 22, 3)
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 3)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -88, 32, 1, false, false, 3)
+    local timers = ERACombatTimersGroup:Create(cFrame, -88, 32, 1, true, false, 3)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -22
     local first_column_X = 0.5
-    ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
+
+    ---@type DisruptTimerIconParams
+    local disruptParams = {
+        kickX = first_column_X + 1,
+        kickY = 1,
+        paraX = first_column_X + 1,
+        paraY = 2
+    }
+
+    ERACombatFrames_MonkTimerBars(timers, monkTalents, disruptParams)
+
+    timers.lastInstaVivify = 0
+    function timers:CLEU(t)
+        local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if (sourceGUY == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED") then
+            if (spellID == 392883) then
+                self.lastInstaVivify = t
+            end
+        end
+    end
 
     function timers:OnResetToIdle()
         self.spinningSlot = ERALIB_GetSpellSlot(101546)
+        self.lastInstaVivify = 0
     end
 
     local rskCooldown = timers:AddTrackedCooldown(107428)
@@ -977,68 +1133,87 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
     table.insert(ehIcons, timers:AddCooldownIcon(ehCooldown, nil, -3, 0, true, true, talent_not_whirling))
     table.insert(ehIcons, timers:AddCooldownIcon(ehCooldown, nil, -4, 0, true, true, talent_whirling))
 
-    local rjwCooldown = timers:AddTrackedCooldown(116847, talent_rjw)
-    local rjwIcon = timers:AddCooldownIcon(rjwCooldown, nil, -0.5, -0.9, true, true)
+    local chibIcon = timers:AddAuraIcon(timers:AddTrackedBuff(460490, talent_chib), 0, 0, nil, talent_chib)
+    function chibIcon:ShouldShowWhenAbsent()
+        return false
+    end
+    chibIcon.icon:Highlight()
 
-    local chiwCooldown = timers:AddTrackedCooldown(115098, talent_chiw)
-    local chiwIcon = timers:AddCooldownIcon(chiwCooldown, nil, -1.5, -0.9, true, true)
-    local chibCooldown = timers:AddTrackedCooldown(123986, talent_chib)
-    local chibIcon = timers:AddCooldownIcon(chibCooldown, nil, -1.5, -0.9, true, true)
-
-    local faeCooldown = timers:AddTrackedCooldown(388193, talent_fae)
-    local faeIcons = {}
-    table.insert(faeIcons, timers:AddCooldownIcon(faeCooldown, nil, -1.5, -0.9, true, true, talent_chi_b_nor_w))
-    table.insert(faeIcons, timers:AddCooldownIcon(faeCooldown, nil, -2.5, -0.9, true, true, talent_chi_b_or_w))
+    local faeCooldown = timers:AddTrackedCooldown(388193, talent_fae_active)
+    local faeIcon = timers:AddCooldownIcon(faeCooldown, nil, -1.5, -0.9, true, true, talent_fae_active)
 
     local windlordCooldown = timers:AddTrackedCooldown(392983, talent_windlord)
     local windlordIcons = {}
-    for i = 0, 2 do
-        table.insert(windlordIcons, timers:AddCooldownIcon(windlordCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_chi_b_or_w, talent_fae)))
-    end
+    table.insert(windlordIcons, timers:AddCooldownIcon(windlordCooldown, nil, -1.5, -0.9, true, true, ERALIBTalent:CreateNot(talent_fae_active)))
+    table.insert(windlordIcons, timers:AddCooldownIcon(windlordCooldown, nil, -2.5, -0.9, true, true, talent_fae_active))
 
     local todCooldown = timers:AddTrackedCooldown(322109)
     local todIcons = {}
     for i = 0, 3 do
-        table.insert(todIcons, timers:AddCooldownIcon(todCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_chi_b_or_w, talent_fae, talent_windlord)))
+        table.insert(todIcons, timers:AddCooldownIcon(todCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_fae_active, talent_windlord)))
     end
 
+    --[[
     local morechiTimer = timers:AddTrackedBuff(129914, talent_power_strikes)
     function points:PointsUpdated(t)
-        local incr
-        if (morechiTimer.remDuration > timers.remGCD) then
-            self:SetBorderColor(0.5, 0.0, 1.0)
-            incr = 3
+        if (timers.cFrame.inCombat) then
+            local incr
+            if (morechiTimer.remDuration > timers.remGCD) then
+                self:SetBorderColor(0.5, 0.0, 1.0)
+                incr = 3
+            else
+                self:SetBorderColor(1.0, 1.0, 0.0)
+                incr = 2
+            end
+            if (self.currentPoints + incr > self.maxPoints) then
+                self:SetPointColor(1.0, 0.5, 0.0)
+            else
+                self:SetPointColor(0.0, 1.0, 0.5)
+            end
         else
             self:SetBorderColor(1.0, 1.0, 0.0)
-            incr = 2
-        end
-        if (self.currentPoints + incr > self.maxPoints) then
-            self:SetPointColor(1.0, 0.5, 0.0)
-        else
             self:SetPointColor(0.0, 1.0, 0.5)
         end
     end
+    ]] --
 
-    local instaVivifyTimer = timers:AddTrackedBuff(392883, ERALIBTalent:Create(101513))
+    local instaVivifyTimer = timers:AddTrackedBuff(392883, talent_insta_vivify)
+    --ERACombatFrames_MonkRecurringIcon_instaVivify(timers, talent_insta_vivify, instaVivifyTimer)
+    --[[
+    local powerStrikesTimer = ERACombatFrames_MonkRecurringIcon:create(timers, 629484, talent_power_strikes, morechiTimer)
+    function powerStrikesTimer:getLastAndDuration()
+        return self.group.lastPowerStrikes, 15
+    end
+    ]] --
 
     local spinningIcon = ERACombatTimersMonkSpinningIcon:create(timers, first_column_X, 1)
-    local spinningBuff = timers:AddTrackedBuff(325202, ERALIBTalent:Create(101437))
+    local spinningBuff = timers:AddTrackedBuff(325202, ERALIBTalent:Create(124834))
     local spinningIgnition = timers:AddTrackedBuff(393057, talent_spinning_ignition)
 
-    local boneTimer = timers:AddTrackedDebuff(386276, talent_bonedust)
-
     timers:AddStacksProgressIcon(spinningIgnition, nil, first_column_X, 2, 30, talent_spinning_ignition)
-    timers:AddStacksProgressIcon(timers:AddTrackedBuff(393039, talent_capacitor), nil, first_column_X, 3, 20, talent_capacitor)
+    local capacitorBuff = timers:AddTrackedBuff(393039, talent_capacitor)
+    timers:AddStacksProgressIcon(capacitorBuff, nil, first_column_X, 3, 20, talent_capacitor)
     timers:AddKick(116705, first_column_X + 1, 3, ERALIBTalent:Create(101504))
 
-    local faexposureTimer = timers:AddTrackedDebuff(395414, talent_fae_exposure)
+    local faexposureTimer = timers:AddTrackedDebuff(395414, talent_fae_any)
     timers:AddAuraBar(faexposureTimer, 3528275, 0.7, 0.0, 1.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(116768), nil, 0.9, 0.0, 0.7)                                                                                    -- free BoK
-    timers:AddAuraBar(timers:AddTrackedDebuff(393047, ERALIBTalent:CreateOr(ERALIBTalent:Create(114822), ERALIBTalent:Create(101479))), nil, 1.0, 0.0, 0.0) -- skyreach/skytouch
-    timers:AddAuraBar(timers:AddTrackedBuff(125174, talent_karma), nil, 1.0, 1.0, 1.0)
+
+    --[[
+    local forbiddenTechniqueBar = timers:AddAuraBar(timers:AddTrackedBuff(393099), nil, 0.7, 0.0, 0.0)
+    function forbiddenTechniqueBar:GetRemDurationOr0IfInvisible(t)
+        local u, nomana = C_Spell.IsSpellUsable(322109) -- CHANGE 11 IsUsableSpell(322109)
+        if (u or nomana) then
+            self.view.icon:SetDesaturated(false)
+        else
+            self.view.icon:SetDesaturated(true)
+        end
+        return self.aura.remDuration
+    end
+    ]]                                                                   --
+
+    timers:AddAuraBar(timers:AddTrackedBuff(116768), nil, 0.9, 0.0, 0.7) -- free BoK
+    timers:AddAuraBar(timers:AddTrackedBuff(125174), nil, 1.0, 1.0, 1.0)
     timers:AddAuraBar(timers:AddTrackedBuff(137639, talent_sef), nil, 1.0, 0.0, 1.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(152173, talent_serenity), nil, 1.0, 0.0, 1.0)
-    timers:AddAuraBar(boneTimer, nil, 0.5, 0.7, 0.4)
     timers:AddAuraBar(spinningBuff, 606543, 0.0, 0.8, 0.2)
     local ignitionBar = timers:AddAuraBar(spinningIgnition, 988193, 0.5, 1.0, 0.2)
     function ignitionBar:GetRemDurationOr0IfInvisible(t)
@@ -1057,18 +1232,13 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
         end
     end
 
-    local utility = ERACombatFrames_MonkUtility(cFrame, 3, true, talent_diffuse, talent_dampen, talent_fortify)
-    utility:AddCooldown(5, 4, 101545, nil, true, ERALIBTalent:Create(101432))      -- fsk
-    utility:AddCooldown(-1.5, 0.9, 122470, nil, true, talent_karma)
-    utility:AddCooldown(-2.5, 0.9, 123904, nil, true, ERALIBTalent:Create(101473)) -- xuen
+    local utility = ERACombatFrames_MonkUtility(cFrame, 3, true, monkTalents)
+    utility:AddCooldown(5, 4, 101545, nil, true)                                   -- fsk
+    utility:AddCooldown(-1.5, 0.9, 122470, nil, true)
+    utility:AddCooldown(-2.5, 0.9, 123904, nil, true, ERALIBTalent:Create(125013)) -- xuen
     utility:AddCooldown(-3.5, 0.9, 137639, nil, true, talent_sef)
-    utility:AddCooldown(-3.5, 0.9, 152173, nil, true, talent_serenity)
-    utility:AddCooldown(-3.5, 0.9, 386276, nil, true, ERALIBTalent:CreateAnd(talent_bonedust, talent_nor_sef_serenity))
-    utility:AddCooldown(-4.5, 0.9, 386276, nil, true, ERALIBTalent:CreateAnd(talent_bonedust, talent_or_sef_serenity))
     -- out of combat
-    utility:AddCooldown(-2, 2, 115098, nil, false, talent_chiw)
-    utility:AddCooldown(-2, 2, 123986, nil, false, talent_chib)
-    utility:AddCooldown(-3, 2, 388193, nil, false, talent_fae)
+    utility:AddCooldown(-3, 2, 388193, nil, false, talent_fae_active)
     utility:AddCooldown(-4, 2, 392983, nil, false, talent_windlord)
     utility:AddCooldown(-5, 2, 322109, nil, false) -- touch of death
     utility:AddCooldown(-2, 3, 107428, nil, false) -- rsk
@@ -1082,25 +1252,22 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
     PRIO
 
     1 - touch of death
-    2 - palm refill 1 or 2 chi
-    3 - fae exposure
-    4 - rsk
-    5 - rjw
-    6 - palm dump
-    7 - fof
-    8 - chib many targets
-    9 - whirling
-    10 - chiw
-    11 - windlord
-    12 - fae
-    13 - chib few targets
-    14 - sck
+    2 - palm refill 2 chi
+    3 - rsk
+    4 - fae exposure
+    X - palm dump
+    6 - fof
+    7 - whirling
+    8 - windlord
+    9 - CJL
+    10 - sck
+    11 : chi burst
 
     ]]
 
     for _, i in ipairs(todIcons) do
         function i:computeAvailablePriority()
-            local u, nomana = IsUsableSpell(322109)
+            local u, nomana = C_Spell.IsSpellUsable(322109) -- CHANGE 11 IsUsableSpell(322109)
             if (u or nomana) then
                 return 1
             else
@@ -1114,14 +1281,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
         if (nrg.currentPower >= 50 and points.currentPoints < 2) then
             return 2
         else
-            local incr
-            if (morechiTimer.remDuration > timers.remGCD) then
-                incr = 3
-            else
-                incr = 2
-            end
-            if (nrg.maxPower - nrg.currentPower < 20 and points.maxPoints - points.currentPoints >= incr) then
-                return 6
+            if (nrg.maxPower - nrg.currentPower < 20 and points.maxPoints - points.currentPoints >= 2) then
+                return 5
             else
                 return 0
             end
@@ -1129,69 +1290,51 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talent_diffuse, ta
     end
 
     function rskIcon:computeAvailablePriority()
+        return 3
+    end
+
+    function faeIcon:computeAvailablePriority()
         return 4
     end
 
-    function rjwIcon:computeAvailablePriority()
-        local ec = enemies:GetCount()
-        if (ec > 3 or (ec > 1 and not talent_several_blackout:PlayerHasTalent())) then
-            return 5
-        else
-            return 0
-        end
-    end
-
     function fofIcon:computeAvailablePriority()
-        return 7
-    end
-
-    function chibIcon:computeAvailablePriority()
-        if (enemies:GetCount() > 2) then
-            return 8
-        else
-            return 13
-        end
+        return 6
     end
 
     function whirlingIcon:computeAvailablePriority()
-        return 9
-    end
-
-    function chiwIcon:computeAvailablePriority()
-        return 10
+        return 7
     end
 
     for _, i in ipairs(windlordIcons) do
         function i:computeAvailablePriority()
-            return 11
+            return 8
         end
     end
 
-    for _, i in ipairs(faeIcons) do
-        function i:computeAvailablePriority()
-            if (talent_fae_exposure:PlayerHasTalent() and faexposureTimer.remDuration <= 3) then
-                return 3
-            else
-                return 12
-            end
+    local cjlPrio = timers:AddPriority(606542)
+    function cjlPrio:computePriority(t)
+        if (capacitorBuff.stacks >= 20) then
+            return 9
+        else
+            return 0
         end
     end
 
     local sckPrio = timers:AddPriority(606543)
     function sckPrio:computePriority(t)
         if ((spinningBuff.remDuration > timers.occupied and spinningBuff.remDuration <= 6) or (spinningIgnition.remDuration > timers.occupied and spinningIgnition.remDuration <= 6)) then
-            return 14
+            return 10
         else
-            local ec = enemies:GetCount()
-            if (ec > 1) then
-                if (boneTimer.remDuration > 0 or spinningIcon.stacks + 1 >= ec) then
-                    return 14
-                else
-                    return 0
-                end
-            else
-                return 0
-            end
+            return 0
+        end
+    end
+
+    local chibPrio = timers:AddPriority(135734)
+    function chibPrio:computePriority()
+        if (chibIcon.aura.remDuration > 0) then
+            return 11
+        else
+            return 0
         end
     end
 end
@@ -1204,7 +1347,7 @@ function ERACombatTimersMonkSpinningIcon:create(group, x, y)
     local pr = {}
     setmetatable(pr, ERACombatTimersMonkSpinningIcon)
     pr.stacks = 0
-    pr:constructProgress(group, 606543, x, y, ERALIBTalent:Create(101434))
+    pr:constructProgress(group, 606543, x, y)
     return pr
 end
 

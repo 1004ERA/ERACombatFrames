@@ -283,7 +283,7 @@ end
 
 ERAOutOfCombatStatusBars = {}
 ERAOutOfCombatStatusBars.__index = ERAOutOfCombatStatusBars
-setmetatable(ERAOutOfCombatStatusBars, {__index = ERACombatModule})
+setmetatable(ERAOutOfCombatStatusBars, { __index = ERACombatModule })
 
 function ERAOutOfCombatStatusBars:Create(cFrame, x, y, barWidth, barHeight, powerType, hideFull, r, g, b, showPet, ...)
     local ooc = {}
@@ -457,7 +457,7 @@ end
 
 ERACombatHealth = {}
 ERACombatHealth.__index = ERACombatHealth
-setmetatable(ERACombatHealth, {__index = ERACombatModule})
+setmetatable(ERACombatHealth, { __index = ERACombatModule })
 
 function ERACombatHealth:Create(cFrame, x, y, barWidth, barHeight, ...)
     local b = {}
@@ -588,8 +588,24 @@ ERACombatPower_TickSpill = 3
 
 ERACombatPower = {}
 ERACombatPower.__index = ERACombatPower
-setmetatable(ERACombatPower, {__index = ERACombatModule})
+setmetatable(ERACombatPower, { __index = ERACombatModule })
 
+---@class ERACombatPower
+---@field AddConsumer fun(this:ERACombatPower, value:number, iconID:integer, talent:ERALIBTalent|nil):ERACombatPowerConsumer
+
+---comment
+---@param cFrame any
+---@param x number
+---@param y number
+---@param barWidth number
+---@param barHeight number
+---@param powerType number
+---@param useEvents boolean
+---@param r number
+---@param g number
+---@param b number
+---@param ... number Specializations
+---@return ERACombatPower
 function ERACombatPower:Create(cFrame, x, y, barWidth, barHeight, powerType, useEvents, r, g, b, ...)
     local bar = {}
     setmetatable(bar, ERACombatPower)
@@ -738,6 +754,15 @@ end
 -- CONSUMERS -------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERACombatPowerConsumer
+---@field ComputeVisibility fun():boolean
+---@field ComputeIconVisibility fun():boolean
+
+---comment
+---@param value number
+---@param iconID integer
+---@param talent ERALIBTalent | nil
+---@return ERACombatPowerConsumer
 function ERACombatPower:AddConsumer(value, iconID, talent)
     return ERACombatPowerConsumer:create(self, value, iconID, talent)
 end

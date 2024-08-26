@@ -36,7 +36,6 @@ function ERACombatFrames_EvokerDPSSetup(cFrame, spec, firebreath_alternative_tal
 
     -- hover
     timers:AddCooldownIcon(timers:AddTrackedCooldown(358267), nil, -1, ERACombatFrames_EvokerDPS_secondY, true, true)
-    timers:AddAuraBar(timers:AddTrackedBuff(358267), nil, 1, 1, 1)
 
     local firebreath_alternative = {}
     firebreath_alternative.id = 382266
@@ -56,7 +55,7 @@ function ERACombatFrames_EvokerDPSSetup(cFrame, spec, firebreath_alternative_tal
     return timers, fireBreathCooldown, leapingBuff, firebreath_alternative
 end
 
-function ERACombatFrames_EvokerMakeUtility(cFrame, includeEmbrace, ...)
+local function ERACombatFrames_EvokerMakeUtility(cFrame, includeEmbrace, ...)
     local utility = ERACombatUtilityFrame:Create(cFrame, 0, -202, ...)
 
     utility:AddMissingBuffAnyCaster(4622448, 0, -1.5, ERALIBTalent:CreateLevel(60), 381748)                        -- bronze buff
@@ -79,13 +78,13 @@ function ERACombatFrames_EvokerMakeUtility(cFrame, includeEmbrace, ...)
     utility:AddCooldown(1.5, 1, 358385, nil, true)                                  -- landslide
     utility:AddCooldown(2.5, 1, 360806, nil, true, ERALIBTalent:Create(115601))     -- sleep
     utility:AddCooldown(2, 2, 363916, nil, true, ERALIBTalent:Create(115613))       -- obsidian
-    utility:AddDefensiveDispellCooldown(2, 3, 365585, nil, ERALIBTalent:Create(115615), "Poison")
-    utility:AddDefensiveDispellCooldown(2.9, 2.5, 374251, nil, ERALIBTalent:Create(115602), "Poison", "Curse", "Disease", "Bleed")
+    utility:AddDefensiveDispellCooldown(2, 3, 365585, nil, ERALIBTalent:Create(115615), "poison")
+    utility:AddDefensiveDispellCooldown(2.9, 2.5, 374251, nil, ERALIBTalent:Create(115602), "poison", "curse", "disease", "bleed")
 
     return utility
 end
 
-function ERACombatFrames_EvokerMakeUnravel(timers, x, y)
+local function ERACombatFrames_EvokerCommonTimerSetup(timers, unravelX, unravelY)
     local cooldown = timers:AddTrackedCooldown(368432, ERALIBTalent:Create(115617))
     cooldown.absorbValue = 0
     function cooldown:preUpdate(t)
@@ -99,7 +98,7 @@ function ERACombatFrames_EvokerMakeUnravel(timers, x, y)
         self.usable = u or nomana
     end
 
-    local icon = timers:AddCooldownIcon(cooldown, nil, x, y, true, true)
+    local icon = timers:AddCooldownIcon(cooldown, nil, unravelX, unravelY, true, true)
     function icon:OverrideTimerVisibility()
         if (self.cd.usable) then
             self.icon:SetAlpha(1.0)
@@ -113,6 +112,9 @@ function ERACombatFrames_EvokerMakeUnravel(timers, x, y)
             return false
         end
     end
+
+    timers:AddAuraBar(timers:AddTrackedBuff(358267), nil, 1, 1, 1)                                    -- hover
+    timers:AddAuraBar(timers:AddTrackedBuff(363916), nil, 0.5, 0.4, 0.1, ERALIBTalent:Create(115613)) -- obsidian scales
 
     return icon
 end
@@ -232,7 +234,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, essence, enemies, combat
 
     -- PRE UPDATE --
 
-    local unravelIcon = ERACombatFrames_EvokerMakeUnravel(timers, ERACombatFrames_EvokerDPS_firstColumnOffset, 1)
+    local unravelIcon = ERACombatFrames_EvokerCommonTimerSetup(timers, ERACombatFrames_EvokerDPS_firstColumnOffset, 1)
 
     function timers:PreUpdateCombat(t)
         unravelIcon.cd:preUpdate(t)
@@ -387,7 +389,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 
 function ERACombatFrames_EvokerPreservationSetup(cFrame)
-    local grid = ERACombatGrid:Create(cFrame, -133, -8, "BOTTOMRIGHT", 2, 360823, "Magic", "Poison")
+    local grid = ERACombatGrid:Create(cFrame, -141, -8, "BOTTOMRIGHT", 2, 360823, "Magic", "Poison")
 
     local essence = ERACombatEvokerEssence:create(cFrame, -77, -77, 1, 2)
 
@@ -421,7 +423,6 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame)
 
     -- hover
     timers:AddCooldownIcon(timers:AddTrackedCooldown(358267), nil, first_column, 0.5, true, true)
-    timers:AddAuraBar(timers:AddTrackedBuff(358267), nil, 1, 1, 1)
 
     timers:AddCooldownIcon(timers:AddTrackedCooldown(360995), nil, first_column, 1.5, true, true) -- embrace
     timers:AddCooldownIcon(timers:AddTrackedCooldown(357170, talent_dilation), nil, first_column, 2.5, true, true)
@@ -459,7 +460,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame)
     local stasisReleaseTimer = timers:AddTrackedBuff(370562, talent_stasis)
     timers:AddAuraBar(stasisReleaseTimer, nil, 0.8, 0.7, 0.2)
 
-    local unravelIcon = ERACombatFrames_EvokerMakeUnravel(timers, third_column, 2.5)
+    local unravelIcon = ERACombatFrames_EvokerCommonTimerSetup(timers, third_column, 2.5)
 
     function timers:PreUpdateCombat(t)
         unravelIcon.cd:preUpdate(t)
@@ -477,9 +478,10 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame)
     utility:AddCooldown(-4, 1, 370537, nil, true, ERALIBTalent:Create(115567)) -- stasis
     utility:AddCooldown(-5, 1, 363534, nil, true, ERALIBTalent:Create(115651)) -- rewind
     -- out of combat :
-    utility:AddCooldown(-3, 2, 373861, nil, false, talent_anomaly)             -- anomaly
-    utility:AddCooldown(-4, 2, 357208, nil, false)                             -- fire breath
-    utility:AddCooldown(-5, 2, 355936, nil, false)                             -- dream breath
+    utility:AddCooldown(-2, 3, 366155, nil, false, talent_reversion)
+    utility:AddCooldown(-3, 2, 373861, nil, false, talent_anomaly) -- anomaly
+    utility:AddCooldown(-4, 2, 357208, nil, false)                 -- fire breath
+    utility:AddCooldown(-5, 2, 355936, nil, false)                 -- dream breath
     utility:AddCooldown(-6, 2, 367226, nil, false, talent_spiritbloom)
     utility:AddCooldown(-6, 1, 357170, nil, false, talent_dilation)
     utility:AddCooldown(-4, 0, 357210, nil, false) -- deep breath
@@ -621,7 +623,7 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, essence, enemies, comba
     out_of_combat_info:AddCooldown(-3, -1, 370553, nil, false, talent_tip)
     out_of_combat_info:AddCooldown(-4, -1, 404977, nil, false, talent_skip)
 
-    local unravelIcon = ERACombatFrames_EvokerMakeUnravel(timers, ERACombatFrames_EvokerDPS_firstColumnOffset, 0)
+    local unravelIcon = ERACombatFrames_EvokerCommonTimerSetup(timers, ERACombatFrames_EvokerDPS_firstColumnOffset, 0)
 
     function timers:PreUpdateCombat(t)
         unravelIcon.cd:preUpdate(t)

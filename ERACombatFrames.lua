@@ -38,7 +38,7 @@ end
 function ERACombatFrames_event(event, ...)
     local addonName = ...
     if (addonName == "ERACombatFrames") then
-        ERACombatFrames_PlayerIsNotMaxLevel = UnitLevel("player") < 70
+        --ERACombatFrames_PlayerIsNotMaxLevel = UnitLevel("player") < 70
         local _, _, classID = UnitClass("player")
         ERACombatFrames_classID = classID
         ERACombatOptions_initialize()
