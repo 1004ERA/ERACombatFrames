@@ -153,20 +153,29 @@ function ERACombatFrame_updateComputeTalents()
                     if node.ID ~= 0 then
                         for _, talentId in ipairs(node.entryIDs) do
                             local entryInfo = C_Traits.GetEntryInfo(configId, talentId)
-                            local definitionInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
-                            local rank = node.activeRank
-                            if node.activeEntry then
-                                rank = node.activeEntry.entryID == talentId and node.activeEntry.rank or 0
+                            if entryInfo.definitionID then
+                                local definitionInfo = C_Traits.GetDefinitionInfo(entryInfo.definitionID)
+                                local spellID = definitionInfo.spellID
+                                local rank = node.activeRank
+                                if node.activeEntry then
+                                    rank = node.activeEntry.entryID == talentId and node.activeEntry.rank or 0
+                                end
+                                if node.subTreeID then
+                                    local subTreeInfo = C_Traits.GetSubTreeInfo(configId, node.subTreeID)
+                                    if not subTreeInfo.isActive then
+                                        rank = 0
+                                    end
+                                end
+                                if (rank > 0) then
+                                    selectedTalentsById[talentId] = rank
+                                end
+                                ----[[
+                                if (spellID and not ERA_TALENTS_PRINTED) then
+                                    local spellInfo = C_Spell.GetSpellInfo(spellID)
+                                    table.insert(ERA_TALENTS_TO_PRINT, { talentId = talentId, name = spellInfo.name })
+                                end
+                                --]]
                             end
-                            if (rank > 0) then
-                                selectedTalentsById[talentId] = rank
-                            end
-                            ----[[
-                            if (definitionInfo.spellID and not ERA_TALENTS_PRINTED) then
-                                local spellInfo = C_Spell.GetSpellInfo(definitionInfo.spellID)
-                                table.insert(ERA_TALENTS_TO_PRINT, { talentId = talentId, name = spellInfo.name })
-                            end
-                            --]]
                         end
                     end
                 end

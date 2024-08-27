@@ -888,7 +888,7 @@ function ERACombatUtilityInventoryCooldown:update(t)
     local start, duration, enable = GetInventoryItemCooldown("player", self.slotID)
     if (enable and enable ~= 0) then
         self.hasCooldown = true
-        if (duration and duration > 0) then
+        if (duration and duration > 0 and duration >= 2) then
             self.totDuration = duration
             self.remDuration = start + duration - t
             self.icon:SetOverlayValue(self.remDuration / duration)

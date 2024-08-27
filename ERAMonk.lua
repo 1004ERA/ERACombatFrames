@@ -1,7 +1,7 @@
 -- TODO
 -- rien
 
----@class DisruptTimerIconParams
+---@class MonkDisruptTimerIconParams
 ---@field kickX number
 ---@field kickY number
 ---@field paraX number
@@ -56,7 +56,7 @@ function ERACombatFrames_MonkSetup(cFrame)
     local enemies = ERACombatEnemies:Create(cFrame, 1, 3)
 
     if (bmActive) then
-        --ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
+        ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     end
     if (mwActive) then
         --ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_dampen, talent_fortify)
@@ -78,6 +78,8 @@ end
 ---@return table
 function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
     local utility = ERACombatUtilityFrame:Create(cFrame, -16, -212, spec)
+
+    utility:AddCooldown(0, 5, 322109, nil, false) -- touch of death
 
     utility:AddTrinket2Cooldown(-3, 0, nil)
     utility:AddTrinket1Cooldown(-2, 0, nil)
@@ -110,7 +112,7 @@ end
 ---comment
 ---@param timers any
 ---@param talents MonkCommonTalents
----@param disrupt DisruptTimerIconParams
+---@param disrupt MonkDisruptTimerIconParams
 function ERACombatFrames_MonkTimerBars(timers, talents, disrupt)
     timers:AddChannelInfo(115175, 1.0) -- soothing mist
     timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
@@ -184,44 +186,44 @@ end
 ---- BM ----------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, talent_dampen, talent_fortify)
-    local talent_not_shuffle = ERALIBTalent:CreateNotTalent(101455)
-    local talent_purifying = ERALIBTalent:Create(101453)
-    local talent_rsk = ERALIBTalent:Create(101508)
-    local talent_bof = ERALIBTalent:Create(101464)
-    local talent_not_bof = ERALIBTalent:CreateNotTalent(101464)
-    local talent_rjw = ERALIBTalent:Create(101549)
-    local talent_chib = ERALIBTalent:Create(101527)
-    local talent_chiw = ERALIBTalent:Create(101528)
-    local talent_chi_b_or_w = ERALIBTalent:CreateOr(talent_chib, talent_chiw)
-    local talent_chi_b_nor_w = ERALIBTalent:CreateNOR(talent_chib, talent_chiw)
-    local talent_elixir = ERALIBTalent:Create(101458)
-    local talent_celestialb = ERALIBTalent:Create(101463)
-    local talent_strong_rsk = ERALIBTalent:Create(101523)
-    local talent_strong_eh = ERALIBTalent:Create(101530)
-    local talent_critical_eh = ERALIBTalent:Create(101526)
-    local talent_scaling_eh = ERALIBTalent:Create(101499)
-    local talent_healing_taken = ERALIBTalent:Create(101529)
-    local talent_weapons = ERALIBTalent:Create(101539)
-    local talent_not_weapons = ERALIBTalent:CreateNotTalent(101539)
-    local talent_bonedust = ERALIBTalent:Create(101552)
-    local talent_exploding = ERALIBTalent:Create(101542)
-    local talent_zenmed = ERALIBTalent:Create(101547)
-    local talent_charred = ERALIBTalent:Create(101465)
-    local talent_celestial_flames = ERALIBTalent:Create(101465)
-    local talent_insta_vivify = ERALIBTalent:Create(101513)
+function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
+    local talent_rsk = ERALIBTalent:Create(124985)
+    local talent_bof = ERALIBTalent:Create(124843)
+    local talent_not_bof = ERALIBTalent:CreateNotTalent(124843)
+    local talent_no_shuffle = ERALIBTalent:CreateNotTalent(124864)
+    local talent_rjw = ERALIBTalent:Create(125007)
+    local talent_chib = ERALIBTalent:Create(126501)
+    local talent_celestialb = ERALIBTalent:Create(124841)
+    local talent_strong_rsk = ERALIBTalent:Create(124984)
+    local talent_strong_eh = ERALIBTalent:Create(124948)
+    local talent_critical_eh = ERALIBTalent:Create(124923)
+    local talent_scaling_eh = ERALIBTalent:Create(124924)
+    local talent_healing_taken = ERALIBTalent:Create(124936)
+    local talent_weapons = ERALIBTalent:Create(124996)
+    local talent_not_weapons = ERALIBTalent:CreateNotTalent(124996)
+    local talent_exploding = ERALIBTalent:Create(125001)
+    local talent_zenmed = ERALIBTalent:Create(125006)
+    local talent_charred = ERALIBTalent:Create(124986)
+    local talent_celestial_flames = ERALIBTalent:Create(124844)
+    local talent_insta_vivify = ERALIBTalent:Create(124935)
 
     local timers = ERACombatTimersGroup:Create(cFrame, -88, 42, 1, true, false, 1)
     timers.offsetIconsX = -32
     timers.offsetIconsY = -36
     local first_column_X = 0.5
-    ERACombatFrames_MonkTimerBars(timers, talent_diffuse, talent_dampen, talent_fortify)
 
-    timers:AddChannelInfo(115175, 1.0) -- soothing mist
-    timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
+    ---@type MonkDisruptTimerIconParams
+    local disruptParams = {
+        kickX = first_column_X,
+        kickY = 3,
+        paraX = 5,
+        paraY = 5,
+    }
+
+    ERACombatFrames_MonkTimerBars(timers, monkTalents, disruptParams)
 
     local kegCooldown = timers:AddTrackedCooldown(121253)
-    local purifCooldown = timers:AddTrackedCooldown(119582, talent_purifying)
+    local purifCooldown = timers:AddTrackedCooldown(119582)
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 1)
 
@@ -256,13 +258,11 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
         return true
     end
 
-    timers:AddKick(116705, first_column_X, 3, ERALIBTalent:Create(101504))
-
     local purifIcon = timers:AddCooldownIcon(purifCooldown, nil, -4.5, 1, true, true)
 
     local bokAlternative = {}
     bokAlternative.id = 100784
-    bokAlternative.talent = talent_not_shuffle
+    bokAlternative.talent = talent_no_shuffle
     local bokCooldown = timers:AddTrackedCooldown(205523, nil, bokAlternative) -- 100784 (basic) or 205523 (with shuffle)
     local bokIcon = timers:AddCooldownIcon(bokCooldown, nil, -1, 0, true, true)
     function bokIcon:ShouldShowMainIcon()
@@ -285,6 +285,9 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
     local rjwBuff = timers:AddTrackedBuff(116847, talent_rjw)
     local rjwCooldown = timers:AddTrackedCooldown(116847, talent_rjw)
     local rjwIcon = timers:AddCooldownIcon(rjwCooldown, nil, -0.5, -0.9, false, true)
+    function rjwIcon:ShouldShowMainIcon()
+        return false
+    end
     local rjwLongBar = timers:AddAuraBar(rjwBuff, nil, 0.0, 0.6, 0.2)
     function rjwLongBar:GetRemDurationOr0IfInvisible(t)
         if (rjwCooldown.remDuration <= self.group.remGCD) then
@@ -304,19 +307,11 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
 
     local chibCooldown = timers:AddTrackedCooldown(123986, talent_chib)
     local chibIcon = timers:AddCooldownIcon(chibCooldown, nil, -1.5, -0.9, true, true)
-    local chiwCooldown = timers:AddTrackedCooldown(115098, talent_chiw)
-    local chiwIcon = timers:AddCooldownIcon(chiwCooldown, nil, -1.5, -0.9, true, true)
-
-    local elixirCooldown = timers:AddTrackedCooldown(122281, talent_elixir)
-    local elixirIcons = {}
-    table.insert(elixirIcons, timers:AddCooldownIcon(elixirCooldown, nil, -1.5, -0.9, true, true, talent_chi_b_nor_w))
-    table.insert(elixirIcons, timers:AddCooldownIcon(elixirCooldown, nil, -2.5, -0.9, true, true, talent_chi_b_or_w))
 
     local celestialbCooldown = timers:AddTrackedCooldown(322507, talent_celestialb)
     local celestialbIcons = {}
-    for i = 0, 2 do
-        table.insert(celestialbIcons, timers:AddCooldownIcon(celestialbCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_chi_b_or_w, talent_elixir)))
-    end
+    table.insert(celestialbIcons, timers:AddCooldownIcon(celestialbCooldown, nil, -1.5, -0.9, true, true, ERALIBTalent:CreateNot(talent_chib)))
+    table.insert(celestialbIcons, timers:AddCooldownIcon(celestialbCooldown, nil, -2.5, -0.9, true, true, talent_chib))
 
     local todCooldown = timers:AddTrackedCooldown(322109)
     local todIcons = {}
@@ -324,14 +319,11 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
         table.insert(todIcons, timers:AddCooldownIcon(todCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_chi_b_or_w, talent_elixir, talent_celestialb)))
     end
 
-    --local zenmedBuff = timers:AddTrackedBuff(115176, talent_zenmed)
-    --timers:AddAuraBar(zenmedBuff, nil, 0.3, 0.6, 0.3)
+    local zenmedBuff = timers:AddTrackedBuff(115176, talent_zenmed)
+    timers:AddAuraBar(zenmedBuff, nil, 0.3, 0.6, 0.3)
 
     local weaponsBuff = timers:AddTrackedBuff(387184, talent_weapons)
     timers:AddAuraBar(weaponsBuff, nil, 0.0, 0.0, 1.0)
-
-    local boneTimer = timers:AddTrackedDebuff(386276, talent_bonedust)
-    timers:AddAuraBar(boneTimer, nil, 0.5, 0.7, 0.4)
 
     timers:AddAuraBar(timers:AddTrackedBuff(325190, talent_celestial_flames), nil, 1.0, 0.0, 0.0)
     timers:AddAuraBar(timers:AddTrackedBuff(386963, talent_charred), nil, 0.7, 0.3, 0.0)
@@ -386,23 +378,16 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
         end
     end
 
-    local utility = ERACombatFrames_MonkUtility(cFrame, 1, true, talent_diffuse, talent_dampen, talent_fortify)
-    utility:AddCooldown(5, 4, 324312, nil, true, ERALIBTalent:Create(101440))      -- clash
-    utility:AddCooldown(-0.5, 0.9, 115399, nil, true, ERALIBTalent:Create(101450)) -- black ox brew
-    utility:AddCooldown(-1.5, 0.9, 115176, nil, true, talent_zenmed)
-    utility:AddCooldown(-2.5, 0.9, 132578, nil, true, ERALIBTalent:Create(101544)) -- niuzao
-    utility:AddCooldown(-3.5, 0.9, 387184, nil, true, talent_weapons)
-    utility:AddCooldown(-3.5, 0.9, 386276, nil, true, ERALIBTalent:CreateAnd(talent_bonedust, talent_not_weapons))
-    utility:AddCooldown(-4.5, 0.9, 386276, nil, true, ERALIBTalent:CreateAnd(talent_bonedust, talent_weapons))
-    for i = 0, 2 do
-        utility:AddCooldown(-3.5 - i, 0.9, 325153, nil, true, ERALIBTalent:CreateAnd(talent_exploding, ERALIBTalent:CreateCount(i, talent_weapons, talent_bonedust)))
-    end
+    local utility = ERACombatFrames_MonkUtility(cFrame, 1, true, monkTalents)
+    utility:AddCooldown(-4.5, 0.9, 115176, nil, true, talent_zenmed)
+    utility:AddCooldown(-3.5, 0.9, 132578, nil, true, ERALIBTalent:Create(124849)) -- niuzao
+    utility:AddCooldown(-2.5, 0.9, 387184, nil, true, talent_weapons)
+    utility:AddCooldown(-1.5, 0.9, 325153, nil, true, talent_exploding)
+    utility:AddCooldown(-0.5, 0.9, 115399, nil, true, ERALIBTalent:Create(124991)) -- black ox brew
+    utility:AddCooldown(1, 0, 122278, nil, true, ERALIBTalent:Create(124978))      -- dampen
     -- out of combat
-    utility:AddCooldown(-2, 2, 115098, nil, false, talent_chiw)
     utility:AddCooldown(-2, 2, 123986, nil, false, talent_chib)
-    utility:AddCooldown(-3, 2, 122281, nil, false, talent_elixir)
     utility:AddCooldown(-4, 2, 322507, nil, false, talent_celestialb)
-    utility:AddCooldown(-5, 2, 322109, nil, false) -- touch of death
     utility:AddCooldown(-2, 3, 121253, nil, false) -- keg
     utility:AddCooldown(-3, 3, 107428, nil, false, talent_rsk)
     utility:AddCooldown(-4, 3, 115181, nil, false, talent_bof)
@@ -505,22 +490,6 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talent_diffuse, ta
             return 12
         else
             return 20
-        end
-    end
-
-    function chiwIcon:computeAvailablePriority()
-        return 9
-    end
-
-    for _, i in ipairs(elixirIcons) do
-        function i:computeAvailablePriority()
-            if (timers.healthPercent < 0.66) then
-                return 11
-            elseif (timers.healthPercent < 0.8) then
-                return 18
-            else
-                return 0
-            end
         end
     end
 
@@ -1096,7 +1065,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     timers.offsetIconsY = -22
     local first_column_X = 0.5
 
-    ---@type DisruptTimerIconParams
+    ---@type MonkDisruptTimerIconParams
     local disruptParams = {
         kickX = first_column_X + 1,
         kickY = 1,
