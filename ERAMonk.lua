@@ -79,7 +79,7 @@ end
 function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
     local utility = ERACombatUtilityFrame:Create(cFrame, -16, -212, spec)
 
-    utility:AddCooldown(0, 5, 322109, nil, false) -- touch of death
+    utility:AddCooldown(-0.5, 0.9, 322109, nil, false) -- touch of death
 
     utility:AddTrinket2Cooldown(-3, 0, nil)
     utility:AddTrinket1Cooldown(-2, 0, nil)
@@ -421,7 +421,6 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     ]]
 
     function ehIcon:computeAvailablePriority()
-        -- CHANGE 11 u et nomana n'étaient pas utilisés local u, nomana = IsUsableSpell(322109)
         if (timers.healthPercent < 0.4) then
             return 1
         elseif (timers.healthPercent < 0.8) then
@@ -817,8 +816,6 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talent_diffuse, talent_damp
     utility:AddCooldown(-3.5, 0.9, 115310, nil, true, talent_revival)
     utility:AddCooldown(-3.5, 0.9, 388615, nil, true, talent_restoral)
     utility:AddCooldown(-4.5, 0.9, 197908, nil, true, talent_manatea)
-    utility:AddCooldown(-4.5, 0.9, 322109, nil, true, talent_not_manatea) -- touch of death
-    utility:AddCooldown(-5.5, 0.9, 322109, nil, true, talent_manatea)     -- touch of death
     -- out of combat
     utility:AddCooldown(-2, 1.8, 122281, nil, false, talent_elixir)
     utility:AddCooldown(-3, 1.8, 123986, nil, false, talent_chib)
@@ -1203,13 +1200,12 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     local utility = ERACombatFrames_MonkUtility(cFrame, 3, true, monkTalents)
     utility:AddCooldown(5, 4, 101545, nil, true)                                   -- fsk
-    utility:AddCooldown(-1.5, 0.9, 122470, nil, true)
+    utility:AddCooldown(-1.5, 0.9, 122470, nil, true)                              -- karma
     utility:AddCooldown(-2.5, 0.9, 123904, nil, true, ERALIBTalent:Create(125013)) -- xuen
     utility:AddCooldown(-3.5, 0.9, 137639, nil, true, talent_sef)
     -- out of combat
     utility:AddCooldown(-3, 2, 388193, nil, false, talent_fae_active)
     utility:AddCooldown(-4, 2, 392983, nil, false, talent_windlord)
-    utility:AddCooldown(-5, 2, 322109, nil, false) -- touch of death
     utility:AddCooldown(-2, 3, 107428, nil, false) -- rsk
     utility:AddCooldown(-3, 3, 113656, nil, false) -- fof
     utility:AddCooldown(-4, 3, 152175, nil, false, talent_whirling)
@@ -1226,8 +1222,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     4 - fae exposure
     X - palm dump
     6 - fof
-    7 - whirling
-    8 - windlord
+    7 - windlord
+    8 - whirling
     9 - CJL
     10 - sck
     11 : chi burst
@@ -1270,14 +1266,14 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
         return 6
     end
 
-    function whirlingIcon:computeAvailablePriority()
-        return 7
-    end
-
     for _, i in ipairs(windlordIcons) do
         function i:computeAvailablePriority()
-            return 8
+            return 7
         end
+    end
+
+    function whirlingIcon:computeAvailablePriority()
+        return 8
     end
 
     local cjlPrio = timers:AddPriority(606542)
