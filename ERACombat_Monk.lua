@@ -1,8 +1,11 @@
----@class MonkDisruptTimerIconParams
+---@class MonkCommonTimerIconParams
 ---@field kickX number
 ---@field kickY number
 ---@field paraX number
 ---@field paraY number
+---@field todX number
+---@field todY number
+---@field todPrio number
 
 ---@class MonkCommonTalents
 ---@field diffuse ERALIBTalent
@@ -85,30 +88,35 @@ end
 ---@param spec number
 ---@param includeDetox boolean
 ---@param monkTalents MonkCommonTalents
----@return table
+---@return ERACombatUtilityFrame
 function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
     local utility = ERACombatUtilityFrame:Create(cFrame, -16, -212, spec)
 
-    utility:AddCooldown(-0.5, 0.9, 322109, nil, false) -- touch of death
+    utility:AddCooldown(-4, 0, 322109, nil, false) -- touch of death
+    utility:AddWarlockHealthStone(0.5, -0.9)
 
     utility:AddTrinket2Cooldown(-3, 0, nil)
     utility:AddTrinket1Cooldown(-2, 0, nil)
-    utility:AddCooldown(0, 0, 115203, nil, true, monkTalents.fortify)
-    utility:AddWarlockHealthStone(-0.5, -0.9)
-    utility:AddCooldown(2, 0, 122783, nil, true, monkTalents.diffuse)
+    utility:AddCooldown(1, 0, 122783, nil, true, monkTalents.diffuse)
+    utility:AddCooldown(2, 0, 115203, nil, true, monkTalents.fortify)
     utility:AddBeltCooldown(3, 0, nil)
     utility:AddCloakCooldown(4, 0, nil)
+
     utility:AddRacial(3, 1)
     utility:AddCooldown(4, 1, 115078, nil, true, monkTalents.paralysis)
+
     utility:AddCooldown(3, 2, 119381, nil, true) -- sweep
     utility:AddCooldown(4, 2, 116844, nil, true, monkTalents.rop)
     utility:AddCooldown(4, 2, 198898, nil, true, monkTalents.sleep)
+
     utility:AddCooldown(3, 3, 324312, nil, true, monkTalents.clash)
     utility:AddCooldown(4, 3, 119996, nil, true, monkTalents.transcendence)
     utility:AddCooldown(5, 3, 101643, nil, true, monkTalents.transcendence).alphaWhenOffCooldown = 0.1
+
     utility:AddCooldown(3, 4, 109132, 574574, true, monkTalents.roll)
     utility:AddCooldown(3, 4, 115008, 607849, true, monkTalents.torpedo)
     utility:AddCooldown(4, 4, 116841, nil, true, monkTalents.lust)
+
     if (includeDetox) then
         utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, monkTalents.detox, "poison", "disease")
     end
@@ -120,18 +128,28 @@ function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
 end
 
 ---comment
----@param timers any
+---@param timers ERACombatTimers
 ---@param talents MonkCommonTalents
----@param disrupt MonkDisruptTimerIconParams
-function ERACombatFrames_MonkTimerBars(timers, talents, disrupt)
+---@param timerParams MonkCommonTimerIconParams
+function ERACombatFrames_MonkTimerBars(timers, talents, timerParams)
     timers:AddChannelInfo(115175, 1.0) -- soothing mist
     timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
 
     timers:AddAuraBar(timers:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
     timers:AddAuraBar(timers:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
 
-    timers:AddKick(116705, disrupt.kickX, disrupt.kickY, talents.kick, false)
-    timers:AddOffensiveDispellIcon(629534, disrupt.paraX, disrupt.paraX, true, talents.disenrage, "enrage")
+    timers:AddKick(116705, timerParams.kickX, timerParams.kickY, talents.kick, false)
+    timers:AddOffensiveDispellIcon(629534, timerParams.paraX, timerParams.paraX, true, talents.disenrage, "enrage")
+
+    local tod = timers:AddCooldownIcon(timers:AddTrackedCooldown(322109), nil, timerParams.todX, timerParams.todY, true, true)
+    function tod:ComputeAvailablePriorityOverride()
+        local u, nomana = C_Spell.IsSpellUsable(322109)
+        if (u or nomana) then
+            return timerParams.todPrio
+        else
+            return 0
+        end
+    end
 end
 
 -- recurring

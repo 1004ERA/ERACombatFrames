@@ -30,15 +30,18 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     timers.offsetIconsY = -36
     local first_column_X = 0.5
 
-    ---@type MonkDisruptTimerIconParams
-    local disruptParams = {
+    ---@type MonkCommonTimerIconParams
+    local timerParams = {
         kickX = first_column_X,
         kickY = 3,
         paraX = 5,
         paraY = 5,
+        todPrio = 4,
+        todX = -3.5,
+        todY = -0.9
     }
 
-    ERACombatFrames_MonkTimerBars(timers, monkTalents, disruptParams)
+    ERACombatFrames_MonkTimerBars(timers, monkTalents, timerParams)
 
     local kegCooldown = timers:AddTrackedCooldown(121253)
     local purifCooldown = timers:AddTrackedCooldown(119582)
@@ -82,7 +85,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     bokAlternative.id = 100784
     bokAlternative.talent = talent_no_shuffle
     local bokCooldown = timers:AddTrackedCooldown(205523, nil, bokAlternative) -- 100784 (basic) or 205523 (with shuffle)
-    local bokIcon = timers:AddCooldownIcon(bokCooldown, nil, -1, 0, true, true)
+    local bokIcon = timers:AddCooldownIcon(bokCooldown, nil, 0, 0, true, true)
     function bokIcon:ShouldShowMainIconOverride()
         return false
     end
@@ -91,18 +94,21 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
 
     local ehCooldown = timers:AddTrackedCooldown(322101)
     local ehIcon = timers:AddCooldownIcon(ehCooldown, nil, -2, 0, true, true)
+    function ehIcon:ShouldShowMainIconOverride()
+        return false
+    end
 
     local bofCooldown = timers:AddTrackedCooldown(115181, talent_bof)
-    local bofIcon = timers:AddCooldownIcon(bofCooldown, nil, -3, 0, true, true)
+    local bofIcon = timers:AddCooldownIcon(bofCooldown, nil, -2, 0, true, true)
 
     local rskCooldown = timers:AddTrackedCooldown(107428, talent_rsk)
     local rskIcons = {}
-    table.insert(rskIcons, timers:AddCooldownIcon(rskCooldown, nil, -3, 0, true, true, talent_not_bof))
-    table.insert(rskIcons, timers:AddCooldownIcon(rskCooldown, nil, -4, 0, true, true, talent_bof))
+    table.insert(rskIcons, timers:AddCooldownIcon(rskCooldown, nil, -2, 0, true, true, talent_not_bof))
+    table.insert(rskIcons, timers:AddCooldownIcon(rskCooldown, nil, -3, 0, true, true, talent_bof))
 
     local rjwBuff = timers:AddTrackedBuff(116847, talent_rjw)
     local rjwCooldown = timers:AddTrackedCooldown(116847, talent_rjw)
-    local rjwIcon = timers:AddCooldownIcon(rjwCooldown, nil, -0.5, -0.9, false, true)
+    local rjwIcon = timers:AddCooldownIcon(rjwCooldown, nil, 0, 0, false, true)
     function rjwIcon:ShouldShowMainIconOverride()
         return false
     end
@@ -123,19 +129,11 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
         end
     end
 
-    local chibCooldown = timers:AddTrackedCooldown(123986, talent_chib)
-    local chibIcon = timers:AddCooldownIcon(chibCooldown, nil, -1.5, -0.9, true, true)
-
     local celestialbCooldown = timers:AddTrackedCooldown(322507, talent_celestialb)
-    local celestialbIcons = {}
-    table.insert(celestialbIcons, timers:AddCooldownIcon(celestialbCooldown, nil, -1.5, -0.9, true, true, ERALIBTalent:CreateNot(talent_chib)))
-    table.insert(celestialbIcons, timers:AddCooldownIcon(celestialbCooldown, nil, -2.5, -0.9, true, true, talent_chib))
+    local celestialbIcon = timers:AddCooldownIcon(celestialbCooldown, nil, -1.5, -0.9, true, true)
 
-    local todCooldown = timers:AddTrackedCooldown(322109)
-    local todIcons = {}
-    for i = 0, 3 do
-        table.insert(todIcons, timers:AddCooldownIcon(todCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_chib, talent_celestialb)))
-    end
+    local chibCooldown = timers:AddTrackedCooldown(123986, talent_chib)
+    local chibIcon = timers:AddCooldownIcon(chibCooldown, nil, -2.5, -0.9, true, true)
 
     local zenmedBuff = timers:AddTrackedBuff(115176, talent_zenmed)
     timers:AddAuraBar(zenmedBuff, nil, 0.3, 0.6, 0.3)
@@ -203,12 +201,12 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     end
 
     local utility = ERACombatFrames_MonkUtility(cFrame, 1, true, monkTalents)
-    utility:AddCooldown(-4.5, 0.9, 115176, nil, true, talent_zenmed)
-    utility:AddCooldown(-3.5, 0.9, 132578, nil, true, ERALIBTalent:Create(124849)) -- niuzao
-    utility:AddCooldown(-2.5, 0.9, 387184, nil, true, talent_weapons)
-    utility:AddCooldown(-1.5, 0.9, 325153, nil, true, talent_exploding)
+    utility:AddCooldown(-3.5, 0.9, 115176, nil, true, talent_zenmed)
+    utility:AddCooldown(-2.5, 0.9, 132578, nil, true, ERALIBTalent:Create(124849)) -- niuzao
+    utility:AddCooldown(-1.5, 0.9, 387184, nil, true, talent_weapons)
     utility:AddCooldown(-0.5, 0.9, 115399, nil, true, ERALIBTalent:Create(124991)) -- black ox brew
-    utility:AddCooldown(1, 0, 122278, nil, true, ERALIBTalent:Create(124978))      -- dampen
+    utility:AddCooldown(-1, 0, 325153, nil, true, talent_exploding)
+    utility:AddCooldown(0, 0, 122278, nil, true, ERALIBTalent:Create(124978))      -- dampen
     -- out of combat
     utility:AddCooldown(-2, 2, 123986, nil, false, talent_chib)
     utility:AddCooldown(-4, 2, 322507, nil, false, talent_celestialb)
@@ -266,18 +264,6 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
             end
         else
             return 0
-        end
-    end
-
-    for _, i in ipairs(todIcons) do
-        function i:ComputeAvailablePriorityOverride()
-            -- CHANGE 11 local u, nomana = IsUsableSpell(322109)
-            local u, nomana = C_Spell.IsSpellUsable(322109)
-            if (u or nomana) then
-                return 4
-            else
-                return 0
-            end
         end
     end
 
@@ -343,10 +329,8 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
         end
     end
 
-    for _, i in ipairs(celestialbIcons) do
-        function i:ComputeAvailablePriorityOverride()
-            return 16
-        end
+    function celestialbIcon:ComputeAvailablePriorityOverride()
+        return 16
     end
 end
 

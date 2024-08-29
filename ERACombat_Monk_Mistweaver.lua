@@ -42,18 +42,22 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     local talent_not_manatea = ERALIBTalent:CreateNotTalent(124920)
     local talent_yulon = ERALIBTalent:Create(124915)
     local talent_chiji = ERALIBTalent:Create(124914)
+    local talent_chiji_sck = ERALIBTalent:Create(124887)
     local talent_short_invoke = ERALIBTalent:Create(124894)
     local talent_revival = ERALIBTalent:Create(124919)
     local talent_restoral = ERALIBTalent:Create(124918)
     local talent_sheilun = ERALIBTalent:Create(124904)
-    local talent_not_sheilun = ERALIBTalent:CreateNotTalent(124904)
-    local talent_fast_sheilun = ERALIBTalent:Create(124904)
+    local talent_sheilun_shaohao = ERALIBTalent:Create(124902)
+    local talent_fast_sheilun = ERALIBTalent:Create(124903)
     local talent_cocoon = ERALIBTalent:Create(124875)
     local talent_stronger_invigorating_10pct = ERALIBTalent:Create(124900)
     local talent_ancient_teachings = ERALIBTalent:Create(124882)
     local talent_ancient_concordance = ERALIBTalent:Create(124886)
     local talent_normal_detox = ERALIBTalent:CreateNotTalent(124866)
     local talent_better_detox = ERALIBTalent:Create(124866)
+
+    local htalent_conduit = ERALIBTalent:Create(125062)
+    local htalent_blackox = ERALIBTalent:Create(125060)
 
     local timers = ERACombatTimersGroup:Create(cFrame, -144, -44, 1.5, true, true, 2)
     ---@cast timers ERACombatTimers_MonkMistweaver
@@ -63,15 +67,18 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     local first_column_X_delta = -0.1
     local first_column_Y = 2
 
-    ---@type MonkDisruptTimerIconParams
-    local disruptParams = {
+    ---@type MonkCommonTimerIconParams
+    local timerParams = {
         kickX = first_column_X + 1,
         kickY = first_column_Y + 3,
         paraX = first_column_X + 1,
         paraY = first_column_Y + 4,
+        todPrio = 1,
+        todX = first_column_X,
+        todY = first_column_Y - 1
     }
 
-    ERACombatFrames_MonkTimerBars(timers, monkTalents, disruptParams)
+    ERACombatFrames_MonkTimerBars(timers, monkTalents, timerParams)
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 0, true, 0.0, 0.0, 1.0, false, 2)
 
@@ -108,12 +115,16 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     local renewingIcon = timers:AddCooldownIcon(renewingCooldown, nil, first_column_X, first_column_Y + 2, true, true)
 
     local faeCooldown = timers:AddTrackedCooldown(388193, talent_fae)
-    local faeIcon = timers:AddCooldownIcon(faeCooldown, nil, first_column_X + 0.9, first_column_Y + 2.5, true, true)
+    local faeIcon = timers:AddCooldownIcon(faeCooldown, nil, first_column_X, first_column_Y + 3, true, true)
 
-    ERACombatFrames_MonkSheilunIcon:create(timers, first_column_X + 0.9, first_column_Y + 3.5, talent_sheilun, talent_fast_sheilun)
+    ERACombatFrames_MonkSheilunIcon:create(timers, first_column_X, first_column_Y + 5, talent_sheilun, talent_fast_sheilun)
+
+    timers:AddStacksProgressIcon(timers:AddTrackedBuff(115867, talent_manatea), nil, first_column_X + 0.9, first_column_Y + 4.5, 20)
 
     local ehCooldown = timers:AddTrackedCooldown(322101)
     local ehIcon = timers:AddCooldownIcon(ehCooldown, nil, first_column_X, first_column_Y, true, true)
+
+    timers:AddProc(timers:AddTrackedBuff(392883, monkTalents.vivification), nil, first_column_X + 1, first_column_Y + 0.5, false, false)
 
     local tftBuff = timers:AddTrackedBuff(116680, talent_tft)
     local tftCooldown = timers:AddTrackedCooldown(116680, talent_tft)
@@ -148,7 +159,23 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     end
 
     timers:AddAuraBar(timers:AddTrackedBuff(388026, talent_ancient_teachings), nil, 1.0, 0.2, 0.8)
-    timers:AddAuraBar(timers:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
+    --timers:AddAuraBar(timers:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
+    timers:AddAuraBar(timers:AddTrackedBuff(443112, htalent_blackox), nil, 0.5, 0.6, 0.0)
+    timers:AddAuraBar(timers:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
+
+    -- anger
+    timers:AddProc(timers:AddTrackedBuff(405807, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
+    timers:AddAuraBar(timers:AddTrackedBuff(400106, talent_sheilun_shaohao), nil, 0.6, 0.0, 0.0)
+    -- doubt
+    timers:AddProc(timers:AddTrackedBuff(405808, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
+    timers:AddAuraBar(timers:AddTrackedBuff(400097, talent_sheilun_shaohao), nil, 0.0, 0.3, 0.2)
+    -- despair
+    timers:AddProc(timers:AddTrackedBuff(405810, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
+    timers:AddAuraBar(timers:AddTrackedBuff(400100, talent_sheilun_shaohao), nil, 0.5, 0.6, 0.8)
+    -- fear
+    timers:AddProc(timers:AddTrackedBuff(405809, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
+    timers:AddAuraBar(timers:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
+
 
     timers.lastInvoke = 0
     timers.lastInstaVivify = 0
@@ -270,7 +297,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
             if (i.remDuration > minDur) then
                 local missing = i.unitframe.absorbHealingValue + i.unitframe.maxHealth - i.unitframe.currentHealth
                 for _, s in ipairs(invigoratingSteps) do
-                    acc = acc + s.chance * math.max(missing, s.value)
+                    acc = acc + s.chance * math.min(missing, s.value)
                 end
             end
         end
@@ -284,17 +311,17 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     local utility = ERACombatFrames_MonkUtility(cFrame, 2, false, monkTalents)
     utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "magic", "poison", "disease")
     utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "magic")
-    utility:AddCooldown(-1.5, 0.9, 116849, nil, true, talent_cocoon)
-    utility:AddCooldown(-2.5, 0.9, 322118, nil, true, talent_yulon)
-    utility:AddCooldown(-2.5, 0.9, 325197, nil, true, talent_chiji)
-    utility:AddCooldown(-3.5, 0.9, 115310, nil, true, talent_revival)
-    utility:AddCooldown(-3.5, 0.9, 388615, nil, true, talent_restoral)
-    utility:AddCooldown(-4.5, 0.9, 197908, nil, true, talent_manatea)
+    utility:AddCooldown(-1, 0, 116849, nil, true, talent_cocoon)
+    utility:AddCooldown(0, 0, 443028, nil, true, htalent_conduit)
+    utility:AddCooldown(-1.5, -0.9, 322118, nil, true, talent_yulon)
+    utility:AddCooldown(-1.5, -0.9, 325197, nil, true, talent_chiji)
+    utility:AddCooldown(-0.5, -0.9, 115310, nil, true, talent_revival)
+    utility:AddCooldown(-0.5, -0.9, 388615, nil, true, talent_restoral)
     -- out of combat
     utility:AddCooldown(-3, 1.8, 123986, nil, false, talent_chib)
     utility:AddCooldown(-4, 1.8, 116680, nil, false, talent_tft)
-    utility:AddCooldown(-1.5, 2.7, 115151, nil, false, talent_renewing)
-    utility:AddCooldown(-2.5, 2.7, 388193, nil, false, talent_fae)
+    utility:AddCooldown(-2.5, 2.7, 115151, nil, false, talent_renewing)
+    utility:AddCooldown(-3.5, 2.7, 388193, nil, false, talent_fae)
 end
 
 -- invigorating --

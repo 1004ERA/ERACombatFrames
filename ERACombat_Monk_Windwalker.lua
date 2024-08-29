@@ -24,6 +24,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local talent_spinning_ignition = ERALIBTalent:Create(124822)
     local talent_combat_wisdom = ERALIBTalent:Create(125025)
 
+    local htalent_conduit = ERALIBTalent:Create(125062)
+
     local points = ERACombatPointsUnitPower:Create(cFrame, -101, 6, 12, 5, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil, 2, 3)
     points:SetTalented(2, talent_combat_wisdom)
 
@@ -43,15 +45,18 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     timers.combatHealth = combatHealth
     timers.nrg = nrg
 
-    ---@type MonkDisruptTimerIconParams
-    local disruptParams = {
+    ---@type MonkCommonTimerIconParams
+    local timerParams = {
         kickX = first_column_X + 1,
         kickY = 1,
         paraX = first_column_X + 1,
-        paraY = 2
+        paraY = 2,
+        todPrio = 1,
+        todX = -3.5,
+        todY = -0.9
     }
 
-    ERACombatFrames_MonkTimerBars(timers, monkTalents, disruptParams)
+    ERACombatFrames_MonkTimerBars(timers, monkTalents, timerParams)
 
     timers.lastInstaVivify = 0
     function timers:CLEU(t)
@@ -75,11 +80,6 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local whirlingCooldown = timers:AddTrackedCooldown(152175, talent_whirling)
     local whirlingIcon = timers:AddCooldownIcon(whirlingCooldown, nil, -3, 0, true, true)
 
-    local ehCooldown = timers:AddTrackedCooldown(322101)
-    local ehIcons = {}
-    table.insert(ehIcons, timers:AddCooldownIcon(ehCooldown, nil, -3, 0, true, true, talent_not_whirling))
-    table.insert(ehIcons, timers:AddCooldownIcon(ehCooldown, nil, -4, 0, true, true, talent_whirling))
-
     local chibIcon = timers:AddAuraIcon(timers:AddTrackedBuff(460490, talent_chib), 0, 0, nil, talent_chib)
     function chibIcon:ShouldShowWhenAbsentOverride()
         return false
@@ -93,12 +93,6 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local windlordIcons = {}
     table.insert(windlordIcons, timers:AddCooldownIcon(windlordCooldown, nil, -1.5, -0.9, true, true, ERALIBTalent:CreateNot(talent_fae_active)))
     table.insert(windlordIcons, timers:AddCooldownIcon(windlordCooldown, nil, -2.5, -0.9, true, true, talent_fae_active))
-
-    local todCooldown = timers:AddTrackedCooldown(322109)
-    local todIcons = {}
-    for i = 0, 3 do
-        table.insert(todIcons, timers:AddCooldownIcon(todCooldown, nil, -1.5 - i, -0.9, true, true, ERALIBTalent:CreateCount(i, talent_fae_active, talent_windlord)))
-    end
 
     --[[
     local morechiTimer = timers:AddTrackedBuff(129914, talent_power_strikes)
@@ -174,17 +168,17 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     local utility = ERACombatFrames_MonkUtility(cFrame, 3, true, monkTalents)
     utility:AddCooldown(5, 4, 101545, nil, true)                                   -- fsk
-    utility:AddCooldown(-1.5, 0.9, 122470, nil, true)                              -- karma
+    utility:AddCooldown(-1.5, 0.9, 443028, nil, true, htalent_conduit)
     utility:AddCooldown(-2.5, 0.9, 123904, nil, true, ERALIBTalent:Create(125013)) -- xuen
     utility:AddCooldown(-3.5, 0.9, 137639, nil, true, talent_sef)
+    utility:AddCooldown(-1, 0, 122470, nil, true)                                  -- karma
+
     -- out of combat
     utility:AddCooldown(-3, 2, 388193, nil, false, talent_fae_active)
     utility:AddCooldown(-4, 2, 392983, nil, false, talent_windlord)
     utility:AddCooldown(-2, 3, 107428, nil, false) -- rsk
     utility:AddCooldown(-3, 3, 113656, nil, false) -- fof
     utility:AddCooldown(-4, 3, 152175, nil, false, talent_whirling)
-    utility:AddCooldown(-5, 3, 322101, nil, false) -- eh
-
 
     --[[
 
@@ -203,17 +197,6 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     11 : chi burst
 
     ]]
-
-    for _, i in ipairs(todIcons) do
-        function i:ComputeAvailablePriorityOverride()
-            local u, nomana = C_Spell.IsSpellUsable(322109) -- CHANGE 11 IsUsableSpell(322109)
-            if (u or nomana) then
-                return 1
-            else
-                return 0
-            end
-        end
-    end
 
     local tigerDump = timers:AddPriority(606551)
     function tigerDump:ComputePriority(t)
