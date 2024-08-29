@@ -124,7 +124,7 @@ function ERACombatFrames_PriestShadowSetup(cFrame, kyrian_talent)
     oocbars.power:SetBorderColor(0.4, 0.4, 1.0)
 
     local mana = ERACombatPower:Create(cFrame, -353, -44, 144, 22, 0, false, 0.2, 0.2, 1.0, 3)
-    function mana:ShouldBeVisible(t)
+    function mana:ShouldBeVisibleOverride(t)
         local ratio = self.currentPower / self.maxPower
         return  ratio < 0.9
     end

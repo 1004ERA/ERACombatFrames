@@ -10,6 +10,17 @@ ERACombatStatusBar_PrevisionHalfThickness = 2
 ERACombatStatusBar = {}
 ERACombatStatusBar.__index = ERACombatStatusBar
 
+---@class ERACombatStatusBar
+---@field SetBorderColor fun(this:ERACombatStatusBar, r:number, g:number, b:number)
+---@field SetMainColor fun(this:ERACombatStatusBar, r:number, g:number, b:number)
+---@field SetPrevisionColor fun(this:ERACombatStatusBar, r:number, g:number, b:number)
+---@field SetMax fun(this:ERACombatStatusBar, x:number)
+---@field SetValue fun(this:ERACombatStatusBar, x:number)
+---@field SetPlus fun(this:ERACombatStatusBar, x:number)
+---@field SetMinus fun(this:ERACombatStatusBar, x:number)
+---@field SetPrevision fun(this:ERACombatStatusBar, x:number)
+---@field SetAll fun(this:ERACombatStatusBar, max:number, value:number, minus:number, plus:number, forecast:number)
+
 function ERACombatStatusBar:create(parentFrame, x, y, barWidth, barHeight, r, g, b)
     local bar = {}
     setmetatable(bar, ERACombatStatusBar)
@@ -285,6 +296,20 @@ ERAOutOfCombatStatusBars = {}
 ERAOutOfCombatStatusBars.__index = ERAOutOfCombatStatusBars
 setmetatable(ERAOutOfCombatStatusBars, { __index = ERACombatModule })
 
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param barWidth number
+---@param barHeight number
+---@param powerType number
+---@param hideFull boolean
+---@param r number
+---@param g number
+---@param b number
+---@param showPet boolean
+---@param ... number
+---@return table
 function ERAOutOfCombatStatusBars:Create(cFrame, x, y, barWidth, barHeight, powerType, hideFull, r, g, b, showPet, ...)
     local ooc = {}
     setmetatable(ooc, ERAOutOfCombatStatusBars)
@@ -459,6 +484,23 @@ ERACombatHealth = {}
 ERACombatHealth.__index = ERACombatHealth
 setmetatable(ERACombatHealth, { __index = ERACombatModule })
 
+---@class ERACombatHealth : ERACombatModule
+---@field bar ERACombatStatusBar
+---@field currentHealth number
+---@field maxHealth number
+---@field absorbHealing number
+---@field absorbDamage number
+---@field SetHealing fun(this:ERACombatHealth, x:number)
+---@field SetHealingColor fun(this:ERACombatHealth, r:number, g:number, b:number)
+
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param barWidth number
+---@param barHeight number
+---@param ... number
+---@return ERACombatHealth
 function ERACombatHealth:Create(cFrame, x, y, barWidth, barHeight, ...)
     local b = {}
     setmetatable(b, ERACombatHealth)
@@ -579,6 +621,10 @@ function ERACombatHealth:SetHealing(value)
     self.healing = value
 end
 
+function ERACombatHealth:SetHealingColor(r, g, b)
+    self.bar:SetPrevisionColor(r, g, b)
+end
+
 --------------------------------------------------------------------------------------------------------------------------------
 -- COMBAT POWER ----------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
@@ -591,10 +637,15 @@ ERACombatPower.__index = ERACombatPower
 setmetatable(ERACombatPower, { __index = ERACombatModule })
 
 ---@class ERACombatPower
----@field AddConsumer fun(this:ERACombatPower, value:number, iconID:integer, talent:ERALIBTalent|nil):ERACombatPowerConsumer
+---@field AddConsumer fun(this:ERACombatPower, value:number, iconID:integer, talent:ERALIBTalent|nil): ERACombatPowerConsumer
+---@field bar ERACombatStatusBar
+---@field currentPower number
+---@field maxPower number
+---@field ShouldBeVisibleOverride fun(this:ERACombatPower, t:number): boolean
+---@field PreUpdateCombatOverride fun(this:ERACombatPower, t:number)
 
 ---comment
----@param cFrame any
+---@param cFrame ERACombatFrame
 ---@param x number
 ---@param y number
 ---@param barWidth number
@@ -632,7 +683,7 @@ function ERACombatPower:Create(cFrame, x, y, barWidth, barHeight, powerType, use
     if (useEvents) then
         function bar.events:UNIT_POWER_FREQUENT(unitID)
             if (unitID == "player") then
-                bar:updateCurrentPower(true)
+                bar:updateCurrentPower(GetTime(), true)
             end
         end
         function bar.events:UNIT_MAXPOWER(unitID)
@@ -679,7 +730,7 @@ function ERACombatPower:enter()
         self.frame:RegisterEvent(k)
     end
     self:updateMaxPower(false)
-    self:updateCurrentPower(false)
+    self:updateCurrentPower(GetTime(), false)
     self.bar:SetAll(self.maxPower, self.currentPower, 0, 0, 0)
 end
 function ERACombatPower:exit()
@@ -688,13 +739,13 @@ function ERACombatPower:exit()
     self.visible = false
 end
 
-function ERACombatPower:PreUpdateCombat(t)
+function ERACombatPower:PreUpdateCombatOverride(t)
 end
 function ERACombatPower:UpdateCombat(t) --, elapsed)
-    self:PreUpdateCombat(t)
+    self:PreUpdateCombatOverride(t)
     self:updateMaxPower(false)
-    self:updateCurrentPower(false)
-    if (self:ShouldBeVisible(t)) then
+    self:updateCurrentPower(t, false)
+    if (self:ShouldBeVisibleOverride(t)) then
         self.bar:SetAll(self.maxPower, self.currentPower, 0, 0, 0)
         if (not self.visible) then
             self.visible = true
@@ -707,7 +758,7 @@ function ERACombatPower:UpdateCombat(t) --, elapsed)
         end
     end
 end
-function ERACombatPower:ShouldBeVisible(t)
+function ERACombatPower:ShouldBeVisibleOverride(t)
     return true
 end
 
@@ -724,13 +775,13 @@ function ERACombatPower:updateMaxPower(updateDisplay)
     end
 end
 
-function ERACombatPower:updateCurrentPower(updateDisplay)
+function ERACombatPower:updateCurrentPower(t, updateDisplay)
     self.currentPower = UnitPower("player", self.powerType)
     if (updateDisplay) then
         self.bar:SetValue(self.currentPower)
     end
     for i, c in ipairs(self.activeConsumers) do
-        c:updateCurrentPower()
+        c:updateCurrentPower(t)
     end
     if (self.redWarning > 0 and self.currentPower >= self.redWarning) then
         self.bar:SetMainColor(1.0, 0.2, 0.2)
@@ -755,8 +806,9 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERACombatPowerConsumer
----@field ComputeVisibility fun():boolean
----@field ComputeIconVisibility fun():boolean
+---@field ComputeVisibilityOverride fun(this:ERACombatPowerConsumer, t:number): boolean
+---@field ComputeIconVisibilityOverride fun(this:ERACombatPowerConsumer, t:number): boolean
+---@field icon ERASquareIcon | nil
 
 ---comment
 ---@param value number
@@ -813,8 +865,8 @@ function ERACombatPowerConsumer:updatePosition()
     end
 end
 
-function ERACombatPowerConsumer:updateCurrentPower()
-    if (self:ComputeVisibility()) then
+function ERACombatPowerConsumer:updateCurrentPower(t)
+    if (self:ComputeVisibilityOverride(t)) then
         if (not self.tickVisible) then
             self.tickVisible = true
             self.tick:Show()
@@ -831,7 +883,7 @@ function ERACombatPowerConsumer:updateCurrentPower()
             end
         end
         if (self.icon) then
-            self.iconVisible = self:ComputeIconVisibility()
+            self.iconVisible = self:ComputeIconVisibilityOverride(t)
             if (self.iconVisible) then
                 self.icon:Show()
             else
@@ -847,9 +899,9 @@ function ERACombatPowerConsumer:updateCurrentPower()
         end
     end
 end
-function ERACombatPowerConsumer:ComputeVisibility()
+function ERACombatPowerConsumer:ComputeVisibilityOverride(t)
     return true
 end
-function ERACombatPowerConsumer:ComputeIconVisibility()
+function ERACombatPowerConsumer:ComputeIconVisibilityOverride(t)
     return false
 end

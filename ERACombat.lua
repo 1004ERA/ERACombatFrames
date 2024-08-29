@@ -9,9 +9,16 @@ end
 -- COMBAT FRAME ----------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERACombatFrame
+---@field frame unknown
+---@field Pack function
+---@field playerGUID string
+
 ERACombatFrame = {}
 ERACombatFrame.__index = ERACombatFrame
 
+---comment
+---@return ERACombatFrame
 function ERACombatFrame:Create()
     local c = {}
     setmetatable(c, ERACombatFrame)
@@ -367,6 +374,11 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 -- COMBAT MODULE ---------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
+
+---@class ERACombatModule
+---@field frame unknown
+---@field cFrame ERACombatFrame
+---@field CLEU fun(this:ERACombatModule, t:number)
 
 ERACombatModule = {}
 ERACombatModule.__index = ERACombatModule

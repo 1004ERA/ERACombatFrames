@@ -26,7 +26,7 @@ function ERACombatFrames_MageSetup(cFrame)
     ERAOutOfCombatStatusBars:Create(cFrame, -144, -8, 128, 22, 0, true, 0.1, 0.1, 1.0, false, arcaneActive, fireActive, frostActive)
     ERACombatHealth:Create(cFrame, 32, -64, 111, 22, arcaneActive, fireActive, frostActive)
     local mana = ERACombatPower:Create(cFrame, -255, -88, 111, 22, 0, true, 0.2, 0.2, 1.0, fireActive, frostActive)
-    function mana:ShouldBeVisible(t)
+    function mana:ShouldBeVisibleOverride(t)
         local ratio = self.currentPower / self.maxPower
         return ratio < 1 and (ratio < 0.5 or t < enemies.lastManaCast + 5)
     end

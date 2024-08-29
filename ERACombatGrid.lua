@@ -25,12 +25,44 @@ ERACombatGrid = {}
 ERACombatGrid.__index = ERACombatGrid
 setmetatable(ERACombatGrid, { __index = ERACombatModule })
 
+---@class ERACombatGrid : ERACombatModule
+---@field isSolo boolean
+---@field UpdatedInCombatOverride fun(this:ERACombatGrid, t:number)
+---@field AddTrackedBuff fun(this:ERACombatGrid, spellID:number, position:number, priority:number, rC:number, gC:number, bC:number, rB:number, gB:number, bB:number, talent:ERALIBTalent|nil): ERACombatGridAuraDefinition
+---@field AddTrackedDebuff fun(this:ERACombatGrid, spellID:number, position:number, priority:number, rC:number, gC:number, bC:number, rB:number, gB:number, bB:number, talent:ERALIBTalent|nil): ERACombatGridAuraDefinition
+
+---comment
+---@param spellID number
+---@param position number
+---@param priority number
+---@param rC number
+---@param gC number
+---@param bC number
+---@param rB number
+---@param gB number
+---@param bB number
+---@param talent ERALIBTalent | nil
+---@return ERACombatGridAuraDefinition
 function ERACombatGrid:AddTrackedBuff(spellID, position, priority, rC, gC, bC, rB, gB, bB, talent)
     return self:addTrackedAura(spellID, position, priority, rC, gC, bC, rB, gB, bB, talent, false, self.allTrackedBuffs)
 end
+
+---comment
+---@param spellID number
+---@param position number
+---@param priority number
+---@param rC number
+---@param gC number
+---@param bC number
+---@param rB number
+---@param gB number
+---@param bB number
+---@param talent ERALIBTalent | nil
+---@return ERACombatGridAuraDefinition
 function ERACombatGrid:AddTrackedDebuff(spellID, position, priority, rC, gC, bC, rB, gB, bB, talent)
     return self:addTrackedAura(spellID, position, priority, rC, gC, bC, rB, gB, bB, talent, true, self.allTrackedDebuffs)
 end
+
 function ERACombatGrid:addTrackedAura(spellID, position, priority, rC, gC, bC, rB, gB, bB, talent, isDebuff, array)
     local x = ERACombatGridAuraDefinition:create(self, 1 + #array, spellID, isDebuff, position, priority, rC, gC, bC, rB, gB, bB, talent)
     table.insert(array, x)
@@ -39,6 +71,15 @@ end
 
 ERACombatGrid_counter = 0
 
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param anchor string
+---@param spec number
+---@param dispellID number
+---@param ... string dispell types
+---@return ERACombatGrid
 function ERACombatGrid:Create(cFrame, x, y, anchor, spec, dispellID, ...)
     local g = {}
     setmetatable(g, ERACombatGrid)
@@ -251,7 +292,7 @@ function ERACombatGrid:UpdateIdle(t)
 end
 function ERACombatGrid:UpdateCombat(t)
     self:update(t)
-    self:UpdatedInCombat(t)
+    self:UpdatedInCombatOverride(t)
 end
 function ERACombatGrid:update(t)
     for i, x in ipairs(self.activeTrackedBuffsArray) do
@@ -270,12 +311,18 @@ function ERACombatGrid:update(t)
         u:update(t)
     end
 end
-function ERACombatGrid:UpdatedInCombat(t)
+function ERACombatGrid:UpdatedInCombatOverride(t)
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
 ---- UNIT FRAME ----------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
+
+---@class ERACombatGridUnit
+---@field maxHealth number
+---@field currentHealth number
+---@field absorbDamageValue number
+---@field absorbHealingValue number
 
 ERACombatGridUnitPrototype = {}
 
@@ -299,7 +346,8 @@ function ERACombatGrid_initialConfigFunction(gridframe, unitframe)
 
         --unitframe.mainFrame = CreateFrame("Frame", nil, unitframe, BackdopTemplateMixin and "BackdropTemplate")
         -- CHANGE 11 unitframe.mainFrame = CreateFrame("Frame", nil, unitframe, "BackdropTemplate")
-        unitframe.mainFrame = CreateFrame("Frame", nil, unitframe)
+        local mf = CreateFrame("Frame", nil, unitframe, "BackdropTemplate")
+        unitframe.mainFrame = mf
         unitframe.mainFrame:SetFrameStrata("LOW")
         unitframe.mainFrame:SetBackdrop(
             {
@@ -351,12 +399,13 @@ function ERACombatGrid_initialConfigFunction(gridframe, unitframe)
         unitframe.dispellable = false
 
         unitframe.deadLine1 = unitframe.mainFrame:CreateLine(nil, "OVERLAY", "ERACombatGridPlayerDeadLine")
-        unitframe.deadLine1:SetStartPoint("BOTTOMLEFT", unitframe.mainFrame, ERACombatGrid_HealthOffsetFromMainFrame, ERACombatGrid_HealthOffsetFromMainFrame)
-        unitframe.deadLine1:SetEndPoint("TOPRIGHT", unitframe.mainFrame, -ERACombatGrid_HealthOffsetFromMainFrame, -ERACombatGrid_HealthOffsetFromMainFrame)
+        ---@cast mf Frame
+        unitframe.deadLine1:SetStartPoint("BOTTOMLEFT", mf, ERACombatGrid_HealthOffsetFromMainFrame, ERACombatGrid_HealthOffsetFromMainFrame)
+        unitframe.deadLine1:SetEndPoint("TOPRIGHT", mf, -ERACombatGrid_HealthOffsetFromMainFrame, -ERACombatGrid_HealthOffsetFromMainFrame)
         unitframe.deadLine1:Hide()
         unitframe.deadLine2 = unitframe.mainFrame:CreateLine(nil, "OVERLAY", "ERACombatGridPlayerDeadLine")
-        unitframe.deadLine2:SetStartPoint("TOPLEFT", unitframe.mainFrame, ERACombatGrid_HealthOffsetFromMainFrame, -ERACombatGrid_HealthOffsetFromMainFrame)
-        unitframe.deadLine2:SetEndPoint("BOTTOMRIGHT", unitframe.mainFrame, -ERACombatGrid_HealthOffsetFromMainFrame, ERACombatGrid_HealthOffsetFromMainFrame)
+        unitframe.deadLine2:SetStartPoint("TOPLEFT", mf, ERACombatGrid_HealthOffsetFromMainFrame, -ERACombatGrid_HealthOffsetFromMainFrame)
+        unitframe.deadLine2:SetEndPoint("BOTTOMRIGHT", mf, -ERACombatGrid_HealthOffsetFromMainFrame, ERACombatGrid_HealthOffsetFromMainFrame)
         unitframe.deadLine2:Hide()
     end
 
@@ -718,6 +767,9 @@ end
 ERACombatGridAuraDefinition = {}
 ERACombatGridAuraDefinition.__index = ERACombatGridAuraDefinition
 
+---@class ERACombatGridAuraDefinition
+---@field instances ERACombatGridAuraInstance[]
+
 function ERACombatGridAuraDefinition:create(g, indexInAllAuras, spellID, isDebuff, position, priority, rC, gC, bC, rB, gB, bB, talent)
     local a = {}
     setmetatable(a, ERACombatGridAuraDefinition)
@@ -777,6 +829,12 @@ end
 
 ERACombatGridAuraInstance = {}
 ERACombatGridAuraInstance.__index = ERACombatGridAuraInstance
+
+---@class ERACombatGridAuraInstance
+---@field totDuration number
+---@field remDuration number
+---@field stacks number
+---@field unitframe ERACombatGridUnit
 
 function ERACombatGridAuraInstance:create(def, unitframe)
     local a = {}

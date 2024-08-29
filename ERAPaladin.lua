@@ -137,7 +137,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame)
     local sow = ERACombatFrames_PaladinProtectionShieldOrWOG:create(cFrame, -212, -101, health, shieldArmour, holyPower, freeWOG)
 
     local mana = ERACombatPower:Create(cFrame, -353, -60, 144, 22, 0, false, 0.2, 0.2, 1.0, 2)
-    function mana:ShouldBeVisible(t)
+    function mana:ShouldBeVisibleOverride(t)
         local ratio = self.currentPower / self.maxPower
         return ratio < 1 and (ratio < 0.5 or t < sow.lastFlashHeal + 5)
     end

@@ -2,6 +2,10 @@ ERACombatEnemiesTracker = {}
 ERACombatEnemiesTracker.__index = ERACombatEnemiesTracker
 setmetatable(ERACombatEnemiesTracker, { __index = ERACombatModule })
 
+---@class ERACombatEnemiesTracker
+---@field GetEnemiesCount fun(this:ERACombatEnemiesTracker):number
+---@field OnEnemyAdded fun(this:ERACombatEnemiesTracker, f:fun(tar:unknown, t:number))
+
 function ERACombatEnemiesTracker:GetEnemiesCount()
     return self.enemiesCount
 end
@@ -13,6 +17,11 @@ function ERACombatEnemiesTracker:OnEnemyRemoved(f)
     table.insert(self.onEnemyRemoved, f)
 end
 
+---comment
+---@param cFrame ERACombatFrame
+---@param updateCombat number
+---@param ... number
+---@return ERACombatEnemiesTracker
 function ERACombatEnemiesTracker:Create(cFrame, updateCombat, ...)
     local et = {}
     setmetatable(et, ERACombatEnemiesTracker)
@@ -215,6 +224,7 @@ function ERACombatEnemy:update(t)
             tmp.h = health
         end
     end
+    local expectancyBasedOnRecent
     if (health >= self.firstHealthTimeStamp.h) then
         expectancyBasedOnRecent = 100
     else

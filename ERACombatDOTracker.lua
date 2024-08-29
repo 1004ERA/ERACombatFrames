@@ -5,6 +5,23 @@ ERACombatDOTracker = {}
 ERACombatDOTracker.__index = ERACombatDOTracker
 setmetatable(ERACombatDOTracker, { __index = ERACombatModuleNestedInTimers })
 
+---@class ERACombatDOTracker : ERACombatModule
+
+---comment
+---@param auraID number
+---@param iconID number
+---@param r number
+---@param g number
+---@param b number
+---@param castTime number
+---@param durationFunction fun(this:ERACombatDOTDefinition, hastMod:number): number
+---@param damageFunction_instant_totalOverTime_duration fun(this:ERACombatDOTDefinition):instantDamage:number, overTimeDamage:number, damageModifidedByHaste:number, spreadsToNearbyTargets:boolean, instantDealtToNearbyTargets:number
+---@param talent ERALIBTalent | nil
+---@param limitedInstances boolean
+---@param rNotOnCurrentTarget number
+---@param gNotOnCurrentTarget number
+---@param bNotOnCurrentTarget number
+---@return ERACombatDOTDefinition
 function ERACombatDOTracker:AddDOT(
     auraID,
     iconID,
@@ -12,6 +29,7 @@ function ERACombatDOTracker:AddDOT(
     g,
     b,
     castTime,
+    durationFunction,
     damageFunction_instant_totalOverTime_duration,
     talent,
     limitedInstances,
@@ -36,6 +54,7 @@ function ERACombatDOTracker:AddDOT(
             g,
             b,
             castTime,
+            durationFunction,
             damageFunction_instant_totalOverTime_duration,
             talent,
             limitedInstances,
@@ -47,6 +66,12 @@ function ERACombatDOTracker:AddDOT(
     return d
 end
 
+---comment
+---@param timers ERACombatTimers
+---@param enemiesTracker ERACombatEnemiesTracker | nil
+---@param spec number
+---@param fillerDPSFunction fun(tracker:ERACombatDOTracker):number
+---@return ERACombatDOTracker
 function ERACombatDOTracker:Create(timers, enemiesTracker, spec, fillerDPSFunction)
     local dt = {}
     setmetatable(dt, ERACombatDOTracker)
@@ -226,6 +251,25 @@ end
 ERACombatDOTDefinition = {}
 ERACombatDOTDefinition.__index = ERACombatDOTDefinition
 
+---@class ERACombatDOTDefinition
+
+---comment
+---@param tracker ERACombatDOTracker
+---@param index number
+---@param auraID number
+---@param iconID number
+---@param r number
+---@param g number
+---@param b number
+---@param castTime number
+---@param durationFunction fun(this:ERACombatDOTDefinition, hastMod:number): number
+---@param damageFunction fun(this:ERACombatDOTDefinition):instantDamage:number, overTimeDamage:number, damageModifidedByHaste:number, spreadsToNearbyTargets:boolean, instantDealtToNearbyTargets:number
+---@param talent ERALIBTalent |nil
+---@param limitedInstances boolean
+---@param rNotOnCurrentTarget number
+---@param gNotOnCurrentTarget number
+---@param bNotOnCurrentTarget number
+---@return ERACombatDOTDefinition
 function ERACombatDOTDefinition:create(
     tracker,
     index,

@@ -49,18 +49,59 @@ end
 ---- UTILISATION ---------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERACombatTimers : ERACombatModule
+---@field remGCD number
+---@field haste number
+---@field occupied number
+---@field OnResetToIdle fun(this: ERACombatTimers)
+---@field PreUpdateCombatOverride fun(this: ERACombatTimers, t:number)
+---@field DataUpdatedOverride fun(this: ERACombatTimers, t:number)
+---@field AddTrackedBuff fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
+---@field AddTrackedDebuff fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
+---@field AddTrackedDebuffOnPlayer fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
+---@field AddTrackedCooldown fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil, ...: ERACombatTimersAdditionalID): ERACombatTimersCooldown
+---@field AddAuraBar fun(this: ERACombatTimers, aura: ERACombatTimersAura, iconID: number | nil, r: number, g: number, b: number, talent:ERALIBTalent|nil): ERACombatTimersAuraBar
+---@field AddTotemBar fun(this: ERACombatTimers, totemID: number, iconID: number, r: number, g: number, b: number, talent:ERALIBTalent|nil): ERACombatTimersStatusBar
+---@field AddCooldownIcon fun(this: ERACombatTimers, cd: ERACombatTimersCooldown, iconID: number | nil, x: number, y: number, showOnTimer: boolean, availableIfLessThanGCD: boolean, talent:ERALIBTalent|nil): ERACombatTimersCooldownIcon
+---@field AddAuraIcon fun(this: ERACombatTimers, aura: ERACombatTimersAura, x: number, y: number, iconID: number|nil, talent: ERALIBTalent|nil): ERACombatTimersAuraIcon
+---@field AddMissingAura fun(this: ERACombatTimers, aura:ERACombatTimersAura, iconID:number|nil, x:number, y:number, beam:boolean, talent:ERALIBTalent|nil): ERACombatTimersMissingAura
+---@field AddProc fun(this: ERACombatTimers, aura:ERACombatTimersAura, iconID:number|nil, x:number, y:number, beam:boolean, showStacks:boolean, talent:ERALIBTalent|nil): ERACombatTimersProc
+---@field AddStacksProgressIcon fun(this: ERACombatTimers, aura:ERACombatTimersAura, iconID:number|nil, x:number, y:number, maxStacks:number, talent:ERALIBTalent|nil): ERACombatTimersStacksProgress
+---@field AddOffensiveDispellIcon fun(this: ERACombatTimers, iconID:number|nil, x:number, y:number, beam:boolean, talent:ERALIBTalent|nil, ...:string): ERACombatTimersTargetDispellableIcon
+---@field AddPriority fun(this: ERACombatTimers, iconID:number): ERACombatTimerPriorityRawIcon
+---@field AddKick fun(this: ERACombatTimers, spellID:number, x:number, y:number, talent:ERALIBTalent|nil, displayOnlyIfSpellPetKnown?:boolean)
+---@field AddOffensiveDispellCooldown fun(this: ERACombatTimers, spellID:number, x:number, y:number, talent:ERALIBTalent|nil, ...:string)
+---@field AddChannelInfo fun(this: ERACombatTimers, spellID:number, tick:number)
+---@field AddMarker fun(this: ERACombatTimers, r:number, g:number, b:number, talent:ERALIBTalent|nil): ERACombatTimersMarker
+
+---@class ERACombatTimersAdditionalID
+---@field id number
+---@field talent ERALIBTalent | nil
+
+---comment
+---@param spellID number
+---@param talent number
+---@return ERACombatTimersAura
 function ERACombatTimersGroup:AddTrackedBuff(spellID, talent)
     local b = ERACombatAura:create(self, spellID, false, talent)
     self.trackedBuffs[spellID] = b
     return b
 end
 
+---comment
+---@param spellID number
+---@param talent number
+---@return ERACombatTimersAura
 function ERACombatTimersGroup:AddTrackedDebuff(spellID, talent)
     local b = ERACombatAura:create(self, spellID, true, talent)
     self.trackedDebuffs[spellID] = b
     return b
 end
 
+---comment
+---@param spellID number
+---@param talent number
+---@return ERACombatTimersAura
 function ERACombatTimersGroup:AddTrackedDebuffOnPlayer(spellID, talent)
     local b = ERACombatAura:create(self, spellID, true, talent)
     self.hasTrackedDebuffsOnPlayer = true
@@ -68,10 +109,23 @@ function ERACombatTimersGroup:AddTrackedDebuffOnPlayer(spellID, talent)
     return b
 end
 
+---comment
+---@param spellID number
+---@param talent ERALIBTalent | nil
+---@param ... ERACombatTimersAdditionalID
+---@return ERACombatTimersCooldown
 function ERACombatTimersGroup:AddTrackedCooldown(spellID, talent, ...)
     return ERACombatCooldown:create(self, spellID, talent, ...)
 end
 
+---comment
+---@param aura ERACombatTimersAura
+---@param iconID number | nil
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersAuraBar
 function ERACombatTimersGroup:AddAuraBar(aura, iconID, r, g, b, talent)
     if (not iconID) then
         -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
@@ -81,18 +135,50 @@ function ERACombatTimersGroup:AddAuraBar(aura, iconID, r, g, b, talent)
     return ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
 end
 
+---comment
+---@param totemID number
+---@param iconID number
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersStatusBar
 function ERACombatTimersGroup:AddTotemBar(totemID, iconID, r, g, b, talent)
     return ERACombatTimerTotemBar:create(self, totemID, iconID, r, g, b, talent)
 end
 
+---comment
+---@param cd ERACombatTimersCooldown
+---@param iconID number | nil
+---@param x number
+---@param y number
+---@param showOnTimer boolean
+---@param availableIfLessThanGCD boolean
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersCooldownIcon
 function ERACombatTimersGroup:AddCooldownIcon(cd, iconID, x, y, showOnTimer, availableIfLessThanGCD, talent)
     return ERACombatCooldownIcon:create(cd, x, y, iconID, showOnTimer, availableIfLessThanGCD, talent)
 end
 
+---comment
+---@param aura ERACombatTimersAura
+---@param x number
+---@param y number
+---@param iconID number | nil
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersAuraIcon
 function ERACombatTimersGroup:AddAuraIcon(aura, x, y, iconID, talent)
     return ERACombatAuraIcon:create(aura, x, y, iconID, talent)
 end
 
+---comment
+---@param aura ERACombatTimersAura
+---@param iconID number | nil
+---@param x number
+---@param y number
+---@param beam boolean
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersMissingAura
 function ERACombatTimersGroup:AddMissingAura(aura, iconID, x, y, beam, talent)
     if (not iconID) then
         -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
@@ -102,6 +188,15 @@ function ERACombatTimersGroup:AddMissingAura(aura, iconID, x, y, beam, talent)
     return ERACombatTimersMissingAura:create(aura, iconID, x, y, beam, talent)
 end
 
+---comment
+---@param aura ERACombatTimersAura
+---@param iconID number | nil
+---@param x number
+---@param y number
+---@param beam boolean
+---@param showStacks boolean
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersProc
 function ERACombatTimersGroup:AddProc(aura, iconID, x, y, beam, showStacks, talent)
     if (not iconID) then
         -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
@@ -111,6 +206,14 @@ function ERACombatTimersGroup:AddProc(aura, iconID, x, y, beam, showStacks, tale
     return ERACombatTimersProc:create(aura, iconID, x, y, beam, showStacks, talent)
 end
 
+---comment
+---@param aura ERACombatTimersAura
+---@param iconID number | nil
+---@param x number
+---@param y number
+---@param maxStacks number
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersStacksProgress
 function ERACombatTimersGroup:AddStacksProgressIcon(aura, iconID, x, y, maxStacks, talent)
     if (not iconID) then
         -- CHANGE 11 _, _, iconID = GetSpellInfo(aura.spellID)
@@ -120,22 +223,29 @@ function ERACombatTimersGroup:AddStacksProgressIcon(aura, iconID, x, y, maxStack
     return ERACombatTimersStacksProgress:create(aura, iconID, x, y, maxStacks, talent)
 end
 
-function ERACombatTimersGroup:AddChannelInfo(spellID, tick)
-    self.channelInfo[spellID] = tick
-end
-function ERACombatTimersGroup:AddMarker(r, g, b, talent)
-    return ERACombatTimerMarker:create(self, r, g, b, talent)
-end
-
+---comment
+---@param iconID number | nil
+---@param x any
+---@param y any
+---@param beam any
+---@param talent any
+---@param ... string
+---@return ERACombatTimersTargetDispellableIcon
 function ERACombatTimersGroup:AddOffensiveDispellIcon(iconID, x, y, beam, talent, ...)
     return ERACombatTimersTargetDispellableIcon:create(self, iconID, x, y, beam, talent, ...)
 end
 
+---comment
+---@param spellID any
+---@param x any
+---@param y any
+---@param talent any
+---@param displayOnlyIfSpellPetKnown any
 function ERACombatTimersGroup:AddKick(spellID, x, y, talent, displayOnlyIfSpellPetKnown)
     local timer = self:AddTrackedCooldown(spellID, talent)
-    local display = self:AddCooldownIcon(timer, nil, x, y, true, false)
+    local display = ERACombatCooldownIcon:create(timer, x, y, nil, true, false, talent)
     display.displayOnlyIfSpellPetKnown = displayOnlyIfSpellPetKnown
-    function display:OverrideTimerVisibility()
+    function display:TimerVisibilityOverride(t)
         if (self.group.targetCast > 0.1 + timer.remDuration) then
             self.icon:SetAlpha(1.0)
             return true
@@ -152,25 +262,31 @@ function ERACombatTimersGroup:AddKick(spellID, x, y, talent, displayOnlyIfSpellP
     table.insert(self.kicks, display)
 end
 
+---comment
+---@param spellID number
+---@param x number
+---@param y number
+---@param talent ERALIBTalent | nil
+---@param ... string
+---@return ERACombatTimersCooldownIcon
 function ERACombatTimersGroup:AddOffensiveDispellCooldown(spellID, x, y, talent, ...)
     self.watchTargetDispellable = true
     local timer = self:AddTrackedCooldown(spellID, talent)
-    local display = self:AddCooldownIcon(timer, nil, x, y, false, false)
+    local display = ERACombatCooldownIcon:create(timer, x, y, nil, false, false, talent)
     display.types = {}
     for i, t in ipairs { ... } do
         table.insert(display.types, t)
     end
     local selfThis = self
-    function display:OverrideTimerVisibility()
-        --[[
+    function display:TimerVisibilityOverride(t)
         local dispellable = false
         for i, t in ipairs(display.types) do
-            if (t == "Magic") then
+            if (t == "magic") then
                 if (selfThis.targetDispellableMagic) then
                     dispellable = true
                     break
                 end
-            elseif (t == "Rage") then
+            elseif (t == "enrage") then
                 if (selfThis.targetDispellableRage) then
                     dispellable = true
                     break
@@ -178,8 +294,6 @@ function ERACombatTimersGroup:AddOffensiveDispellCooldown(spellID, x, y, talent,
             end
         end
         if (dispellable) then
-            ]]
-        if (selfThis.targetDispellable) then
             display.icon:SetAlpha(1.0)
             if (timer.remDuration <= 0) then
                 display.icon:Beam()
@@ -196,16 +310,35 @@ function ERACombatTimersGroup:AddOffensiveDispellCooldown(spellID, x, y, talent,
     return display
 end
 
+---comment
+---@param iconID number
+---@return ERACombatTimerPriorityRawIcon
 function ERACombatTimersGroup:AddPriority(iconID)
     local x = ERACombatTimerPriorityRawIcon:create(iconID)
     table.insert(self.priorityIcons, x)
     return x
 end
 
+function ERACombatTimersGroup:AddChannelInfo(spellID, tick)
+    self.channelInfo[spellID] = tick
+end
+function ERACombatTimersGroup:AddMarker(r, g, b, talent)
+    return ERACombatTimerMarker:create(self, r, g, b, talent)
+end
+
 --------------------------------------------------------------------------------------------------------------------------------
 ---- TIMERS GROUP --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param baseGCD number
+---@param requiresCLEU boolean
+---@param reversed boolean
+---@param ... number specializations
+---@return ERACombatTimers
 function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, reversed, ...)
     local group = {}
     setmetatable(group, ERACombatTimersGroup)
@@ -330,7 +463,7 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, revers
         loc:updateLOC(locIndex, timeRemaining, duration)
     end
     function group.events:LOSS_OF_CONTROL_UPDATE()
-        -- hum, on ne fait rien car on recalcule toujours dans ERACombatTimerLOCBar:GetRemDurationOr0IfInvisible
+        -- hum, on ne fait rien car on recalcule toujours dans ERACombatTimerLOCBar:GetRemDurationOr0IfInvisibleOverride
     end
     for k, v in pairs(group.loc) do
         table.insert(group.bars, v)
@@ -702,7 +835,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
     -- màj données --
     -----------------
 
-    self:PreUpdateCombat(t)
+    self:PreUpdateCombatOverride(t)
 
     local locCount = C_LossOfControl.GetActiveLossOfControlDataCount()
     for i = 1, locCount do
@@ -795,7 +928,7 @@ function ERACombatTimersGroup:UpdateCombat(t)
         nestedHeight = self.nestedModule:updateAsNested_returnHeightForTimerOverlay(t) + self.nestedModule.offsetY
     end
 
-    self:DataUpdated(t)
+    self:DataUpdatedOverride(t)
 
     -------------------
     -- màj affichage --
@@ -927,9 +1060,9 @@ function ERACombatTimersGroup:calcTimerPixel(t)
     return -(t / self.totGCD) * (ERACombat_TimerWidth / ERACombat_TimerGCDCount)
 end
 
-function ERACombatTimersGroup:PreUpdateCombat(t)
+function ERACombatTimersGroup:PreUpdateCombatOverride(t)
 end
-function ERACombatTimersGroup:DataUpdated(t)
+function ERACombatTimersGroup:DataUpdatedOverride(t)
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -940,6 +1073,10 @@ end
 
 ERACombatTimer = {}
 ERACombatTimer.__index = ERACombatTimer
+
+---@class ERACombatTimer
+---@field remDuration number
+---@field totDuration number
 
 function ERACombatTimer:constructTimer(group, talent)
     self.totDuration = 1
@@ -980,6 +1117,11 @@ end
 ERACombatCooldown = {}
 ERACombatCooldown.__index = ERACombatCooldown
 setmetatable(ERACombatCooldown, { __index = ERACombatTimer })
+
+---@class ERACombatTimersCooldown : ERACombatTimer
+---@field currentCharges number
+---@field maxCharges number
+---@field hasCharges boolean
 
 function ERACombatCooldown:create(group, spellID, talent, ...)
     local t = {}
@@ -1099,6 +1241,10 @@ ERACombatAura = {}
 ERACombatAura.__index = ERACombatAura
 setmetatable(ERACombatAura, { __index = ERACombatTimer })
 
+---@class ERACombatTimersAura : ERACombatTimer
+---@field stacks number
+---@field spellID number
+
 function ERACombatAura:create(group, spellID, isDebuff, talent)
     local t = {}
     setmetatable(t, ERACombatAura)
@@ -1140,6 +1286,9 @@ end
 ERACombatTimerPriorityIcon = {}
 ERACombatTimerPriorityIcon.__index = ERACombatTimerPriorityIcon
 
+---@class ERACombatTimersPriorityIcon
+---@field ComputePriority fun(this: ERACombatTimersPriorityIcon, t:number): number
+
 function ERACombatTimerPriorityIcon:construct()
 
 end
@@ -1160,6 +1309,9 @@ ERACombatTimerPriorityRawIcon = {}
 ERACombatTimerPriorityRawIcon.__index = ERACombatTimerPriorityRawIcon
 setmetatable(ERACombatTimerPriorityRawIcon, { __index = ERACombatTimerPriorityIcon })
 
+---@class ERACombatTimerPriorityRawIcon : ERACombatTimersPriorityIcon
+---@field icon ERASquareIcon
+
 function ERACombatTimerPriorityRawIcon:create(iconID)
     local pri = {}
     setmetatable(pri, ERACombatTimerPriorityRawIcon)
@@ -1172,14 +1324,14 @@ function ERACombatTimerPriorityRawIcon:createOverlayDisplay(group)
     self.icon = ERASquareIcon:Create(group.frameOverlay, "CENTER", ERACombat_TimerIconCooldownSize, self.iconID)
 end
 function ERACombatTimerPriorityRawIcon:updatePriority(t)
-    self.priority = self:computePriority(t)
+    self.priority = self:ComputePriority(t)
     if (self.priority > 0) then
         self.icon:Show()
     else
         self.icon:Hide()
     end
 end
-function ERACombatTimerPriorityRawIcon:computePriority(t)
+function ERACombatTimerPriorityRawIcon:ComputePriority(t)
     return 0
 end
 
@@ -1201,6 +1353,10 @@ end
 
 ERACombatTimerMarker = {}
 ERACombatTimerMarker.__index = ERACombatTimerMarker
+
+---@class ERACombatTimersMarker
+---@field ComputeTimeOr0IfInvisibleOverride fun(this:ERACombatTimersMarker, haste:number): number
+---@field SetColor fun(this:ERACombatTimersMarker, r:number, g:number, b:number)
 
 function ERACombatTimerMarker:create(group, r, g, b, talent)
     local m = {}
@@ -1245,7 +1401,7 @@ function ERACombatTimerMarker:checkTalentsOrHide()
 end
 
 function ERACombatTimerMarker:update(haste, timerHeight, reversed)
-    local t = self:computeTimeOr0IfInvisible(haste)
+    local t = self:ComputeTimeOr0IfInvisibleOverride(haste)
     if (t > 0) then
         local px = self.group:calcTimerPixel(t)
         if (px ~= self.pixel or timerHeight ~= self.height) then
@@ -1265,7 +1421,7 @@ function ERACombatTimerMarker:update(haste, timerHeight, reversed)
     end
 end
 
-function ERACombatTimerMarker:computeTimeOr0IfInvisible(haste)
+function ERACombatTimerMarker:ComputeTimeOr0IfInvisibleOverride(haste)
     return 0
 end
 
@@ -1284,6 +1440,11 @@ end
 
 ERACombatTimerIcon = {}
 ERACombatTimerIcon.__index = ERACombatTimerIcon
+
+---@class ERACombatTimersIcon
+---@field icon ERAPieIcon
+---@field ComputeAvailablePriorityOverride fun(this:ERACombatTimersIcon): number
+---@field group ERACombatTimers
 
 function ERACombatTimerIcon:construct(group, x, y, iconID, showOnTimer)
     self.group = group
@@ -1395,7 +1556,7 @@ function ERACombatTimerIcon:drawOnTimer(timerHeight, timerStandardDuration, prvI
             if (self.timerDuration < 0) then
                 self.priorityObject.priority = 0
             else
-                self.priorityObject.priority = self:computeAvailablePriority()
+                self.priorityObject.priority = self:ComputeAvailablePriorityOverride()
             end
             if (self.timerLineVisible) then
                 self.line:Hide()
@@ -1420,7 +1581,7 @@ function ERACombatTimerIcon:drawOnTimer(timerHeight, timerStandardDuration, prvI
     end
 end
 
-function ERACombatTimerIcon:computeAvailablePriority()
+function ERACombatTimerIcon:ComputeAvailablePriorityOverride()
     return 0
 end
 
@@ -1429,6 +1590,12 @@ end
 ERACombatCooldownIcon = {}
 ERACombatCooldownIcon.__index = ERACombatCooldownIcon
 setmetatable(ERACombatCooldownIcon, { __index = ERACombatTimerIcon })
+
+---@class ERACombatTimersCooldownIcon : ERACombatTimersIcon
+---@field cd ERACombatTimersCooldown
+---@field ShouldShowMainIconOverride fun(this: ERACombatTimersCooldownIcon, t: number): boolean
+---@field TimerVisibilityOverride fun(this: ERACombatTimersCooldownIcon, t: number): boolean
+---@field HighlightOverride fun(this: ERACombatTimersCooldownIcon, t: number): boolean return FALSE if you want to keep the default behaviour based on IsSpellOverlayed
 
 function ERACombatCooldownIcon:create(cd, x, y, iconID, showOnTimer, availableIfLessThanGCD, talent)
     local i = {}
@@ -1512,14 +1679,14 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
         self.shouldShowMainIcon = false
         self.timerDuration = -1
     else
-        self.shouldShowMainIcon = self:ShouldShowMainIcon()
+        self.shouldShowMainIcon = self:ShouldShowMainIconOverride(t)
         local dur = self.cd.remDuration
         if (self.cd.hasCharges) then
             self.icon:SetAlpha(1)
             self.icon:SetOverlayValue(dur / self.cd.totDuration)
             if (self.cd.currentCharges > 0) then
                 ERACombatCooldownIcon_SetSaturatedAndChargesText(self, self.cd)
-                if (self:OverrideTimerVisibility()) then
+                if (self:TimerVisibilityOverride(t)) then
                     if (self.iconTimer) then
                         self.iconTimer:SetDesaturated(self.cd.currentCharges + 1 < self.cd.maxCharges)
                     end
@@ -1531,7 +1698,7 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
                 self.icon:SetDesaturated(true)
                 self.icon:SetSecondaryText(nil)
                 self.icon:SetMainText(math.floor(dur))
-                if (self:OverrideTimerVisibility()) then
+                if (self:TimerVisibilityOverride(t)) then
                     self.timerDuration = dur
                     if (self.iconTimer) then
                         self.iconTimer:SetDesaturated(true)
@@ -1554,7 +1721,7 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
                 self.icon:SetOverlayValue(0)
                 self.icon:SetDesaturated(false)
                 self.icon:SetMainText(nil)
-                if (self:OverrideTimerVisibility()) then
+                if (self:TimerVisibilityOverride(t)) then
                     self.timerDuration = 0
                 else
                     self.timerDuration = -1
@@ -1564,7 +1731,7 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
                 self.icon:SetOverlayValue(dur / self.cd.totDuration)
                 local dimmed = dur > self.group.timerStandardDuration
                 self.icon:SetDesaturated(dimmed)
-                if (self:OverrideTimerVisibility()) then
+                if (self:TimerVisibilityOverride(t)) then
                     self.timerDuration = dur
                     if (dimmed) then
                         self.icon:SetMainText(math.floor(dur))
@@ -1595,7 +1762,7 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
                 self.previousDur = dur
             end
         end
-        if (not self:OverrideHighlight()) then
+        if (not self:HighlightOverride()) then
             if (IsSpellOverlayed(self.cd.spellID)) then
                 self.icon:Highlight()
             else
@@ -1605,15 +1772,15 @@ function ERACombatCooldownIcon:updateTimerDurationAndMainIconVisibility(t, timer
     end
 end
 
-function ERACombatCooldownIcon:ShouldShowMainIcon()
+function ERACombatCooldownIcon:ShouldShowMainIconOverride(t)
     return true
 end
 
-function ERACombatCooldownIcon:OverrideTimerVisibility()
+function ERACombatCooldownIcon:TimerVisibilityOverride(t)
     return true
 end
 
-function ERACombatCooldownIcon:OverrideHighlight()
+function ERACombatCooldownIcon:HighlightOverride(t)
     return false
 end
 
@@ -1622,6 +1789,11 @@ end
 ERACombatAuraIcon = {}
 ERACombatAuraIcon.__index = ERACombatAuraIcon
 setmetatable(ERACombatAuraIcon, { __index = ERACombatTimerIcon })
+
+---@class ERACombatTimersAuraIcon : ERACombatTimersIcon
+---@field aura ERACombatTimersAura
+---@field IconUpdatedAndShown fun(this:ERACombatTimersAuraIcon, t:number): boolean
+---@field ShouldShowWhenAbsentOverride fun(this:ERACombatTimersAuraIcon, t:number): boolean
 
 function ERACombatAuraIcon:create(aura, x, y, iconID, talent)
     local i = {}
@@ -1667,9 +1839,9 @@ function ERACombatAuraIcon:updateTimerDurationAndMainIconVisibility(t, timerStan
             self.icon:SetMainText(nil)
         end
         self.icon:SetMainTextColor(1.0, 1.0, 1.0)
-        self:IconUpdatedAndShown()
+        self:IconUpdatedAndShown(t)
     else
-        if (self:ShouldShowWhenAbsent()) then
+        if (self:ShouldShowWhenAbsentOverride(t)) then
             self.icon:SetOverlayValue(0)
             self.icon:SetDesaturated(true)
             self.icon:SetMainText("X")
@@ -1681,10 +1853,10 @@ function ERACombatAuraIcon:updateTimerDurationAndMainIconVisibility(t, timerStan
     end
 end
 
-function ERACombatAuraIcon:IconUpdatedAndShown()
+function ERACombatAuraIcon:IconUpdatedAndShown(t)
 end
 
-function ERACombatAuraIcon:ShouldShowWhenAbsent()
+function ERACombatAuraIcon:ShouldShowWhenAbsentOverride(t)
     return true
 end
 
@@ -1694,6 +1866,10 @@ end
 
 ERACombatTimerStatusBar = {}
 ERACombatTimerStatusBar.__index = ERACombatTimerStatusBar
+
+---@class ERACombatTimersStatusBar
+---@field GetRemDurationOr0IfInvisibleOverride fun(this: ERACombatTimersStatusBar, t: number): number
+---@field group ERACombatTimers
 
 function ERACombatTimerStatusBar:construct(group, iconID, r, g, b, texture, parentFrame)
     -- assignation
@@ -1719,10 +1895,10 @@ function ERACombatTimerStatusBar:hide()
 end
 
 function ERACombatTimerStatusBar:updateDuration(t)
-    self.remDuration = self:GetRemDurationOr0IfInvisible(t)
+    self.remDuration = self:GetRemDurationOr0IfInvisibleOverride(t)
 end
 
--- abstract function ERACombatTimerStatusBar:GetRemDurationOr0IfInvisible()
+-- abstract function ERACombatTimerStatusBar:GetRemDurationOr0IfInvisibleOverride()
 
 function ERACombatTimerStatusBar:drawOrHide(y, timerStandardDuration, reversed)
     if (self.remDuration > 0) then
@@ -1739,6 +1915,9 @@ end
 ERACombatTimerAuraBar = {}
 ERACombatTimerAuraBar.__index = ERACombatTimerAuraBar
 setmetatable(ERACombatTimerAuraBar, { __index = ERACombatTimerStatusBar })
+
+---@class ERACombatTimersAuraBar : ERACombatTimersStatusBar
+---@field aura ERACombatTimersAura
 
 function ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
     local bar = {}
@@ -1759,7 +1938,7 @@ function ERACombatTimerAuraBar:checkTalentsOrHide()
     end
 end
 
-function ERACombatTimerAuraBar:GetRemDurationOr0IfInvisible(t)
+function ERACombatTimerAuraBar:GetRemDurationOr0IfInvisibleOverride(t)
     if (self.showStacks) then
         self.view:SetText(self.aura.stacks)
     end
@@ -1790,7 +1969,7 @@ function ERACombatTimerTotemBar:checkTalentsOrHide()
     end
 end
 
-function ERACombatTimerTotemBar:GetRemDurationOr0IfInvisible(t)
+function ERACombatTimerTotemBar:GetRemDurationOr0IfInvisibleOverride(t)
     local haveTotem, _, startTime, duration = GetTotemInfo(self.totemID)
     if (haveTotem) then
         self.haveTotem = true
@@ -1833,7 +2012,7 @@ function ERACombatTimerLOCBar:foundActive(locTypeDescription, remDuration, icon)
     self.locRemDuration = remDuration
 end
 
-function ERACombatTimerLOCBar:GetRemDurationOr0IfInvisible(t)
+function ERACombatTimerLOCBar:GetRemDurationOr0IfInvisibleOverride(t)
     if (self.locRemDuration > 0) then
         local tmp = self.locRemDuration
         self.locRemDuration = 0
@@ -1873,7 +2052,7 @@ function ERACombatTimerTargetCastBar:checkTalentsOrHide()
     return true
 end
 
-function ERACombatTimerTargetCastBar:GetRemDurationOr0IfInvisible(t)
+function ERACombatTimerTargetCastBar:GetRemDurationOr0IfInvisibleOverride(t)
     local c = self.group.targetCast
     if (c > 0) then
         local couldKick = false
@@ -2195,6 +2374,9 @@ end
 ERACombatTimersHintIcon = {}
 ERACombatTimersHintIcon.__index = ERACombatTimersHintIcon
 
+---@class ERACombatTimersHintIcon
+---@field ComputeIsVisibleOverride fun(this:ERACombatTimersHintIcon, t:number): boolean
+
 function ERACombatTimersHintIcon:construct(group, iconID, x, y, talent)
     self.group = group
     self.icon:Draw(
@@ -2220,18 +2402,19 @@ function ERACombatTimersHintIcon:talentIncactive()
 end
 
 function ERACombatTimersHintIcon:update(t)
-    if (self:ComputeIsVisible(t)) then
+    if (self:ComputeIsVisibleOverride(t)) then
         self.icon:Show()
     else
         self.icon:Hide()
     end
 end
 
--- abstract function ERACombatTimersHintIcon:ComputeIsVisible(t)
-
 ERACombatTimersHintSquareIcon = {}
 ERACombatTimersHintSquareIcon.__index = ERACombatTimersHintSquareIcon
 setmetatable(ERACombatTimersHintSquareIcon, { __index = ERACombatTimersHintIcon })
+
+---@class ERACombatTimersHintSquareIcon
+---@field icon ERASquareIcon
 
 function ERACombatTimersHintSquareIcon:constructSquare(group, iconID, x, y, beam, talent)
     self.icon = ERASquareIcon:Create(group.frame, "CENTER", ERACombat_TimerIconSize, iconID)
@@ -2245,6 +2428,9 @@ ERACombatTimersHintProgressIcon = {}
 ERACombatTimersHintProgressIcon.__index = ERACombatTimersHintProgressIcon
 setmetatable(ERACombatTimersHintProgressIcon, { __index = ERACombatTimersHintIcon })
 
+---@class ERACombatTimersHintProgressIcon : ERACombatTimersHintIcon
+---@field icon ERAPieIcon
+
 function ERACombatTimersHintProgressIcon:constructProgress(group, iconID, x, y, talent)
     self.icon = ERAPieIcon:Create(group.frame, "CENTER", ERACombat_TimerIconSize, iconID)
     self:construct(group, iconID, x, y, talent)
@@ -2256,6 +2442,10 @@ ERACombatTimersMissingAura = {}
 ERACombatTimersMissingAura.__index = ERACombatTimersMissingAura
 setmetatable(ERACombatTimersMissingAura, { __index = ERACombatTimersHintSquareIcon })
 
+---@class ERACombatTimersMissingAura : ERACombatTimersHintSquareIcon
+---@field aura ERACombatTimersAura
+---@field AuraVisibleOverride fun(this:ERACombatTimersMissingAura, t:number): boolean
+
 function ERACombatTimersMissingAura:create(aura, iconID, x, y, beam, talent)
     local mi = {}
     setmetatable(mi, ERACombatTimersMissingAura)
@@ -2264,14 +2454,14 @@ function ERACombatTimersMissingAura:create(aura, iconID, x, y, beam, talent)
     return mi
 end
 
-function ERACombatTimersMissingAura:ComputeIsVisible(t)
+function ERACombatTimersMissingAura:ComputeIsVisibleOverride(t)
     if (self.aura.isDebuff and not UnitExists("target")) then
         return false
     else
-        return (self.aura.stacks <= 0 or self.aura.remDuration <= 0) and self:OverrideVisible(t)
+        return (self.aura.stacks <= 0 or self.aura.remDuration <= 0) and self:AuraVisibleOverride(t)
     end
 end
-function ERACombatTimersMissingAura:OverrideVisible(t)
+function ERACombatTimersMissingAura:AuraVisibleOverride(t)
     return true
 end
 
@@ -2280,6 +2470,9 @@ end
 ERACombatTimersProc = {}
 ERACombatTimersProc.__index = ERACombatTimersProc
 setmetatable(ERACombatTimersProc, { __index = ERACombatTimersHintSquareIcon })
+
+---@class ERACombatTimersProc : ERACombatTimersHintSquareIcon
+---@field aura ERACombatTimersAura
 
 function ERACombatTimersProc:create(aura, iconID, x, y, beam, showStacks, talent)
     local pr = {}
@@ -2291,7 +2484,7 @@ function ERACombatTimersProc:create(aura, iconID, x, y, beam, showStacks, talent
     return pr
 end
 
-function ERACombatTimersProc:ComputeIsVisible(t)
+function ERACombatTimersProc:ComputeIsVisibleOverride(t)
     if (self.aura.remDuration > 0) then
         if (self.showStacks) then
             local s = self.aura.stacks
@@ -2316,6 +2509,9 @@ ERACombatTimersTargetDispellableIcon = {}
 ERACombatTimersTargetDispellableIcon.__index = ERACombatTimersTargetDispellableIcon
 setmetatable(ERACombatTimersTargetDispellableIcon, { __index = ERACombatTimersHintSquareIcon })
 
+---@class ERACombatTimersTargetDispellableIcon : ERACombatTimersHintSquareIcon
+---@field ComputeDispellableIsVisibleOverride fun(this:ERACombatTimersTargetDispellableIcon, t:number): boolean
+
 function ERACombatTimersTargetDispellableIcon:create(group, iconID, x, y, beam, talent, ...)
     local mi = {}
     setmetatable(mi, ERACombatTimersTargetDispellableIcon)
@@ -2328,29 +2524,35 @@ function ERACombatTimersTargetDispellableIcon:create(group, iconID, x, y, beam, 
     return mi
 end
 
-function ERACombatTimersTargetDispellableIcon:ComputeIsVisible(t)
-    return self.group.targetDispellable
-    --[[
-    for i, t in ipairs(self.types) do
-        if (t == "Magic") then
+function ERACombatTimersTargetDispellableIcon:ComputeIsVisibleOverride(t)
+    for _, t in ipairs(self.types) do
+        if (t == "magic") then
             if (self.group.targetDispellableMagic) then
-                return true
+                return self:ComputeDispellableIsVisibleOverride(t)
             end
-        elseif (t == "Enrage") then
+        elseif (t == "enrage") then
             if (self.group.targetDispellableRage) then
-                return true
+                return self:ComputeDispellableIsVisibleOverride(t)
             end
         end
     end
     return false
-    ]]
 end
+function ERACombatTimersTargetDispellableIcon:ComputeDispellableIsVisibleOverride(t)
+    return true
+end
+
 
 -- stack progress
 
 ERACombatTimersStacksProgress = {}
 ERACombatTimersStacksProgress.__index = ERACombatTimersStacksProgress
 setmetatable(ERACombatTimersStacksProgress, { __index = ERACombatTimersHintProgressIcon })
+
+---@class ERACombatTimersStacksProgress : ERACombatTimersHintProgressIcon
+---@field aura ERACombatTimersAura
+---@field ShouldHighlightOverride fun(this:ERACombatTimersStacksProgress, t:number): boolean
+---@field highlightWhenFull boolean
 
 function ERACombatTimersStacksProgress:create(aura, iconID, x, y, maxStacks, talent)
     local pr = {}
@@ -2362,14 +2564,14 @@ function ERACombatTimersStacksProgress:create(aura, iconID, x, y, maxStacks, tal
     return pr
 end
 
-function ERACombatTimersStacksProgress:ComputeIsVisible(t)
+function ERACombatTimersStacksProgress:ComputeIsVisibleOverride(t)
     local s = self.aura.stacks
     if (s > 0) then
         if (self.stacks ~= s) then
             self.stacks = s
             self.icon:SetMainText(self.stacks)
         end
-        if (self:ShouldHighlight(t)) then
+        if (self:ShouldHighlightOverride(t)) then
             self.icon:Highlight()
         else
             self.icon:StopHighlight()
@@ -2381,6 +2583,6 @@ function ERACombatTimersStacksProgress:ComputeIsVisible(t)
     end
 end
 
-function ERACombatTimersStacksProgress:ShouldHighlight(t)
+function ERACombatTimersStacksProgress:ShouldHighlightOverride(t)
     return self.highlightWhenFull and self.stacks >= self.maxStacks
 end

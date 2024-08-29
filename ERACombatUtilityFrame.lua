@@ -7,94 +7,152 @@ ERACombatUtilityFrame_IconSpacing = 4
 ERACombatUtilityFrame_LongCooldownThreshold = 30
 
 ---@class ERACombatUtilityFrame
----@field AddCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, showInCombat:boolean, talent:ERALIBTalent | nil, ...:integer)
----@field AddTrinket1Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
----@field AddTrinket2Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
----@field AddCloakCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
----@field AddBeltCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil)
----@field AddWarlockHealthStone fun(this:ERACombatUtilityFrame, x:number, y:number)
+---@field AddCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, showInCombat:boolean, talent:ERALIBTalent | nil, ...:integer): ERACombatUtilityCooldown
+---@field AddDefensiveDispellCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, talent:ERALIBTalent|nil, ...:string): ERACombatUtilityCooldownBase
+---@field AddTrackedBuff fun(this:ERACombatUtilityFrame, spellID:number, talent:ERALIBTalent | nil): ERACombatUtilityBuffTracker
+---@field AddTrackedDebuffAnyCaster fun(this:ERACombatUtilityFrame, spellID:number, talent:ERALIBTalent | nil): ERACombatUtilityDebuffTracker
+---@field AddMissingBuffAnyCaster fun(this:ERACombatUtilityFrame, iconID: number, x:number, y:number, talent:ERALIBTalent | nil, ...: number): ERACombatUtilityMissingBuffAnyCaster
+---@field AddDebuffAnyCasterIcon fun(this:ERACombatUtilityFrame, aura:ERACombatUtilityMissingBuffAnyCaster, iconID:number, x:number, y:number, showInCombat:boolean, talent:ERALIBTalent | nil): ERACombatUtilityDebuffAnyCaster
+---@field AddTrinket1Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
+---@field AddTrinket2Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
+---@field AddCloakCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
+---@field AddBeltCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
 ---@field AddRacial fun(this:ERACombatUtilityFrame, x:number, y:number)
+---@field AddWarlockHealthStone fun(this:ERACombatUtilityFrame, x:number, y:number)
 ---@field AddWarlockPortal fun(this:ERACombatUtilityFrame, x:number, y:number)
----@field AddDefensiveDispellCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, spellID:integer, iconID:integer | nil, talent:ERALIBTalent|nil, ...:string)
+---@field AddBagItem fun(this:ERACombatUtilityFrame, x:number, y:number, itemID:number, iconID:number, warningIfMissing:boolean, talent:ERALIBTalent | nil): ERACombatUtilityBagItem
 
 ERACombatUtilityFrame = {}
 ERACombatUtilityFrame.__index = ERACombatUtilityFrame
 setmetatable(ERACombatUtilityFrame, { __index = ERACombatModule })
 
+---comment
+---@param x number
+---@param y number
+---@param spellID number
+---@param iconID number | nil
+---@param showInCombat boolean
+---@param talent ERALIBTalent | nil
+---@param ... integer
+---@return ERACombatUtilityCooldown
 function ERACombatUtilityFrame:AddCooldown(x, y, spellID, iconID, showInCombat, talent, ...)
     return ERACombatUtilityCooldown:create(self, x, y, spellID, iconID, showInCombat, talent, ...)
 end
 
+---comment
+---@param x number
+---@param y number
+---@param iconID number | nil
+---@return ERACombatUtilityInventoryCooldown
 function ERACombatUtilityFrame:AddTrinket1Cooldown(x, y, iconID)
     return ERACombatUtilityInventoryCooldown:create(self, x, y, iconID or 465875, INVSLOT_TRINKET1)
 end
+---comment
+---@param x number
+---@param y number
+---@param iconID number | nil
+---@return ERACombatUtilityInventoryCooldown
 function ERACombatUtilityFrame:AddTrinket2Cooldown(x, y, iconID)
     return ERACombatUtilityInventoryCooldown:create(self, x, y, iconID or 3610503, INVSLOT_TRINKET2)
 end
+
+---comment
+---@param x number
+---@param y number
+---@param iconID number | nil
+---@return ERACombatUtilityInventoryCooldown
 function ERACombatUtilityFrame:AddCloakCooldown(x, y, iconID)
     return ERACombatUtilityInventoryCooldown:create(self, x, y, iconID or 530999, INVSLOT_BACK)
 end
+---comment
+---@param x number
+---@param y number
+---@param iconID number | nil
+---@return ERACombatUtilityInventoryCooldown
 function ERACombatUtilityFrame:AddBeltCooldown(x, y, iconID)
     return ERACombatUtilityInventoryCooldown:create(self, x, y, iconID or 443322, INVSLOT_WAIST)
 end
 
---[[
-function ERACombatUtilityFrame:AddCovenantClassAbility(x, y, kyrian, venthyr, nightfae, necrolords, kyrianSpellKnown)
-    ERACombatUtilityCooldown:create(self, x, y, kyrian, nil, true, ERALIBTalent:CreateKyrianOrSpellKnown(kyrianSpellKnown or kyrian))
-    if (venthyr) then
-        ERACombatUtilityCooldown:create(self, x, y, venthyr, nil, true, ERALIBTalent:CreateVenthyrOrSpellKnown(venthyr))
-    end
-    if (nightfae) then
-        ERACombatUtilityCooldown:create(self, x, y, nightfae, nil, true, ERALIBTalent:CreateNightfaeOrSpellKnown(nightfae))
-    end
-    ERACombatUtilityCooldown:create(self, x, y, necrolords, nil, true, ERALIBTalent:CreateNecrolordsOrSpellKnown(necrolords))
-end
-function ERACombatUtilityFrame:AddCovenantGenericAbility(x, y)
-    self:AddBagItem(x, y, 177278, 463534, false, ERALIBTalent_Kyrian)
-
-    ERACombatUtilityCooldown:create(self, x, y, 300728, nil, true, ERALIBTalent_VenthyrOrGenericSpell)
-
-    local talent_nightfae = ERALIBTalent:CreateNightfaeOrSpellKnown(310143)
-    local blink = ERACombatUtilityCooldown:create(self, x, y, 324701, 3586269, true, talent_nightfae)
-    local foxBuff = self:AddTrackedBuff(310143, talent_nightfae)
-    function blink:IconUpdatedAndShown(t)
-        if (foxBuff.remDuration <= 0) then
-            self.icon:Hide()
-        end
-    end
-    local fox = ERACombatUtilityCooldown:create(self, x, y, 310143, 3586268, true, talent_nightfae)
-    function fox:IconUpdatedAndShown(t)
-        if (blink.remDuration > 0) then
-            self.icon:Hide()
-        end
-    end
-
-    ERACombatUtilityCooldown:create(self, x, y, 324631, nil, true, ERALIBTalent:CreateNecrolordsOrSpellKnown(324631))
-end
-]]
-
+---comment
+---@param aura any
+---@param iconID any
+---@param x any
+---@param y any
+---@param showInCombat any
+---@param talent any
+---@return ERACombatUtilityDebuffAnyCaster
 function ERACombatUtilityFrame:AddDebuffAnyCasterIcon(aura, iconID, x, y, showInCombat, talent)
     return ERACombatUtilityDebuffAnyCaster:create(aura, iconID, x, y, showInCombat, talent)
 end
+
+---comment
+---@param aura ERACombatUtilityBuffTracker
+---@param iconID number
+---@param x number
+---@param y number
+---@param showInCombat boolean
+---@param talent ERALIBTalent | nil
+---@return ERACombatUtilityAuraIcon
 function ERACombatUtilityFrame:AddBuffIcon(aura, iconID, x, y, showInCombat, talent)
     return ERACombatUtilityBuff:create(aura, iconID, x, y, showInCombat, talent)
 end
+---comment
+---@param iconID number
+---@param x number
+---@param y number
+---@param talent ERALIBTalent | nil
+---@param ... number
+---@return ERACombatUtilityMissingBuffAnyCaster
 function ERACombatUtilityFrame:AddMissingBuffAnyCaster(iconID, x, y, talent, ...)
     return ERACombatUtilityMissingBuffAnyCaster:create(self, iconID, x, y, talent, ...)
 end
+---comment
+---@param iconID number
+---@param x number
+---@param y number
+---@param talent ERALIBTalent | nil
+---@param ... number IDs
+---@return ERACombatUtilityMissingBuffOnGroupMember
 function ERACombatUtilityFrame:AddMissingBuffOnGroupMember(iconID, x, y, talent, ...)
     return ERACombatUtilityMissingBuffOnGroupMember:create(self, iconID, x, y, talent, ...)
 end
+---comment
+---@param aura ERACombatUtilityBuffTracker
+---@param iconID number
+---@param x number
+---@param y number
+---@param showInCombat boolean
+---@param beam boolean
+---@param talent ERALIBTalent | nil
+---@param ... number IDs
+---@return ERACombatUtilityMissingAura
 function ERACombatUtilityFrame:AddMissingBuff(aura, iconID, x, y, showInCombat, beam, talent, ...)
     return ERACombatUtilityMissingAura:create(aura, iconID, x, y, showInCombat, beam, talent, ...)
 end
+
+---comment
+---@param spellID number
+---@param talent ERALIBTalent | nil
+---@return ERACombatUtilityBuffTracker
 function ERACombatUtilityFrame:AddTrackedBuff(spellID, talent)
     return ERACombatUtilityBuffTracker:create(self, spellID, talent)
 end
+---comment
+---@param spellID number
+---@param talent ERALIBTalent | nil
+---@return ERACombatUtilityDebuffTracker
 function ERACombatUtilityFrame:AddTrackedDebuffAnyCaster(spellID, talent)
     return ERACombatUtilityDebuffAnyCasterTracker:create(self, spellID, talent)
 end
 
+---comment
+---@param x number
+---@param y number
+---@param spellID number
+---@param iconID number
+---@param talent ERALIBTalent | nil
+---@param ... string IDs
+---@return ERACombatUtilityCooldownBase
 function ERACombatUtilityFrame:AddDefensiveDispellCooldown(x, y, spellID, iconID, talent, ...)
     local c = ERACombatUtilityDefensiveDispellCooldown:create(self, x, y, spellID, iconID, talent)
     self.watchDefensiveDispell = true
@@ -109,6 +167,10 @@ function ERACombatUtilityFrame:AddDefensiveDispellCooldown(x, y, spellID, iconID
     return c
 end
 
+---comment
+---@param x number
+---@param y number
+---@return ERACombatUtilityCooldown | nil
 function ERACombatUtilityFrame:AddRacial(x, y)
     local _, _, r = UnitRace("player")
     local spellID = nil
@@ -175,6 +237,15 @@ function ERACombatUtilityFrame:AddWarlockPortal(x, y)
     d.fade = true
     return d
 end
+
+---comment
+---@param x number
+---@param y number
+---@param itemID number
+---@param iconID number
+---@param warningIfMissing boolean
+---@param talent ERALIBTalent |nil
+---@return ERACombatUtilityBagItem
 function ERACombatUtilityFrame:AddBagItem(x, y, itemID, iconID, warningIfMissing, talent)
     return ERACombatUtilityBagItem:create(self, x, y, itemID, iconID, warningIfMissing, talent)
 end
@@ -471,6 +542,10 @@ end
 ERACombatUtilityAuraTracker = {}
 ERACombatUtilityAuraTracker.__index = ERACombatUtilityAuraTracker
 
+---@class ERACombatUtilityAuraTracker
+---@field totDuration number
+---@field remDuration number
+
 function ERACombatUtilityAuraTracker:construct(owner, spellID, talent)
     self.talent = talent
     self.spellID = spellID
@@ -521,6 +596,8 @@ ERACombatUtilityBuffTracker = {}
 ERACombatUtilityBuffTracker.__index = ERACombatUtilityBuffTracker
 setmetatable(ERACombatUtilityBuffTracker, { __index = ERACombatUtilityAuraTracker })
 
+---@class ERACombatUtilityBuffTracker : ERACombatUtilityAuraTracker
+
 function ERACombatUtilityBuffTracker:create(owner, spellID, talent)
     local bt = {}
     setmetatable(bt, ERACombatUtilityBuffTracker)
@@ -536,6 +613,8 @@ end
 ERACombatUtilityDebuffAnyCasterTracker = {}
 ERACombatUtilityDebuffAnyCasterTracker.__index = ERACombatUtilityDebuffAnyCasterTracker
 setmetatable(ERACombatUtilityDebuffAnyCasterTracker, { __index = ERACombatUtilityAuraTracker })
+
+---@class ERACombatUtilityDebuffTracker : ERACombatUtilityAuraTracker
 
 function ERACombatUtilityDebuffAnyCasterTracker:create(owner, spellID, talent)
     local bt = {}
@@ -600,6 +679,10 @@ ERACombatUtilityCooldownBase = {}
 ERACombatUtilityCooldownBase.__index = ERACombatUtilityCooldownBase
 setmetatable(ERACombatUtilityCooldownBase, { __index = ERACombatUtilityIcon })
 
+---@class ERACombatUtilityCooldownBase
+---@field remDuration number
+---@field totDuration number
+
 function ERACombatUtilityCooldownBase:constructBase(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     self.iconID = iconID
     if (not iconID) then
@@ -646,6 +729,12 @@ end
 ERACombatUtilityCooldown = {}
 ERACombatUtilityCooldown.__index = ERACombatUtilityCooldown
 setmetatable(ERACombatUtilityCooldown, { __index = ERACombatUtilityCooldownBase })
+
+---@class ERACombatUtilityCooldown
+---@field alphaWhenOffCooldown number
+---@field alphaWhenOnShortCooldown number
+---@field alphaWhenOnLongCooldown number
+---@field IconUpdatedAndShownOverride fun(this:ERACombatUtilityCooldown, t:number)
 
 function ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     local c = {}
@@ -704,9 +793,9 @@ function ERACombatUtilityCooldown:showIcon(t)
         return
     end
     self.icon:Show()
-    self:IconUpdatedAndShown(t)
+    self:IconUpdatedAndShownOverride(t)
 end
-function ERACombatUtilityCooldown:IconUpdatedAndShown(t)
+function ERACombatUtilityCooldown:IconUpdatedAndShownOverride(t)
 end
 
 function ERACombatUtilityCooldown:doUpdateCombat(t)
@@ -862,6 +951,12 @@ ERACombatUtilityInventoryCooldown = {}
 ERACombatUtilityInventoryCooldown.__index = ERACombatUtilityInventoryCooldown
 setmetatable(ERACombatUtilityInventoryCooldown, { __index = ERACombatUtilityIcon })
 
+---@class ERACombatUtilityInventoryCooldown
+---@field remDuration number
+---@field totDuration number
+---@field hasCooldown boolean
+---@field alphaWhenOffCooldown number
+
 function ERACombatUtilityInventoryCooldown:create(owner, x, y, iconID, slotID)
     local c = {}
     setmetatable(c, ERACombatUtilityInventoryCooldown)
@@ -923,6 +1018,9 @@ end
 ERACombatUtilityAura = {}
 ERACombatUtilityAura.__index = ERACombatUtilityAura
 setmetatable(ERACombatUtilityAura, { __index = ERACombatUtilityIcon })
+
+---@class ERACombatUtilityAuraIcon
+---@field aura ERACombatUtilityAuraTracker
 
 function ERACombatUtilityAura:constructAura(aura, iconID, x, y, showInCombat, talent)
     if (not iconID) then
@@ -996,6 +1094,10 @@ ERACombatUtilityDebuffAnyCaster = {}
 ERACombatUtilityDebuffAnyCaster.__index = ERACombatUtilityDebuffAnyCaster
 setmetatable(ERACombatUtilityDebuffAnyCaster, { __index = ERACombatUtilityAura })
 
+---@class ERACombatUtilityDebuffAnyCaster : ERACombatUtilityAuraIcon
+---@field fade boolean
+---@field reverse boolean
+
 function ERACombatUtilityDebuffAnyCaster:create(aura, iconID, x, y, showInCombat, talent)
     local c = {}
     setmetatable(c, ERACombatUtilityDebuffAnyCaster)
@@ -1054,6 +1156,13 @@ end
 ERACombatUtilityBagItem = {}
 ERACombatUtilityBagItem.__index = ERACombatUtilityBagItem
 setmetatable(ERACombatUtilityBagItem, ERACombatUtilityIcon)
+
+---@class ERACombatUtilityBagItem
+---@field totDuration number
+---@field remDuration number
+---@field alphaWhenOffCooldown number
+---@field alphaWhenOnShortCooldown number
+---@field alphaWhenOnLongCooldown number
 
 function ERACombatUtilityBagItem:create(utility, x, y, itemID, iconID, warningIfMissing, talent)
     local s = {}
@@ -1181,6 +1290,8 @@ ERACombatUtilityMissingAura = {}
 ERACombatUtilityMissingAura.__index = ERACombatUtilityMissingAura
 setmetatable(ERACombatUtilityMissingAura, { __index = ERACombatUtilityIcon })
 
+---@class ERACombatUtilityMissingAura
+
 function ERACombatUtilityMissingAura:create(aura, iconID, x, y, showInCombat, beam, talent, ...)
     local mi = {}
     setmetatable(mi, ERACombatUtilityMissingAura)
@@ -1237,6 +1348,8 @@ ERACombatUtilityMissingBuffAnyCaster = {}
 ERACombatUtilityMissingBuffAnyCaster.__index = ERACombatUtilityMissingBuffAnyCaster
 setmetatable(ERACombatUtilityMissingBuffAnyCaster, { __index = ERACombatUtilityIcon })
 
+---@class ERACombatUtilityMissingBuffAnyCaster
+
 function ERACombatUtilityMissingBuffAnyCaster:create(owner, iconID, x, y, talent, ...)
     local mi = {}
     setmetatable(mi, ERACombatUtilityMissingBuffAnyCaster)
@@ -1277,6 +1390,8 @@ end
 ERACombatUtilityMissingBuffOnGroupMember = {}
 ERACombatUtilityMissingBuffOnGroupMember.__index = ERACombatUtilityMissingBuffOnGroupMember
 setmetatable(ERACombatUtilityMissingBuffOnGroupMember, { __index = ERACombatUtilityIcon })
+
+---@class ERACombatUtilityMissingBuffOnGroupMember
 
 function ERACombatUtilityMissingBuffOnGroupMember:create(owner, iconID, x, y, talent, ...)
     local mi = {}

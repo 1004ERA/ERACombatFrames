@@ -34,7 +34,10 @@ ERACombatUtilityFrame.lua
 ERACombatPoints.xml
 ERACombatPoints.lua
 
-ERAMonk.lua
+ERACombat_Monk.lua
+ERACombat_Monk_Brewmaster.lua
+ERACombat_Monk_Mistweaver.lua
+ERACombat_Monk_Windwalker.lua
 
 ERACombatOptions.xml
 ERACombatOptions.lua

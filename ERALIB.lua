@@ -18,13 +18,14 @@ end
 -- TALENTS ---------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERALIBTalent
+---@field PlayerHasTalent fun():boolean
+---@field rank number
+
 ERALIBTalent_all_talents = {}
 
 ERALIBTalent = {}
 ERALIBTalent.__index = ERALIBTalent
-
----@class ERALIBTalent
----@field PlayerHasTalent fun():boolean
 
 ---comment
 ---@param talentID number
@@ -143,8 +144,6 @@ end
 function ERALIBTalent:update(selectedTalentsById)
     self.talentActive = self:computeHasTalent(selectedTalentsById)
 end
-
--- abstract function computeHasTalent()
 
 ERALIBTalentLevel = {}
 ERALIBTalentLevel.__index = ERALIBTalentLevel

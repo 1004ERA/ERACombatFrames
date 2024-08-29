@@ -5,6 +5,24 @@
 ---- ICONS ---------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERAIcon
+---@field SetIconTexture fun(this:ERAIcon, iconID:number,force:boolean)
+---@field SetMainText fun(this:ERAIcon, txt:string)
+---@field SetMainTextColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
+---@field SetSecondaryText fun(this:ERAIcon, txt:string)
+---@field SetSecondaryTextColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
+---@field SetDesaturated fun(this:ERAIcon, desat:boolean)
+---@field SetAlpha fun(this:ERAIcon, a:number)
+---@field SetVertexColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
+---@field Hide function
+---@field Show function
+---@field Draw fun(this:ERAIcon, x:number, y:number, translateIfMoved:boolean)
+---@field Beam function
+---@field StopBeam function
+---@field Highlight function
+---@field StopHighlight function
+---@field frame unknown
+
 ERAIcon = {}
 ERAIcon.__index = ERAIcon
 
@@ -218,10 +236,18 @@ end
 ---- SQUARE ICONS --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
+---@class ERASquareIcon : ERAIcon
+
 ERASquareIcon = {}
 ERASquareIcon.__index = ERASquareIcon
 setmetatable(ERASquareIcon, { __index = ERAIcon })
 
+---comment
+---@param parentFrame any
+---@param relativePoint string
+---@param size number
+---@param iconID number
+---@return ERASquareIcon
 function ERASquareIcon:Create(parentFrame, relativePoint, size, iconID)
     local i = {}
     setmetatable(i, ERASquareIcon)
@@ -253,6 +279,16 @@ ERAPieIcon = {}
 ERAPieIcon.__index = ERAPieIcon
 setmetatable(ERAPieIcon, { __index = ERAIcon })
 
+---@class ERAPieIcon : ERAIcon
+---@field SetOverlayAlpha fun(this:ERAPieIcon, a:number)
+---@field SetOverlayValue fun(this:ERAPieIcon, value:number)
+
+---comment
+---@param parentFrame any
+---@param relativePoint string
+---@param size number
+---@param iconID number
+---@return ERAPieIcon
 function ERAPieIcon:Create(parentFrame, relativePoint, size, iconID)
     local i = {}
     setmetatable(i, ERAPieIcon)

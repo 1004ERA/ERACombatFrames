@@ -11,7 +11,7 @@ ERACombatTankWindow_YScale = 0.5
 
 ERACombatTankWindow = {}
 ERACombatTankWindow.__index = ERACombatTankWindow
-setmetatable(ERACombatTankWindow, {__index = ERACombatModuleNestedInTimers})
+setmetatable(ERACombatTankWindow, { __index = ERACombatModuleNestedInTimers })
 
 function ERACombatTankWindow:Create(timers, height, spec, windowDuration, x, y, initWidth, isModuleActive)
     local w = {}

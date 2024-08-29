@@ -11,6 +11,25 @@ ERACombatPoints = {}
 ERACombatPoints.__index = ERACombatPoints
 setmetatable(ERACombatPoints, { __index = ERACombatModule })
 
+---@class ERACombatPoints : ERACombatModule
+---@field currentPoints number
+---@field maxPoints number
+---@field SetTalented fun(this:ERACombatPoints, talentedIdlePoints:number, talentIdle:ERALIBTalent)
+
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param maxPoints number
+---@param rB number
+---@param gB number
+---@param bB number
+---@param rP number
+---@param gP number
+---@param bP number
+---@param talent ERALIBTalent | nil
+---@param anchor number
+---@param ... number
 function ERACombatPoints:ConstructPoints(cFrame, x, y, maxPoints, rB, gB, bB, rP, gP, bP, talent, anchor, ...)
     self:construct(cFrame, 0.2, 0.02, false, ...)
     self.frame = CreateFrame("Frame", nil, UIParent, nil)
@@ -40,6 +59,11 @@ function ERACombatPoints:ConstructPoints(cFrame, x, y, maxPoints, rB, gB, bB, rP
     self.rP = rP
     self.gP = gP
     self.bP = bP
+end
+
+function ERACombatPoints:SetTalented(talentedIdlePoints, talentIdle)
+    self.talentIdle = talentIdle
+    self.talentedIdlePoints = talentedIdlePoints
 end
 
 function ERACombatPoints:SpecInactive(wasActive)
@@ -194,6 +218,24 @@ ERACombatPointsUnitPower = {}
 ERACombatPointsUnitPower.__index = ERACombatPointsUnitPower
 setmetatable(ERACombatPointsUnitPower, { __index = ERACombatPoints })
 
+---@class ERACombatPointsUnitPower : ERACombatPoints
+
+---comment
+---@param cFrame ERACombatFrame
+---@param x number
+---@param y number
+---@param powerType number
+---@param maxPoints number
+---@param rB number
+---@param gB number
+---@param bB number
+---@param rP number
+---@param gP number
+---@param bP number
+---@param talent ERALIBTalent | nil
+---@param anchor number
+---@param ... number
+---@return ERACombatPointsUnitPower
 function ERACombatPointsUnitPower:Create(cFrame, x, y, powerType, maxPoints, rB, gB, bB, rP, gP, bP, talent, anchor, ...)
     local p = {}
     setmetatable(p, ERACombatPointsUnitPower)
@@ -201,7 +243,6 @@ function ERACombatPointsUnitPower:Create(cFrame, x, y, powerType, maxPoints, rB,
     p.powerType = powerType
     p.events = {}
     function p.events:UNIT_MAXPOWER(unit, pType)
-        --print(unit, pType)
         if (unit == "player") then
             self:UpdateMaxPoints()
         end
