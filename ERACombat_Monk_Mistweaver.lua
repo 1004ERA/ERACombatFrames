@@ -221,16 +221,6 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
         return 3
     end
 
-    local todPrio = timers:AddPriority(606552)
-    function todPrio:ComputePriority(t)
-        local u, nomana = C_Spell.IsSpellUsable(322109) -- CHANGE 11 IsUsableSpell(322109)
-        if (u or nomana) then
-            return 1
-        else
-            return 0
-        end
-    end
-
     -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
     local renewingDef = grid:AddTrackedBuff(119611, 0, 1, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, talent_renewing)
     local envelopingDef = grid:AddTrackedBuff(124682, 1, 1, 0.6, 0.7, 0.0, 0.6, 0.7, 0.0, nil)
@@ -309,8 +299,8 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     ERACombatFrames_MonkInvigoratingBar:create(cFrame, -64, -32, 100, 20, grid, instaVivifyTimer, talent_invigorating)
 
     local utility = ERACombatFrames_MonkUtility(cFrame, 2, false, monkTalents)
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "magic", "poison", "disease")
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "magic")
+    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "Magic", "Poison", "Disease")
+    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "Magic")
     utility:AddCooldown(-1, 0, 116849, nil, true, talent_cocoon)
     utility:AddCooldown(0, 0, 443028, nil, true, htalent_conduit)
     utility:AddCooldown(-1.5, -0.9, 322118, nil, true, talent_yulon)

@@ -118,7 +118,7 @@ function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
     utility:AddCooldown(4, 4, 116841, nil, true, monkTalents.lust)
 
     if (includeDetox) then
-        utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, monkTalents.detox, "poison", "disease")
+        utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, monkTalents.detox, "Poison", "Disease")
     end
     utility:AddCooldown(4, 5, 115546, nil, true).alphaWhenOffCooldown = 0.2
     utility:AddWarlockPortal(5, 5)
