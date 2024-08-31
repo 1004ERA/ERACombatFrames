@@ -1,9 +1,9 @@
 -- TODO
 -- defensive dispells à tester
 
-ERACombatUtilityFrame_IconSize = 55
+ERACombatUtilityFrame_IconSize = 51
 --44
-ERACombatUtilityFrame_IconSpacing = 4
+ERACombatUtilityFrame_IconSpacing = 8
 ERACombatUtilityFrame_LongCooldownThreshold = 30
 
 ---@class ERACombatUtilityFrame
@@ -12,6 +12,7 @@ ERACombatUtilityFrame_LongCooldownThreshold = 30
 ---@field AddTrackedBuff fun(this:ERACombatUtilityFrame, spellID:number, talent:ERALIBTalent | nil): ERACombatUtilityBuffTracker
 ---@field AddTrackedDebuffAnyCaster fun(this:ERACombatUtilityFrame, spellID:number, talent:ERALIBTalent | nil): ERACombatUtilityDebuffTracker
 ---@field AddMissingBuffAnyCaster fun(this:ERACombatUtilityFrame, iconID: number, x:number, y:number, talent:ERALIBTalent | nil, ...: number): ERACombatUtilityMissingBuffAnyCaster
+---@field AddMissingBuffOnGroupMember fun(this:ERACombatUtilityFrame, iconID: number, x:number, y:number, talent:ERALIBTalent | nil, ...: number): ERACombatUtilityMissingBuffOnGroupMember
 ---@field AddDebuffAnyCasterIcon fun(this:ERACombatUtilityFrame, aura:ERACombatUtilityMissingBuffAnyCaster, iconID:number, x:number, y:number, showInCombat:boolean, talent:ERALIBTalent | nil): ERACombatUtilityDebuffAnyCaster
 ---@field AddTrinket1Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
 ---@field AddTrinket2Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
@@ -1392,6 +1393,7 @@ ERACombatUtilityMissingBuffOnGroupMember.__index = ERACombatUtilityMissingBuffOn
 setmetatable(ERACombatUtilityMissingBuffOnGroupMember, { __index = ERACombatUtilityIcon })
 
 ---@class ERACombatUtilityMissingBuffOnGroupMember
+---@field onlyOnHealer boolean
 
 function ERACombatUtilityMissingBuffOnGroupMember:create(owner, iconID, x, y, talent, ...)
     local mi = {}

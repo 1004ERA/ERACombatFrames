@@ -39,6 +39,12 @@ ERACombat_Monk_Brewmaster.lua
 ERACombat_Monk_Mistweaver.lua
 ERACombat_Monk_Windwalker.lua
 
+ERACombat_Evoker.xml
+ERACombat_Evoker.lua
+ERACombat_Evoker_Devastation.lua
+ERACombat_Evoker_Preservation.lua
+ERACombat_Evoker_Augmentation.lua
+
 ERACombatOptions.xml
 ERACombatOptions.lua
 

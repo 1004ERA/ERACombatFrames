@@ -18,6 +18,8 @@ ERA_Debug = function()
 end
 --]]
 
+--/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
+
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")
 end

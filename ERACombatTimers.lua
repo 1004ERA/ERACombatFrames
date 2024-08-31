@@ -53,6 +53,8 @@ end
 ---@field remGCD number
 ---@field haste number
 ---@field occupied number
+---@field offsetIconsX number
+---@field offsetIconsY number
 ---@field OnResetToIdle fun(this: ERACombatTimers)
 ---@field PreUpdateCombatOverride fun(this: ERACombatTimers, t:number)
 ---@field DataUpdatedOverride fun(this: ERACombatTimers, t:number)
@@ -80,7 +82,7 @@ end
 
 ---comment
 ---@param spellID number
----@param talent number
+---@param talent ERALIBTalent | nil
 ---@return ERACombatTimersAura
 function ERACombatTimersGroup:AddTrackedBuff(spellID, talent)
     local b = ERACombatAura:create(self, spellID, false, talent)
@@ -610,6 +612,9 @@ function ERACombatTimersGroup:Pack()
     for _, icon in ipairs(self.priorityIcons) do
         icon:createOverlayDisplay(self)
     end
+
+    local paradoxTimer = self:AddTrackedBuff(406732)
+    self:AddAuraBar(paradoxTimer, nil, 1, 0.9, 0.7)
 end
 
 function ERACombatTimersGroup:updateAura(aura, t, stacks, durAura, expirationTime)
@@ -1918,6 +1923,7 @@ setmetatable(ERACombatTimerAuraBar, { __index = ERACombatTimerStatusBar })
 
 ---@class ERACombatTimersAuraBar : ERACombatTimersStatusBar
 ---@field aura ERACombatTimersAura
+---@field showStacks boolean
 
 function ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
     local bar = {}
@@ -1925,6 +1931,7 @@ function ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
     bar:construct(aura.group, iconID, r, g, b, "Interface\\TargetingFrame\\UI-StatusBar-Glow")
     -- assignation
     bar.aura = aura
+    bar.showStacks = true
     bar.talent = ERALIBTalent_MakeAnd(talent, aura.talent)
     return bar
 end
@@ -1939,8 +1946,10 @@ function ERACombatTimerAuraBar:checkTalentsOrHide()
 end
 
 function ERACombatTimerAuraBar:GetRemDurationOr0IfInvisibleOverride(t)
-    if (self.showStacks) then
+    if (self.showStacks and self.aura.stacks > 1) then
         self.view:SetText(self.aura.stacks)
+    else
+        self.view:SetText(nil)
     end
     return self.aura.remDuration
 end

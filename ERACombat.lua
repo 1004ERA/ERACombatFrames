@@ -205,7 +205,7 @@ function ERACombatFrame_updateComputeTalents()
     end
 end
 
-ERA_TALENTS_DO_PRINT_N = 0
+ERA_TALENTS_DO_PRINT_N = 500
 ERA_TALENTS_PRINTED = false
 ERA_TALENTS_TO_PRINT = {}
 function ERAPrintTalents_sort(t1, t2)
@@ -598,6 +598,13 @@ ERACombatEnemies = {}
 ERACombatEnemies.__index = ERACombatEnemies
 setmetatable(ERACombatEnemies, { __index = ERACombatModule })
 
+---@class ERACombatEnemiesCount
+---@field GetCount fun(this:ERACombatEnemiesCount): number
+
+---comment
+---@param cFrame ERACombatFrame
+---@param ... number specializations
+---@return ERACombatEnemiesCount
 function ERACombatEnemies:Create(cFrame, ...)
     local e = {}
     setmetatable(e, ERACombatEnemies)
