@@ -678,8 +678,8 @@ function ERACombatGridUnitPrototype:update(t)
                 ERACombatGridUnitPrototype_updateAura(t, auraInfo.expirationTime, auraInfo.duration, auraInfo.applications, td, self.activeDebuffs)
             end
             if (not dispellable) then
-                for i, dis in ipairs(self.grid.dispells) do
-                    if (type == dis) then
+                for _, dis in ipairs(self.grid.dispells) do
+                    if (auraInfo.dispelName == dis) then
                         dispellable = true
                         break
                     end
