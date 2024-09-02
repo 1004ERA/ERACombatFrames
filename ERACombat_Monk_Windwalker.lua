@@ -230,6 +230,11 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 
     function whirlingIcon:ComputeAvailablePriorityOverride()
+        if C_Spell.IsSpellUsable(self.cd.spellID) then
+            self.iconTimer:SetDesaturated(false)
+        else
+            self.iconTimer:SetDesaturated(true)
+        end
         return 8
     end
 

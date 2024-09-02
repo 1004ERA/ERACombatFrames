@@ -205,7 +205,7 @@ function ERACombatFrame_updateComputeTalents()
     end
 end
 
-ERA_TALENTS_DO_PRINT_N = 500
+ERA_TALENTS_DO_PRINT_N = 0
 ERA_TALENTS_PRINTED = false
 ERA_TALENTS_TO_PRINT = {}
 function ERAPrintTalents_sort(t1, t2)

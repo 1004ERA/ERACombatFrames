@@ -1127,6 +1127,7 @@ setmetatable(ERACombatCooldown, { __index = ERACombatTimer })
 ---@field currentCharges number
 ---@field maxCharges number
 ---@field hasCharges boolean
+---@field spellID number
 
 function ERACombatCooldown:create(group, spellID, talent, ...)
     local t = {}
@@ -1448,6 +1449,7 @@ ERACombatTimerIcon.__index = ERACombatTimerIcon
 
 ---@class ERACombatTimersIcon
 ---@field icon ERAPieIcon
+---@field iconTimer ERASquareIcon | nil
 ---@field ComputeAvailablePriorityOverride fun(this:ERACombatTimersIcon): number
 ---@field group ERACombatTimers
 

@@ -1,4 +1,4 @@
----@class ERACombatTimers_EvokerDevastation : ERACombatTimers_Evoker
+---@class ERACombatTimers_EvokerDevastation : ERACombatTimers_EvokerDPS
 ---@field evoker_goodSpells number
 
 ---comment
@@ -20,8 +20,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
 
     local firstColumnX = 0.9
 
-    local dps = ERACombat_EvokerDPS(cFrame, talents, talent_big_empower, 1)
-    local timers = dps.timers
+    local timers = ERACombat_EvokerDPS(cFrame, talents, talent_big_empower, 1)
     ---@cast timers ERACombatTimers_EvokerDevastation
     ---@type ERACombat_EvokerTimerParams
     local tParams = {
@@ -31,50 +30,48 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         unravelY = 2,
         unravelPrio = 2
     }
-    local utility = ERACombat_EvokerSetup(cFrame, dps.timers, tParams, talents, 1)
+    local utility = ERACombat_EvokerSetup(cFrame, timers, tParams, talents, 1)
+    ERACombat_EvokerDPS_Utility(utility, talents)
 
-    local shatter = dps.timers:AddTrackedCooldown(370452, talent_shatter)
-    local shatterIcon = dps.timers:AddCooldownIcon(shatter, nil, 0, 0, true, true)
+    local shatter = timers:AddTrackedCooldown(370452, talent_shatter)
+    local shatterIcon = timers:AddCooldownIcon(shatter, nil, 0, 0, true, true)
 
     local surge_alternative = {
         id = 382411,
         talent = talent_big_empower,
     }
-    local surge = dps.timers:AddTrackedCooldown(359073, talent_surge, surge_alternative)
-    local surgeIcon = dps.timers:AddCooldownIcon(surge, nil, -1, 0, true, true)
+    local surge = timers:AddTrackedCooldown(359073, talent_surge, surge_alternative)
+    local surgeIcon = timers:AddCooldownIcon(surge, nil, -1, 0, true, true)
 
     local firebreathIcons = {}
-    table.insert(firebreathIcons, dps.timers:AddCooldownIcon(dps.firebreathCooldown, nil, -1, 0, true, true, talent_not_surge))
-    table.insert(firebreathIcons, dps.timers:AddCooldownIcon(dps.firebreathCooldown, nil, -2, 0, true, true, talent_surge))
+    table.insert(firebreathIcons, timers:AddCooldownIcon(timers.evoker_firebreathCooldown, nil, -1, 0, true, true, talent_not_surge))
+    table.insert(firebreathIcons, timers:AddCooldownIcon(timers.evoker_firebreathCooldown, nil, -2, 0, true, true, talent_surge))
 
-    local firestorm = dps.timers:AddTrackedCooldown(368847, talent_firestorm)
+    local firestorm = timers:AddTrackedCooldown(368847, talent_firestorm)
     local firestormIcons = {}
-    table.insert(firestormIcons, dps.timers:AddCooldownIcon(firestorm, nil, -2, 0, true, true, talent_not_surge))
-    table.insert(firestormIcons, dps.timers:AddCooldownIcon(firestorm, nil, -3, 0, true, true, talent_surge))
-    local instaStorm = dps.timers:AddTrackedBuff(370818, talent_instastorm)
-    dps.timers:AddAuraBar(instaStorm, nil, 0.6, 0.0, 0.0)
+    table.insert(firestormIcons, timers:AddCooldownIcon(firestorm, nil, -2, 0, true, true, talent_not_surge))
+    table.insert(firestormIcons, timers:AddCooldownIcon(firestorm, nil, -3, 0, true, true, talent_surge))
+    local instaStorm = timers:AddTrackedBuff(370818, talent_instastorm)
+    timers:AddAuraBar(instaStorm, nil, 0.6, 0.0, 0.0)
 
-    local burstTimer = dps.timers:AddTrackedBuff(359618)
+    local burstTimer = timers:AddTrackedBuff(359618)
 
-    local instaflameTimer = dps.timers:AddTrackedBuff(375802, ERALIBTalent:Create(115624))
-    local instaflameBar = dps.timers:AddAuraBar(instaflameTimer, nil, 0, 1, 0)
+    local chargedBlastTimer = timers:AddTrackedBuff(370454, ERALIBTalent:Create(115628))
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -1.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_not_surge))
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_surge))
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_not_surge))
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -3, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_surge))
 
-    local chargedBlastTimer = dps.timers:AddTrackedBuff(370454, ERALIBTalent:Create(115628))
-    dps.timers:AddStacksProgressIcon(chargedBlastTimer, nil, -1.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_not_surge))
-    dps.timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_surge))
-    dps.timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_not_surge))
-    dps.timers:AddStacksProgressIcon(chargedBlastTimer, nil, -3, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_surge))
+    local iriRedTimer = timers:AddTrackedBuff(386353, talent_iridescence)
+    timers:AddAuraBar(iriRedTimer, nil, 1, 0, 0)
+    local iriBlueTimer = timers:AddTrackedBuff(386399, talent_iridescence)
+    timers:AddAuraBar(iriBlueTimer, nil, 0, 0, 1)
 
-    local iriRedTimer = dps.timers:AddTrackedBuff(386353, talent_iridescence)
-    dps.timers:AddAuraBar(iriRedTimer, nil, 1, 0, 0)
-    local iriBlueTimer = dps.timers:AddTrackedBuff(386399, talent_iridescence)
-    dps.timers:AddAuraBar(iriBlueTimer, nil, 0, 0, 1)
+    local shatterTimer = timers:AddTrackedDebuff(370452, talent_shatter)
+    timers:AddAuraBar(shatterTimer, nil, 1, 0.3, 1)
 
-    local shatterTimer = dps.timers:AddTrackedDebuff(370452, talent_shatter)
-    dps.timers:AddAuraBar(shatterTimer, nil, 1, 0.3, 1)
-
-    local rageTimer = dps.timers:AddTrackedBuff(375087, talent_dragonrage)
-    dps.timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_dragonrage)
+    local rageTimer = timers:AddTrackedBuff(375087, talent_dragonrage)
+    timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_dragonrage)
 
     ------------
     --- prio ---
@@ -99,8 +96,8 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         if (talent_surge:PlayerHasTalent()) then
             goodSpells = math.min(goodSpells, surge.remDuration)
         end
-        if (talents.unravel:PlayerHasTalent() and dps.timers.evoker_unravel.absorbValue > 0) then
-            goodSpells = math.min(goodSpells, dps.timers.evoker_unravel.remDuration)
+        if (talents.unravel:PlayerHasTalent() and timers.evoker_unravel.absorbValue > 0) then
+            goodSpells = math.min(goodSpells, timers.evoker_unravel.remDuration)
         end
         timers.evoker_goodSpells = goodSpells
     end
@@ -118,7 +115,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         end
     end
 
-    function dps.timers.evoker_unravelIcon:ComputeAvailablePriorityOverride()
+    function timers.evoker_unravelIcon:ComputeAvailablePriorityOverride()
         local cd = self.cd
         ---@cast cd ERACombat_EvokerUnravelCooldown
         if cd.useable then
@@ -128,7 +125,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         end
     end
 
-    local livingPrio = dps.timers:AddPriority(4622464)
+    local livingPrio = timers:AddPriority(4622464)
     function livingPrio:ComputePriority(t)
         if (enemies:GetCount() < 3 and 0 < timers.evoker_goodSpells and timers.evoker_goodSpells <= 3) then
             return 3
@@ -137,7 +134,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         end
     end
 
-    local strikePrio = dps.timers:AddPriority(4622447)
+    local strikePrio = timers:AddPriority(4622447)
     function strikePrio:ComputePriority(t)
         if (enemies:GetCount() >= 3 and 0 < timers.evoker_goodSpells and timers.evoker_goodSpells <= 3) then
             return 3

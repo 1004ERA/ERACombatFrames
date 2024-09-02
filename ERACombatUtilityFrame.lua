@@ -14,6 +14,7 @@ ERACombatUtilityFrame_LongCooldownThreshold = 30
 ---@field AddMissingBuffAnyCaster fun(this:ERACombatUtilityFrame, iconID: number, x:number, y:number, talent:ERALIBTalent | nil, ...: number): ERACombatUtilityMissingBuffAnyCaster
 ---@field AddMissingBuffOnGroupMember fun(this:ERACombatUtilityFrame, iconID: number, x:number, y:number, talent:ERALIBTalent | nil, ...: number): ERACombatUtilityMissingBuffOnGroupMember
 ---@field AddDebuffAnyCasterIcon fun(this:ERACombatUtilityFrame, aura:ERACombatUtilityMissingBuffAnyCaster, iconID:number, x:number, y:number, showInCombat:boolean, talent:ERALIBTalent | nil): ERACombatUtilityDebuffAnyCaster
+---@field AddBuffIcon fun(this:ERACombatUtilityFrame, aura:ERACombatUtilityBuffTracker, iconID:number|nil, x:number, y:number, showInCombat:boolean, talent:ERALIBTalent|nil)
 ---@field AddTrinket1Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
 ---@field AddTrinket2Cooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
 ---@field AddCloakCooldown fun(this:ERACombatUtilityFrame, x:number, y:number, iconID:integer | nil): ERACombatUtilityInventoryCooldown
@@ -436,7 +437,7 @@ function ERACombatUtilityFrame:updateData(t)
             -- CHANGE 11
             local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff("player", i, "PLAYER")
             ]] --
-            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i, "PLAYER")
+            local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
             if (auraInfo) then
                 local b = self.activeBuffs[auraInfo.spellId]
                 if (b ~= nil) then

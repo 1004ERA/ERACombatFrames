@@ -33,11 +33,11 @@ function ERACombatFrames_event(event, ...)
         ERACombatOptions_initialize()
         local cFrame = ERACombatFrame:Create()
         if (classID == 9) then
-            ERACombatFrames_WarlockSetup(cFrame)
+            --ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
             ERACombatFrames_MonkSetup(cFrame)
         elseif (classID == 12) then
-            ERACombatFrames_DemonHunterSetup(cFrame)
+            --ERACombatFrames_DemonHunterSetup(cFrame)
         elseif (classID == 13) then
             ERACombatFrames_EvokerSetup(cFrame)
         end

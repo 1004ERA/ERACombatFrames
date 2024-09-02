@@ -15,6 +15,9 @@
 ---@field sleep ERALIBTalent
 ---@field source ERALIBTalent
 ---@field roar ERALIBTalent
+---@field leaping ERALIBTalent
+---@field fast_blossom ERALIBTalent
+---@field burnout_or_onslaught ERALIBTalent
 
 ---@class ERACombat_EvokerTimerParams
 ---@field quellX number
@@ -30,6 +33,9 @@
 ---@class ERACombatTimers_Evoker : ERACombatTimers
 ---@field evoker_unravel ERACombat_EvokerUnravelCooldown
 ---@field evoker_unravelIcon ERACombatTimersCooldownIcon
+---@field evoker_leapingBuff ERACombatTimersAura
+---@field evoker_firebreathCooldown ERACombatTimersCooldown
+---@field evoker_burnoutTimer ERACombatTimersAura
 ---@field evoker_offsetX number
 ---@field evoker_offsetY number
 ---@field evoker_additionalPreupdate fun(t: number) | nil
@@ -57,9 +63,12 @@ function ERACombatFrames_EvokerSetup(cFrame)
         sleep = ERALIBTalent:Create(115601),
         source = ERALIBTalent:Create(115658),
         roar = ERALIBTalent:Create(115607),
+        leaping = ERALIBTalent:Create(115657),
+        fast_blossom = ERALIBTalent:Create(115577),
+        burnout_or_onslaught = ERALIBTalent:CreateOr(ERALIBTalent:Create(115624), ERALIBTalent:Create(117541))
     }
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -101, 128, 16, 0, true, 0.4, 0.4, 0.8, false, devastationActive, preservationActive, augmentationActive)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -55, 128, 16, 0, true, 0.4, 0.4, 0.8, false, devastationActive, preservationActive, augmentationActive)
 
     local essence = ERACombatEvokerEssence:create(cFrame, -111, -51, 0, devastationActive, augmentationActive)
 
@@ -95,6 +104,20 @@ function ERACombat_EvokerSetup(cFrame, timers, tParams, talents, spec)
     timers:AddKick(351338, tParams.quellX, tParams.quellY, talents.quell)
 
     timers:AddAuraBar(timers:AddTrackedBuff(358267), nil, 1, 1, 1) -- hover
+
+    timers.evoker_leapingBuff = timers:AddTrackedBuff(370901, talents.leaping)
+    local leapingBar = timers:AddAuraBar(timers.evoker_leapingBuff, nil, 1, 0.7, 0)
+    function leapingBar:GetRemDurationOr0IfInvisibleOverride(t)
+        if (self.aura.remDuration < 5 or timers.evoker_firebreathCooldown.remDuration < 4) then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
+
+    local burnout_buff_ID = 375802
+    timers.evoker_burnoutTimer = timers:AddTrackedBuff(burnout_buff_ID, talents.burnout_or_onslaught)
+    timers:AddAuraBar(timers.evoker_burnoutTimer, nil, 0, 1, 0)
 
     local unravel = timers:AddTrackedCooldown(368432, talents.unravel)
     ---@cast unravel ERACombat_EvokerUnravelCooldown
@@ -154,23 +177,25 @@ function ERACombat_EvokerSetup(cFrame, timers, tParams, talents, spec)
     utility:AddMissingBuffAnyCaster(4622448, 1, 0, ERALIBTalent:CreateLevel(60), 381748) -- bronze buff
     utility:AddMissingBuffOnGroupMember(4630412, 1, 1, talents.source, 369459).onlyOnHealer = true
 
-    utility:AddCooldown(-0.5, 0.9, 370553, nil, true, talents.tip)
-
-    utility:AddCooldown(0, 0, 358267, nil, true)  -- hover
-    utility:AddCooldown(1, 0, 357214, nil, true)  -- buffet
-    utility:AddCooldown(2, 0, 372048, nil, true, talents.roar)
-    utility:AddCooldown(3, 0, 368970, nil, true)  -- swipe
+    utility:AddBuffIcon(utility:AddTrackedBuff(burnout_buff_ID, talents.burnout_or_onslaught), nil, 0.5, 0.9, false)
 
     utility:AddCooldown(-5, 0, 390386, nil, true) -- BL
-    utility:AddCooldown(-3, 0, 374348, nil, true, talents.renewing)
-    utility:AddCooldown(-2, 0, 360995, nil, true, talents.embrace)
+
     utility:AddCooldown(-1, 0, 363916, nil, true, talents.obsidian)
+
+    utility:AddCooldown(0, 0, 358267, nil, true) -- hover
+    utility:AddCooldown(1, 0, 357214, nil, true) -- buffet
+    utility:AddCooldown(2, 0, 372048, nil, true, talents.roar)
+    utility:AddCooldown(3, 0, 368970, nil, true) -- swipe
 
     utility:AddWarlockHealthStone(-2.5, -0.9)
     utility:AddCooldown(-1.5, -0.9, 406732, nil, true, talents.paradox)
     utility:AddCooldown(-1.5, -0.9, 374968, nil, true, talents.spiral)
     utility:AddCooldown(-0.5, -0.9, 374227, nil, true, talents.zephyr)
     utility:AddWarlockPortal(0.5, -0.9)
+
+    utility:AddTrinket1Cooldown(-1.5, -1.9)
+    utility:AddTrinket2Cooldown(-0.5, -1.9)
 
     utility:AddCooldown(1.5, 0.9, 358385, nil, true, talents.landslide)
     utility:AddCooldown(2.5, 0.9, 360806, nil, true, talents.sleep)
@@ -189,9 +214,16 @@ end
 --- DPS ---
 -----------
 
----@class ERACombat_EvokerDPS
----@field timers ERACombatTimers_Evoker
----@field firebreathCooldown ERACombatTimersCooldown
+---comment
+---@param utility ERACombatUtilityFrame
+---@param talents ERACombat_EvokerCommonTalents
+function ERACombat_EvokerDPS_Utility(utility, talents)
+    utility:AddCooldown(-0.5, 0.9, 370553, nil, true, talents.tip)
+    utility:AddCooldown(-3, 0, 374348, nil, true, talents.renewing)
+    utility:AddCooldown(-2, 0, 360995, nil, true, talents.embrace)
+end
+
+---@class ERACombatTimers_EvokerDPS : ERACombatTimers_Evoker
 ---@field essence ERACombat_EvokerEssence
 
 ---comment
@@ -199,10 +231,10 @@ end
 ---@param talents ERACombat_EvokerCommonTalents
 ---@param talent_big_empower ERALIBTalent
 ---@param spec number
----@return ERACombat_EvokerDPS
+---@return ERACombatTimers_EvokerDPS
 function ERACombat_EvokerDPS(cFrame, talents, talent_big_empower, spec)
     local timers = ERACombatTimersGroup:Create(cFrame, -101, 4, 1.5, false, false, spec)
-    ---@cast timers ERACombatTimers_Evoker
+    ---@cast timers ERACombatTimers_EvokerDPS
 
     timers.offsetIconsX = -42
     timers.offsetIconsY = -32
@@ -212,11 +244,9 @@ function ERACombat_EvokerDPS(cFrame, talents, talent_big_empower, spec)
         talent = talent_big_empower
     }
     local firebreathCooldown = timers:AddTrackedCooldown(357208, nil, firebreathAlternative)
+    timers.evoker_firebreathCooldown = firebreathCooldown
 
-    return {
-        timers = timers,
-        firebreathCooldown = firebreathCooldown
-    }
+    return timers
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -307,6 +337,8 @@ setmetatable(ERACombatEvokerEssence, { __index = ERACombatModule })
 
 ---@class ERACombat_EvokerEssence
 ---@field currentPoints number
+---@field maxPoints number
+---@field nextAvailable number
 
 ---comment
 ---@param cFrame ERACombatFrame
