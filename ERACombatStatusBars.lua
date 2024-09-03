@@ -1,6 +1,3 @@
--- TODO
--- tout
-
 --------------------------------------------------------------------------------------------------------------------------------
 -- BAR VIEW --------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
@@ -301,35 +298,36 @@ setmetatable(ERAOutOfCombatStatusBars, { __index = ERACombatModule })
 ---@param x number
 ---@param y number
 ---@param barWidth number
----@param barHeight number
+---@param healthHeight number
+---@param powerHeight number
 ---@param powerType number
 ---@param hideFull boolean
 ---@param r number
 ---@param g number
 ---@param b number
----@param showPet boolean
----@param ... number
+---@param petHeight number
+---@param ... number specializations
 ---@return table
-function ERAOutOfCombatStatusBars:Create(cFrame, x, y, barWidth, barHeight, powerType, hideFull, r, g, b, showPet, ...)
+function ERAOutOfCombatStatusBars:Create(cFrame, x, y, barWidth, healthHeight, powerHeight, powerType, hideFull, r, g, b, petHeight, ...)
     local ooc = {}
     setmetatable(ooc, ERAOutOfCombatStatusBars)
 
     ooc.frame = CreateFrame("Frame", nil, UIParent, nil)
     ooc.frame:SetPoint("TOP", UIParent, "CENTER", x, y)
-    ooc.frame:SetSize(barWidth, 3 * barHeight)
+    ooc.frame:SetSize(barWidth, healthHeight + powerHeight + petHeight)
 
-    ooc.health = ERACombatStatusBar:create(ooc.frame, 0, 0, barWidth, barHeight, 0.0, 1.0, 0.0)
+    ooc.health = ERACombatStatusBar:create(ooc.frame, 0, 0, barWidth, healthHeight, 0.0, 1.0, 0.0)
+    if (petHeight > 0) then
+        ooc.pet = ERACombatStatusBar:create(ooc.frame, 0, -healthHeight, barWidth, petHeight, 0.0, 0.7, 0.0)
+    end
     if (powerType >= 0) then
-        ooc.power = ERACombatStatusBar:create(ooc.frame, 0, -barHeight, barWidth, barHeight, r, g, b)
+        ooc.power = ERACombatStatusBar:create(ooc.frame, 0, -healthHeight - petHeight, barWidth, powerHeight, r, g, b)
         ooc.hideFull = hideFull
         ooc.powerType = powerType
         ooc.powerValue = -1
         ooc.last_power_change = -1
     else
         ooc.powerType = -1
-    end
-    if (showPet) then
-        ooc.pet = ERACombatStatusBar:create(ooc.frame, 0, -2 * barHeight, barWidth, barHeight, 0.0, 0.7, 0.0)
     end
 
     -- évènements
@@ -490,6 +488,7 @@ setmetatable(ERACombatHealth, { __index = ERACombatModule })
 ---@field maxHealth number
 ---@field absorbHealing number
 ---@field absorbDamage number
+---@field SetUnitID fun(this:ERACombatHealth, id:string)
 ---@field SetHealing fun(this:ERACombatHealth, x:number)
 ---@field SetHealingColor fun(this:ERACombatHealth, r:number, g:number, b:number)
 
@@ -637,7 +636,8 @@ ERACombatPower.__index = ERACombatPower
 setmetatable(ERACombatPower, { __index = ERACombatModule })
 
 ---@class ERACombatPower
----@field AddConsumer fun(this:ERACombatPower, value:number, iconID:integer, talent:ERALIBTalent|nil): ERACombatPowerConsumer
+---@field AddConsumer fun(this:ERACombatPower, value:number, iconID:integer|nil, talent:ERALIBTalent|nil): ERACombatPowerConsumer
+---@field AddThreashold fun(this:ERACombatPower, value:number, iconID:integer|nil, talent:ERALIBTalent|nil): ERACombatPowerThreashold
 ---@field bar ERACombatStatusBar
 ---@field currentPower number
 ---@field maxPower number
@@ -699,8 +699,9 @@ function ERACombatPower:Create(cFrame, x, y, barWidth, barHeight, powerType, use
         )
     end
 
-    bar.consumers = {}
-    bar.activeConsumers = {}
+    bar.markings = {}
+    bar.activeMarkings = {}
+    bar.activeMarkingsRequiringContinuousUpdate = {}
 
     bar:construct(cFrame, -1, 0.05, false, ...)
 
@@ -743,6 +744,9 @@ function ERACombatPower:PreUpdateCombatOverride(t)
 end
 function ERACombatPower:UpdateCombat(t) --, elapsed)
     self:PreUpdateCombatOverride(t)
+    for _, c in ipairs(self.activeMarkingsRequiringContinuousUpdate) do
+        c:updateContinuous(t)
+    end
     self:updateMaxPower(false)
     self:updateCurrentPower(t, false)
     if (self:ShouldBeVisibleOverride(t)) then
@@ -769,7 +773,7 @@ function ERACombatPower:updateMaxPower(updateDisplay)
         if (updateDisplay) then
             self.bar:SetMax(mp)
         end
-        for i, c in ipairs(self.activeConsumers) do
+        for _, c in ipairs(self.activeMarkings) do
             c:updatePosition()
         end
     end
@@ -780,7 +784,7 @@ function ERACombatPower:updateCurrentPower(t, updateDisplay)
     if (updateDisplay) then
         self.bar:SetValue(self.currentPower)
     end
-    for i, c in ipairs(self.activeConsumers) do
+    for i, c in ipairs(self.activeMarkings) do
         c:updateCurrentPower(t)
     end
     if (self.redWarning > 0 and self.currentPower >= self.redWarning) then
@@ -793,51 +797,46 @@ function ERACombatPower:updateCurrentPower(t, updateDisplay)
 end
 
 function ERACombatPower:CheckTalents()
-    self.activeConsumers = {}
-    for i, c in ipairs(self.consumers) do
+    self.activeMarkings = {}
+    self.activeMarkingsRequiringContinuousUpdate = {}
+    for i, c in ipairs(self.markings) do
         if (c:checkTalents()) then
-            table.insert(self.activeConsumers, c)
+            table.insert(self.activeMarkings, c)
+            if (c.requireContinuousUpdate) then
+                table.insert(self.activeMarkingsRequiringContinuousUpdate, c)
+            end
         end
     end
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
--- CONSUMERS -------------------------------------------------------------------------------------------------------------------
+-- POWER MARKING ---------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
----@class ERACombatPowerConsumer
+---@class ERACombatPowerMarking
+---@field ComputeValueOverride (fun(this:ERACombatPowerConsumer, t:number): number) | nil
+---@field requireContinuousUpdate boolean
 ---@field ComputeVisibilityOverride fun(this:ERACombatPowerConsumer, t:number): boolean
 ---@field ComputeIconVisibilityOverride fun(this:ERACombatPowerConsumer, t:number): boolean
 ---@field icon ERASquareIcon | nil
 
----comment
----@param value number
----@param iconID integer
----@param talent ERALIBTalent | nil
----@return ERACombatPowerConsumer
-function ERACombatPower:AddConsumer(value, iconID, talent)
-    return ERACombatPowerConsumer:create(self, value, iconID, talent)
-end
+ERACombatPowerMarking = {}
+ERACombatPowerMarking.__index = ERACombatPowerMarking
 
-ERACombatPowerConsumer = {}
-ERACombatPowerConsumer.__index = ERACombatPowerConsumer
-
-function ERACombatPowerConsumer:create(bar, value, iconID, talent)
-    local c = {}
-    setmetatable(c, ERACombatPowerConsumer)
-    c.bar = bar
-    c.value = value
-    c.talent = talent
-    c.tick = bar.overlay:CreateLine(nil, "OVERLAY", "ERACombatPowerTick")
-    c.tickVisible = true
+function ERACombatPowerMarking:constructMarking(bar, value, iconID, talent)
+    self.bar = bar
+    self.value = value
+    self.talent = talent
+    self.tick = bar.overlay:CreateLine(nil, "OVERLAY", "ERACombatPowerTick")
+    self.tickVisible = true
+    self.x = -1
     if (iconID) then
-        c.icon = ERASquareIcon:Create(bar.overlay, "TOPLEFT", ERACombatPower_IconSize, iconID)
+        self.icon = ERASquareIcon:Create(bar.overlay, "TOPLEFT", ERACombatPower_IconSize, iconID)
     end
-    table.insert(bar.consumers, c)
-    return c
+    table.insert(bar.markings, self)
 end
 
-function ERACombatPowerConsumer:checkTalents()
+function ERACombatPowerMarking:checkTalents()
     if (self.talent and not self.talent:PlayerHasTalent()) then
         if (self.icon) then
             self.icon:Hide()
@@ -854,15 +853,65 @@ function ERACombatPowerConsumer:checkTalents()
     end
 end
 
-function ERACombatPowerConsumer:updatePosition()
-    local x = self.bar.barWidth * self.value / self.bar.maxPower
-    self.tick:SetStartPoint("TOPLEFT", self.bar.frame, x, 0)
-    self.tick:SetEndPoint("TOPLEFT", self.bar.frame, x, -self.bar.tickHeight)
-    if (self.icon) then
-        self.icon:Draw(x, -self.bar.tickHeight - ERACombatPower_IconSize / 2, false)
-        self.iconVisible = false
-        self.icon:Hide()
+function ERACombatPowerMarking:updatePosition()
+    local x = self:GetPosition(self.bar.barWidth, self.value, self.bar.maxPower)
+    if (x ~= self.x) then
+        self.x = x
+        self.tick:SetStartPoint("TOPLEFT", self.bar.frame, x, 0)
+        self.tick:SetEndPoint("TOPLEFT", self.bar.frame, x, -self.bar.tickHeight)
+        if (self.icon) then
+            self.icon:Draw(x, -self.bar.tickHeight - ERACombatPower_IconSize / 2, false)
+            self.iconVisible = false
+            self.icon:Hide()
+        end
     end
+end
+function ERACombatPowerMarking:GetPosition(width, value, maxValue)
+    return 0
+end
+
+function ERACombatPowerMarking:updateContinuous(t)
+    if (self.ComputeValueOverride) then
+        self.value = self:ComputeValueOverride(t)
+        self:updatePosition()
+    end
+end
+
+function ERACombatPowerMarking:ComputeVisibilityOverride(t)
+    return true
+end
+function ERACombatPowerMarking:ComputeIconVisibilityOverride(t)
+    return false
+end
+
+--------------------------------------------------------------------------------------------------------------------------------
+-- CONSUMERS -------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
+---@class ERACombatPowerConsumer : ERACombatPowerMarking
+
+---comment
+---@param value number
+---@param iconID integer|nil
+---@param talent ERALIBTalent | nil
+---@return ERACombatPowerConsumer
+function ERACombatPower:AddConsumer(value, iconID, talent)
+    return ERACombatPowerConsumer:create(self, value, iconID, talent)
+end
+
+ERACombatPowerConsumer = {}
+ERACombatPowerConsumer.__index = ERACombatPowerConsumer
+setmetatable(ERACombatPowerConsumer, { __index = ERACombatPowerMarking })
+
+function ERACombatPowerConsumer:create(bar, value, iconID, talent)
+    local c = {}
+    setmetatable(c, ERACombatPowerConsumer)
+    c:constructMarking(bar, value, iconID, talent)
+    return c
+end
+
+function ERACombatPowerConsumer:GetPosition(width, value, maxValue)
+    return width * value / maxValue
 end
 
 function ERACombatPowerConsumer:updateCurrentPower(t)
@@ -899,9 +948,76 @@ function ERACombatPowerConsumer:updateCurrentPower(t)
         end
     end
 end
-function ERACombatPowerConsumer:ComputeVisibilityOverride(t)
-    return true
+
+--------------------------------------------------------------------------------------------------------------------------------
+-- THREASHOLD ------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
+---@class ERACombatPowerThreashold : ERACombatPowerMarking
+
+---comment
+---@param value number
+---@param iconID integer|nil
+---@param talent ERALIBTalent | nil
+---@return ERACombatPowerThreashold
+function ERACombatPower:AddThreashold(value, iconID, talent)
+    return ERACombatPowerThreashold:create(self, value, iconID, talent)
 end
-function ERACombatPowerConsumer:ComputeIconVisibilityOverride(t)
-    return false
+
+ERACombatPowerThreashold = {}
+ERACombatPowerThreashold.__index = ERACombatPowerThreashold
+setmetatable(ERACombatPowerThreashold, { __index = ERACombatPowerMarking })
+
+function ERACombatPowerThreashold:create(bar, value, iconID, talent)
+    local c = {}
+    setmetatable(c, ERACombatPowerThreashold)
+    c.bar = bar
+    c.value = value
+    c.talent = talent
+    c.tick = bar.overlay:CreateLine(nil, "OVERLAY", "ERACombatPowerTick")
+    c.tickVisible = true
+    if (iconID) then
+        c.icon = ERASquareIcon:Create(bar.overlay, "TOPLEFT", ERACombatPower_IconSize, iconID)
+    end
+    table.insert(bar.markings, c)
+    return c
+end
+
+function ERACombatPowerThreashold:GetPosition(width, value, maxValue)
+    return width * (maxValue - value) / maxValue
+end
+
+function ERACombatPowerThreashold:updateCurrentPower(t)
+    if (self:ComputeVisibilityOverride(t)) then
+        if (not self.tickVisible) then
+            self.tickVisible = true
+            self.tick:Show()
+        end
+        if (self.bar.maxPower - self.bar.currentPower >= self.value) then
+            if (self.excess) then
+                self.excess = false
+                self.tick:SetVertexColor(1.0, 1.0, 1.0)
+            end
+        else
+            if (not self.excess) then
+                self.excess = true
+                self.tick:SetVertexColor(1.0, 0.0, 0.0)
+            end
+        end
+        if (self.icon) then
+            self.iconVisible = self:ComputeIconVisibilityOverride(t)
+            if (self.iconVisible) then
+                self.icon:Show()
+            else
+                self.icon:Hide()
+            end
+        end
+    else
+        if (self.tickVisible) then
+            self.tickVisible = false
+            self.tick:Hide()
+            self.iconVisible = false
+            self.icon:Hide()
+        end
+    end
 end

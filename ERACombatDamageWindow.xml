@@ -1,7 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\..\FrameXML\UI.xsd">
 
-    <FontString name="ERACombatTankWindowText" virtual="true">
+    <FontString name="ERACombatDamageWindowText" virtual="true">
         <FontHeight>
             <AbsValue val="50"/>
         </FontHeight>
@@ -14,7 +14,7 @@
         <Color r="1.0" g="0.82" b="0"/>
     </FontString>
 
-    <Frame name="ERACombatTankWindowFrame" virtual="true">
+    <Frame name="ERACombatDamageWindowFrame" virtual="true">
         <!-->
         <Backdrop bgFile="Interface/DialogFrame/UI-DialogBox-Background" tile="true">
             <TileSize val="32"/>
@@ -27,7 +27,7 @@
                 </Texture>
             </Layer>
             <Layer level="OVERLAY">
-                <FontString parentKey="BRText" justifyH="RIGHT" inherits="ERACombatTankWindowText">
+                <FontString parentKey="BRText" justifyH="RIGHT" inherits="ERACombatDamageWindowText">
                     <FontHeight>
                         <AbsValue val="50"/>
                     </FontHeight>
@@ -56,11 +56,11 @@
         </Frames>
     </Frame>
 
-    <Line name="ERACombatTankWindowDELine" thickness="2" virtual="true">
+    <Line name="ERACombatDamageWindowDELine" thickness="2" virtual="true">
         <Color r="1" g="0.2" b="0.2"/>
     </Line>
 
-    <Line name="ERACombatTankWindowCurveLine" thickness="1" virtual="true">
+    <Line name="ERACombatDamageWindowCurveLine" thickness="1" virtual="true">
         <Color r="1" g="1" b="1"/>
     </Line>
 

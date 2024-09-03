@@ -46,7 +46,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     local kegCooldown = timers:AddTrackedCooldown(121253)
     local purifCooldown = timers:AddTrackedCooldown(119582)
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 1)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 22, 3, true, 1, 1, 0, 0, 1)
 
     local barWidth = 151
     local barX = -181
@@ -195,7 +195,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
             health:SetHealingColor(1.0, 1.0, 0.0)
             health:SetHealing(vivifyHeal * healMult)
         else
-            health:SetHealingColor(0.0, 0.0, 1.0)
+            health:SetHealingColor(0.5, 0.5, 1.0)
             health:SetHealing(ehHeal * healMult)
         end
     end

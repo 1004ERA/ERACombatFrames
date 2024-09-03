@@ -80,7 +80,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
 
     ERACombatFrames_MonkTimerBars(timers, monkTalents, timerParams)
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 0, true, 0.0, 0.0, 1.0, false, 2)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 22, 0, true, 0.0, 0.0, 1.0, 0, 2)
 
     local health = ERACombatHealth:Create(cFrame, 0, -111, 144, 20, 2)
     local mana = ERACombatPower:Create(cFrame, 0, -131, 144, 16, 0, false, 0.0, 0.0, 1.0, 2)

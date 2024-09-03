@@ -53,12 +53,14 @@ end
 ---@field remGCD number
 ---@field haste number
 ---@field occupied number
+---@field timerStandardDuration number
 ---@field offsetIconsX number
 ---@field offsetIconsY number
 ---@field OnResetToIdle fun(this: ERACombatTimers)
 ---@field PreUpdateCombatOverride fun(this: ERACombatTimers, t:number)
 ---@field DataUpdatedOverride fun(this: ERACombatTimers, t:number)
 ---@field AddTrackedBuff fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
+---@field AddTrackedBuffOnPet fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
 ---@field AddTrackedDebuff fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
 ---@field AddTrackedDebuffOnPlayer fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil): ERACombatTimersAura
 ---@field AddTrackedCooldown fun(this: ERACombatTimers, spellID: number, talent:ERALIBTalent|nil, ...: ERACombatTimersAdditionalID): ERACombatTimersCooldown
@@ -80,7 +82,6 @@ end
 ---@field id number
 ---@field talent ERALIBTalent | nil
 
----comment
 ---@param spellID number
 ---@param talent ERALIBTalent | nil
 ---@return ERACombatTimersAura
@@ -90,7 +91,16 @@ function ERACombatTimersGroup:AddTrackedBuff(spellID, talent)
     return b
 end
 
----comment
+---@param spellID number
+---@param talent ERALIBTalent | nil
+---@return ERACombatTimersAura
+function ERACombatTimersGroup:AddTrackedBuffOnPet(spellID, talent)
+    local b = ERACombatAura:create(self, spellID, false, talent)
+    self.trackedBuffsOnPet[spellID] = b
+    self.hasPetBuffs = true
+    return b
+end
+
 ---@param spellID number
 ---@param talent number
 ---@return ERACombatTimersAura
@@ -100,7 +110,6 @@ function ERACombatTimersGroup:AddTrackedDebuff(spellID, talent)
     return b
 end
 
----comment
 ---@param spellID number
 ---@param talent number
 ---@return ERACombatTimersAura
@@ -111,7 +120,6 @@ function ERACombatTimersGroup:AddTrackedDebuffOnPlayer(spellID, talent)
     return b
 end
 
----comment
 ---@param spellID number
 ---@param talent ERALIBTalent | nil
 ---@param ... ERACombatTimersAdditionalID
@@ -120,7 +128,6 @@ function ERACombatTimersGroup:AddTrackedCooldown(spellID, talent, ...)
     return ERACombatCooldown:create(self, spellID, talent, ...)
 end
 
----comment
 ---@param aura ERACombatTimersAura
 ---@param iconID number | nil
 ---@param r number
@@ -137,7 +144,6 @@ function ERACombatTimersGroup:AddAuraBar(aura, iconID, r, g, b, talent)
     return ERACombatTimerAuraBar:create(aura, iconID, r, g, b, talent)
 end
 
----comment
 ---@param totemID number
 ---@param iconID number
 ---@param r number
@@ -149,7 +155,6 @@ function ERACombatTimersGroup:AddTotemBar(totemID, iconID, r, g, b, talent)
     return ERACombatTimerTotemBar:create(self, totemID, iconID, r, g, b, talent)
 end
 
----comment
 ---@param cd ERACombatTimersCooldown
 ---@param iconID number | nil
 ---@param x number
@@ -162,7 +167,6 @@ function ERACombatTimersGroup:AddCooldownIcon(cd, iconID, x, y, showOnTimer, ava
     return ERACombatCooldownIcon:create(cd, x, y, iconID, showOnTimer, availableIfLessThanGCD, talent)
 end
 
----comment
 ---@param aura ERACombatTimersAura
 ---@param x number
 ---@param y number
@@ -173,7 +177,6 @@ function ERACombatTimersGroup:AddAuraIcon(aura, x, y, iconID, talent)
     return ERACombatAuraIcon:create(aura, x, y, iconID, talent)
 end
 
----comment
 ---@param aura ERACombatTimersAura
 ---@param iconID number | nil
 ---@param x number
@@ -190,7 +193,6 @@ function ERACombatTimersGroup:AddMissingAura(aura, iconID, x, y, beam, talent)
     return ERACombatTimersMissingAura:create(aura, iconID, x, y, beam, talent)
 end
 
----comment
 ---@param aura ERACombatTimersAura
 ---@param iconID number | nil
 ---@param x number
@@ -208,7 +210,6 @@ function ERACombatTimersGroup:AddProc(aura, iconID, x, y, beam, showStacks, tale
     return ERACombatTimersProc:create(aura, iconID, x, y, beam, showStacks, talent)
 end
 
----comment
 ---@param aura ERACombatTimersAura
 ---@param iconID number | nil
 ---@param x number
@@ -225,7 +226,6 @@ function ERACombatTimersGroup:AddStacksProgressIcon(aura, iconID, x, y, maxStack
     return ERACombatTimersStacksProgress:create(aura, iconID, x, y, maxStacks, talent)
 end
 
----comment
 ---@param iconID number | nil
 ---@param x any
 ---@param y any
@@ -237,7 +237,6 @@ function ERACombatTimersGroup:AddOffensiveDispellIcon(iconID, x, y, beam, talent
     return ERACombatTimersTargetDispellableIcon:create(self, iconID, x, y, beam, talent, ...)
 end
 
----comment
 ---@param spellID any
 ---@param x any
 ---@param y any
@@ -264,7 +263,6 @@ function ERACombatTimersGroup:AddKick(spellID, x, y, talent, displayOnlyIfSpellP
     table.insert(self.kicks, display)
 end
 
----comment
 ---@param spellID number
 ---@param x number
 ---@param y number
@@ -312,7 +310,6 @@ function ERACombatTimersGroup:AddOffensiveDispellCooldown(spellID, x, y, talent,
     return display
 end
 
----comment
 ---@param iconID number
 ---@return ERACombatTimerPriorityRawIcon
 function ERACombatTimersGroup:AddPriority(iconID)
@@ -332,7 +329,6 @@ end
 ---- TIMERS GROUP --------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
----comment
 ---@param cFrame ERACombatFrame
 ---@param x number
 ---@param y number
@@ -372,6 +368,7 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, revers
     end
     group.baseGCD = baseGCD
     group.remGCD = 0
+    group.occupied = 0
     group.haste = 1
     group.channelInfo = {}
     group.channelTicks = {}
@@ -396,6 +393,7 @@ function ERACombatTimersGroup:Create(cFrame, x, y, baseGCD, requiresCLEU, revers
     group.markers = {}
     group.activeMarkers = {}
     group.trackedBuffs = {}
+    group.trackedBuffsOnPet = {}
     group.trackedDebuffs = {}
     group.trackedDebuffsOnPlayer = {}
 
@@ -654,10 +652,6 @@ function ERACombatTimersGroup:UpdateCombat(t)
         end
     end
     for i = 1, 40 do
-        --[[
-            CHANGE 11
-        local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitDebuff("target", i, "PLAYER")
-        ]] --
         local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
         if (auraInfo) then
             local td = self.trackedDebuffs[auraInfo.spellId]
@@ -669,10 +663,6 @@ function ERACombatTimersGroup:UpdateCombat(t)
         end
     end
     for i = 1, 40 do
-        --[[
-            CHANGE 11
-        local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff("player", i, "PLAYER")
-        ]] --
         local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
         if (auraInfo) then
             local tb = self.trackedBuffs[auraInfo.spellId]
@@ -681,6 +671,19 @@ function ERACombatTimersGroup:UpdateCombat(t)
             end
         else
             break
+        end
+    end
+    if (self.hasPetBuffs) then
+        for i = 1, 40 do
+            local auraInfo = C_UnitAuras.GetBuffDataByIndex("pet", i, "PLAYER")
+            if (auraInfo) then
+                local tb = self.trackedBuffsOnPet[auraInfo.spellId]
+                if (tb ~= nil) then
+                    self:updateAura(tb, t, auraInfo.applications, auraInfo.duration, auraInfo.expirationTime)
+                end
+            else
+                break
+            end
         end
     end
 
@@ -1082,6 +1085,7 @@ ERACombatTimer.__index = ERACombatTimer
 ---@class ERACombatTimer
 ---@field remDuration number
 ---@field totDuration number
+---@field group ERACombatTimers
 
 function ERACombatTimer:constructTimer(group, talent)
     self.totDuration = 1
@@ -1186,29 +1190,27 @@ function ERACombatCooldown_Update(cd, t, totGCD)
             return
         end
     end
-    -- CHANGE 11 local started, duration = GetSpellCooldown(cd.spellID)
     local cdInfo = C_Spell.GetSpellCooldown(cd.spellID)
     if (cdInfo and cdInfo.startTime and cdInfo.startTime > 0) then
-        cd.currentCharges = 0
         local remDur = cdInfo.duration - (t - cdInfo.startTime)
-        if (cdInfo.duration <= totGCD + 0.5) then
-            if (cd.lastGoodUpdate) then
-                cd.isAvailable = true
-                -- cd.totDuration reste inchangé
-                cd.remDuration = cd.lastGoodDuration - (t - cd.lastGoodUpdate)
-                if (cd.remDuration < 0) then
-                    cd.remDuration = 0
-                elseif (cd.remDuration > remDur) then
-                    cd.remDuration = remDur
-                end
-                return
+        if (cdInfo.duration <= totGCD + 0.2 and cd.lastGoodUpdate) then
+            cd.isAvailable = true
+            cd.currentCharges = 1
+            -- cd.totDuration reste inchangé
+            cd.remDuration = cd.lastGoodDuration - (t - cd.lastGoodUpdate)
+            if (cd.remDuration < 0) then
+                cd.remDuration = 0
+            elseif (cd.remDuration > remDur) then
+                cd.remDuration = remDur
             end
+            return
         end
+        cd.currentCharges = 0
         cd.isAvailable = false
         cd.totDuration = cdInfo.duration
         cd.remDuration = remDur
+        cd.lastGoodDuration = remDur
         cd.lastGoodUpdate = t
-        cd.lastGoodDuration = cd.remDuration
     else
         cd.isAvailable = true
         if (cdInfo) then
@@ -1224,9 +1226,11 @@ function ERACombatCooldown_Update(cd, t, totGCD)
 end
 
 function ERACombatCooldown:updateDurations(t)
+    --[[
     if (self.mustAlwaysUpdateKind) then
         ERACombatCooldown_UpdateKind(self)
     end
+    ]]
     ERACombatCooldown_Update(self, t, self.group.totGCD)
 end
 
@@ -1258,7 +1262,7 @@ function ERACombatAura:create(group, spellID, isDebuff, talent)
     t.spellID = spellID
     t.stacks = 0
     t.found = false
-    self.isDebuff = isDebuff
+    t.isDebuff = isDebuff
     return t
 end
 

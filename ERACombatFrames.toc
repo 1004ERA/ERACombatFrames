@@ -23,8 +23,8 @@ ERACombatTimers.lua
 ERACombatGrid.xml
 ERACombatGrid.lua
 
-ERACombatTankWindow.xml
-ERACombatTankWindow.lua
+ERACombatDamageWindow.xml
+ERACombatDamage.lua
 
 ERACombatEnemiesTracker.lua
 ERACombatDOTracker.lua
@@ -44,6 +44,11 @@ ERACombat_Evoker.lua
 ERACombat_Evoker_Devastation.lua
 ERACombat_Evoker_Preservation.lua
 ERACombat_Evoker_Augmentation.lua
+
+ERACombat_DeathKnight.lua
+ERACombat_DeathKnight_Blood.lua
+ERACombat_DeathKnight_Frost.lua
+ERACombat_DeathKnight_Unholy.lua
 
 ERACombatOptions.xml
 ERACombatOptions.lua

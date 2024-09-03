@@ -18,7 +18,9 @@ ERA_Debug = function()
 end
 --]]
 
+--/run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
 --/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
+--/run print(C_Spell.GetSpellInfo("").spellID)
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")
@@ -32,7 +34,9 @@ function ERACombatFrames_event(event, ...)
         ERACombatFrames_classID = classID
         ERACombatOptions_initialize()
         local cFrame = ERACombatFrame:Create()
-        if (classID == 9) then
+        if (classID == 6) then
+            ERACombatFrames_DeathKnightSetup(cFrame)
+        elseif (classID == 9) then
             --ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
             ERACombatFrames_MonkSetup(cFrame)

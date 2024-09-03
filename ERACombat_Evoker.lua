@@ -68,7 +68,7 @@ function ERACombatFrames_EvokerSetup(cFrame)
         burnout_or_onslaught = ERALIBTalent:CreateOr(ERALIBTalent:Create(115624), ERALIBTalent:Create(117541))
     }
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -55, 128, 16, 0, true, 0.4, 0.4, 0.8, false, devastationActive, preservationActive, augmentationActive)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -55, 128, 16, 16, 0, true, 0.4, 0.4, 0.8, 0, devastationActive, preservationActive, augmentationActive)
 
     local essence = ERACombatEvokerEssence:create(cFrame, -111, -51, 0, devastationActive, augmentationActive)
 

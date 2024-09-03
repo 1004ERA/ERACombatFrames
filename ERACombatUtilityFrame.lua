@@ -253,7 +253,7 @@ function ERACombatUtilityFrame:AddBagItem(x, y, itemID, iconID, warningIfMissing
 end
 
 ---comment
----@param cFrame any
+---@param cFrame ERACombatFrame
 ---@param x number
 ---@param y number
 ---@param ... number
@@ -737,6 +737,7 @@ setmetatable(ERACombatUtilityCooldown, { __index = ERACombatUtilityCooldownBase 
 ---@field alphaWhenOnShortCooldown number
 ---@field alphaWhenOnLongCooldown number
 ---@field IconUpdatedAndShownOverride fun(this:ERACombatUtilityCooldown, t:number)
+---@field protected specialUpdate fun(this:ERACombatUtilityCooldown, t:number, totGCD:number) | nil
 
 function ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCombat, talent, ...)
     local c = {}
@@ -752,7 +753,11 @@ function ERACombatUtilityCooldown:updateIdle(t)
     if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not C_Spell.IsSpellUsable(self.spellID)) then -- CHANGE 11 IsUsableSpell(self.spellID)
         self.icon:Hide()
     else
-        ERACombatCooldown_Update(self, t, 2)
+        if (self.specialUpdate) then
+            self:specialUpdate(t, 2)
+        else
+            ERACombatCooldown_Update(self, t, 2)
+        end
         self.icon:StopHighlight()
         if (self.hasCharges) then
             if (self.currentCharges > 0) then
@@ -804,7 +809,11 @@ function ERACombatUtilityCooldown:doUpdateCombat(t)
     if ((self.showOnlyIfPetSpellKnown and not IsSpellKnown(self.spellID, true)) or self.showOnlyIfSpellUsable and not C_Spell.IsSpellUsable(self.spellID)) then -- CHANGE 11 IsUsableSpell(self.spellID)
         self.icon:Hide()
     else
-        ERACombatCooldown_Update(self, t, 2)
+        if (self.specialUpdate) then
+            self:specialUpdate(t, 2)
+        else
+            ERACombatCooldown_Update(self, t, 2)
+        end
         if (self.hasCharges) then
             if (self.currentCharges > 0) then
                 self.icon:SetOverlayValue(self.remDuration / self.totDuration)

@@ -34,7 +34,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local tigerPalmConsumer55 = nrg:AddConsumer(55, 606551, talent_inner_peace)
 
     local combatHealth = ERACombatHealth:Create(cFrame, 0, -77, 144, 22, 3)
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 3, true, 1, 1, 0, false, 3)
+    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 22, 3, true, 1, 1, 0, 0, 3)
 
     local timers = ERACombatTimersGroup:Create(cFrame, -88, 32, 1, true, false, 3)
     ---@cast timers ERACombatTimers_MonkWindwalker
