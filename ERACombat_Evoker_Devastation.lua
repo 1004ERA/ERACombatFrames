@@ -17,6 +17,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     local talent_shatter = ERALIBTalent:Create(115627)
     local talent_iridescence = ERALIBTalent:Create(115633)
     local talent_dragonrage = ERALIBTalent:Create(115643)
+    local talent_massdisintegrate = ERALIBTalent:Create(117536)
 
     local firstColumnX = 0.9
 
@@ -57,10 +58,8 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     local burstTimer = timers:AddTrackedBuff(359618)
 
     local chargedBlastTimer = timers:AddTrackedBuff(370454, ERALIBTalent:Create(115628))
-    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -1.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_not_surge))
-    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2.5, -0.9, 20, ERALIBTalent:CreateAnd(talent_firestorm, talent_surge))
-    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -2, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_not_surge))
-    timers:AddStacksProgressIcon(chargedBlastTimer, nil, -3, 0, 20, ERALIBTalent:CreateAnd(talent_not_firestorm, talent_surge))
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, 0, -0, 20, talent_not_surge)
+    timers:AddStacksProgressIcon(chargedBlastTimer, nil, 1, -0, 20, talent_surge)
 
     local iriRedTimer = timers:AddTrackedBuff(386353, talent_iridescence)
     timers:AddAuraBar(iriRedTimer, nil, 1, 0, 0)
@@ -72,6 +71,9 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
 
     local rageTimer = timers:AddTrackedBuff(375087, talent_dragonrage)
     timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_dragonrage)
+
+    local massdisintegrate = timers:AddTrackedBuff(436336, talent_massdisintegrate)
+    timers:AddAuraBar(massdisintegrate, nil, 0.2, 0.2, 1.0)
 
     ------------
     --- prio ---

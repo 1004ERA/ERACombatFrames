@@ -18,6 +18,8 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
     local talent_scythe = ERALIBTalent:Create(96330)
     local talent_ebon_fever = ERALIBTalent:Create(96294)
 
+    ERAOutOfCombatStatusBars:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY, ERADK_BarsWidth, 4 * ERADK_BarsHeight / 9, 3 * ERADK_BarsHeight / 9, 6, false, 0.2, 0.7, 1.0, 2 * ERADK_BarsHeight / 9, 3)
+
     local dk = ERACombat_CommonDK(cFrame, runes, 1, talents, 4 * ERADK_BarsHeight / 9, 2 * ERADK_BarsHeight / 9, 3 * ERADK_BarsHeight / 9, 3)
     ERACombat_DPSDK(dk.combatHealth, dk.combatPower, dk.damageTaken, dk.succor, dk.blooddraw, talents)
 
@@ -28,7 +30,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
     missingPlague.icon:SetVertexColor(1.0, 0.2, 0.2, 1.0)
     local plagueLongBar = dk.timers:AddAuraBar(plague, nil, 0.3, 0.4, 0.1)
     function plagueLongBar:GetRemDurationOr0IfInvisibleOverride(t)
-        if (plague.remDuration <= 4 or (plague.remDuration <= 2.5 and talent_ebon_fever:PlayerHasTalent())) then
+        if (plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent())) then
             return plague.remDuration
         else
             return 0
@@ -36,7 +38,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
     end
     local plagueShortBar = dk.timers:AddAuraBar(plague, nil, 0.7, 1.0, 0.0)
     function plagueShortBar:GetRemDurationOr0IfInvisibleOverride(t)
-        if (plague.remDuration <= 4 or (plague.remDuration <= 2.5 and talent_ebon_fever:PlayerHasTalent())) then
+        if (plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent())) then
             return 0
         else
             return plague.remDuration
@@ -105,7 +107,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
     function outbreakPrio:ComputePriority(t)
         if plague.remDuration <= dk.timers.occupied + 0.1 then
             return 2
-        elseif plague.remDuration <= 4 or (plague.remDuration <= 2.5 and talent_ebon_fever:PlayerHasTalent()) then
+        elseif plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent()) then
             return 5
         else
             return 0
@@ -174,6 +176,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
 
     dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY, 49206, nil, true, talent_gargoyle)
     dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY - 1, 207289, nil, true, talent_frenzy)
+    dk.utility:AddCooldown(ERADK_UtilityBaseX - 2, ERADK_UtilityBaseY, 47481, nil, true, talents.raisedead).showOnlyIfPetSpellKnown = true
     dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY, 46585, nil, true, talents.raisedead)
     dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY - 1, 327574, nil, true, talents.sacrifice)
     ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX - 1.8, ERADK_UtilityBaseY - 0.5, 42560, nil, true, runes, 1, talent_army)

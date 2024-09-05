@@ -736,6 +736,7 @@ setmetatable(ERACombatUtilityCooldown, { __index = ERACombatUtilityCooldownBase 
 ---@field alphaWhenOffCooldown number
 ---@field alphaWhenOnShortCooldown number
 ---@field alphaWhenOnLongCooldown number
+---@field showOnlyIfPetSpellKnown boolean
 ---@field IconUpdatedAndShownOverride fun(this:ERACombatUtilityCooldown, t:number)
 ---@field protected specialUpdate fun(this:ERACombatUtilityCooldown, t:number, totGCD:number) | nil
 

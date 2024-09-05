@@ -261,6 +261,8 @@ function ERACombatDamageTakenWindow:updateAsNested_returnHeightForTimerOverlay(t
     end
 
     self.dt:drawLines(max, tPast)
+
+    return 0
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -312,6 +314,7 @@ function ERACombatDamageEventLine_setupLine(x, w)
     x.line = w.chart:CreateLine(nil, "OVERLAY", "ERACombatDamageWindowDELine")
     x.line:Hide()
     x.visible = false
+    setmetatable(x, ERACombatDamageEventLine)
 end
 
 function ERACombatDamageEventLine:hide()

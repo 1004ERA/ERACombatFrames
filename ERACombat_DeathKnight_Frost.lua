@@ -21,6 +21,18 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, runes, talents)
     dk.combatPower:AddConsumer(30, nil, nil)
     dk.combatPower:AddThreashold(20, nil, nil)
 
+    local fever = dk.timers:AddTrackedDebuff(55095)
+    local missingFever = dk.timers:AddMissingAura(fever, nil, ERADK_TimersSpecialX0, ERADK_TimersSpecialY0 - 1.5, false)
+    missingFever.icon:SetVertexColor(1.0, 0.2, 0.2, 1.0)
+    local feverShortBar = dk.timers:AddAuraBar(fever, nil, 1.0, 0.0, 1.0)
+    function feverShortBar:GetRemDurationOr0IfInvisibleOverride(t)
+        if (fever.remDuration <= 6) then
+            return 0
+        else
+            return fever.remDuration
+        end
+    end
+
     local dnd = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 43265)
     local dndIcon = dk.timers:AddCooldownIcon(dnd, nil, 0, 0, true, true)
 

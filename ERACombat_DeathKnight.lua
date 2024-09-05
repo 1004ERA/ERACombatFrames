@@ -185,8 +185,9 @@ function ERACombat_CommonDK(cFrame, runes, soulReaperBasePrio, talents, healthHe
     utility:AddCooldown(0, -1, 51052, nil, true, talents.amz)
     utility:AddCooldown(1, 0, 48792, nil, true, talents.fortitude)
     utility:AddCooldown(1, -1, 48743, nil, true, talents.pact)
-    utility:AddCooldown(2, 0, 49039, nil, true) -- lichborne
+    utility:AddCooldown(2, 0, 49039, nil, true)  -- lichborne
 
+    utility:AddCooldown(4, -1, 61999, nil, true) -- raise dead
     utility:AddRacial(4, 0)
     utility:AddWarlockHealthStone(3, -1)
 
