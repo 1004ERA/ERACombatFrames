@@ -42,6 +42,11 @@
 ---@field blooddraw ERALIBTalent
 ---@field rootchains ERALIBTalent
 ---@field cleavednd ERALIBTalent
+---@field deathcharger ERALIBTalent
+---@field not_deathcharger ERALIBTalent
+---@field reapermark ERALIBTalent
+---@field reapermark1rune ERALIBTalent
+---@field reapermark2rune ERALIBTalent
 
 ---comment
 ---@param cFrame ERACombatFrame
@@ -84,6 +89,11 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         blooddraw = ERALIBTalent:Create(96184),
         rootchains = ERALIBTalent:Create(96215),
         cleavednd = ERALIBTalent:Create(96202),
+        deathcharger = ERALIBTalent:Create(123412),
+        not_deathcharger = ERALIBTalent:CreateNotTalent(123412),
+        reapermark = ERALIBTalent:Create(117659),
+        reapermark2rune = ERALIBTalent:CreateAnd(ERALIBTalent:Create(117659), ERALIBTalent:CreateNotTalent(117629)),
+        reapermark1rune = ERALIBTalent:Create(117629),
     }
 
     ERAOutOfCombatStatusBars:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY, ERADK_BarsWidth, 2 * ERADK_BarsHeight / 3, ERADK_BarsHeight / 3, 6, false, 0.2, 0.7, 1.0, 0, bloodActive, frostActive)
@@ -165,7 +175,7 @@ function ERACombat_CommonDK(cFrame, runes, soulReaperBasePrio, talents, healthHe
         end
     end
 
-    local blooddraw = timers:AddTrackedBuff(374598, talents.blooddraw)
+    local blooddraw = timers:AddTrackedBuff(454871, talents.blooddraw)
     timers:AddAuraBar(blooddraw, nil, 0.8, 0.4, 0.5)
 
     local succor = timers:AddTrackedBuff(101568)
@@ -176,6 +186,10 @@ function ERACombat_CommonDK(cFrame, runes, soulReaperBasePrio, talents, healthHe
     timers:AddAuraBar(timers:AddTrackedBuff(49039), nil, 0.4, 0.4, 0.4)     -- lichborne
 
     timers:AddAuraBar(timers:AddTrackedBuff(188290), 136144, 0.8, 0.5, 0.0) -- cleave dnd
+
+    timers:AddAuraBar(timers:AddTrackedBuff(444347, talents.deathcharger), nil, 0.8, 1.0, 0.9)
+
+    timers:AddAuraBar(timers:AddTrackedDebuff(434765, talents.reapermark), nil, 0.6, 0.2, 0.4)
 
     local utility = ERACombatUtilityFrame:Create(cFrame, 0, -181, spec)
 
@@ -194,9 +208,10 @@ function ERACombat_CommonDK(cFrame, runes, soulReaperBasePrio, talents, healthHe
     utility:AddCooldown(1, 1, 45524, nil, true, talents.rootchains)
     utility:AddCooldown(3, 0, 207167, nil, true, talents.blinding)
 
-    utility:AddCooldown(3, 1, 49576, nil, true) -- grip
+    utility:AddCooldown(3, 1, 49576, nil, true)                           -- grip
     utility:AddCooldown(4, 1, 221562, nil, true, talents.vader)
-    utility:AddCooldown(3, 2, 48265, nil, true) -- advance&
+    utility:AddCooldown(3, 2, 48265, nil, true, talents.not_deathcharger) -- advance
+    utility:AddCooldown(3, 2, 444347, nil, true, talents.deathcharger)
     utility:AddCooldown(4, 2, 212552, nil, true, talents.wraithwalk)
     utility:AddWarlockPortal(5, 2)
     utility:AddCooldown(2.5, 2.9, 56222, nil, true).alphaWhenOffCooldown = 0.1 -- taunt

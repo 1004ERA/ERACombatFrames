@@ -18,6 +18,9 @@
 ---@field leaping ERALIBTalent
 ---@field fast_blossom ERALIBTalent
 ---@field burnout_or_onslaught ERALIBTalent
+---@field maneuverability ERALIBTalent
+---@field not_maneuverability ERALIBTalent
+---@field engulf ERALIBTalent
 
 ---@class ERACombat_EvokerTimerParams
 ---@field quellX number
@@ -65,7 +68,10 @@ function ERACombatFrames_EvokerSetup(cFrame)
         roar = ERALIBTalent:Create(115607),
         leaping = ERALIBTalent:Create(115657),
         fast_blossom = ERALIBTalent:Create(115577),
-        burnout_or_onslaught = ERALIBTalent:CreateOr(ERALIBTalent:Create(115624), ERALIBTalent:Create(117541))
+        burnout_or_onslaught = ERALIBTalent:CreateOr(ERALIBTalent:Create(115624), ERALIBTalent:Create(117541)),
+        maneuverability = ERALIBTalent:Create(117538),
+        not_maneuverability = ERALIBTalent:CreateNotTalent(117538),
+        engulf = ERALIBTalent:Create(117547),
     }
 
     ERAOutOfCombatStatusBars:Create(cFrame, 0, -55, 128, 16, 16, 0, true, 0.4, 0.4, 0.8, 0, devastationActive, preservationActive, augmentationActive)

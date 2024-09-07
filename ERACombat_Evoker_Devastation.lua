@@ -18,6 +18,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     local talent_iridescence = ERALIBTalent:Create(115633)
     local talent_dragonrage = ERALIBTalent:Create(115643)
     local talent_massdisintegrate = ERALIBTalent:Create(117536)
+    local talent_imminent_destruction = ERALIBTalent:Create(115638)
 
     local firstColumnX = 0.9
 
@@ -50,10 +51,16 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
 
     local firestorm = timers:AddTrackedCooldown(368847, talent_firestorm)
     local firestormIcons = {}
-    table.insert(firestormIcons, timers:AddCooldownIcon(firestorm, nil, -2, 0, true, true, talent_not_surge))
-    table.insert(firestormIcons, timers:AddCooldownIcon(firestorm, nil, -3, 0, true, true, talent_surge))
+    for i = 0, 2 do
+        table.insert(firestormIcons, timers:AddCooldownIcon(firestorm, nil, -2 - i, 0, true, true, ERALIBTalent:CreateCount(i, talent_surge, talents.engulf)))
+    end
     local instaStorm = timers:AddTrackedBuff(370818, talent_instastorm)
     timers:AddAuraBar(instaStorm, nil, 0.6, 0.0, 0.0)
+
+    local engulf = timers:AddTrackedCooldown(443328, talents.engulf)
+    local engulfIcons = {}
+    table.insert(engulfIcons, timers:AddCooldownIcon(engulf, nil, -2, 0, true, true, talent_not_surge))
+    table.insert(engulfIcons, timers:AddCooldownIcon(engulf, nil, -3, 0, true, true, talent_surge))
 
     local burstTimer = timers:AddTrackedBuff(359618)
 
@@ -72,8 +79,21 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     local rageTimer = timers:AddTrackedBuff(375087, talent_dragonrage)
     timers:AddAuraBar(rageTimer, nil, 1, 0.5, 0.1, talent_dragonrage)
 
+    local imminentDestruction = timers:AddTrackedBuff(411055, talent_imminent_destruction)
+    timers:AddAuraBar(imminentDestruction, nil, 0.2, 1.0, 0.5)
+
     local massdisintegrate = timers:AddTrackedBuff(436336, talent_massdisintegrate)
-    timers:AddAuraBar(massdisintegrate, nil, 0.2, 0.2, 1.0)
+    timers:AddAuraBar(massdisintegrate, nil, 0.8, 0.2, 1.0)
+
+    local firedot = timers:AddTrackedDebuff(357209)
+    local firedotBar = timers:AddAuraBar(firedot, nil, 1.0, 1.0, 0.0)
+    function firedotBar:GetRemDurationOr0IfInvisibleOverride(t)
+        if (talents.engulf:PlayerHasTalent() and engulf.remDuration <= self.group.timerStandardDuration) then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     ------------
     --- prio ---
@@ -88,8 +108,9 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     5 - shatter (good spells soon available)
     6 - breath
     7 - surge
-    8 - storm
-    9 - shatter
+    8 - engulf
+    9 - storm
+    10 - shatter
 
     ]]
 
@@ -112,7 +133,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
             if (goodSpells <= 3) then
                 return 5
             else
-                return 9
+                return 10
             end
         end
     end
@@ -155,9 +176,19 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
         return 7
     end
 
-    for _, icon in ipairs(firestormIcons) do
+    for _, icon in ipairs(engulfIcons) do
         function icon:ComputeAvailablePriorityOverride()
             return 8
+        end
+    end
+
+    for _, icon in ipairs(firestormIcons) do
+        function icon:ComputeAvailablePriorityOverride()
+            if (enemies:GetCount() > 1) then
+                return 9
+            else
+                return 0
+            end
         end
     end
 
@@ -166,8 +197,9 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, essence, combat
     ---------------
 
     utility:AddCooldown(-2.5, 0.9, 375087, nil, true, talent_dragonrage)
-    utility:AddCooldown(-3.5, 0.9, 357210, nil, true) -- deep breath
-    utility:AddCooldown(-4, 0, 355913, nil, true)     -- emerald blossom
+    utility:AddCooldown(-3.5, 0.9, 357210, nil, true, talents.not_maneuverability) -- deep breath
+    utility:AddCooldown(-3.5, 0.9, 433874, nil, true, talents.maneuverability)     -- deep breath
+    utility:AddCooldown(-4, 0, 355913, nil, true)                                  -- emerald blossom
     -- out of combat
     utility:AddCooldown(-2, 3, 382266, nil, false, talent_big_empower)
     utility:AddCooldown(-2, 3, 357208, nil, false, ERALIBTalent:CreateNot(talent_big_empower))

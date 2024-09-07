@@ -112,6 +112,12 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
     local caress = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 195292)
     local caressIcon = dk.timers:AddCooldownIcon(caress, nil, -1, -1.8, true, true)
 
+    local reapermark1rune = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 439843, talents.reapermark1rune)
+    local reapermark2rune = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 2, 439843, talents.reapermark2rune)
+    local reapermarkIcons = {}
+    table.insert(reapermarkIcons, dk.timers:AddCooldownIcon(reapermark1rune, nil, 0, -1.8, true, true))
+    table.insert(reapermarkIcons, dk.timers:AddCooldownIcon(reapermark2rune, nil, 0, -1.8, true, true))
+
     local tombstone = timers:AddTrackedCooldown(219809, talent_tombstone)
     local tombstoneIcon = dk.timers:AddCooldownIcon(tombstone, nil, -1.5, -0.9, true, true)
 
@@ -124,7 +130,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
     local bonestormIcon = dk.timers:AddCooldownIcon(bonestorm, nil, -2, -1.8, true, true)
 
     local bloodtap = timers:AddTrackedCooldown(221699, talent_bloodtap)
-    local bloodtapIcon = dk.timers:AddCooldownIcon(bonestorm, nil, 1.9, 0.5, true, true)
+    local bloodtapIcon = dk.timers:AddCooldownIcon(bloodtap, nil, 1.9, 0.5, true, true)
 
     local crimson = timers:AddTrackedBuff(81141)
     timers:AddAuraBar(crimson, nil, 0.5, 1.0, 0.1)
@@ -145,11 +151,12 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
     3 - boil
     4 - dnd proc
     5 - bloodtap
-    6 - dnd
-    7 - consumption
-    8 - drinker
-    9 - runetap
-    10 - bloodmark refresh
+    6 - reapermark
+    7 - dnd
+    8 - consumption
+    9 - drinker
+    10 - runetap
+    11 - bloodmark refresh
 
     ]]
 
@@ -157,7 +164,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
         if bloodmarkDebuff.remDuration <= self.group.occupied then
             return 2
         elseif bloodmarkDebuff.remDuration <= 4 then
-            return 10
+            return 11
         else
             return 0
         end
@@ -175,7 +182,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
         if crimson.remDuration > self.group.occupied + 0.1 then
             return 4
         else
-            return 6
+            return 7
         end
     end
 
@@ -187,16 +194,22 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
         end
     end
 
-    function consumptionIcon:ComputeAvailablePriorityOverride()
-        return 7
+    for _, icon in ipairs(reapermarkIcons) do
+        function icon:ComputeAvailablePriorityOverride()
+            return 6
+        end
     end
 
-    function drinkerIcon:ComputeAvailablePriorityOverride()
+    function consumptionIcon:ComputeAvailablePriorityOverride()
         return 8
     end
 
-    function runetapIcon:ComputeAvailablePriorityOverride()
+    function drinkerIcon:ComputeAvailablePriorityOverride()
         return 9
+    end
+
+    function runetapIcon:ComputeAvailablePriorityOverride()
+        return 10
     end
 
     -------------

@@ -205,7 +205,8 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, essence, comba
 
     utility:AddMissingBuffAnyCaster(5199623, -1, -1.5, talent_attunement, 403264, 403265)
 
-    utility:AddCooldown(-1.5, 0.9, 403631, nil, true) -- breath of eons
+    utility:AddCooldown(-1.5, 0.9, 403631, nil, true, talents.not_maneuverability) -- breath of eons
+    utility:AddCooldown(-1.5, 0.9, 442204, nil, true, talents.maneuverability)     -- breath of eons
     utility:AddCooldown(-4, 0, 404977, 5201905, true, talent_skip)
 
     -- out of combat

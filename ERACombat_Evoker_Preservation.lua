@@ -59,6 +59,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     timers:AddCooldownIcon(timers:AddTrackedCooldown(357170, talent_dilation), nil, first_column_X, first_column_Y + 1, true, true)
     timers:AddCooldownIcon(timers:AddTrackedCooldown(373861, talent_anomaly), nil, first_column_X, first_column_Y + 2, true, true)
     timers:AddCooldownIcon(timers:AddTrackedCooldown(366155, talent_reversion), nil, first_column_X, first_column_Y + 3, true, true)
+    timers:AddCooldownIcon(timers:AddTrackedCooldown(443328, talents.engulf), nil, first_column_X, first_column_Y + 4, true, true)
 
     --local stasisAccTimer = timers:AddTrackedBuff(370537, talent_stasis)
     local stasisReleaseTimer = timers:AddTrackedBuff(370562, talent_stasis)
