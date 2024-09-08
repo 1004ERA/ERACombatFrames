@@ -379,6 +379,7 @@ end
 ---@field frame unknown
 ---@field cFrame ERACombatFrame
 ---@field CLEU fun(this:ERACombatModule, t:number)
+---@field protected construct fun(this:ERACombatModule, cFrame:ERACombatFrame, idleUpdate:number, combatUpdate:number, requiresCLEU:boolean, ...:number)
 
 ERACombatModule = {}
 ERACombatModule.__index = ERACombatModule
