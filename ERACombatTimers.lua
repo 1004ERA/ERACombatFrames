@@ -281,12 +281,12 @@ function ERACombatTimersGroup:AddOffensiveDispellCooldown(spellID, x, y, talent,
     function display:TimerVisibilityOverride(t)
         local dispellable = false
         for i, t in ipairs(display.types) do
-            if (t == "magic") then
+            if (t == "Magic") then
                 if (selfThis.targetDispellableMagic) then
                     dispellable = true
                     break
                 end
-            elseif (t == "enrage") then
+            elseif (t == "Enrage") then
                 if (selfThis.targetDispellableRage) then
                     dispellable = true
                     break
@@ -631,7 +631,6 @@ function ERACombatTimersGroup:updateAura(aura, t, stacks, durAura, expirationTim
     aura:auraFound(auraRemDuration, durAura, stacks)
 end
 
----comment
 ---@param t number
 function ERACombatTimersGroup:UpdateCombat(t)
     if (self.hasTrackedDebuffsOnPlayer) then

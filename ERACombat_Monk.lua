@@ -1,4 +1,4 @@
----@class MonkCommonTimerIconParams
+---@class (exact) MonkCommonTimerIconParams
 ---@field kickX number
 ---@field kickY number
 ---@field paraX number
@@ -7,7 +7,7 @@
 ---@field todY number
 ---@field todPrio number
 
----@class MonkCommonTalents
+---@class (exact) MonkCommonTalents
 ---@field diffuse ERALIBTalent
 ---@field fortify ERALIBTalent
 ---@field clash ERALIBTalent
@@ -66,7 +66,7 @@ function ERACombatFrames_MonkSetup(cFrame)
         scalingEH = ERALIBTalent:Create(124924)
     }
 
-    local enemies = ERACombatEnemies:Create(cFrame, 1, 3)
+    local enemies = ERACombatEnemies:Create(cFrame, bmActive, wwActive)
 
     if (bmActive) then
         ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)

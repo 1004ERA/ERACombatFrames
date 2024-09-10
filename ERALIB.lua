@@ -1,5 +1,8 @@
+---@param fs FontString
+---@param size number
 function ERALIB_SetFont(fs, size)
-    fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICKOUTLINE")
+    --fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICKOUTLINE")
+    fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICK")
 end
 
 function ERALIB_GetSpellSlot(spellID)
@@ -17,7 +20,8 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERALIBTalent
----@field PlayerHasTalent fun():boolean
+---@field PlayerHasTalent fun(this:ERALIBTalent):boolean
+---@field protected construct fun(this:ERALIBTalent)
 ---@field rank number
 
 ERALIBTalent_all_talents = {}
@@ -172,6 +176,25 @@ end
 function ERALIBTalentInstance:computeHasTalent(selectedTalentsById)
     local _, _, _, _, _, _, _, instanceID = GetInstanceInfo()
     return instanceID == self.iid
+end
+
+---@class ERALIBTalentTrue : ERALIBTalent
+ERALIBTalentTrue = {}
+ERALIBTalentTrue.__index = ERALIBTalentTrue
+setmetatable(ERALIBTalentTrue, { __index = ERALIBTalent })
+ERALIBTalentTrue:construct()
+function ERALIBTalentTrue:computeHasTalent(selectedTalentsById)
+    self.rank = 1
+    return true
+end
+---@class ERALIBTalentFalse : ERALIBTalent
+ERALIBTalentFalse = {}
+ERALIBTalentFalse.__index = ERALIBTalentFalse
+setmetatable(ERALIBTalentFalse, { __index = ERALIBTalent })
+ERALIBTalentFalse:construct()
+function ERALIBTalentFalse:computeHasTalent(selectedTalentsById)
+    self.rank = 0
+    return false
 end
 
 ERALIBTalentYes = {}

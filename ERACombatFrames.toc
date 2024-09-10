@@ -34,6 +34,12 @@ ERACombatUtilityFrame.lua
 ERACombatPoints.xml
 ERACombatPoints.lua
 
+ERAHUD.xml
+ERAHUDData.lua
+ERAHUDDisplay.lua
+ERAHUDStatusBars.lua
+ERAHUD.lua
+
 ERACombat_Monk.lua
 ERACombat_Monk_Brewmaster.lua
 ERACombat_Monk_Mistweaver.lua
@@ -49,6 +55,9 @@ ERACombat_DeathKnight.lua
 ERACombat_DeathKnight_Blood.lua
 ERACombat_DeathKnight_Frost.lua
 ERACombat_DeathKnight_Unholy.lua
+
+ERACombat_Paladin.lua
+ERACombat_Paladin_Retribution.lua
 
 ERACombatOptions.xml
 ERACombatOptions.lua

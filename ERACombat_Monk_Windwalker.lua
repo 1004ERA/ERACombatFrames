@@ -7,8 +7,8 @@
 ---@field combatHealth ERACombatHealth
 
 ---comment
----@param cFrame any
----@param enemies any
+---@param cFrame ERACombatFrame
+---@param enemies ERACombatEnemiesCount
 ---@param monkTalents MonkCommonTalents
 function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local talent_whirling = ERALIBTalent:Create(125011)

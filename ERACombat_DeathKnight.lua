@@ -25,7 +25,7 @@
 
 ]]
 
----@class DKCommonTalents
+---@class (exact) DKCommonTalents
 ---@field kick ERALIBTalent
 ---@field soulreaper ERALIBTalent
 ---@field wraithwalk ERALIBTalent

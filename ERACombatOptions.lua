@@ -46,12 +46,12 @@ function ERACombatOptions_initialize()
         ERACombatOptionsVariables = {}
     end
 
-    ERACombatOptions_addSpecOption(2, 1, ERACombatOptions_Grid) -- paladin holy
-    ERACombatOptions_addSpecOption(5, 1, ERACombatOptions_Grid) -- priest disc
-    ERACombatOptions_addSpecOption(5, 2, ERACombatOptions_Grid) -- priest holy
-    ERACombatOptions_addSpecOption(6, 1, ERACombatOptions_TankWindow) -- dk blood
-    ERACombatOptions_addSpecOption(10, 2, ERACombatOptions_Grid) -- monk heal
-    ERACombatOptions_addSpecOption(11, 4, ERACombatOptions_Grid) -- druid heal
+    ERACombatOptions_addSpecOption(2, 1, ERACombatOptions_Grid)        -- paladin holy
+    ERACombatOptions_addSpecOption(5, 1, ERACombatOptions_Grid)        -- priest disc
+    ERACombatOptions_addSpecOption(5, 2, ERACombatOptions_Grid)        -- priest holy
+    ERACombatOptions_addSpecOption(6, 1, ERACombatOptions_TankWindow)  -- dk blood
+    ERACombatOptions_addSpecOption(10, 2, ERACombatOptions_Grid)       -- monk heal
+    ERACombatOptions_addSpecOption(11, 4, ERACombatOptions_Grid)       -- druid heal
     ERACombatOptions_addSpecOption(12, 2, ERACombatOptions_TankWindow) -- dh vengeance
 
     local optionsContent = ERACombatOptionsFrame.ScrollFrame.ScrollChild

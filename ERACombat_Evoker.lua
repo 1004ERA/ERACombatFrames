@@ -1,4 +1,4 @@
----@class ERACombat_EvokerCommonTalents
+---@class (exact) ERACombat_EvokerCommonTalents
 ---@field quell ERALIBTalent
 ---@field unravel ERALIBTalent
 ---@field landslide ERALIBTalent
@@ -22,18 +22,18 @@
 ---@field not_maneuverability ERALIBTalent
 ---@field engulf ERALIBTalent
 
----@class ERACombat_EvokerTimerParams
+---@class (exact) ERACombat_EvokerTimerParams
 ---@field quellX number
 ---@field quellY number
 ---@field unravelX number
 ---@field unravelY number
 ---@field unravelPrio number
 
----@class ERACombat_EvokerUnravelCooldown : ERACombatTimersCooldown
+---@class (exact) ERACombat_EvokerUnravelCooldown : ERACombatTimersCooldown
 ---@field absorbValue number
 ---@field useable boolean
 
----@class ERACombatTimers_Evoker : ERACombatTimers
+---@class (exact) ERACombatTimers_Evoker : ERACombatTimers
 ---@field evoker_unravel ERACombat_EvokerUnravelCooldown
 ---@field evoker_unravelIcon ERACombatTimersCooldownIcon
 ---@field evoker_leapingBuff ERACombatTimersAura

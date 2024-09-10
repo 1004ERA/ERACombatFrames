@@ -7,9 +7,9 @@
 
 ---@class ERAIcon
 ---@field SetIconTexture fun(this:ERAIcon, iconID:number,force:boolean)
----@field SetMainText fun(this:ERAIcon, txt:string)
+---@field SetMainText fun(this:ERAIcon, txt:string|nil)
 ---@field SetMainTextColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
----@field SetSecondaryText fun(this:ERAIcon, txt:string)
+---@field SetSecondaryText fun(this:ERAIcon, txt:string|nil)
 ---@field SetSecondaryTextColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
 ---@field SetDesaturated fun(this:ERAIcon, desat:boolean)
 ---@field SetAlpha fun(this:ERAIcon, a:number)

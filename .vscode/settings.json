@@ -73,7 +73,8 @@
         "CALENDAR_STATUS_TENTATIVE",
         "UIParent",
         "ERACombatFrameMain",
-        "ERACombatOptionsFrame"
+        "ERACombatOptionsFrame",
+        "PLAYER"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

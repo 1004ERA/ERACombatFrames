@@ -34,7 +34,9 @@ function ERACombatFrames_event(event, ...)
         ERACombatFrames_classID = classID
         ERACombatOptions_initialize()
         local cFrame = ERACombatFrame:Create()
-        if (classID == 6) then
+        if (classID == 2) then
+            ERACombatFrames_PaladinSetup(cFrame)
+        elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 9) then
             --ERACombatFrames_WarlockSetup(cFrame)
