@@ -13,6 +13,7 @@ end
 ---@field frame unknown
 ---@field Pack function
 ---@field playerGUID string
+---@field inCombat boolean
 
 ERACombatFrame = {}
 ERACombatFrame.__index = ERACombatFrame

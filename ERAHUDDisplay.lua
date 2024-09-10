@@ -548,6 +548,7 @@ end
 ---@field protected checkAdditionalTalent fun(this:ERAHUDIcon): boolean
 ---@field protected updateIconID fun(this:ERAHUDIcon, currentIconID:integer): integer
 ---@field talent ERALIBTalent|nil
+---@field talentActive boolean
 ---@field hud ERAHUD
 ---@field iconID integer
 ---@field icon ERAPieIcon
@@ -569,6 +570,7 @@ end
 function ERAHUDIcon:checkTalentOrHide()
     if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkAdditionalTalent() then
         self.icon:Hide()
+        self.talentActive = false
         return false
     else
         local i = self:updateIconID(self.iconID)
@@ -577,6 +579,7 @@ function ERAHUDIcon:checkTalentOrHide()
             self.icon:SetIconTexture(i, true)
         end
         self.icon:Show()
+        self.talentActive = true
         return true
     end
 end
@@ -650,7 +653,7 @@ end
 ---@class (exact) ERAHUDRotationIcon : ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
----@field update fun(this:ERAHUDIcon, combat:boolean, t:number)
+---@field update fun(this:ERAHUDRotationIcon, combat:boolean, t:number)
 ---@field specialPosition boolean
 ERAHUDRotationIcon = {}
 ERAHUDRotationIcon.__index = ERAHUDRotationIcon
@@ -933,6 +936,177 @@ end
 ---------------
 
 --#region UTILITY
+
+---@class (exact) ERAHUDUtilityIcon : ERAHUDIcon
+---@field private __index unknown
+---@field protected constructUtilityIcon fun(this:ERAHUDUtilityIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field update fun(this:ERAHUDUtilityIcon, combat:boolean, t:number)
+ERAHUDUtilityIcon = {}
+ERAHUDUtilityIcon.__index = ERAHUDUtilityIcon
+setmetatable(ERAHUDUtilityIcon, { __index = ERAHUDIcon })
+
+---@param hud ERAHUD
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+function ERAHUDUtilityIcon:constructUtilityIcon(hud, iconID, talent)
+    local parentFrame = hud:addUtilityIcon(self)
+    self:constructIcon(hud, iconID, ERAHUD_UtilityIconSize, parentFrame, talent)
+end
+
+--#region IN GROUP
+
+---@class (exact) ERAHUDUtilityIconInGroup : ERAHUDUtilityIcon
+---@field private __index unknown
+---@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, talent:ERALIBTalent|nil)
+---@field update fun(this:ERAHUDUtilityIconInGroup, combat:boolean, t:number)
+---@field private group ERAHUDUtilityGroup
+ERAHUDUtilityIconInGroup = {}
+ERAHUDUtilityIconInGroup.__index = ERAHUDUtilityIconInGroup
+setmetatable(ERAHUDUtilityIconInGroup, { __index = ERAHUDUtilityIcon })
+
+---@param group ERAHUDUtilityGroup
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, talent)
+    self:constructUtilityIcon(group.hud, iconID, talent)
+    self.group = group
+    group:addIcon(self)
+end
+
+----------------
+--- COOLDOWN ---
+----------------
+
+---@class (exact) ERAHUDUtilityCooldownInGroup : ERAHUDUtilityIconInGroup
+---@field private __index unknown
+---@field update fun(this:ERAHUDUtilityIconInGroup, combat:boolean, t:number)
+---@field data ERACooldownBase
+---@field private currentCharges integer
+---@field private maxCharges integer
+ERAHUDUtilityCooldownInGroup = {}
+ERAHUDUtilityCooldownInGroup.__index = ERAHUDUtilityCooldownInGroup
+setmetatable(ERAHUDUtilityCooldownInGroup, { __index = ERAHUDUtilityIconInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+    local cd = {}
+    setmetatable(cd, ERAHUDUtilityCooldownInGroup)
+    ---@cast cd ERAHUDUtilityCooldownInGroup
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(data.spellID)
+        iconID = spellInfo.iconID
+    end
+    cd:constructUtilityIconInGroup(group, iconID, talent)
+    cd.data = data
+    cd.currentCharges = -1
+    cd.maxCharges = -1
+    return cd
+end
+
+---@return boolean
+function ERAHUDUtilityCooldownInGroup:checkAdditionalTalent()
+    return self.data.talentActive
+end
+
+---@param currentIconID integer
+---@return integer
+function ERAHUDUtilityCooldownInGroup:updateIconID(currentIconID)
+    local spellInfo = C_Spell.GetSpellInfo(self.data.spellID)
+    return spellInfo.iconID
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityCooldownInGroup:update(combat, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, t)
+    self.currentCharges = self.data.currentCharges
+    self.maxCharges = self.data.maxCharges
+end
+
+--#endregion
+
+--#region OUT OF COMBAT
+
+---@class (exact) ERAHUDUtilityIconOutOfCombat : ERAHUDUtilityIcon
+---@field private __index unknown
+---@field protected constructUtilityIconOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field private update fun(this:ERAHUDUtilityIconOutOfCombat, combat:boolean, t:number)
+---@field protected updateOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, t:number)
+ERAHUDUtilityIconOutOfCombat = {}
+ERAHUDUtilityIconOutOfCombat.__index = ERAHUDUtilityIconOutOfCombat
+setmetatable(ERAHUDUtilityIconOutOfCombat, { __index = ERAHUDUtilityIcon })
+
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+function ERAHUDUtilityIconOutOfCombat:constructUtilityIconOutOfCombat(hud, iconID, talent)
+    self:constructUtilityIcon(hud, iconID, talent)
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityIconOutOfCombat:update(combat, t)
+    if combat then
+        self.icon:Hide()
+    else
+        self:updateOutOfCombat(t)
+    end
+end
+
+---@class (exact) ERAHUDUtilityAuraOutOfCombat : ERAHUDUtilityIconOutOfCombat
+---@field private __index unknown
+---@field aura ERAAura
+ERAHUDUtilityAuraOutOfCombat = {}
+ERAHUDUtilityAuraOutOfCombat.__index = ERAHUDUtilityAuraOutOfCombat
+setmetatable(ERAHUDUtilityAuraOutOfCombat, { __index = ERAHUDUtilityIconOutOfCombat })
+
+---@param aura ERAAura
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityAuraOutOfCombat
+function ERAHUDUtilityAuraOutOfCombat:create(aura, iconID, talent)
+    local a = {}
+    setmetatable(a, ERAHUDUtilityAuraOutOfCombat)
+    ---@cast a ERAHUDUtilityAuraOutOfCombat
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
+    end
+    a:constructUtilityIconOutOfCombat(aura.hud, iconID, talent)
+    aura.hud:addOutOfCombat(a)
+    return a
+end
+
+---@return boolean
+function ERAHUDUtilityAuraOutOfCombat:checkAdditionalTalent()
+    return self.aura.talentActive
+end
+
+---@param currentIconID integer
+---@return integer
+function ERAHUDUtilityAuraOutOfCombat:updateIconID(currentIconID)
+    local spellInfo = C_Spell.GetSpellInfo(self.aura.spellID)
+    return spellInfo.iconID
+end
+
+---@param t number
+function ERAHUDUtilityAuraOutOfCombat:updateOutOfCombat(t)
+    if self.aura.remDuration > 0 then
+        if self.aura.stacks > 0 then
+            self.icon:SetMainText(tostring(self.aura.stacks))
+        else
+            self.icon:SetMainText(nil)
+        end
+        self.icon:SetOverlayAlpha(self.aura.remDuration / self.aura.totDuration)
+        self.icon:Show()
+    else
+        self.icon:Hide()
+    end
+end
+
+--#endregion
 
 --#endregion UTILITY
 
