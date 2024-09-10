@@ -64,4 +64,46 @@
 
     </FontString>
 
+    <Line name="ERAHUDUtilityGroupBorder" thickness="1" virtual="true">
+        <Color r="0.7" g="0.7" b="0.7"/>
+    </Line>
+
+    <Frame name="ERAHUDUtilityGroupLEFT" virtual="true">
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture setAllPoints="true">
+                    <Color r="0" g="0" b="0" a="0.5"/>
+                </Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <Line inherits="ERAHUDUtilityGroupBorder">
+                    <StartAnchor relativePoint="BOTTOMLEFT" x="2" y="2"/>
+                    <EndAnchor relativePoint="TOPLEFT" x="2" y="-2"/>
+                </Line>
+                <Line inherits="ERAHUDUtilityGroupBorder">
+                    <StartAnchor relativePoint="TOPLEFT" x="2" y="-2"/>
+                    <EndAnchor relativePoint="TOPRIGHT" x="-2" y="-2"/>
+                </Line>
+                <Line inherits="ERAHUDUtilityGroupBorder">
+                    <StartAnchor relativePoint="TOPRIGHT" x="-2" y="-2"/>
+                    <EndAnchor relativePoint="BOTTOMRIGHT" x="-2" y="2"/>
+                </Line>
+                <Line inherits="ERAHUDUtilityGroupBorder">
+                    <StartAnchor relativePoint="BOTTOMRIGHT" x="-2" y="2"/>
+                    <EndAnchor relativePoint="BOTTOMLEFT" x="2" y="2"/>
+                </Line>
+                <Line inherits="ERAHUDUtilityGroupBorder">
+                    <StartAnchor relativePoint="BOTTOMLEFT" x="40" y="2"/>
+                    <EndAnchor relativePoint="TOPLEFT" x="40" y="-2"/>
+                </Line>
+                <Texture parentKey="Icon">
+                    <Size x="32" y="32"/>
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="LEFT" x="4" y="0"/>
+                    </Anchors>
+                </Texture>
+            </Layer>
+        </Layers>
+    </Frame>
+
 </Ui>

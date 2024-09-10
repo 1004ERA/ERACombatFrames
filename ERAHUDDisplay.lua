@@ -469,6 +469,11 @@ function ERAHUDTimerItem:update(t)
             self.line:Hide()
         end
         self.priority = self:ComputeAvailablePriorityOverride(t)
+        if self.priority > 0 then
+            self.icon:Show()
+        else
+            self.icon:Hide()
+        end
     else
         self.pixel = self.hud:calcTimerPixel(duration)
         if not self.lineVisible then
@@ -756,7 +761,7 @@ end
 
 ---@param t number
 function ERAHUDRotationCooldownIconPriority:ComputeAvailablePriorityOverride(t)
-    return 0
+    return 1
 end
 
 ---@class (exact) ERAHUDRotationCooldownIconChargedPriority : ERAHUDTimerItem

@@ -77,7 +77,7 @@ ERAHUD_UtilityIconSize = 55
 ---@field private lastEmpowerStartMS number
 ---@field private lastEmpowerEndMS number
 ---@field private lastEmpowerID number
----@field private mainFrame Frame
+---@field mainFrame Frame
 ---@field private timerFrame Frame
 ---@field private timerFrameOverlay Frame
 ---@field private timerMaxY number
@@ -105,6 +105,7 @@ ERAHUD_UtilityIconSize = 55
 ---@field private activeTimerItems ERAHUDTimerItem[]
 ---@field private displayedTimerItems ERAHUDTimerItem[]
 ---@field private availablePriority ERAHUDTimerItem[]
+---@field powerUpGroup ERAHUDUtilityGroup
 ---@field IsCombatPowerVisibleOverride fun(this:ERAHUD, t:number): boolean
 ---@field calcTimerPixel fun(this:ERAHUD, t:number): number
 
@@ -277,6 +278,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     end
     hud.statusMaxY = statusY
 
+    hud.powerUpGroup = ERAHUDUtilityGroup:create(hud, "LEFT")
+
     -- events
 
     hud.events = {}
@@ -341,9 +344,9 @@ function ERAHUD:Pack()
     self.gcdBar = self.timerFrameOverlay:CreateTexture(nil, "BACKGROUND")
     self.gcdBar:SetColorTexture(1.0, 1.0, 1.0, 0.8)
     if (self.topdown) then
-        self.gcdBar:SetPoint("TOPRIGHT", self.timerFrameOverlay, "RIGHT", 0, 0)
+        self.gcdBar:SetPoint("TOPRIGHT", self.timerFrameOverlay, "RIGHT", 0, ERAHUD_TimerIconSize)
     else
-        self.gcdBar:SetPoint("BOTTOMRIGHT", self.timerFrameOverlay, "RIGHT", 0, 0)
+        self.gcdBar:SetPoint("BOTTOMRIGHT", self.timerFrameOverlay, "RIGHT", 0, -ERAHUD_TimerIconSize)
     end
     self.gcdBar:Hide()
     self.gcdVisible = false
@@ -895,9 +898,9 @@ function ERAHUD:UpdateCombat(t)
 
     local yPrio
     if self.topdown then
-        yPrio = -2 * ERAHUD_TimerIconSize
+        yPrio = 1.5 * ERAHUD_TimerIconSize
     else
-        yPrio = 2 * ERAHUD_TimerIconSize
+        yPrio = -1.5 * ERAHUD_TimerIconSize
     end
     for _, ti in ipairs(self.availablePriority) do
         ti:drawPriority(yPrio)
@@ -1293,6 +1296,34 @@ function ERAHUDNestedModule:CLEU(t)
 end
 
 --#endregion
+
+---------------
+--- UTILITY ---
+---------------
+
+---@class (exact) ERAHUDUtilityGroup
+---@field private __index unknown
+---@field frame Frame
+---@field icon Texture
+ERAHUDUtilityGroup = {}
+ERAHUDUtilityGroup.__index = ERAHUDUtilityGroup
+
+---@alias ERAHUDUtilityGroupKind "LEFT" | "BOTTOM" | "RIGHT"
+
+---@param hud ERAHUD
+---@param iconPosition ERAHUDUtilityGroupKind
+---@return ERAHUDUtilityGroup
+function ERAHUDUtilityGroup:create(hud, iconPosition)
+    local g = {}
+    setmetatable(g, ERAHUDUtilityGroup)
+    ---@cast g ERAHUDUtilityGroup
+    local frame = CreateFrame("Frame", nil, hud.mainFrame, "ERAHUDUtilityGroup" .. iconPosition)
+    g.icon = frame.Icon
+    g.frame = frame
+    frame:SetSize(300, 300)
+    frame:SetPoint("CENTER", hud.mainFrame, "CENTER", 0, 0)
+    return g
+end
 
 ---------------
 --- CONTENT ---
