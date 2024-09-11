@@ -92,12 +92,11 @@
                     <StartAnchor relativePoint="BOTTOMRIGHT" x="-2" y="2"/>
                     <EndAnchor relativePoint="BOTTOMLEFT" x="2" y="2"/>
                 </Line>
-                <Line inherits="ERAHUDUtilityGroupBorder">
+                <Line parentKey="Separator" inherits="ERAHUDUtilityGroupBorder">
                     <StartAnchor relativePoint="BOTTOMLEFT" x="40" y="2"/>
                     <EndAnchor relativePoint="TOPLEFT" x="40" y="-2"/>
                 </Line>
                 <Texture parentKey="Icon">
-                    <Size x="32" y="32"/>
                     <Anchors>
                         <Anchor point="LEFT" relativePoint="LEFT" x="4" y="0"/>
                     </Anchors>
@@ -130,12 +129,11 @@
                     <StartAnchor relativePoint="BOTTOMRIGHT" x="-2" y="2"/>
                     <EndAnchor relativePoint="BOTTOMLEFT" x="2" y="2"/>
                 </Line>
-                <Line inherits="ERAHUDUtilityGroupBorder">
+                <Line parentKey="Separator" inherits="ERAHUDUtilityGroupBorder">
                     <StartAnchor relativePoint="TOPRIGHT" x="-40" y="-2"/>
                     <EndAnchor relativePoint="BOTTOMRIGHT" x="-40" y="2"/>
                 </Line>
                 <Texture parentKey="Icon">
-                    <Size x="32" y="32"/>
                     <Anchors>
                         <Anchor point="RIGHT" relativePoint="RIGHT" x="-4" y="0"/>
                     </Anchors>
@@ -168,12 +166,11 @@
                     <StartAnchor relativePoint="BOTTOMRIGHT" x="-2" y="2"/>
                     <EndAnchor relativePoint="BOTTOMLEFT" x="2" y="2"/>
                 </Line>
-                <Line inherits="ERAHUDUtilityGroupBorder">
+                <Line parentKey="Separator" inherits="ERAHUDUtilityGroupBorder">
                     <StartAnchor relativePoint="BOTTOMLEFT" x="2" y="40"/>
                     <EndAnchor relativePoint="BOTTOMRIGHT" x="-2" y="40"/>
                 </Line>
                 <Texture parentKey="Icon">
-                    <Size x="32" y="32"/>
                     <Anchors>
                         <Anchor point="BOTTOM" relativePoint="BOTTOM" x="0" y="4"/>
                     </Anchors>

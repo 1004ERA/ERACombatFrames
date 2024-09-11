@@ -10,7 +10,7 @@
 ---@field hud ERAHUD
 ---@field remDuration number
 ---@field private parentFrame Frame
----@field private display StatusBar
+---@field protected display StatusBar
 ---@field private iconID integer|nil
 ---@field private icon Texture
 ---@field private iconDesat boolean
@@ -244,6 +244,8 @@ end
 
 ---@class (exact) ERAHUDTargetCastBar : ERAHUDBar
 ---@field private __index unknown
+---@field private kick_is_available boolean
+---@field private kick_will_be_available boolean
 ERAHUDTargetCastBar = {}
 ERAHUDTargetCastBar.__index = ERAHUDTargetCastBar
 setmetatable(ERAHUDTargetCastBar, { __index = ERAHUDBar })
@@ -263,10 +265,28 @@ function ERAHUDTargetCastBar:checkTalentsOverride()
     return true
 end
 
+function ERAHUDTargetCastBar:kickIsAvailable()
+    self.kick_is_available = true
+end
+function ERAHUDTargetCastBar:kickWillBeAvailable()
+    self.kick_will_be_available = true
+end
+
 ---@param t number
 ---@return number
 function ERAHUDTargetCastBar:ComputeDurationOverride(t)
-    return self.hud.targetCast
+    if self.kick_is_available then
+        self.kick_is_available = false
+        self.kick_will_be_available = false
+        self.display:SetVertexColor(1.0, 1.0, 1.0, 1.0)
+        return self.hud.targetCast
+    elseif self.kick_will_be_available then
+        self.kick_will_be_available = false
+        self.display:SetVertexColor(0.8, 0.0, 0.0, 1.0)
+        return self.hud.targetCast
+    else
+        return 0
+    end
 end
 
 --#endregion
@@ -625,6 +645,8 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
         end
         if available and hideIfAvailable then
             icon:Hide()
+            icon:SetMainText(nil)
+            icon:SetOverlayValue(0)
         else
             icon:SetOverlayValue(data.remDuration / data.totDuration)
             if data.remDuration > 0 then
@@ -674,6 +696,8 @@ end
 
 --#region COOLDOWN
 
+--#region BASE
+
 ---@class (exact) ERAHUDRotationCooldownIcon : ERAHUDRotationIcon
 ---@field private __index unknown
 ---@field private currentCharges integer
@@ -681,19 +705,24 @@ end
 ---@field data ERACooldownBase
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
+---@field protected UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, combat:boolean, t:number)
 ERAHUDRotationCooldownIcon = {}
 ERAHUDRotationCooldownIcon.__index = ERAHUDRotationCooldownIcon
 setmetatable(ERAHUDRotationCooldownIcon, { __index = ERAHUDRotationIcon })
 
 ---@param data ERACooldownBase
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationCooldownIcon
-function ERAHUDRotationCooldownIcon:create(data, talent)
+function ERAHUDRotationCooldownIcon:create(data, iconID, talent)
     local cd = {}
     setmetatable(cd, ERAHUDRotationCooldownIcon)
     ---@cast cd ERAHUDRotationCooldownIcon
-    local spellInfo = C_Spell.GetSpellInfo(data.spellID)
-    cd:constructRotationIcon(data.hud, spellInfo.iconID, talent)
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(data.spellID)
+        iconID = spellInfo.iconID
+    end
+    cd:constructRotationIcon(data.hud, iconID, talent)
     cd.data = data
     cd.currentCharges = -1
     cd.maxCharges = -1
@@ -720,6 +749,10 @@ function ERAHUDRotationCooldownIcon:update(combat, t)
     ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
+end
+---@param combat boolean
+---@param t number
+function ERAHUDRotationCooldownIcon:UpdatedOverride(combat, t)
 end
 
 ---@class (exact) ERAHUDRotationCooldownIconPriority : ERAHUDTimerItem
@@ -805,6 +838,45 @@ end
 
 --#endregion
 
+--#region KICK
+
+---@class (exact) ERAHUDRotationKickIcon : ERAHUDRotationCooldownIcon
+---@field private __index unknown
+ERAHUDRotationKickIcon = {}
+ERAHUDRotationKickIcon.__index = ERAHUDRotationKickIcon
+setmetatable(ERAHUDRotationKickIcon, { __index = ERAHUDRotationCooldownIcon })
+
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDRotationKickIcon
+function ERAHUDRotationKickIcon:create(data, iconID, talent)
+    local cd = ERAHUDRotationCooldownIcon:create(data, iconID, talent)
+    setmetatable(cd, ERAHUDRotationKickIcon)
+    ---@cast cd ERAHUDRotationKickIcon
+    cd.specialPosition = true
+    return cd
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDRotationKickIcon:UpdatedOverride(combat, t)
+    if self.hud.targetCast > self.data.remDuration then
+        if self.data.remDuration <= 0 then
+            self.hud.targetCastBar:kickIsAvailable()
+        else
+            self.hud.targetCastBar:kickWillBeAvailable()
+        end
+        self.icon:Show()
+    else
+        self.icon:Hide()
+    end
+end
+
+--#endregion
+
+--#endregion
+
 -------------
 --- AURAS ---
 -------------
@@ -824,15 +896,19 @@ ERAHUDRotationAuraIcon.__index = ERAHUDRotationAuraIcon
 setmetatable(ERAHUDRotationAuraIcon, { __index = ERAHUDRotationIcon })
 
 ---@param data ERAAura
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationAuraIcon
-function ERAHUDRotationAuraIcon:create(data, talent)
+function ERAHUDRotationAuraIcon:create(data, iconID, talent)
     local buff = {}
     setmetatable(buff, ERAHUDRotationAuraIcon)
     ---@cast buff ERAHUDRotationAuraIcon
     buff.data = data
-    local spellInfo = C_Spell.GetSpellInfo(data.spellID)
-    buff:constructRotationIcon(data.hud, spellInfo.iconID, talent)
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(data.spellID)
+        iconID = spellInfo.iconID
+    end
+    buff:constructRotationIcon(data.hud, iconID, talent)
     buff.currentStacks = -1
     return buff
 end
@@ -887,16 +963,20 @@ setmetatable(ERAHUDRotationStacksIcon, { __index = ERAHUDRotationIcon })
 
 ---@param data ERAAura
 ---@param maxStacks integer
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationStacksIcon
-function ERAHUDRotationStacksIcon:create(data, maxStacks, talent)
+function ERAHUDRotationStacksIcon:create(data, maxStacks, iconID, talent)
     local buff = {}
     setmetatable(buff, ERAHUDRotationStacksIcon)
     ---@cast buff ERAHUDRotationStacksIcon
     buff.data = data
     buff.maxStacks = maxStacks
-    local spellInfo = C_Spell.GetSpellInfo(data.spellID)
-    buff:constructRotationIcon(data.hud, spellInfo.iconID, talent)
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(data.spellID)
+        iconID = spellInfo.iconID
+    end
+    buff:constructRotationIcon(data.hud, iconID, talent)
     buff.currentStacks = -1
     return buff
 end
@@ -973,13 +1053,73 @@ function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, tal
     group:addIcon(self)
 end
 
+--#region GENERIC
+
+---@class ERAHUDUtilityGenericTimerInGroup : ERAHUDUtilityIconInGroup
+---@field private __index unknown
+---@field timer ERATimer
+---@field private timerActive boolean
+---@field protected updateIconIDOnShown fun(this:ERAHUDUtilityGenericTimerInGroup): integer
+ERAHUDUtilityGenericTimerInGroup = {}
+ERAHUDUtilityGenericTimerInGroup.__index = ERAHUDUtilityGenericTimerInGroup
+setmetatable(ERAHUDUtilityGenericTimerInGroup, { __index = ERAHUDUtilityIconInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param timer ERATimer
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+function ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, talent)
+    local g = {}
+    setmetatable(g, ERAHUDUtilityGenericTimerInGroup)
+    ---@cast g ERAHUDUtilityGenericTimerInGroup
+    g:constructUtilityIconInGroup(group, iconID, talent)
+    g.timer = timer
+    g.timerActive = false
+end
+
+---@return boolean
+function ERAHUDUtilityGenericTimerInGroup:checkAdditionalTalent()
+    return self.timer.talentActive
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityGenericTimerInGroup:update(combat, t)
+    if self.timer.talentActive then
+        if not self.timerActive then
+            self.timerActive = true
+            local iconID = self:updateIconIDOnShown()
+            if iconID ~= self.iconID then
+                self.iconID = iconID
+                self.icon:SetIconTexture(iconID, true)
+            end
+        end
+        self.icon:SetOverlayValue(self.timer.remDuration / self.timer.totDuration)
+        if self.timer.remDuration <= 0 and not combat then
+            self.icon:Hide()
+        else
+            self.icon:Show()
+        end
+    else
+        self.timerActive = false
+        self.icon:Hide()
+    end
+end
+---@return integer
+function ERAHUDUtilityGenericTimerInGroup:updateIconIDOnShown()
+    return self.iconID
+end
+
+--#endregion
+
 ----------------
 --- COOLDOWN ---
 ----------------
 
 ---@class (exact) ERAHUDUtilityCooldownInGroup : ERAHUDUtilityIconInGroup
 ---@field private __index unknown
----@field update fun(this:ERAHUDUtilityIconInGroup, combat:boolean, t:number)
+---@field update fun(this:ERAHUDUtilityCooldownInGroup, combat:boolean, t:number)
+---@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, combat:boolean, t:number)
 ---@field data ERACooldownBase
 ---@field private currentCharges integer
 ---@field private maxCharges integer
@@ -1024,7 +1164,107 @@ function ERAHUDUtilityCooldownInGroup:update(combat, t)
     ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
+    self:UpdatedOverride(combat, t)
 end
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityCooldownInGroup:UpdatedOverride(combat, t)
+end
+
+---------------
+--- SPECIAL ---
+---------------
+
+--#region DISPELL
+
+---@class (exact) ERAHUDUtilityDispellInGroup : ERAHUDUtilityCooldownInGroup
+---@field private __index unknown
+---@field private UpdatedOverride fun(this:ERAHUDUtilityDispellInGroup, combat:boolean, t:number)
+---@field private magic boolean
+---@field private disease boolean
+---@field private poison boolean
+---@field private curse boolean
+---@field private bleed boolean
+ERAHUDUtilityDispellInGroup = {}
+ERAHUDUtilityDispellInGroup.__index = ERAHUDUtilityDispellInGroup
+setmetatable(ERAHUDUtilityDispellInGroup, { __index = ERAHUDUtilityCooldownInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@param magic boolean
+---@param poison boolean
+---@param disease boolean
+---@param curse boolean
+---@param bleed boolean
+function ERAHUDUtilityDispellInGroup:create(group, data, iconID, talent, magic, poison, disease, curse, bleed)
+    local cd = ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+    setmetatable(cd, ERAHUDUtilityDispellInGroup)
+    ---@cast cd ERAHUDUtilityDispellInGroup
+    cd.magic = magic
+    cd.poison = poison
+    cd.disease = disease
+    cd.curse = curse
+    cd.bleed = bleed
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityDispellInGroup:UpdatedOverride(combat, t)
+    if
+        (self.hud.selfDispellableMagic and self.magic)
+        or
+        (self.hud.selfDispellablePoison and self.poison)
+        or
+        (self.hud.selfDispellableDisease and self.disease)
+        or
+        (self.hud.selfDispellableCurse and self.curse)
+        or
+        (self.hud.selfDispellableBleed and self.bleed)
+    then
+        self.icon:Beam()
+        self.icon:Show()
+    else
+        if self.data.remDuration > 0 then
+            self.icon:StopBeam()
+        else
+            self.icon:Hide()
+        end
+    end
+end
+
+--#endregion
+
+--#region EQUIPMENT
+
+---@class ERAHUDUtilityEquipmentInGroup : ERAHUDUtilityGenericTimerInGroup
+---@field private __index unknown
+---@field private equipment ERACooldownEquipment
+ERAHUDUtilityEquipmentInGroup = {}
+ERAHUDUtilityEquipmentInGroup.__index = ERAHUDUtilityEquipmentInGroup
+setmetatable(ERAHUDUtilityEquipmentInGroup, { __index = ERAHUDUtilityGenericTimerInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param timer ERACooldownEquipment
+---@param iconID integer
+function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID)
+    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, nil)
+    ---@cast c ERAHUDUtilityEquipmentInGroup
+    c.equipment = timer
+end
+
+---@return integer
+function ERAHUDUtilityEquipmentInGroup:updateIconIDOnShown()
+    local fileID = GetInventoryItemTexture("player", self.equipment.slotID)
+    if fileID then
+        return fileID
+    else
+        return self.iconID
+    end
+end
+
+--#endregion
 
 --#endregion
 

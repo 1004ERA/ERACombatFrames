@@ -1,8 +1,9 @@
 ---@param fs FontString
 ---@param size number
 function ERALIB_SetFont(fs, size)
-    --fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICKOUTLINE")
-    fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICK")
+    --fs:SetFont("Fonts\\FRIZQT__.TTF", size, "OUTLINE")
+    ---@cast fs unknown
+    fs:SetFont("Fonts\\FRIZQT__.TTF", size, "THICKOUTLINE")
 end
 
 function ERALIB_GetSpellSlot(spellID)
@@ -113,7 +114,7 @@ end
 
 ---comment
 ---@param t1 ERALIBTalent | nil
----@param t2 ERALIBTalent| nil
+---@param t2 ERALIBTalent | nil
 ---@return ERALIBTalent | nil
 function ERALIBTalent_MakeAnd(t1, t2)
     if (t1) then

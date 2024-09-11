@@ -159,9 +159,9 @@ function ERACooldown:updateCooldownData(t)
         self.hasCharges = false
         self.maxCharges = 1
         local cdInfo = C_Spell.GetSpellCooldown(self.spellID)
-        if cdInfo and cdInfo.startTime and cdInfo.startTime > 0 then
+        if cdInfo and cdInfo.startTime and cdInfo.startTime > 0 and cdInfo.duration and cdInfo.duration > 0 then
             local remDur = cdInfo.duration - (t - cdInfo.startTime)
-            if cdInfo.duration <= self.hud.remGCD + 0.1 and self.lastGoodUpdate > 0 then
+            if remDur <= self.hud.remGCD + 0.1 and self.lastGoodUpdate > 0 then
                 self.isAvailable = true
                 self.currentCharges = 1
                 -- totDuration reste inchangé
@@ -181,18 +181,67 @@ function ERACooldown:updateCooldownData(t)
             end
         else
             self.isAvailable = true
-            if cdInfo then
-                self.totDuration = cdInfo.duration or 1
-            else
-                self.totDuration = 1
-            end
-            self.remDuration = 1
             self.currentCharges = 1
+            self.remDuration = 0
+            if cdInfo.duration and cdInfo.duration > 0 then
+                self.totDuration = cdInfo.duration
+            end
             self.lastGoodRemdur = 0
             self.lastGoodUpdate = t
         end
     end
 end
+
+--#region EQUIPMENT
+
+---@class ERACooldownEquipment : ERATimer
+---@field private __index unknown
+---@field slotID integer
+---@field private hasCooldown boolean
+ERACooldownEquipment = {}
+ERACooldownEquipment.__index = ERACooldownEquipment
+setmetatable(ERACooldownEquipment, { __index = ERATimer })
+
+---@param hud ERAHUD
+---@param slotID number
+---@return ERACooldownEquipment
+function ERACooldownEquipment:create(hud, slotID)
+    local cd = {}
+    setmetatable(cd, ERACooldown)
+    ---@cast cd ERACooldownEquipment
+    cd:constructTimer(hud)
+    cd.slotID = slotID
+    cd.hasCooldown = false
+    return cd
+end
+
+---@return boolean
+function ERACooldownEquipment:checkTimerTalent()
+    return self.hasCooldown
+end
+
+function ERACooldownEquipment:updateData(t)
+    local start, duration, enable = GetInventoryItemCooldown("player", self.slotID)
+    if enable and enable ~= 0 then
+        if not self.hasCooldown then
+            self.hasCooldown = true
+            self.hud:updateUtilityLayout()
+        end
+        if duration and duration > 0 then
+            self.totDuration = duration
+            self.remDuration = duration - (t - start)
+        else
+            self.remDuration = 0
+        end
+    else
+        if self.hasCooldown then
+            self.hasCooldown = false
+            self.hud:updateUtilityLayout()
+        end
+    end
+end
+
+--#endregion
 
 ------------
 --- AURA ---
@@ -200,50 +249,50 @@ end
 
 ---@class ERAAura : ERATimerWithID
 ---@field private __index unknown
----@field isBuff boolean
 ---@field stacks integer
 ---@field auraFound fun(this:ERAAura, t:number, data:AuraData)
----@field private found boolean
+---@field private foundDuration number
+---@field private foundStacks integer
 ERAAura = {}
 ERAAura.__index = ERAAura
 setmetatable(ERAAura, { __index = ERATimerWithID })
 
 ---@param hud ERAHUD
----@param isBuff boolean
 ---@param spellID integer
 ---@param talent ERALIBTalent | nil
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
-function ERAAura:create(hud, isBuff, spellID, talent, ...)
+function ERAAura:create(hud, spellID, talent, ...)
     local a = {}
     setmetatable(a, ERAAura)
     ---@cast a ERAAura
     a:constructID(hud, spellID, talent, ...)
-    a.isBuff = isBuff
-    a.found = false
-    if isBuff then
-        hud:addBuff(self)
-    else
-        hud:addDebuff(self)
-    end
+    a.foundDuration = -1
+    a.foundStacks = 0
     return a
 end
 
 ---@param t number
 ---@param data AuraData
 function ERAAura:auraFound(t, data)
-    self.found = true
-    self.remDuration = data.expirationTime - t
-    self.totDuration = data.duration
-    self.stacks = data.applications
+    local remDur = data.expirationTime - t
+    if remDur > self.foundDuration then
+        self.foundDuration = remDur
+        self.totDuration = data.duration
+    end
+    self.foundStacks = math.max(self.foundStacks, data.applications, 1)
 end
 
 ---@param t number
 function ERAAura:updateData(t)
-    if self.found then
-        self.found = false
+    if self.foundDuration > 0 then
+        self.remDuration = self.foundDuration
+        self.stacks = self.foundStacks
+        self.foundDuration = -1
+        self.foundStacks = 0
     else
         self.remDuration = 0
         self.stacks = 0
+        self.foundStacks = 0
     end
 end

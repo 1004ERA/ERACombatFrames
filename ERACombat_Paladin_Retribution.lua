@@ -9,6 +9,25 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, enemies, paladinTalents
         return self.power.currentPower / self.power.maxPower <= 0.75
     end
 
+    local holyPower = ERAHUDModulePointsUnitPower:Create(hud, 9, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, nil)
+
     local judgment = hud:AddTrackedCooldown(20271)
     hud:AddRotationCooldown(judgment)
+
+    local loh = hud:AddTrackedCooldown(633)
+    hud:AddUtilityCooldown(loh, nil, hud.healGroup)
+
+    local stunHammer = hud:AddTrackedCooldown(853)
+    hud:AddUtilityCooldown(stunHammer, nil, hud.controlGroup)
+
+    local steed = hud:AddTrackedCooldown(190784)
+    hud:AddUtilityCooldown(steed, nil, hud.movementGroup)
+
+    local wrath = hud:AddTrackedCooldown(31884)
+    hud:AddUtilityCooldown(wrath, nil, hud.powerUpGroup)
+
+    local bop = hud:AddTrackedCooldown(1022)
+    hud:AddUtilityCooldown(bop, nil, hud.defenseGroup)
+    local divineprotection = hud:AddTrackedCooldown(403876)
+    hud:AddUtilityCooldown(divineprotection, nil, hud.defenseGroup)
 end

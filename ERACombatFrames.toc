@@ -39,6 +39,7 @@ ERAHUDData.lua
 ERAHUDDisplay.lua
 ERAHUDStatusBars.lua
 ERAHUD.lua
+ERAHUDModulePoints.lua
 
 ERACombat_Monk.lua
 ERACombat_Monk_Brewmaster.lua

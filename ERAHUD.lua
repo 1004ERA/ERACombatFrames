@@ -1,12 +1,28 @@
+--[[
+
+TODO
+- warlock health stone
+- generic improvements
+- reverse overlay for buffs
+
+]]
+
+
 ERAHUD_TimerWidth = 400
 ERAHUD_TimerGCDCount = 5
 ERAHUD_TimerBarDefaultSize = 22
 ERAHUD_TimerBarSpacing = 4
 ERAHUD_TimerIconSize = 22
-ERAHUD_RotationIconSize = 44
-ERAHUD_RotationIconSpacing = 4
-ERAHUD_UtilityIconSize = 55
+ERAHUD_RotationIconSize = 42
+ERAHUD_RotationIconSpacing = 2
+ERAHUD_UtilityIconSize = 50
 ERAHUD_UtilityIconSpacing = 4
+ERAHUD_UtilityGoupSpacing = 8
+ERAHUD_UtilityGoupIconSize = 22
+ERAHUD_UtilityGoupBorder = 2
+ERAHUD_UtilityGoupPadding = 4
+ERAHUD_UtilityMinBottomY = -202
+ERAHUD_UtilityMinRightX = 272
 ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 
 ---@class (exact) ERAHUDHealth
@@ -46,9 +62,15 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field private totCast number
 ---@field occupied number
 ---@field hasteMultiplier number
+---@field selfDispellableMagic boolean
+---@field selfDispellablePoison boolean
+---@field selfDispellableDisease boolean
+---@field selfDispellableCurse boolean
+---@field selfDispellableBleed boolean
 ---@field targetDispellableMagic boolean
 ---@field targetDispellableEnrage boolean
 ---@field targetCast number
+---@field targetCastBar ERAHUDTargetCastBar
 ---@field private channelingSpellID integer|nil
 ---@field private watchTargetDispellable boolean
 ---@field private baseGCD number
@@ -62,6 +84,8 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field private hasBuffsAnyCaster boolean
 ---@field private debuffs ERAAura[]
 ---@field private activeDebuffs table<number, ERAAura>
+---@field private debuffsOnSelf ERAAura[]
+---@field private activeDebuffsOnSelf table<number, ERAAura>
 ---@field private updateData fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private resetEmpower fun(this:ERAHUD)
 ---@field private updateHealthData fun(this:ERAHUD, h:ERAHUDHealth, unit:string)
@@ -90,7 +114,6 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field private bars ERAHUDBar[]
 ---@field private activeBars ERAHUDBar[]
 ---@field private visibleBars ERAHUDBar[]
----@field private targetCastBar ERAHUDTargetCastBar
 ---@field private loc ERAHUDLOCBar[]
 ---@field private empowerLevels ERAHUDEmpowerLevel[]
 ---@field private channelTicksCount integer
@@ -120,6 +143,8 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field movementGroup ERAHUDUtilityGroup
 ---@field IsCombatPowerVisibleOverride fun(this:ERAHUD, t:number): boolean
 ---@field calcTimerPixel fun(this:ERAHUD, t:number): number
+---@field private modules ERAHUDResourceModule[]
+---@field private activeModules ERAHUDResourceModule[]
 
 ---@class ERAHUD : ERACombatModule
 ERAHUD = {}
@@ -192,6 +217,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.hasBuffsAnyCaster = false
     hud.debuffs = {}
     hud.activeDebuffs = {}
+    hud.debuffsOnSelf = {}
+    hud.activeDebuffsOnSelf = {}
 
     -- display
 
@@ -241,6 +268,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.activeUtilityIcons = {}
     hud.utilityGroups = {}
     hud.outOfCombat = {}
+    hud.modules = {}
+    hud.activeModules = {}
 
     hud.targetCastBar = ERAHUDTargetCastBar:create(hud)
 
@@ -295,7 +324,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.statusMaxY = statusY
 
     hud.healGroup = ERAHUDUtilityGroup:create(hud, "LEFT", "Interface/Addons/ERACombatFrames/textures/pharmacy.tga")
-    hud.powerUpGroup = ERAHUDUtilityGroup:create(hud, "BOTTOM", "Interface/Addons/ERACombatFrames/textures/power-up-white.tga")
+    hud.powerUpGroup = ERAHUDUtilityGroup:create(hud, "BOTTOM", "Interface/Addons/ERACombatFrames/textures/power-up.tga")
     hud.defenseGroup = ERAHUDUtilityGroup:create(hud, "BOTTOM", "Interface/Addons/ERACombatFrames/textures/shield.tga")
     hud.specialGroup = ERAHUDUtilityGroup:create(hud, "RIGHT", "Interface/Addons/ERACombatFrames/textures/cogs.tga")
     hud.controlGroup = ERAHUDUtilityGroup:create(hud, "RIGHT", "Interface/Addons/ERACombatFrames/textures/disruption.tga")
@@ -443,6 +472,12 @@ function ERAHUD:CheckTalents()
             self.activeDebuffs[a.spellID] = a
         end
     end
+    table.wipe(self.activeDebuffsOnSelf)
+    for _, a in ipairs(self.debuffsOnSelf) do
+        if a.talentActive then
+            self.activeDebuffsOnSelf[a.spellID] = a
+        end
+    end
     table.wipe(self.activeMarkers)
     for _, m in ipairs(self.markers) do
         if m:checkTalentsOrHide() then
@@ -486,6 +521,13 @@ function ERAHUD:CheckTalents()
             self.power.bar:checkTalents()
             self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
             statusY = statusY - self.powerHeight - self.statusSpacing
+        end
+    end
+    table.wipe(self.activeModules)
+    for _, m in ipairs(self.modules) do
+        if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
+            statusY = statusY - m.height - self.statusSpacing
+            table.insert(self.activeModules, m)
         end
     end
     self.statusMaxY = statusY
@@ -620,6 +662,10 @@ function ERAHUD:UpdateIdle(t)
     end
 
     self:updateIcons(t, false)
+
+    for _, m in ipairs(self.activeModules) do
+        m:updateDisplay(false, t)
+    end
 end
 
 ---@param t number
@@ -937,6 +983,10 @@ function ERAHUD:UpdateCombat(t)
     end
 
     --#endregion
+
+    for _, m in ipairs(self.activeModules) do
+        m:updateDisplay(true, t)
+    end
 end
 
 ---@param t number
@@ -989,15 +1039,6 @@ end
 ---@param t ERATimer
 function ERAHUD:addTimer(t)
     table.insert(self.timers, t)
-end
-
----@param a ERAAura
-function ERAHUD:addBuff(a)
-    table.insert(self.buffs, a)
-end
----@param a ERAAura
-function ERAHUD:addDebuff(a)
-    table.insert(self.debuffs, a)
 end
 
 ---@param t number
@@ -1069,6 +1110,33 @@ function ERAHUD:updateData(t, combat)
             else
                 break
             end
+        end
+    end
+    self.selfDispellableBleed = false
+    self.selfDispellableDisease = false
+    self.selfDispellableCurse = false
+    self.selfDispellableMagic = false
+    self.selfDispellablePoison = false
+    for i = 1, 40 do
+        local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i)
+        if (auraInfo) then
+            if auraInfo.dispelName == "Magic" then
+                self.selfDispellableMagic = true
+            elseif auraInfo.dispelName == "Poison" then
+                self.selfDispellablePoison = true
+            elseif auraInfo.dispelName == "Curse" then
+                self.selfDispellableCurse = true
+            elseif auraInfo.dispelName == "Disease" then
+                self.selfDispellableDisease = true
+            elseif auraInfo.dispelName == "Bleed" then
+                self.selfDispellableBleed = true
+            end
+            local a = self.activeDebuffsOnSelf[auraInfo.spellId]
+            if (a ~= nil) then
+                a:auraFound(t, auraInfo)
+            end
+        else
+            break
         end
     end
 
@@ -1210,6 +1278,10 @@ function ERAHUD:updateData(t, combat)
         tim:updateData(t)
     end
 
+    for _, m in ipairs(self.activeModules) do
+        m:updateData(combat, t)
+    end
+
     for _, n in ipairs(self.activeNested) do
         n:updateData(t)
     end
@@ -1342,6 +1414,8 @@ end
 --- UTILITY ---
 ---------------
 
+--#region UTILITY
+
 function ERAHUD:updateUtilityLayout()
     table.wipe(self.activeUtilityIcons)
     for _, i in ipairs(self.utilityIcons) do
@@ -1360,18 +1434,18 @@ function ERAHUD:updateUtilityLayout()
     end
 
     local xBottom = self.statusBaseX + self.barsWidth / 2 + ERAHUD_RotationIconSize
-    local y = -202
+    local y = ERAHUD_UtilityMinBottomY
     if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
         self.powerUpGroup:arrange(xBottom, y, self.mainFrame)
-        xBottom = xBottom + self.powerUpGroup.width
+        xBottom = xBottom + self.powerUpGroup.width + ERAHUD_UtilityGoupSpacing
     end
     if self.defenseGroup.width > 0 and self.defenseGroup.height > 0 then
         self.defenseGroup:arrange(xBottom, y, self.mainFrame)
-        xBottom = xBottom + self.defenseGroup.width
+        xBottom = xBottom + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
     end
     local xRight
-    if xBottom > 256 then
-        xRight = 256
+    if xBottom < ERAHUD_UtilityMinRightX then
+        xRight = ERAHUD_UtilityMinRightX
     else
         xRight = xBottom
     end
@@ -1379,11 +1453,11 @@ function ERAHUD:updateUtilityLayout()
         self.specialGroup:arrange(xBottom, y, self.mainFrame)
     end
     if self.controlGroup.width > 0 and self.controlGroup.height > 0 then
-        y = y + self.controlGroup.height
+        y = y + self.controlGroup.height + ERAHUD_UtilityGoupSpacing
         self.controlGroup:arrange(xRight, y, self.mainFrame)
     end
     if self.movementGroup.width > 0 and self.movementGroup.height > 0 then
-        self.movementGroup:arrange(xRight, y + self.movementGroup.height, self.mainFrame)
+        self.movementGroup:arrange(xRight, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
     end
 
     local xOutOfCombat = -ERAHUD_UtilityIconSize
@@ -1444,7 +1518,6 @@ end
 ---@field private __index unknown
 ---@field private show fun(this:ERAHUDUtilityGroup)
 ---@field private frame Frame
----@field private icon Texture
 ---@field private iconPosition ERAHUDUtilityGroupIconPosition
 ---@field private icons ERAHUDUtilityIconInGroup[]
 ---@field width number
@@ -1465,11 +1538,29 @@ function ERAHUDUtilityGroup:create(hud, iconPosition, texture)
     ---@cast g ERAHUDUtilityGroup
     local parentFrame = hud:addUtilityGroup(g)
     local frame = CreateFrame("Frame", nil, parentFrame, "ERAHUDUtilityGroup" .. iconPosition)
-    g.icon = frame.Icon
+
+    local icon = frame.Icon
+    ---@cast icon Texture
+    icon:SetSize(ERAHUD_UtilityGoupIconSize, ERAHUD_UtilityGoupIconSize)
+    icon:SetTexture(texture)
+
+    local separator = frame.Separator
+    ---@cast separator Line
+    local sepOffset = ERAHUD_UtilityGoupIconSize + 3.5 * ERAHUD_UtilityGoupBorder
+    if iconPosition == "LEFT" then
+        separator:SetStartPoint("TOPLEFT", frame, sepOffset, -ERAHUD_UtilityGoupBorder)
+        separator:SetEndPoint("BOTTOMLEFT", frame, sepOffset, ERAHUD_UtilityGoupBorder)
+    elseif iconPosition == "RIGHT" then
+        separator:SetStartPoint("TOPRIGHT", frame, -sepOffset, -ERAHUD_UtilityGoupBorder)
+        separator:SetEndPoint("BOTTOMRIGHT", frame, -sepOffset, ERAHUD_UtilityGoupBorder)
+    else
+        separator:SetStartPoint("BOTTOMLEFT", frame, ERAHUD_UtilityGoupBorder, sepOffset)
+        separator:SetEndPoint("BOTTOMRIGHT", frame, -ERAHUD_UtilityGoupBorder, sepOffset)
+    end
+
     g.frame = frame
     g.iconPosition = iconPosition
     g.hud = hud
-    g.icon:SetTexture(texture)
     g.icons = {}
     g:hide()
     return g
@@ -1549,16 +1640,18 @@ function ERAHUDUtilityGroup:measure()
             rowCount = math.ceil(count / 5)
             self.aligned = true
         end
-        self.width = self.maxColCount * iconSpace + 4
+        local borderAndPadding = ERAHUD_UtilityGoupBorder + ERAHUD_UtilityGoupPadding
+        local iconPart = ERAHUD_UtilityGoupIconSize + 3 * ERAHUD_UtilityGoupBorder
+        self.width = self.maxColCount * iconSpace + 2 * borderAndPadding
         if self.aligned then
-            self.height = iconSpace * rowCount + 4
+            self.height = iconSpace * rowCount + 2 * borderAndPadding
         else
-            self.height = iconSpace + ERAHUD_IconDeltaY * (rowCount - 1) + 4
+            self.height = iconSpace + ERAHUD_IconDeltaY * (rowCount - 1) + 2 * borderAndPadding
         end
         if self.iconPosition == "LEFT" or self.iconPosition == "RIGHT" then
-            self.width = self.width + 40
+            self.width = self.width + iconPart
         else
-            self.height = self.height + 40
+            self.height = self.height + iconPart
         end
 
         if self.hud.cFrame.inCombat then
@@ -1578,18 +1671,20 @@ function ERAHUDUtilityGroup:arrange(topLeftX, topLeftY, frame)
     self.frame:SetPoint("TOPLEFT", frame, "CENTER", topLeftX, topLeftY)
     self.frame:SetPoint("BOTTOMRIGHT", frame, "CENTER", topLeftX + self.width, topLeftY - self.height)
     local offsetX, offsetY
+    local iconPart = ERAHUD_UtilityGoupIconSize + 3 * ERAHUD_UtilityGoupBorder
+    local borderAndPadding = ERAHUD_UtilityGoupBorder + ERAHUD_UtilityGoupPadding
     if self.iconPosition == "LEFT" then
-        offsetX = topLeftX + 44
-        offsetY = topLeftY - 4
+        offsetX = topLeftX + iconPart + borderAndPadding
+        offsetY = topLeftY - borderAndPadding
     elseif self.iconPosition == "RIGHT" then
-        offsetX = topLeftX + 4
-        offsetY = topLeftY - 4
+        offsetX = topLeftX + borderAndPadding
+        offsetY = topLeftY - borderAndPadding
     elseif self.iconPosition == "BOTTOM" then
-        offsetX = topLeftX + 4
-        offsetY = topLeftY - 4
+        offsetX = topLeftX + borderAndPadding
+        offsetY = topLeftY - borderAndPadding
     else -- TOP
-        offsetX = topLeftX + 4
-        offsetY = topLeftY - 44
+        offsetX = topLeftX + borderAndPadding
+        offsetY = topLeftY - iconPart - borderAndPadding
     end
     local iconSpace = ERAHUD_UtilityIconSize + ERAHUD_UtilityIconSpacing
     local largeRow
@@ -1601,7 +1696,7 @@ function ERAHUDUtilityGroup:arrange(topLeftX, topLeftY, frame)
         x = offsetX + iconSpace
         largeRow = false
     end
-    local y = offsetY + iconSpace / 2
+    local y = offsetY - iconSpace / 2
     local count = 0
     for _, i in ipairs(self.icons) do
         if i.talentActive then
@@ -1640,6 +1735,81 @@ function ERAHUDUtilityGroup:arrange(topLeftX, topLeftY, frame)
     end
 end
 
+--#endregion
+
+---------------
+--- MODULES ---
+---------------
+
+--#region MODULES
+
+---@param m ERAHUDResourceModule
+---@return Frame
+function ERAHUD:addModule(m)
+    table.insert(self.modules, m)
+    return self.mainFrame
+end
+
+---@class (exact) ERAHUDResourceModule
+---@field private __index unknown
+---@field protected constructModule fun(this:ERAHUDResourceModule, hud:ERAHUD, height:number, talent:ERALIBTalent|nil)
+---@field private talent ERALIBTalent|nil
+---@field protected frame Frame
+---@field protected checkTalentOverride fun(this:ERAHUDResourceModule): boolean
+---@field protected hide fun(this:ERAHUDResourceModule)
+---@field protected show fun(this:ERAHUDResourceModule)
+---@field private visible boolean
+---@field height number
+---@field updateData fun(this:ERAHUDResourceModule, combat:boolean, t:number)
+---@field updateDisplay fun(this:ERAHUDResourceModule, combat:boolean, t:number)
+---@field hud ERAHUD
+ERAHUDResourceModule = {}
+ERAHUDResourceModule.__index = ERAHUDResourceModule
+
+---@param hud ERAHUD
+---@param height number
+---@param talent ERALIBTalent|nil
+function ERAHUDResourceModule:constructModule(hud, height, talent)
+    self.hud = hud
+    self.talent = talent
+    local parentFrame = hud:addModule(self)
+    self.frame = CreateFrame("Frame", nil, parentFrame)
+    self.frame:SetSize(hud.barsWidth, height)
+    self.height = height
+    self.visible = true
+end
+
+function ERAHUDResourceModule:hide()
+    if self.visible then
+        self.visible = false
+        self.frame:Hide()
+    end
+end
+
+function ERAHUDResourceModule:show()
+    if not self.visible then
+        self.visible = true
+        self.frame:Show()
+    end
+end
+
+---@param topX number
+---@param topY number
+---@param parentFrame Frame
+---@return boolean
+function ERAHUDResourceModule:checkTalentOrHide(topX, topY, parentFrame)
+    if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkTalentOverride() then
+        self:hide()
+        return false
+    else
+        self.frame:SetPoint("TOP", parentFrame, "CENTER", topX, topY)
+        self:show()
+        return true
+    end
+end
+
+--#endregion
+
 ---------------
 --- CONTENT ---
 ---------------
@@ -1653,7 +1823,9 @@ end
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedBuff(spellID, talent, ...)
-    return ERAAura:create(self, true, spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
+    table.insert(self.buffs, a)
+    return a
 end
 
 ---@param spellID integer
@@ -1661,8 +1833,9 @@ end
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedBuffAnyCaster(spellID, talent, ...)
-    local a = ERAAura:create(self, true, spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
     self.hasBuffsAnyCaster = true
+    table.insert(self.buffs, a)
     return a
 end
 
@@ -1671,7 +1844,19 @@ end
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedDebuff(spellID, talent, ...)
-    return ERAAura:create(self, false, spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
+    table.insert(self.debuffs, a)
+    return a
+end
+
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@param ... ERACooldownAdditionalID
+---@return ERAAura
+function ERAHUD:AddTrackedDebuffOnSelf(spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
+    table.insert(self.debuffsOnSelf, a)
+    return a
 end
 
 ---@param spellID integer
@@ -1698,25 +1883,28 @@ function ERAHUD:AddBarWithID(timer, iconID, r, g, b, talent)
 end
 
 ---@param data ERACooldownBase
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationCooldownIcon
-function ERAHUD:AddRotationCooldown(data, talent)
-    return ERAHUDRotationCooldownIcon:create(data, talent)
+function ERAHUD:AddRotationCooldown(data, iconID, talent)
+    return ERAHUDRotationCooldownIcon:create(data, iconID, talent)
 end
 
 ---@param data ERAAura
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationAuraIcon
-function ERAHUD:AddRotationBuff(data, talent)
-    return ERAHUDRotationAuraIcon:create(data, talent)
+function ERAHUD:AddRotationBuff(data, iconID, talent)
+    return ERAHUDRotationAuraIcon:create(data, iconID, talent)
 end
 
 ---@param data ERAAura
 ---@param maxStacks integer
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationStacksIcon
-function ERAHUD:AddRotationStacks(data, maxStacks, talent)
-    return ERAHUDRotationStacksIcon:create(data, maxStacks, talent)
+function ERAHUD:AddRotationStacks(data, maxStacks, iconID, talent)
+    return ERAHUDRotationStacksIcon:create(data, maxStacks, iconID, talent)
 end
 
 ---@param iconID integer
@@ -1724,6 +1912,23 @@ end
 ---@return ERAHUDRawPriority
 function ERAHUD:AddPriority(iconID, talent)
     return ERAHUDRawPriority:create(self, iconID, talent)
+end
+
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param group ERAHUDUtilityGroup
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityCooldownInGroup
+function ERAHUD:AddUtilityCooldown(data, iconID, group, talent)
+    return ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+end
+
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDRotationKickIcon
+function ERAHUD:AddKick(data, iconID, talent)
+    return ERAHUDRotationKickIcon:create(data, iconID, talent)
 end
 
 --#endregion
