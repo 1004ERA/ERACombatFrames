@@ -82,8 +82,8 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private minGCD number
 ---@field private nested ERAHUDNestedModule[]
 ---@field private activeNested ERAHUDNestedModule[]
----@field private timers ERATimer[]
----@field private activeTimers ERATimer[]
+---@field private dataItems ERADataItem[]
+---@field private activeDataItems ERADataItem[]
 ---@field private buffs ERAAura[]
 ---@field private activeBuffs table<number, ERAAura>
 ---@field private hasBuffsAnyCaster boolean
@@ -100,6 +100,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private ResetToIdle fun(this:ERAHUD)
 ---@field private CheckTalents fun(this:ERAHUD)
 ---@field private CLEU fun(this:ERAHUD, t:number)
+---@field AdditionalCLEU fun(this:ERAHUD, t:number)
 ---@field private updateHealthStatus fun(this:ERAHUD, h:ERAHUDHealth, t:number)
 ---@field private updateHealthStatusIdle fun(this:ERAHUD, h:ERAHUDHealth, t:number)
 ---@field private updatePowerStatus fun(this:ERAHUD, t:number)
@@ -166,6 +167,7 @@ setmetatable(ERAHUD, { __index = ERACombatModule })
 ---@param cFrame ERACombatFrame
 ---@param baseGCD number
 ---@param requireCLEU boolean
+---@param isHealer boolean
 ---@param powerType integer
 ---@param rPower number
 ---@param gPower number
@@ -220,8 +222,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     -- data content
     hud.nested = {}
     hud.activeNested = {}
-    hud.timers = {}
-    hud.activeTimers = {}
+    hud.dataItems = {}
+    hud.activeDataItems = {}
     hud.buffs = {}
     hud.activeBuffs = {}
     hud.hasBuffsAnyCaster = false
@@ -494,10 +496,10 @@ function ERAHUD:SpecInactive(wasActive)
 end
 
 function ERAHUD:CheckTalents()
-    table.wipe(self.activeTimers)
-    for _, t in ipairs(self.timers) do
+    table.wipe(self.activeDataItems)
+    for _, t in ipairs(self.dataItems) do
         if (t:checkTalent()) then
-            table.insert(self.activeTimers, t)
+            table.insert(self.activeDataItems, t)
         end
     end
     table.wipe(self.activeBuffs)
@@ -1148,9 +1150,9 @@ end
 
 --#region DATA
 
----@param t ERATimer
-function ERAHUD:addTimer(t)
-    table.insert(self.timers, t)
+---@param i ERADataItem
+function ERAHUD:addDataItem(i)
+    table.insert(self.dataItems, i)
 end
 
 ---@param b ERACooldownBagItem
@@ -1193,37 +1195,42 @@ function ERAHUD:updateData(t, combat)
 
     --#region BUFF / DEBUFF
 
-    for i = 1, 40 do
+    local i = 1
+    while true do
         local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
         if (auraInfo) then
             local a = self.activeDebuffs[auraInfo.spellId]
             if (a ~= nil) then
                 a:auraFound(t, auraInfo)
             end
+            i = i + 1
         else
             break
         end
     end
+    i = 1
     if self.hasBuffsAnyCaster then
-        for i = 1, 40 do
+        while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
                     a:auraFound(t, auraInfo)
                 end
+                i = i + 1
             else
                 break
             end
         end
     else
-        for i = 1, 40 do
+        while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
                     a:auraFound(t, auraInfo)
                 end
+                i = i + 1
             else
                 break
             end
@@ -1234,7 +1241,8 @@ function ERAHUD:updateData(t, combat)
     self.selfDispellableCurse = false
     self.selfDispellableMagic = false
     self.selfDispellablePoison = false
-    for i = 1, 40 do
+    i = 1
+    while true do
         local auraInfo = C_UnitAuras.GetDebuffDataByIndex("player", i)
         if (auraInfo) then
             if auraInfo.dispelName == "Magic" then
@@ -1252,6 +1260,7 @@ function ERAHUD:updateData(t, combat)
             if (a ~= nil) then
                 a:auraFound(t, auraInfo)
             end
+            i = i + 1
         else
             break
         end
@@ -1264,7 +1273,8 @@ function ERAHUD:updateData(t, combat)
     if (self.watchTargetDispellable) then
         self.targetDispellableMagic = false
         self.targetDispellableEnrage = false
-        for i = 1, 40 do
+        i = 1
+        while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("target", i)
             if (auraInfo) then
                 if (auraInfo.isStealable) then
@@ -1275,6 +1285,7 @@ function ERAHUD:updateData(t, combat)
                 elseif (auraInfo.dispelName == "Enrage") then
                     self.targetDispellableEnrage = true
                 end
+                i = i + 1
             else
                 break
             end
@@ -1391,7 +1402,7 @@ function ERAHUD:updateData(t, combat)
 
     self:PreUpdateDataOverride(t, combat)
 
-    for _, tim in ipairs(self.activeTimers) do
+    for _, tim in ipairs(self.activeDataItems) do
         tim:updateData(t)
     end
 
@@ -2033,6 +2044,13 @@ function ERAHUD:AddEquipmentCooldown(slotID)
     return ERACooldownEquipment:create(self, slotID)
 end
 
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@return ERASpellStacks
+function ERAHUD:AddSpellStacks(spellID, talent)
+    return ERASpellStacks:create(self, spellID, talent)
+end
+
 --#endregion
 
 --#region DISPLAY
@@ -2066,6 +2084,17 @@ function ERAHUD:AddKick(data, iconID, talent)
     return ERAHUDRotationKickIcon:create(data, iconID, talent)
 end
 
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@param magic boolean
+---@param enrage boolean
+---@return ERAHUDRotationOffensiveDispellIcon
+function ERAHUD:AddOffensiveDispell(data, iconID, talent, magic, enrage)
+    self.watchTargetDispellable = true
+    return ERAHUDRotationOffensiveDispellIcon:create(data, iconID, talent, magic, enrage)
+end
+
 ---@param data ERAAura
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
@@ -2074,7 +2103,7 @@ function ERAHUD:AddRotationBuff(data, iconID, talent)
     return ERAHUDRotationAuraIcon:create(data, iconID, talent)
 end
 
----@param data ERAAura
+---@param data ERAStacks
 ---@param maxStacks integer
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil

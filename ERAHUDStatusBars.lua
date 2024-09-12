@@ -486,6 +486,20 @@ function ERAHUDStatusBar:updateMarkings(t)
     end
 end
 
+---@param baseValue number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDStatusMarkingFrom0
+function ERAHUDStatusBar:AddMarkingFrom0(baseValue, talent)
+    return ERAHUDStatusMarkingFrom0:create(self, baseValue, talent)
+end
+
+---@param baseValue number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDStatusMarkingFromMax
+function ERAHUDStatusBar:AddMarkingFromMax(baseValue, talent)
+    return ERAHUDStatusMarkingFromMax:create(self, baseValue, talent)
+end
+
 ----------------
 --- MARKINGS ---
 ----------------

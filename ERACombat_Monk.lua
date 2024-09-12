@@ -1,12 +1,3 @@
----@class (exact) MonkCommonTimerIconParams
----@field kickX number
----@field kickY number
----@field paraX number
----@field paraY number
----@field todX number
----@field todY number
----@field todPrio number
-
 ---@class (exact) MonkCommonTalents
 ---@field diffuse ERALIBTalent
 ---@field fortify ERALIBTalent
@@ -27,6 +18,10 @@
 ---@field vivify_30pct ERALIBTalent
 ---@field strongEH ERALIBTalent
 ---@field scalingEH ERALIBTalent
+
+---@class MonkHUD : ERAHUD
+---@field lastInstaVivify number
+---@field nextInstaVifify MonkInstaVivify
 
 function ERACombatFrames_MonkSetup(cFrame)
     cFrame.hideAlertsForSpec = { 1 }
@@ -79,134 +74,99 @@ function ERACombatFrames_MonkSetup(cFrame)
     end
 end
 
-------------------------------------------------------------------------------------------------------------------------
----- COMMON ------------------------------------------------------------------------------------------------------------
-------------------------------------------------------------------------------------------------------------------------
+--------------------
+--#region COMMON ---
+--------------------
 
----comment
----@param cFrame any
----@param spec number
----@param includeDetox boolean
+---@param hud MonkHUD
 ---@param monkTalents MonkCommonTalents
----@return ERACombatUtilityFrame
-function ERACombatFrames_MonkUtility(cFrame, spec, includeDetox, monkTalents)
-    local utility = ERACombatUtilityFrame:Create(cFrame, -16, -212, spec)
-
-    utility:AddCooldown(-4, 0, 322109, nil, false) -- touch of death
-    utility:AddWarlockHealthStone(0.5, -0.9)
-
-    utility:AddTrinket2Cooldown(-3, 0, nil)
-    utility:AddTrinket1Cooldown(-2, 0, nil)
-    utility:AddCooldown(1, 0, 122783, nil, true, monkTalents.diffuse)
-    utility:AddCooldown(2, 0, 115203, nil, true, monkTalents.fortify)
-    utility:AddBeltCooldown(3, 0, nil)
-    utility:AddCloakCooldown(4, 0, nil)
-
-    utility:AddRacial(3, 1)
-    utility:AddCooldown(4, 1, 115078, nil, true, monkTalents.paralysis)
-
-    utility:AddCooldown(3, 2, 119381, nil, true) -- sweep
-    utility:AddCooldown(4, 2, 116844, nil, true, monkTalents.rop)
-    utility:AddCooldown(4, 2, 198898, nil, true, monkTalents.sleep)
-
-    utility:AddCooldown(3, 3, 324312, nil, true, monkTalents.clash)
-    utility:AddCooldown(4, 3, 119996, nil, true, monkTalents.transcendence)
-    utility:AddCooldown(5, 3, 101643, nil, true, monkTalents.transcendence).alphaWhenOffCooldown = 0.1
-
-    utility:AddCooldown(3, 4, 109132, 574574, true, monkTalents.roll)
-    utility:AddCooldown(3, 4, 115008, 607849, true, monkTalents.torpedo)
-    utility:AddCooldown(4, 4, 116841, nil, true, monkTalents.lust)
-
-    if (includeDetox) then
-        utility:AddDefensiveDispellCooldown(3, 5, 218164, nil, monkTalents.detox, "Poison", "Disease")
-    end
-    utility:AddCooldown(4, 5, 115546, nil, true).alphaWhenOffCooldown = 0.2
-    utility:AddWarlockPortal(5, 5)
-
-
-    return utility
-end
-
----comment
----@param timers ERACombatTimers
----@param talents MonkCommonTalents
----@param timerParams MonkCommonTimerIconParams
-function ERACombatFrames_MonkTimerBars(timers, talents, timerParams)
-    timers:AddChannelInfo(115175, 1.0) -- soothing mist
-    timers:AddChannelInfo(117952, 1.0) -- crackling jade lightning
-
-    timers:AddAuraBar(timers:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
-
-    timers:AddKick(116705, timerParams.kickX, timerParams.kickY, talents.kick, false)
-    timers:AddOffensiveDispellIcon(629534, timerParams.paraX, timerParams.paraX, true, talents.disenrage, "enrage")
-
-    local tod = timers:AddCooldownIcon(timers:AddTrackedCooldown(322109), nil, timerParams.todX, timerParams.todY, true, true)
-    function tod:ComputeAvailablePriorityOverride()
-        local u, nomana = C_Spell.IsSpellUsable(322109)
-        if (u or nomana) then
-            return timerParams.todPrio
-        else
-            return 0
+function ERACombatFrames_MonkCommonSetup(hud, monkTalents)
+    hud.lastInstaVivify = 0
+    function hud:AdditionalCLEU(t)
+        local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if (sourceGUY == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED") then
+            if (spellID == 392883) then
+                self.lastInstaVivify = t
+            end
         end
     end
+    hud.nextInstaVifify = MonkInstaVivify:create(hud, monkTalents.vivification)
 end
 
--- recurring
+------------------------
+--#region TIMER CLEU ---
+------------------------
 
-ERACombatFrames_MonkRecurringIcon = {}
-ERACombatFrames_MonkRecurringIcon.__index = ERACombatFrames_MonkRecurringIcon
-setmetatable(ERACombatFrames_MonkRecurringIcon, { __index = ERACombatTimerIcon })
+---@class MonkTimerCLEU : ERATimer
+---@field private __index unknown
+---@field private talent ERALIBTalent|nil
+---@field getLastTime fun(this:MonkTimerCLEU): number
+---@field protected setLastTime fun(this:MonkTimerCLEU, t:number)
+---@field private isValid boolean
+---@field mhud MonkHUD
+MonkTimerCLEU = {}
+MonkTimerCLEU.__index = MonkTimerCLEU
+setmetatable(MonkTimerCLEU, { __index = ERATimer })
 
-function ERACombatFrames_MonkRecurringIcon:create(group, iconID, talent, buffAlready)
-    local i = {}
-    setmetatable(i, ERACombatFrames_MonkRecurringIcon)
-    i.iconID = iconID
-    i:construct(group, 0, 0, iconID, true)
-    i.talent = talent
-    i.buffAlready = buffAlready
-    return i
+---@param hud MonkHUD
+---@param talent ERALIBTalent|nil
+function MonkTimerCLEU:constructCLEU(hud, totDuration, talent)
+    self:constructTimer(hud)
+    self.talent = talent
+    self.totDuration = totDuration
+    self.mhud = hud
 end
 
-function ERACombatFrames_MonkRecurringIcon:checkTalentsOrHide()
-    if ((not self.talent) or self.talent:PlayerHasTalent()) then
-        self.talentActive = true
-        return true
-    else
-        self:hide()
-        self.talentActive = false
-        return false
-    end
+function MonkTimerCLEU:checkDataItemTalent()
+    return not (self.talent and not self.talent:PlayerHasTalent())
 end
 
-function ERACombatFrames_MonkRecurringIcon:updateIconCooldownTexture()
-    return self.iconID
-end
-
-function ERACombatFrames_MonkRecurringIcon:updateAfterReset(t)
-    self:updateIconCooldownTexture()
-end
-
-function ERACombatFrames_MonkRecurringIcon:updateTimerDurationAndMainIconVisibility(t, timerStandardDuration)
-    self.shouldShowMainIcon = false
-    local last, dur = self:getLastAndDuration()
-    if (last > 0) then
-        local elapsed = t - last
-        self.timerDuration = dur - (elapsed - dur * math.floor(elapsed / dur))
-        if (self.buffAlready) then
-            self.iconTimer:SetDesaturated(self.buffAlready.remDuration <= 0)
+---@param t number
+function MonkTimerCLEU:updateData(t)
+    local last = self:getLastTime()
+    if last and last > 0 then
+        self.isValid = true
+        self.remDuration = self.totDuration - (t - last)
+        if self.remDuration < 0 then
+            while self.remDuration < 0 do
+                self.remDuration = self.remDuration + self.totDuration
+            end
+            self:setLastTime(t + self.remDuration - self.totDuration)
         end
     else
-        self.timerDuration = -1
+        self.remDuration = 0
+        self.isValid = false
     end
-end
-function ERACombatFrames_MonkRecurringIcon:getLastAndDuration()
-    return 0, 1
 end
 
-function ERACombatFrames_MonkRecurringIcon_instaVivify(timers, talent, instaVivifyTimer)
-    local i = ERACombatFrames_MonkRecurringIcon:create(timers, 1360980, talent, instaVivifyTimer)
-    function i:getLastAndDuration()
-        return self.group.lastInstaVivify, 10
-    end
+--- VIVIFY ---
+
+---@class MonkInstaVivify : MonkTimerCLEU
+---@field __index unknown
+---@field mhud MonkHUD
+MonkInstaVivify = {}
+MonkInstaVivify.__index = MonkInstaVivify
+setmetatable(MonkInstaVivify, { __index = MonkTimerCLEU })
+
+---@param hud MonkHUD
+---@param talent ERALIBTalent
+---@return MonkInstaVivify
+function MonkInstaVivify:create(hud, talent)
+    local v = {}
+    setmetatable(v, MonkInstaVivify)
+    ---@cast v MonkInstaVivify
+    v:constructCLEU(hud, 10, talent)
+    return v
 end
+
+---@return number
+function MonkInstaVivify:getLastTime()
+    return self.mhud.lastInstaVivify
+end
+
+---@param t number
+function MonkInstaVivify:setLastTime(t)
+    self.mhud.lastInstaVivify = t
+end
+
+--#endregion

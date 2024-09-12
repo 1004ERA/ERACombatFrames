@@ -838,6 +838,53 @@ end
 
 --#endregion
 
+--#region DISPELL
+
+---@class (exact) ERAHUDRotationOffensiveDispellIcon : ERAHUDRotationCooldownIcon
+---@field private __index unknown
+---@field private magic boolean
+---@field private enrage boolean
+ERAHUDRotationOffensiveDispellIcon = {}
+ERAHUDRotationOffensiveDispellIcon.__index = ERAHUDRotationOffensiveDispellIcon
+setmetatable(ERAHUDRotationOffensiveDispellIcon, { __index = ERAHUDRotationCooldownIcon })
+
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@param magic boolean
+---@param enrage boolean
+---@return ERAHUDRotationOffensiveDispellIcon
+function ERAHUDRotationOffensiveDispellIcon:create(data, iconID, talent, magic, enrage)
+    local cd = ERAHUDRotationCooldownIcon:create(data, iconID, talent)
+    setmetatable(cd, ERAHUDRotationOffensiveDispellIcon)
+    ---@cast cd ERAHUDRotationOffensiveDispellIcon
+    cd.specialPosition = true
+    cd.magic = magic
+    cd.enrage = enrage
+    return cd
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(combat, t)
+    if
+        (self.magic and self.hud.targetDispellableMagic)
+        or
+        (self.enrage and self.hud.targetDispellableEnrage)
+    then
+        self.icon:Show()
+        if self.data.remDuration > 0 then
+            self.icon:StopHighlight()
+        else
+            self.icon:Highlight()
+        end
+    else
+        self.icon:Hide()
+    end
+end
+
+--#endregion
+
 --#region KICK
 
 ---@class (exact) ERAHUDRotationKickIcon : ERAHUDRotationCooldownIcon
@@ -954,14 +1001,14 @@ end
 
 ---@class (exact) ERAHUDRotationStacksIcon : ERAHUDRotationIcon
 ---@field private __index unknown
----@field data ERAAura
+---@field data ERAStacks
 ---@field maxStacks integer
 ---@field private currentStacks integer
 ERAHUDRotationStacksIcon = {}
 ERAHUDRotationStacksIcon.__index = ERAHUDRotationStacksIcon
 setmetatable(ERAHUDRotationStacksIcon, { __index = ERAHUDRotationIcon })
 
----@param data ERAAura
+---@param data ERAStacks
 ---@param maxStacks integer
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil

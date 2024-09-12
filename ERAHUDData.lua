@@ -1,32 +1,55 @@
----@class (exact) ERATimer
+---@class (exact) ERADataItem
 ---@field private __index unknown
----@field remDuration number
----@field totDuration number
+---@field protected constructItem fun(this:ERADataItem, hud:ERAHUD)
 ---@field hud ERAHUD
 ---@field talentActive boolean
----@field checkTalent fun(this:ERATimer): boolean
----@field protected checkTimerTalent fun(this:ERATimer): boolean
----@field updateData fun(this:ERATimer, t:number)
-ERATimer = {}
-ERATimer.__index = ERATimer
+---@field checkTalent fun(this:ERADataItem): boolean
+---@field protected checkDataItemTalent fun(this:ERADataItem): boolean
+---@field protected clear fun(this:ERADataItem)
+---@field updateData fun(this:ERADataItem, t:number)
+ERADataItem = {}
+ERADataItem.__index = ERADataItem
 
 ---@param hud ERAHUD
-function ERATimer:constructTimer(hud)
+function ERADataItem:constructItem(hud)
     self.hud = hud
-    self.remDuration = 0
-    self.totDuration = 1
-    hud:addTimer(self)
+    hud:addDataItem(self)
 end
 
-function ERATimer:checkTalent()
-    if (self:checkTimerTalent()) then
+function ERADataItem:checkTalent()
+    if (self:checkDataItemTalent()) then
         self.talentActive = true
         return true
     else
         self.talentActive = false
-        self.remDuration = 0
+        self:clear()
         return false
     end
+end
+
+---@class (exact) ERATimer : ERADataItem
+---@field private __index unknown
+---@field protected constructTimer fun(this:ERATimer, hud:ERAHUD)
+---@field remDuration number
+---@field totDuration number
+---@field private clear fun(this:ERADataItem)
+---@field protected clearTimer fun(this:ERATimer)
+ERATimer = {}
+ERATimer.__index = ERATimer
+setmetatable(ERATimer, { __index = ERADataItem })
+
+---@param hud ERAHUD
+function ERATimer:constructTimer(hud)
+    self.remDuration = 0
+    self.totDuration = 1
+    self:constructItem(hud)
+end
+
+function ERATimer:clear()
+    self.remDuration = 0
+    self:clearTimer()
+end
+function ERATimer:clearTimer()
 end
 
 ---@class (exact) ERACooldownAdditionalID
@@ -35,6 +58,7 @@ end
 
 ---@class (exact) ERATimerWithID : ERATimer
 ---@field private __index unknown
+---@field protected constructID fun(this:ERATimer, hud:ERAHUD, spellID:integer, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
 ---@field spellID integer
 ---@field private mainSpellID integer
 ---@field private talent ERALIBTalent | nil
@@ -57,7 +81,7 @@ function ERATimerWithID:constructID(hud, spellID, talent, ...)
     self.additionalSpellIDs = { ... }
 end
 
-function ERATimerWithID:checkTimerTalent()
+function ERATimerWithID:checkDataItemTalent()
     self.talent = self.mainTalent
     self.spellID = self.mainSpellID
     for _, info in ipairs(self.additionalSpellIDs) do
@@ -74,6 +98,8 @@ end
 --- COOLDOWN ---
 ----------------
 
+--#region GENERIC
+
 ---@class (exact) ERACooldownBase : ERATimerWithID
 ---@field private __index unknown
 ---@field hasCharges boolean
@@ -84,6 +110,7 @@ end
 ---@field isPetSpell boolean
 ---@field protected constructCooldownBase fun(this:ERACooldownBase, hud:ERAHUD, spellID:number, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
 ---@field protected updateCooldownData fun(this:ERACooldownBase, t:number)
+---@field private clearTimer fun(this:ERACooldownBase)
 ERACooldownBase = {}
 ERACooldownBase.__index = ERACooldownBase
 setmetatable(ERACooldownBase, { __index = ERATimerWithID })
@@ -100,6 +127,11 @@ function ERACooldownBase:constructCooldownBase(hud, spellID, talent, ...)
     self.isAvailable = false
     self.isKnown = false
     self.isPetSpell = false
+end
+
+function ERACooldownBase:clearTimer()
+    self.isAvailable = false
+    self.currentCharges = 0
 end
 
 ---@param t number
@@ -192,6 +224,8 @@ function ERACooldown:updateCooldownData(t)
     end
 end
 
+--#endregion
+
 --#region EQUIPMENT
 
 ---@class ERACooldownEquipment : ERATimer
@@ -216,7 +250,7 @@ function ERACooldownEquipment:create(hud, slotID)
 end
 
 ---@return boolean
-function ERACooldownEquipment:checkTimerTalent()
+function ERACooldownEquipment:checkDataItemTalent()
     return self.hasCooldown
 end
 
@@ -276,7 +310,7 @@ function ERACooldownBagItem:create(hud, itemID, talent)
 end
 
 ---@return boolean
-function ERACooldownBagItem:checkTimerTalent()
+function ERACooldownBagItem:checkDataItemTalent()
     return self.talent:PlayerHasTalent()
 end
 
@@ -330,12 +364,69 @@ end
 
 --#endregion
 
+--------------
+--- STACKS ---
+--------------
+
+---@class ERAStacks : ERADataItem
+---@field stacks integer
+---@field spellID integer
+
+--#region SPELL STACKS
+
+---@class ERASpellStacks : ERAStacks
+---@field private __index unknown
+---@field private talent ERALIBTalent|nil
+---@field private slot integer
+ERASpellStacks = {}
+ERASpellStacks.__index = ERASpellStacks
+setmetatable(ERASpellStacks, { __index = ERADataItem })
+
+---@param hud ERAHUD
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@return ERASpellStacks
+function ERASpellStacks:create(hud, spellID, talent)
+    local s = {}
+    setmetatable(s, ERASpellStacks)
+    ---@cast s ERASpellStacks
+    s:constructItem(hud)
+    s.spellID = spellID
+    s.talent = talent
+    return s
+end
+
+function ERASpellStacks:clear()
+    self.stacks = 0
+end
+
+function ERASpellStacks:checkDataItemTalent()
+    if self.talent and not self.talent:PlayerHasTalent() then
+        return false
+    else
+        self.slot = ERALIB_GetSpellSlot(self.spellID)
+        return self.slot >= 0
+    end
+end
+
+---@param t number
+function ERASpellStacks:updateData(t)
+    if self.slot >= 0 then
+        self.stacks = GetActionCount(self.slot)
+    else
+        self.stacks = 0
+    end
+end
+
+--#endregion
+
 ------------
 --- AURA ---
 ------------
 
----@class ERAAura : ERATimerWithID
+---@class ERAAura : ERATimerWithID, ERAStacks
 ---@field private __index unknown
+---@field private clearTimer fun(this:ERAAura)
 ---@field stacks integer
 ---@field auraFound fun(this:ERAAura, t:number, data:AuraData)
 ---@field private foundDuration number
@@ -357,6 +448,10 @@ function ERAAura:create(hud, spellID, talent, ...)
     a.foundDuration = -1
     a.foundStacks = 0
     return a
+end
+
+function ERAAura:clearTimer()
+    self.stacks = 0
 end
 
 ---@param t number

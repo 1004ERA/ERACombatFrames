@@ -15,7 +15,7 @@ ERAHUDModulePoints_PointSpacing = 4
 ---@field updateDisplay fun(this:ERAHUDModulePoints, combat:boolean, t:number)
 ---@field protected getMaxPoints fun(this:ERAHUDModulePoints): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePoints): integer
----@field protected getIdlePoints fun(this:ERAHUDModulePoints): integer
+---@field GetIdlePointsOverride fun(this:ERAHUDModulePoints): integer
 ---@field private points ERAHUDModulePoint[]
 ---@field currentPoints integer
 ---@field maxPoints integer
@@ -71,7 +71,7 @@ function ERAHUDModulePoints:checkTalentOverride()
 end
 
 ---@return integer
-function ERAHUDModulePoints:getIdlePoints()
+function ERAHUDModulePoints:GetIdlePointsOverride()
     return 0
 end
 
@@ -84,7 +84,7 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDModulePoints:updateDisplay(combat, t)
-    if combat or self.currentPoints ~= self:getIdlePoints() then
+    if combat or self.currentPoints ~= self:GetIdlePointsOverride() then
         for i = 1, self.currentPoints do
             self.points[i]:update(true)
         end

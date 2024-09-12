@@ -15,19 +15,19 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, enemies, paladinTalents
     hud:AddRotationCooldown(judgment)
 
     local loh = hud:AddTrackedCooldown(633)
-    hud:AddUtilityCooldown(loh, nil, hud.healGroup)
+    hud:AddUtilityCooldown(loh, hud.healGroup)
 
     local stunHammer = hud:AddTrackedCooldown(853)
-    hud:AddUtilityCooldown(stunHammer, nil, hud.controlGroup)
+    hud:AddUtilityCooldown(stunHammer, hud.controlGroup)
 
     local steed = hud:AddTrackedCooldown(190784)
-    hud:AddUtilityCooldown(steed, nil, hud.movementGroup)
+    hud:AddUtilityCooldown(steed, hud.movementGroup)
 
     local wrath = hud:AddTrackedCooldown(31884)
-    hud:AddUtilityCooldown(wrath, nil, hud.powerUpGroup)
+    hud:AddUtilityCooldown(wrath, hud.powerUpGroup)
 
     local bop = hud:AddTrackedCooldown(1022)
-    hud:AddUtilityCooldown(bop, nil, hud.defenseGroup)
+    hud:AddUtilityCooldown(bop, hud.defenseGroup)
     local divineprotection = hud:AddTrackedCooldown(403876)
-    hud:AddUtilityCooldown(divineprotection, nil, hud.defenseGroup)
+    hud:AddUtilityCooldown(divineprotection, hud.defenseGroup)
 end
