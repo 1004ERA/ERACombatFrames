@@ -139,7 +139,7 @@ function ERACombatFrames_MonkWindwalkerSetup_OLD(cFrame, enemies, monkTalents)
     timers:AddAuraBar(faexposureTimer, 3528275, 0.7, 0.0, 1.0)
 
     timers:AddAuraBar(timers:AddTrackedBuff(116768), nil, 0.7, 0.0, 0.1) -- free BoK
-    timers:AddAuraBar(timers:AddTrackedBuff(125174), nil, 1.0, 1.0, 1.0)
+    timers:AddAuraBar(timers:AddTrackedBuff(125174), nil, 1.0, 1.0, 1.0) -- karma ?
     timers:AddAuraBar(timers:AddTrackedBuff(137639, talent_sef), nil, 1.0, 0.0, 1.0)
     timers:AddAuraBar(spinningBuff, 606543, 0.0, 0.8, 0.2)
     local ignitionBar = timers:AddAuraBar(spinningIgnition, 988193, 0.5, 1.0, 0.2)

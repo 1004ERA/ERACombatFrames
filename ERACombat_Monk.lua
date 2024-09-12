@@ -21,7 +21,10 @@
 
 ---@class MonkHUD : ERAHUD
 ---@field lastInstaVivify number
+---@field instaVivify ERAAura
 ---@field nextInstaVifify MonkInstaVivify
+---@field tod ERACooldown
+---@field paralysis ERACooldown
 
 function ERACombatFrames_MonkSetup(cFrame)
     cFrame.hideAlertsForSpec = { 1 }
@@ -79,18 +82,93 @@ end
 --------------------
 
 ---@param hud MonkHUD
----@param monkTalents MonkCommonTalents
-function ERACombatFrames_MonkCommonSetup(hud, monkTalents)
+---@param talents MonkCommonTalents
+---@param vivifyPrediction boolean
+---@param detox boolean
+function ERACombatFrames_MonkCommonSetup(hud, talents, vivifyPrediction, detox)
+    hud.tod = hud:AddTrackedCooldown(322109)
+
+    local instaVivifyID = 392883
+
+    hud.instaVivify = hud:AddTrackedBuff(instaVivifyID, talents.vivification)
+
     hud.lastInstaVivify = 0
     function hud:AdditionalCLEU(t)
         local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
         if (sourceGUY == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED") then
-            if (spellID == 392883) then
+            if (spellID == instaVivifyID) then
                 self.lastInstaVivify = t
             end
         end
     end
-    hud.nextInstaVifify = MonkInstaVivify:create(hud, monkTalents.vivification)
+    hud.nextInstaVifify = MonkInstaVivify:create(hud, talents.vivification)
+
+    if vivifyPrediction then
+        function hud:PreUpdateDisplayOverride(t, combat)
+            if self.instaVivify.remDuration > 0 then
+                self.health.bar:SetForecast(ERACombatFrames_InstaVivifyHealing(talents))
+            else
+                self.health.bar:SetForecast(0)
+            end
+        end
+    end
+
+    ----------------
+    --- ROTATION ---
+    ----------------
+
+    hud:AddChannelInfo(115175, 1.0) -- soothing mist
+    hud:AddChannelInfo(117952, 1.0) -- crackling jade lightning
+
+    hud:AddBarWithID(hud:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
+    hud:AddBarWithID(hud:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
+
+    local todPrio = hud:AddPriority(606552)
+    function todPrio:ComputeAvailablePriorityOverride(t)
+        local u, nomana = C_Spell.IsSpellUsable(hud.tod.spellID)
+        if (u or nomana) then
+            return 1
+        else
+            return 0
+        end
+    end
+
+    hud:AddKick(hud:AddTrackedCooldown(116705), nil, talents.kick)
+
+    local paralysis = hud:AddTrackedCooldown(115078, talents.paralysis)
+    hud:AddOffensiveDispell(paralysis, nil, talents.disenrage, false, true)
+
+    ---------------
+    --- UTILITY ---
+    ---------------
+
+    hud:AddUtilityCooldown(hud.tod, hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(122783, talents.diffuse), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115203, talents.fortify), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(119381), hud.controlGroup) -- sweep
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(116844, talents.rop), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(198898, talents.sleep), hud.controlGroup)
+    hud:AddUtilityCooldown(paralysis, hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(109132, talents.roll), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115008, talents.torpedo), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(116841, talents.lust), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(324312, talents.clash), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(119996, talents.transcendence), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(101643, talents.transcendence), hud.movementGroup)
+    if detox then
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(218164, talents.detox), hud.specialGroup, nil, nil, nil, false, true, true, false, false)
+    end
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115546), hud.specialGroup) -- taunt
+end
+
+---@param talents MonkCommonTalents
+---@return number
+function ERACombatFrames_InstaVivifyHealing(talents)
+    local mult = 1.2 * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100)
+    mult = mult * (1 + talents.healingDone2.rank * 0.02)
+    mult = mult * (1 + talents.healingTaken4.rank * 0.04)
+    mult = mult * (1 + talents.vivify_30pct.rank * 0.3)
+    return 6 * GetSpellBonusHealing() * mult
 end
 
 ------------------------

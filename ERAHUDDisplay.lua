@@ -352,6 +352,7 @@ end
 ---@field private __index unknown
 ---@field private talent ERALIBTalent|nil
 ---@field timer ERATimerWithID
+---@field ComputeDurationOverride fun(this:ERAHUDSpellIDBar, t:number): number
 ERAHUDSpellIDBar = {}
 ERAHUDSpellIDBar.__index = ERAHUDSpellIDBar
 setmetatable(ERAHUDSpellIDBar, { __index = ERAHUDBar })
@@ -407,7 +408,7 @@ end
 ---@class (exact) ERAHUDTimerItem
 ---@field private __index unknown
 ---@field protected constructItem fun(this:ERAHUDTimerItem, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
----@field ComputeAvailablePriorityOverride fun(this:ERAHUDTimerItem, t:number)
+---@field ComputeAvailablePriorityOverride fun(this:ERAHUDTimerItem, t:number): number
 ---@field protected checkAdditionalTalent fun(this:ERAHUDTimerItem): boolean
 ---@field protected updateIconID fun(this:ERAHUDTimerItem, currentIconID:integer): integer
 ---@field ComputeDurationOverride fun(this:ERAHUDTimerItem, t:number): number
@@ -796,8 +797,9 @@ function ERAHUDRotationCooldownIconPriority:ComputeDurationOverride(t)
 end
 
 ---@param t number
+---@return number
 function ERAHUDRotationCooldownIconPriority:ComputeAvailablePriorityOverride(t)
-    return 1
+    return 0
 end
 
 ---@class (exact) ERAHUDRotationCooldownIconChargedPriority : ERAHUDTimerItem
@@ -832,8 +834,9 @@ function ERAHUDRotationCooldownIconChargedPriority:ComputeDurationOverride(t)
 end
 
 ---@param t number
+---@return number
 function ERAHUDRotationCooldownIconChargedPriority:ComputeAvailablePriorityOverride(t)
-    return 0
+    return self.cd.onTimer:ComputeAvailablePriorityOverride(t)
 end
 
 --#endregion
@@ -938,6 +941,7 @@ end
 ---@field private __index unknown
 ---@field data ERAAura
 ---@field private currentStacks integer
+---@field ShowWhenMissing fun(this:ERAHUDRotationAuraIcon, t:number, combat:boolean): boolean
 ERAHUDRotationAuraIcon = {}
 ERAHUDRotationAuraIcon.__index = ERAHUDRotationAuraIcon
 setmetatable(ERAHUDRotationAuraIcon, { __index = ERAHUDRotationIcon })
@@ -972,27 +976,41 @@ function ERAHUDRotationAuraIcon:updateIconID(currentIconID)
     return spellInfo.iconID
 end
 
+---@param combat boolean
 ---@param t number
-function ERAHUDRotationAuraIcon:update(t)
+function ERAHUDRotationAuraIcon:update(combat, t)
     if self.data.stacks > 0 then
-        if self.currentStacks == 0 then
-            self.icon:SetDesaturated(false)
-            self.icon:SetMainTextColor(1.0, 1.0, 1.0, 1.0)
-        end
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks
-            self.icon:SetMainText(tostring(self.currentStacks))
+            self.icon:SetDesaturated(false)
+            if self.currentStacks == 1 then
+                self.icon:SetMainText(nil)
+            else
+                self.icon:SetMainTextColor(1.0, 1.0, 1.0, 1.0)
+                self.icon:SetMainText(tostring(self.currentStacks))
+            end
         end
         self.icon:SetOverlayValue(self.data.remDuration / self.data.totDuration)
     else
         if self.currentStacks ~= 0 then
             self.currentStacks = 0
-            self.icon:SetDesaturated(true)
-            self.icon:SetOverlayValue(0)
-            self.icon:SetMainText("X")
-            self.icon:SetMainTextColor(1.0, 0.0, 0.0, 1.0)
+            if self:ShowWhenMissing(t, combat) then
+                self.icon:SetDesaturated(true)
+                self.icon:SetOverlayValue(0)
+                self.icon:SetMainText("X")
+                self.icon:SetMainTextColor(1.0, 0.0, 0.0, 1.0)
+                self.icon:Show()
+            else
+                self.icon:Hide()
+            end
         end
     end
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function ERAHUDRotationAuraIcon:ShowWhenMissing(t, combat)
+    return combat
 end
 
 --------------
@@ -1040,8 +1058,9 @@ function ERAHUDRotationStacksIcon:updateIconID(currentIconID)
     return spellInfo.iconID
 end
 
+---@param combat boolean
 ---@param t number
-function ERAHUDRotationStacksIcon:update(t)
+function ERAHUDRotationStacksIcon:update(combat, t)
     if self.data.stacks > 0 then
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks

@@ -146,6 +146,8 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field mustUpdateUtilityLayout fun(this:ERAHUD)
 ---@field private updateUtilityLayout fun(this:ERAHUD)
 ---@field private updateUtilityLayoutIfNecessary fun(this:ERAHUD)
+---@field maxRotationInRow integer
+---@field maxRotationInHealerColumn integer
 ---@field powerUpGroup ERAHUDUtilityGroup
 ---@field healGroup ERAHUDUtilityGroup
 ---@field defenseGroup ERAHUDUtilityGroup
@@ -156,6 +158,10 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field calcTimerPixel fun(this:ERAHUD, t:number): number
 ---@field private modules ERAHUDResourceModule[]
 ---@field private activeModules ERAHUDResourceModule[]
+---@field PreUpdateDataOverride fun(this:ERAHUD, t:number, combat:boolean)
+---@field DataUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
+---@field PreUpdateDisplayOverride fun(this:ERAHUD, t:number, combat:boolean)
+---@field DisplayUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
 
 ---@class ERAHUD : ERACombatModule
 ERAHUD = {}
@@ -266,6 +272,10 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.channelTicksCount = 0
 
     -- content
+
+    hud.maxRotationInRow = 4
+    hud.maxRotationInHealerColumn = 5
+
     hud.rotation = {}
     hud.activeRotation = {}
     hud.markers = {}
@@ -435,6 +445,112 @@ function ERAHUD:Pack()
     --warlock portal
     self:AddBagExternalTimerIcon(self:AddTrackedDebuffOnSelf(113942), self.movementGroup, 607512)
 
+    -- racial
+
+    local _, _, r = UnitRace("player")
+    local racialSpellID = nil
+    local racialGroup = nil
+    if (r == 1 or r == 33) then
+        -- human
+        racialSpellID = 59752
+        racialGroup = self.movementGroup
+    elseif (r == 2) then
+        -- orc
+        racialSpellID = 33697
+        racialGroup = self.powerUpGroup
+    elseif (r == 3) then
+        -- dwarf
+        racialSpellID = 20594
+        racialGroup = self.defenseGroup
+    elseif (r == 4) then
+        -- night elf
+        racialSpellID = 58984
+        racialGroup = self.specialGroup
+    elseif (r == 5) then
+        -- undead
+        racialSpellID = 7744
+        racialGroup = self.specialGroup
+    elseif (r == 6) then
+        -- tauren
+        racialSpellID = 20549
+        racialGroup = self.controlGroup
+    elseif (r == 7) then
+        -- gnome
+        racialSpellID = 20589
+        racialGroup = self.movementGroup
+    elseif (r == 8) then
+        -- troll
+        racialSpellID = 26297
+        racialGroup = self.powerUpGroup
+    elseif (r == 9) then
+        -- goblin
+        racialSpellID = 69070
+        racialGroup = self.movementGroup
+    elseif (r == 10) then
+        -- blood elf
+        racialSpellID = 202719
+        racialGroup = self.specialGroup
+    elseif (r == 11) then
+        -- draenei
+        racialSpellID = 59542
+        racialGroup = self.healGroup
+    elseif (r == 22) then
+        -- worgen
+        racialSpellID = 68992
+        racialGroup = self.movementGroup
+    elseif (r == 24 or r == 25 or r == 26) then
+        -- pandaren
+        racialSpellID = 107079
+        racialGroup = self.controlGroup
+    elseif (r == 27) then
+        -- nightborne
+        racialSpellID = 260364
+        racialGroup = self.powerUpGroup
+    elseif (r == 28) then
+        -- highmountain
+        racialSpellID = 255654
+        racialGroup = self.controlGroup
+    elseif (r == 29) then
+        -- void elf
+        racialSpellID = 256948
+        racialGroup = self.movementGroup
+    elseif (r == 30) then
+        -- lightforged
+        racialSpellID = 255647
+        racialGroup = self.powerUpGroup
+    elseif (r == 31) then
+        -- zandalari
+        racialSpellID = 291944
+        racialGroup = self.healGroup
+    elseif (r == 32) then
+        -- kul tiran
+        racialSpellID = 287712
+        racialGroup = self.controlGroup
+    elseif (r == 34) then
+        -- dark iron
+        racialSpellID = 265221
+        racialGroup = self.powerUpGroup
+    elseif (r == 35) then
+        -- vulpera
+        racialSpellID = 312411
+        racialGroup = self.powerUpGroup
+    elseif (r == 36) then
+        -- mag'har
+        racialSpellID = 274738
+        racialGroup = self.powerUpGroup
+    elseif (r == 37) then
+        -- mechagnome
+        racialSpellID = 312924
+        racialGroup = self.specialGroup
+    elseif (r == 84 or r == 85) then
+        -- earthen
+        racialSpellID = 436344
+        racialGroup = self.powerUpGroup
+    end
+    if (racialSpellID) then
+        return self:AddUtilityCooldown(self:AddTrackedCooldown(racialSpellID), self.specialGroup)
+    end
+
     -- equipment
     self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET1), self.powerUpGroup, 465875)
     self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET2), self.powerUpGroup, 3610503)
@@ -589,7 +705,6 @@ function ERAHUD:CheckTalents()
     if self.isHealer then
         --#region HEALER ICONS
 
-        local maxRows = 6
         local xRotation = 1.5 * ERAHUD_TimerIconSize + ERAHUD_RotationIconSize / 2
         local yRotation = ERAHUD_RotationHealerY
         local largeColumn = true
@@ -632,7 +747,7 @@ function ERAHUD:CheckTalents()
                 countInColumn = countInColumn + 1
                 local newColumn
                 if largeColumn then
-                    if countInColumn >= maxRows then
+                    if countInColumn >= self.maxRotationInHealerColumn then
                         largeColumn = false
                         yRotation = ERAHUD_RotationHealerY + iconSpace / 2
                         newColumn = true
@@ -640,7 +755,7 @@ function ERAHUD:CheckTalents()
                         newColumn = false
                     end
                 else
-                    if countInColumn + 1 >= maxRows then
+                    if countInColumn + 1 >= self.maxRotationInHealerColumn then
                         largeColumn = true
                         yRotation = ERAHUD_RotationHealerY
                         newColumn = true
@@ -661,13 +776,11 @@ function ERAHUD:CheckTalents()
     else
         --#region NON-HEALER ICONS
 
-        local maxColumns = math.ceil(self.barsWidth / iconSpace)
         local xRotationInit = -ERAHUD_TimerIconSize - ERAHUD_RotationIconSize / 2
         local xRotation = xRotationInit
         local yRotation = statusY - ERAHUD_RotationIconSize / 2
         local largeRow = true
         local countInRow = 0
-        local maxSpecial = math.ceil(1.5 * self.barsWidth / iconSpace)
         local xSpecial = ERAHUD_RotationSpecialX
         local ySpecial = ERAHUD_RotationSpecialY
         local highColumn = true
@@ -678,7 +791,7 @@ function ERAHUD:CheckTalents()
                 countInColumn = countInColumn + 1
                 local newColumn
                 if highColumn then
-                    if countInColumn >= maxSpecial then
+                    if countInColumn >= self.maxRotationInRow then
                         highColumn = false
                         ySpecial = ERAHUD_RotationSpecialY + iconSpace / 2
                         newColumn = true
@@ -686,7 +799,7 @@ function ERAHUD:CheckTalents()
                         newColumn = false
                     end
                 else
-                    if countInColumn + 1 >= maxSpecial then
+                    if countInColumn + 1 >= self.maxRotationInRow then
                         highColumn = true
                         ySpecial = ERAHUD_RotationSpecialY
                         newColumn = true
@@ -705,7 +818,7 @@ function ERAHUD:CheckTalents()
                 countInRow = countInRow + 1
                 local newRow
                 if largeRow then
-                    if countInRow >= maxColumns then
+                    if countInRow >= self.maxRotationInRow then
                         largeRow = false
                         xRotation = xRotationInit - iconSpace / 2
                         newRow = true
@@ -713,7 +826,7 @@ function ERAHUD:CheckTalents()
                         newRow = false
                     end
                 else
-                    if countInRow + 1 >= maxColumns then
+                    if countInRow + 1 >= self.maxRotationInRow then
                         largeRow = true
                         xRotation = xRotationInit
                         newRow = true
@@ -754,6 +867,8 @@ end
 function ERAHUD:UpdateIdle(t)
     self:updateData(t, false)
 
+    self:PreUpdateDisplayOverride(t, false)
+
     self:updateHealthStatusIdle(self.health, t)
     if self.petHealthTalent:PlayerHasTalent() then
         self:updateHealthStatusIdle(self.petHealth, t)
@@ -777,12 +892,16 @@ function ERAHUD:UpdateIdle(t)
         m:updateDisplay(false, t)
     end
 
+    self:DisplayUpdatedOverride(t, false)
+
     self:updateUtilityLayoutIfNecessary()
 end
 
 ---@param t number
 function ERAHUD:UpdateCombat(t)
     self:updateData(t, true)
+
+    self:PreUpdateDisplayOverride(t, true)
 
     --#region LOC
 
@@ -1099,6 +1218,8 @@ function ERAHUD:UpdateCombat(t)
     for _, m in ipairs(self.activeModules) do
         m:updateDisplay(true, t)
     end
+
+    self:DisplayUpdatedOverride(t, true)
 
     self:updateUtilityLayoutIfNecessary()
 end
@@ -1571,7 +1692,7 @@ function ERAHUD:updateUtilityLayout()
         --#region NON-HEALER LAYOUT
 
         if self.healGroup.width > 0 and self.healGroup.height > 0 then
-            local xMax = self.statusBaseX - self.barsWidth / 2 - ERAHUD_RotationIconSize
+            local xMax = -2 * ERAHUD_TimerIconSize - self.maxRotationInRow
             self.healGroup:arrange(xMax - self.healGroup.width, self.statusBaseY, self.mainFrame)
         end
 
