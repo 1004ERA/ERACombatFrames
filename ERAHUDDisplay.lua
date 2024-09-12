@@ -1037,20 +1037,29 @@ end
 
 ---@class (exact) ERAHUDUtilityIconInGroup : ERAHUDUtilityIcon
 ---@field private __index unknown
----@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, displayOrder:number|nil, talent:ERALIBTalent|nil)
 ---@field update fun(this:ERAHUDUtilityIconInGroup, combat:boolean, t:number)
 ---@field private group ERAHUDUtilityGroup
+---@field displayOrder number
 ERAHUDUtilityIconInGroup = {}
 ERAHUDUtilityIconInGroup.__index = ERAHUDUtilityIconInGroup
 setmetatable(ERAHUDUtilityIconInGroup, { __index = ERAHUDUtilityIcon })
 
 ---@param group ERAHUDUtilityGroup
 ---@param iconID integer
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, talent)
+function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
     self:constructUtilityIcon(group.hud, iconID, talent)
+    self.displayOrder = group:addIcon(self, displayOrder)
     self.group = group
-    group:addIcon(self)
+end
+
+---@param i1 ERAHUDUtilityIconInGroup
+---@param i2 ERAHUDUtilityIconInGroup
+---@return boolean
+function ERAHUDUtilityIconInGroup_compareDisplayOrder(i1, i2)
+    return i1.displayOrder < i2.displayOrder
 end
 
 --#region GENERIC
@@ -1059,7 +1068,9 @@ end
 ---@field private __index unknown
 ---@field timer ERATimer
 ---@field private timerActive boolean
----@field protected updateIconIDOnShown fun(this:ERAHUDUtilityGenericTimerInGroup): integer
+---@field protected timerActive_returnIconID fun(this:ERAHUDUtilityGenericTimerInGroup): integer
+---@field protected mustStillShowIfTimerTalentInactive fun(this:ERAHUDUtilityGenericTimerInGroup): boolean
+---@field protected GenericUpdatedOverride fun(this:ERAHUDUtilityGenericTimerInGroup, combat:boolean, t:number)
 ERAHUDUtilityGenericTimerInGroup = {}
 ERAHUDUtilityGenericTimerInGroup.__index = ERAHUDUtilityGenericTimerInGroup
 setmetatable(ERAHUDUtilityGenericTimerInGroup, { __index = ERAHUDUtilityIconInGroup })
@@ -1067,19 +1078,22 @@ setmetatable(ERAHUDUtilityGenericTimerInGroup, { __index = ERAHUDUtilityIconInGr
 ---@param group ERAHUDUtilityGroup
 ---@param timer ERATimer
 ---@param iconID integer
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, talent)
+---@return ERAHUDUtilityGenericTimerInGroup
+function ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, talent)
     local g = {}
     setmetatable(g, ERAHUDUtilityGenericTimerInGroup)
     ---@cast g ERAHUDUtilityGenericTimerInGroup
-    g:constructUtilityIconInGroup(group, iconID, talent)
+    g:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
     g.timer = timer
     g.timerActive = false
+    return g
 end
 
 ---@return boolean
 function ERAHUDUtilityGenericTimerInGroup:checkAdditionalTalent()
-    return self.timer.talentActive
+    return self.timer.talentActive or self:mustStillShowIfTimerTalentInactive()
 end
 
 ---@param combat boolean
@@ -1088,26 +1102,48 @@ function ERAHUDUtilityGenericTimerInGroup:update(combat, t)
     if self.timer.talentActive then
         if not self.timerActive then
             self.timerActive = true
-            local iconID = self:updateIconIDOnShown()
+            local iconID = self:timerActive_returnIconID()
             if iconID ~= self.iconID then
                 self.iconID = iconID
                 self.icon:SetIconTexture(iconID, true)
             end
+            self.hud:mustUpdateUtilityLayout()
         end
         self.icon:SetOverlayValue(self.timer.remDuration / self.timer.totDuration)
+        if self.timer.remDuration <= 0 then
+            self.icon:SetMainText(nil)
+        else
+            self.icon:SetMainText(tostring(self.timer.remDuration))
+        end
         if self.timer.remDuration <= 0 and not combat then
             self.icon:Hide()
         else
             self.icon:Show()
         end
     else
-        self.timerActive = false
-        self.icon:Hide()
+        if self.timerActive then
+            self.icon:SetOverlayValue(0)
+            self.icon:SetMainText(nil)
+            self.timerActive = false
+            if not self:mustStillShowIfTimerTalentInactive() then
+                self.icon:Hide()
+            end
+            self.hud:mustUpdateUtilityLayout()
+        end
     end
+    self:GenericUpdatedOverride(combat, t)
 end
 ---@return integer
-function ERAHUDUtilityGenericTimerInGroup:updateIconIDOnShown()
+function ERAHUDUtilityGenericTimerInGroup:timerActive_returnIconID()
     return self.iconID
+end
+---@return boolean
+function ERAHUDUtilityGenericTimerInGroup:mustStillShowIfTimerTalentInactive()
+    return false
+end
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityGenericTimerInGroup:GenericUpdatedOverride(combat, t)
 end
 
 --#endregion
@@ -1130,8 +1166,9 @@ setmetatable(ERAHUDUtilityCooldownInGroup, { __index = ERAHUDUtilityIconInGroup 
 ---@param group ERAHUDUtilityGroup
 ---@param data ERACooldownBase
 ---@param iconID integer|nil
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
     local cd = {}
     setmetatable(cd, ERAHUDUtilityCooldownInGroup)
     ---@cast cd ERAHUDUtilityCooldownInGroup
@@ -1139,7 +1176,7 @@ function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
     end
-    cd:constructUtilityIconInGroup(group, iconID, talent)
+    cd:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
     cd.data = data
     cd.currentCharges = -1
     cd.maxCharges = -1
@@ -1192,14 +1229,16 @@ setmetatable(ERAHUDUtilityDispellInGroup, { __index = ERAHUDUtilityCooldownInGro
 ---@param group ERAHUDUtilityGroup
 ---@param data ERACooldownBase
 ---@param iconID integer|nil
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
 ---@param magic boolean
 ---@param poison boolean
 ---@param disease boolean
 ---@param curse boolean
 ---@param bleed boolean
-function ERAHUDUtilityDispellInGroup:create(group, data, iconID, talent, magic, poison, disease, curse, bleed)
-    local cd = ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+---@return ERAHUDUtilityDispellInGroup
+function ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
+    local cd = ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
     setmetatable(cd, ERAHUDUtilityDispellInGroup)
     ---@cast cd ERAHUDUtilityDispellInGroup
     cd.magic = magic
@@ -1207,6 +1246,7 @@ function ERAHUDUtilityDispellInGroup:create(group, data, iconID, talent, magic, 
     cd.disease = disease
     cd.curse = curse
     cd.bleed = bleed
+    return cd
 end
 
 ---@param combat boolean
@@ -1248,19 +1288,129 @@ setmetatable(ERAHUDUtilityEquipmentInGroup, { __index = ERAHUDUtilityGenericTime
 ---@param group ERAHUDUtilityGroup
 ---@param timer ERACooldownEquipment
 ---@param iconID integer
-function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID)
-    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, nil)
+---@param displayOrder number|nil
+---@return ERAHUDUtilityEquipmentInGroup
+function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder)
+    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, nil)
+    setmetatable(c, ERAHUDUtilityEquipmentInGroup)
     ---@cast c ERAHUDUtilityEquipmentInGroup
     c.equipment = timer
+    return c
 end
 
 ---@return integer
-function ERAHUDUtilityEquipmentInGroup:updateIconIDOnShown()
+function ERAHUDUtilityEquipmentInGroup:timerActive_returnIconID()
     local fileID = GetInventoryItemTexture("player", self.equipment.slotID)
     if fileID then
         return fileID
     else
         return self.iconID
+    end
+end
+
+--#endregion
+
+--#region BAG ITEM
+
+---@class ERAHUDUtilityBagItemInGroup : ERAHUDUtilityGenericTimerInGroup
+---@field private __index unknown
+---@field private bagItem ERACooldownBagItem
+---@field private warningIfMissing boolean
+ERAHUDUtilityBagItemInGroup = {}
+ERAHUDUtilityBagItemInGroup.__index = ERAHUDUtilityBagItemInGroup
+setmetatable(ERAHUDUtilityBagItemInGroup, { __index = ERAHUDUtilityGenericTimerInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param timer ERACooldownBagItem
+---@param iconID integer
+---@param displayOrder number|nil
+---@param warningIfMissing boolean
+---@return ERAHUDUtilityBagItemInGroup
+function ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing)
+    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, nil)
+    setmetatable(c, ERAHUDUtilityBagItemInGroup)
+    ---@cast c ERAHUDUtilityBagItemInGroup
+    c.bagItem = timer
+    c.warningIfMissing = warningIfMissing
+    return c
+end
+
+---@return boolean
+function ERAHUDUtilityBagItemInGroup:mustStillShowIfTimerTalentInactive()
+    return self.warningIfMissing
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityBagItemInGroup:GenericUpdatedOverride(combat, t)
+    if self.bagItem.hasItem then
+        self.icon:SetVertexColor(1.0, 1.0, 1.0, 1.0)
+        self.icon:SetSecondaryText(tostring(self.bagItem.stacks))
+    else
+        if self.warningIfMissing then
+            self.icon:SetVertexColor(1.0, 0.0, 0.0, 1.0)
+            self.icon:SetSecondaryText("0")
+        else
+            --- pas important, va être géré par hud:mustUpdateUtilityLayout()
+            self.icon:Hide()
+        end
+    end
+end
+
+--#endregion
+
+--#region EXTERNAL TIMER
+
+---@class ERAHUDUtilityExternalTimerInGroup : ERAHUDUtilityIconInGroup
+---@field private __index unknown
+---@field timer ERATimer
+---@field private timerActive boolean
+ERAHUDUtilityExternalTimerInGroup = {}
+ERAHUDUtilityExternalTimerInGroup.__index = ERAHUDUtilityExternalTimerInGroup
+setmetatable(ERAHUDUtilityExternalTimerInGroup, { __index = ERAHUDUtilityIconInGroup })
+
+---@param group ERAHUDUtilityGroup
+---@param timer ERATimer
+---@param iconID integer
+---@param displayOrder number|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityExternalTimerInGroup
+function ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayOrder, talent)
+    local g = {}
+    setmetatable(g, ERAHUDUtilityExternalTimerInGroup)
+    ---@cast g ERAHUDUtilityExternalTimerInGroup
+    g:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
+    g.timer = timer
+    g.timerActive = false
+    return g
+end
+
+---@return boolean
+function ERAHUDUtilityExternalTimerInGroup:checkAdditionalTalent()
+    return self.timer.talentActive and self.timer.remDuration > 0
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityExternalTimerInGroup:update(combat, t)
+    if self.timer.talentActive and self.timer.remDuration > 0 then
+        if not self.timerActive then
+            self.timerActive = true
+            self.hud:mustUpdateUtilityLayout()
+        end
+        self.icon:SetOverlayValue(self.timer.remDuration / self.timer.totDuration)
+        if self.timer.remDuration <= 0 then
+            self.icon:SetMainText(nil)
+        else
+            self.icon:SetMainText(tostring(self.timer.remDuration))
+        end
+    else
+        if self.timerActive then
+            self.icon:SetOverlayValue(0)
+            self.icon:SetMainText(nil)
+            self.timerActive = false
+            self.hud:mustUpdateUtilityLayout()
+        end
     end
 end
 

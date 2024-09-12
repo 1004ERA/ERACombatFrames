@@ -203,7 +203,7 @@ ERACooldownEquipment.__index = ERACooldownEquipment
 setmetatable(ERACooldownEquipment, { __index = ERATimer })
 
 ---@param hud ERAHUD
----@param slotID number
+---@param slotID integer
 ---@return ERACooldownEquipment
 function ERACooldownEquipment:create(hud, slotID)
     local cd = {}
@@ -225,7 +225,7 @@ function ERACooldownEquipment:updateData(t)
     if enable and enable ~= 0 then
         if not self.hasCooldown then
             self.hasCooldown = true
-            self.hud:updateUtilityLayout()
+            self.hud:mustUpdateUtilityLayout()
         end
         if duration and duration > 0 then
             self.totDuration = duration
@@ -236,8 +236,95 @@ function ERACooldownEquipment:updateData(t)
     else
         if self.hasCooldown then
             self.hasCooldown = false
-            self.hud:updateUtilityLayout()
+            self.hud:mustUpdateUtilityLayout()
         end
+    end
+end
+
+--#endregion
+
+--#region BAG ITEM
+
+---@class ERACooldownBagItem : ERATimer
+---@field private __index unknown
+---@field itemID integer
+---@field hasItem boolean
+---@field stacks integer
+---@field private talent ERALIBTalent|nil
+---@field private bagID integer
+---@field private slot integer
+ERACooldownBagItem = {}
+ERACooldownBagItem.__index = ERACooldownBagItem
+setmetatable(ERACooldownBagItem, { __index = ERATimer })
+
+---@param hud ERAHUD
+---@param itemID integer
+---@param talent ERALIBTalent|nil
+---@return ERACooldownBagItem
+function ERACooldownBagItem:create(hud, itemID, talent)
+    local cd = {}
+    setmetatable(cd, ERACooldownBagItem)
+    ---@cast cd ERACooldownBagItem
+    cd:constructTimer(hud)
+    cd.itemID = itemID
+    cd.hasItem = false
+    cd.talent = talent
+    cd.bagID = -1
+    cd.slot = -1
+    hud:addBagItem(cd)
+    return cd
+end
+
+---@return boolean
+function ERACooldownBagItem:checkTimerTalent()
+    return self.talent:PlayerHasTalent()
+end
+
+function ERACooldownBagItem:bagUpdateOrReset()
+    self.bagID = -1
+    self.slot = -1
+    for i = 0, NUM_BAG_SLOTS do
+        local cpt = C_Container.GetContainerNumSlots(i)
+        for j = 1, cpt do
+            local id = C_Container.GetContainerItemID(i, j)
+            if (id == self.itemID) then
+                self.bagID = i
+                self.slot = j
+                break
+            end
+        end
+        if (self.bagID >= 0) then
+            break
+        end
+    end
+    if self.hasItem then
+        if self.bagID < 0 then
+            self.hasItem = false
+            self.hud:mustUpdateUtilityLayout()
+        end
+    else
+        if self.bagID >= 0 then
+            self.hasItem = true
+            self.hud:mustUpdateUtilityLayout()
+        end
+    end
+end
+
+function ERACooldownBagItem:updateData(t)
+    if (self.bagID >= 0) then
+        local start, duration = C_Container.GetContainerItemCooldown(self.bagID, self.slot)
+        if (start and start > 0) then
+            self.remDuration = (start + duration) - t
+            self.totDuration = duration
+        else
+            self.remDuration = 0
+            self.totDuration = duration
+        end
+        self.stacks = C_Item.GetItemCount(self.itemID, false, true) -- CHANGE 11 GetItemCount(self.itemID, false, true)
+    else
+        self.remDuration = 0
+        self.totDuration = 1
+        self.stacks = 0
     end
 end
 

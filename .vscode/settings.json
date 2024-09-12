@@ -74,7 +74,8 @@
         "UIParent",
         "ERACombatFrameMain",
         "ERACombatOptionsFrame",
-        "PLAYER"
+        "PLAYER",
+        "RATED_BG_BLITZ_SIZE"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

@@ -1,7 +1,7 @@
 --[[
 
 TODO
-- warlock health stone
+- healer layout
 - generic improvements
 - reverse overlay for buffs
 
@@ -15,6 +15,11 @@ ERAHUD_TimerBarSpacing = 4
 ERAHUD_TimerIconSize = 22
 ERAHUD_RotationIconSize = 42
 ERAHUD_RotationIconSpacing = 2
+ERAHUD_RotationSpecialX = ERAHUD_TimerIconSize + ERAHUD_RotationIconSize
+ERAHUD_RotationSpecialY = 0
+ERAHUD_RotationHealerY = -ERAHUD_RotationIconSize / 2
+ERAHUD_RotationSpecialHealerX = 3 * ERAHUD_RotationIconSize
+ERAHUD_RotationSpecialHealerY = 0
 ERAHUD_UtilityIconSize = 50
 ERAHUD_UtilityIconSpacing = 4
 ERAHUD_UtilityGoupSpacing = 8
@@ -23,7 +28,7 @@ ERAHUD_UtilityGoupBorder = 2
 ERAHUD_UtilityGoupPadding = 4
 ERAHUD_UtilityMinBottomY = -202
 ERAHUD_UtilityMinRightX = 272
-ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
+ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 
 ---@class (exact) ERAHUDHealth
 ---@field currentHealth number
@@ -86,6 +91,7 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field private activeDebuffs table<number, ERAAura>
 ---@field private debuffsOnSelf ERAAura[]
 ---@field private activeDebuffsOnSelf table<number, ERAAura>
+---@field private bagItems ERACooldownBagItem[]
 ---@field private updateData fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private resetEmpower fun(this:ERAHUD)
 ---@field private updateHealthData fun(this:ERAHUD, h:ERAHUDHealth, unit:string)
@@ -135,6 +141,10 @@ ERAHUD_IconDeltaY = 0.86 -- sqrt(0.75)
 ---@field private activeUtilityIcons ERAHUDUtilityIcon[]
 ---@field private outOfCombat ERAHUDUtilityIconOutOfCombat[]
 ---@field private utilityGroups ERAHUDUtilityGroup[]
+---@field private must_update_utility_layout boolean
+---@field mustUpdateUtilityLayout fun(this:ERAHUD)
+---@field private updateUtilityLayout fun(this:ERAHUD)
+---@field private updateUtilityLayoutIfNecessary fun(this:ERAHUD)
 ---@field powerUpGroup ERAHUDUtilityGroup
 ---@field healGroup ERAHUDUtilityGroup
 ---@field defenseGroup ERAHUDUtilityGroup
@@ -219,6 +229,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.activeDebuffs = {}
     hud.debuffsOnSelf = {}
     hud.activeDebuffsOnSelf = {}
+    hud.bagItems = {}
 
     -- display
 
@@ -323,6 +334,10 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     end
     hud.statusMaxY = statusY
 
+    -- layout
+
+    hud.must_update_utility_layout = true
+
     hud.healGroup = ERAHUDUtilityGroup:create(hud, "LEFT", "Interface/Addons/ERACombatFrames/textures/pharmacy.tga")
     hud.powerUpGroup = ERAHUDUtilityGroup:create(hud, "BOTTOM", "Interface/Addons/ERACombatFrames/textures/power-up.tga")
     hud.defenseGroup = ERAHUDUtilityGroup:create(hud, "BOTTOM", "Interface/Addons/ERACombatFrames/textures/shield.tga")
@@ -352,6 +367,11 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     function hud.events:UNIT_SPELLCAST_SUCCEEDED(unit)
         if (unit == "player") then
             self:resetEmpower()
+        end
+    end
+    function hud.events:BAG_UPDATE()
+        for _, i in ipairs(self.bagItems) do
+            i:bagUpdateOrReset()
         end
     end
     local evts = hud.events
@@ -401,8 +421,25 @@ function ERAHUD:Pack()
     self.gcdBar:Hide()
     self.gcdVisible = false
 
-    local paradoxTimer = self:AddTrackedBuffAnyCaster(406732)
-    self:AddBarWithID(paradoxTimer, nil, 1, 0.9, 0.7)
+    --#region COMMON/GENERIC CONTENT
+
+    if self.isHealer then
+        local paradoxTimer = self:AddTrackedBuffAnyCaster(406732)
+        self:AddBarWithID(paradoxTimer, nil, 1, 0.9, 0.7)
+    end
+
+    -- warlock health stone
+    self:AddBagItemIcon(self:AddBagItemCooldown(5512), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
+    --warlock portal
+    self:AddBagExternalTimerIcon(self:AddTrackedDebuffOnSelf(113942), self.movementGroup, 607512)
+
+    -- equipment
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET1), self.powerUpGroup, 465875)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET2), self.powerUpGroup, 3610503)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_BACK), self.specialGroup, 530999)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_WAIST), self.specialGroup, 443322)
+
+    --#endregion
 
     for _, ti in ipairs(self.timerItems) do
         ti:constructOverlay(self.timerFrameOverlay)
@@ -439,6 +476,9 @@ end
 function ERAHUD:ResetToIdle()
     for k, v in pairs(self.events) do
         self.mainFrame:RegisterEvent(k)
+    end
+    for _, i in ipairs(self.bagItems) do
+        i:bagUpdateOrReset()
     end
     self.mainFrame:Show()
     self:OnResetToIdleOverride()
@@ -542,24 +582,92 @@ function ERAHUD:CheckTalents()
         end
     end
 
+    local iconSpace = ERAHUD_RotationIconSize + ERAHUD_RotationIconSpacing
+
     if self.isHealer then
         --#region HEALER ICONS
 
-
+        local maxRows = 6
+        local xRotation = 1.5 * ERAHUD_TimerIconSize + ERAHUD_RotationIconSize / 2
+        local yRotation = ERAHUD_RotationHealerY
+        local largeColumn = true
+        local countInColumn = 0
+        local maxSpecial = 4
+        local xSpecial = ERAHUD_RotationSpecialHealerX
+        local ySpecial = ERAHUD_RotationSpecialHealerY
+        local largeSpecial = true
+        local countSpecial = 0
+        for _, i in ipairs(self.activeRotation) do
+            if i.specialPosition then
+                i.icon:Draw(xSpecial, ySpecial, false)
+                countSpecial = countSpecial + 1
+                local newRow
+                if largeSpecial then
+                    if countSpecial >= maxSpecial then
+                        largeSpecial = false
+                        xSpecial = ERAHUD_RotationSpecialHealerX + iconSpace / 2
+                        newRow = true
+                    else
+                        newRow = false
+                    end
+                else
+                    if countSpecial + 1 >= maxSpecial then
+                        largeSpecial = true
+                        xSpecial = ERAHUD_RotationSpecialHealerX
+                        newRow = true
+                    else
+                        newRow = false
+                    end
+                end
+                if newRow then
+                    countSpecial = 0
+                    ySpecial = ySpecial - iconSpace * ERAHUD_IconDeltaDiagonal
+                else
+                    xSpecial = xSpecial + iconSpace
+                end
+            else
+                i.icon:Draw(xRotation, yRotation, false)
+                countInColumn = countInColumn + 1
+                local newColumn
+                if largeColumn then
+                    if countInColumn >= maxRows then
+                        largeColumn = false
+                        yRotation = ERAHUD_RotationHealerY + iconSpace / 2
+                        newColumn = true
+                    else
+                        newColumn = false
+                    end
+                else
+                    if countInColumn + 1 >= maxRows then
+                        largeColumn = true
+                        yRotation = ERAHUD_RotationHealerY
+                        newColumn = true
+                    else
+                        newColumn = false
+                    end
+                end
+                if newColumn then
+                    countInColumn = 0
+                    xRotation = xRotation + iconSpace * ERAHUD_IconDeltaDiagonal
+                else
+                    yRotation = yRotation + iconSpace
+                end
+            end
+        end
 
         --#endregion
     else
         --#region NON-HEALER ICONS
 
-        local iconSpace = ERAHUD_RotationIconSize + ERAHUD_RotationIconSpacing
         local maxColumns = math.ceil(self.barsWidth / iconSpace)
-        local xRotation = -ERAHUD_TimerIconSize - ERAHUD_RotationIconSize / 2
+        local xRotationInit = -ERAHUD_TimerIconSize - ERAHUD_RotationIconSize / 2
+        local xRotation = xRotationInit
         local yRotation = statusY - ERAHUD_RotationIconSize / 2
         local largeRow = true
         local countInRow = 0
         local maxSpecial = math.ceil(1.5 * self.barsWidth / iconSpace)
-        local xSpecial = 1.5 * ERAHUD_TimerIconSize + ERAHUD_RotationIconSize / 2
-        local ySpecial = 0
+        local xSpecial = ERAHUD_RotationSpecialX
+        local ySpecial = ERAHUD_RotationSpecialY
         local highColumn = true
         local countInColumn = 0
         for _, i in ipairs(self.activeRotation) do
@@ -570,7 +678,7 @@ function ERAHUD:CheckTalents()
                 if highColumn then
                     if countInColumn >= maxSpecial then
                         highColumn = false
-                        ySpecial = ERAHUD_RotationIconSize / 2
+                        ySpecial = ERAHUD_RotationSpecialY + iconSpace / 2
                         newColumn = true
                     else
                         newColumn = false
@@ -578,7 +686,7 @@ function ERAHUD:CheckTalents()
                 else
                     if countInColumn + 1 >= maxSpecial then
                         highColumn = true
-                        ySpecial = 0
+                        ySpecial = ERAHUD_RotationSpecialY
                         newColumn = true
                     else
                         newColumn = false
@@ -586,7 +694,7 @@ function ERAHUD:CheckTalents()
                 end
                 if newColumn then
                     countInColumn = 0
-                    xSpecial = xSpecial + iconSpace * ERAHUD_IconDeltaY
+                    xSpecial = xSpecial + iconSpace * ERAHUD_IconDeltaDiagonal
                 else
                     ySpecial = ySpecial + iconSpace
                 end
@@ -597,7 +705,7 @@ function ERAHUD:CheckTalents()
                 if largeRow then
                     if countInRow >= maxColumns then
                         largeRow = false
-                        xRotation = -ERAHUD_TimerIconSize - ERAHUD_RotationIconSize
+                        xRotation = xRotationInit - iconSpace / 2
                         newRow = true
                     else
                         newRow = false
@@ -605,7 +713,7 @@ function ERAHUD:CheckTalents()
                 else
                     if countInRow + 1 >= maxColumns then
                         largeRow = true
-                        xRotation = -ERAHUD_TimerIconSize - ERAHUD_RotationIconSize / 2
+                        xRotation = xRotationInit
                         newRow = true
                     else
                         newRow = false
@@ -613,7 +721,7 @@ function ERAHUD:CheckTalents()
                 end
                 if newRow then
                     countInRow = 0
-                    yRotation = yRotation + iconSpace * ERAHUD_IconDeltaY
+                    yRotation = yRotation + iconSpace * ERAHUD_IconDeltaDiagonal
                 else
                     xRotation = xRotation - iconSpace
                 end
@@ -666,6 +774,8 @@ function ERAHUD:UpdateIdle(t)
     for _, m in ipairs(self.activeModules) do
         m:updateDisplay(false, t)
     end
+
+    self:updateUtilityLayoutIfNecessary()
 end
 
 ---@param t number
@@ -987,6 +1097,8 @@ function ERAHUD:UpdateCombat(t)
     for _, m in ipairs(self.activeModules) do
         m:updateDisplay(true, t)
     end
+
+    self:updateUtilityLayoutIfNecessary()
 end
 
 ---@param t number
@@ -1039,6 +1151,11 @@ end
 ---@param t ERATimer
 function ERAHUD:addTimer(t)
     table.insert(self.timers, t)
+end
+
+---@param b ERACooldownBagItem
+function ERAHUD:addBagItem(b)
+    table.insert(self.bagItems, b)
 end
 
 ---@param t number
@@ -1416,6 +1533,11 @@ end
 
 --#region UTILITY
 
+function ERAHUD:updateUtilityLayoutIfNecessary()
+    if self.must_update_utility_layout then
+        self:updateUtilityLayout()
+    end
+end
 function ERAHUD:updateUtilityLayout()
     table.wipe(self.activeUtilityIcons)
     for _, i in ipairs(self.utilityIcons) do
@@ -1428,73 +1550,87 @@ function ERAHUD:updateUtilityLayout()
         g:measure()
     end
 
-    if self.healGroup.width > 0 and self.healGroup.height > 0 then
-        local xMax = self.statusBaseX - self.barsWidth / 2 - ERAHUD_RotationIconSize
-        self.healGroup:arrange(xMax - self.healGroup.width, self.statusBaseY, self.mainFrame)
-    end
+    if self.healGroup then
+        --#region HEALER LAYOUT
 
-    local xBottom = self.statusBaseX + self.barsWidth / 2 + ERAHUD_RotationIconSize
-    local y = ERAHUD_UtilityMinBottomY
-    if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
-        self.powerUpGroup:arrange(xBottom, y, self.mainFrame)
-        xBottom = xBottom + self.powerUpGroup.width + ERAHUD_UtilityGoupSpacing
-    end
-    if self.defenseGroup.width > 0 and self.defenseGroup.height > 0 then
-        self.defenseGroup:arrange(xBottom, y, self.mainFrame)
-        xBottom = xBottom + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
-    end
-    local xRight
-    if xBottom < ERAHUD_UtilityMinRightX then
-        xRight = ERAHUD_UtilityMinRightX
+
+
+        --#endregion
     else
-        xRight = xBottom
-    end
-    if self.specialGroup.width > 0 and self.specialGroup.height > 0 then
-        self.specialGroup:arrange(xBottom, y, self.mainFrame)
-    end
-    if self.controlGroup.width > 0 and self.controlGroup.height > 0 then
-        y = y + self.controlGroup.height + ERAHUD_UtilityGoupSpacing
-        self.controlGroup:arrange(xRight, y, self.mainFrame)
-    end
-    if self.movementGroup.width > 0 and self.movementGroup.height > 0 then
-        self.movementGroup:arrange(xRight, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
-    end
+        --#region NON-HEALER LAYOUT
 
-    local xOutOfCombat = -ERAHUD_UtilityIconSize
-    local outOfCombatIconSize = ERAHUD_UtilityIconSize + ERAHUD_UtilityIconSpacing
-    local yOutOfCombat = ERAHUD_UtilityIconSize / 2
-    local largeRow = true
-    local count = 0
-    for _, i in ipairs(self.outOfCombat) do
-        if i.talentActive then
-            i.icon:Draw(xOutOfCombat, yOutOfCombat, false)
-            count = count + 1
-            local newRow
-            if largeRow then
-                if count >= 5 then
-                    xOutOfCombat = -1.5 * ERAHUD_UtilityIconSize
-                    largeRow = false
-                    newRow = true
+        if self.healGroup.width > 0 and self.healGroup.height > 0 then
+            local xMax = self.statusBaseX - self.barsWidth / 2 - ERAHUD_RotationIconSize
+            self.healGroup:arrange(xMax - self.healGroup.width, self.statusBaseY, self.mainFrame)
+        end
+
+        local xBottom = self.statusBaseX + self.barsWidth / 2 + ERAHUD_RotationIconSize
+        local y = ERAHUD_UtilityMinBottomY
+        if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
+            self.powerUpGroup:arrange(xBottom, y, self.mainFrame)
+            xBottom = xBottom + self.powerUpGroup.width + ERAHUD_UtilityGoupSpacing
+        end
+        if self.defenseGroup.width > 0 and self.defenseGroup.height > 0 then
+            self.defenseGroup:arrange(xBottom, y, self.mainFrame)
+            xBottom = xBottom + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
+        end
+        local xRight
+        if xBottom < ERAHUD_UtilityMinRightX then
+            xRight = ERAHUD_UtilityMinRightX
+        else
+            xRight = xBottom
+        end
+        if self.specialGroup.width > 0 and self.specialGroup.height > 0 then
+            self.specialGroup:arrange(xBottom, y, self.mainFrame)
+        end
+        if self.controlGroup.width > 0 and self.controlGroup.height > 0 then
+            y = y + self.controlGroup.height + ERAHUD_UtilityGoupSpacing
+            self.controlGroup:arrange(xRight, y, self.mainFrame)
+        end
+        if self.movementGroup.width > 0 and self.movementGroup.height > 0 then
+            self.movementGroup:arrange(xRight, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
+        end
+
+        local xOutOfCombat = -ERAHUD_UtilityIconSize
+        local outOfCombatIconSize = ERAHUD_UtilityIconSize + ERAHUD_UtilityIconSpacing
+        local yOutOfCombat = ERAHUD_UtilityIconSize / 2
+        local largeRow = true
+        local count = 0
+        for _, i in ipairs(self.outOfCombat) do
+            if i.talentActive then
+                i.icon:Draw(xOutOfCombat, yOutOfCombat, false)
+                count = count + 1
+                local newRow
+                if largeRow then
+                    if count >= 5 then
+                        xOutOfCombat = -1.5 * ERAHUD_UtilityIconSize
+                        largeRow = false
+                        newRow = true
+                    else
+                        newRow = false
+                    end
                 else
-                    newRow = false
+                    if count >= 4 then
+                        xOutOfCombat = -ERAHUD_UtilityIconSize
+                        largeRow = true
+                        newRow = true
+                    else
+                        newRow = false
+                    end
                 end
-            else
-                if count >= 4 then
-                    xOutOfCombat = -ERAHUD_UtilityIconSize
-                    largeRow = true
-                    newRow = true
+                if newRow then
+                    count = 0
+                    yOutOfCombat = yOutOfCombat + outOfCombatIconSize * ERAHUD_IconDeltaDiagonal
                 else
-                    newRow = false
+                    xOutOfCombat = xOutOfCombat - outOfCombatIconSize
                 end
-            end
-            if newRow then
-                count = 0
-                yOutOfCombat = yOutOfCombat + outOfCombatIconSize * ERAHUD_IconDeltaY
-            else
-                xOutOfCombat = xOutOfCombat - outOfCombatIconSize
             end
         end
+
+        --#endregion
     end
+
+    self.must_update_utility_layout = false
 end
 
 ---@param i ERAHUDUtilityIcon
@@ -1566,8 +1702,23 @@ function ERAHUDUtilityGroup:create(hud, iconPosition, texture)
     return g
 end
 
-function ERAHUDUtilityGroup:addIcon(i)
+---@param i ERAHUDUtilityIconInGroup
+---@param givenDisplayOrder number|nil
+---@return number
+function ERAHUDUtilityGroup:addIcon(i, givenDisplayOrder)
+    local maxDisplay = 0
+    for _, existing in self.icons do
+        ---@cast existing ERAHUDUtilityIconInGroup
+        if existing.displayOrder > maxDisplay then
+            maxDisplay = existing.displayOrder
+        end
+    end
     table.insert(self.icons, i)
+    if givenDisplayOrder then
+        return givenDisplayOrder
+    else
+        return maxDisplay + 1
+    end
 end
 
 function ERAHUDUtilityGroup:show()
@@ -1646,7 +1797,7 @@ function ERAHUDUtilityGroup:measure()
         if self.aligned then
             self.height = iconSpace * rowCount + 2 * borderAndPadding
         else
-            self.height = iconSpace + ERAHUD_IconDeltaY * (rowCount - 1) + 2 * borderAndPadding
+            self.height = iconSpace + ERAHUD_IconDeltaDiagonal * (rowCount - 1) + 2 * borderAndPadding
         end
         if self.iconPosition == "LEFT" or self.iconPosition == "RIGHT" then
             self.width = self.width + iconPart
@@ -1668,6 +1819,8 @@ end
 ---@param topLeftY number
 ---@param frame Frame
 function ERAHUDUtilityGroup:arrange(topLeftX, topLeftY, frame)
+    table.sort(self.icons, ERAHUDUtilityIconInGroup_compareDisplayOrder)
+
     self.frame:SetPoint("TOPLEFT", frame, "CENTER", topLeftX, topLeftY)
     self.frame:SetPoint("BOTTOMRIGHT", frame, "CENTER", topLeftX + self.width, topLeftY - self.height)
     local offsetX, offsetY
@@ -1727,7 +1880,7 @@ function ERAHUDUtilityGroup:arrange(topLeftX, topLeftY, frame)
             end
             if newRow then
                 count = 0
-                y = y + iconSpace * ERAHUD_IconDeltaY
+                y = y + iconSpace * ERAHUD_IconDeltaDiagonal
             else
                 x = x + iconSpace
             end
@@ -1843,7 +1996,7 @@ end
 ---@param talent ERALIBTalent|nil
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
-function ERAHUD:AddTrackedDebuff(spellID, talent, ...)
+function ERAHUD:AddTrackedDebuffOnTarget(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
     table.insert(self.debuffs, a)
     return a
@@ -1867,9 +2020,24 @@ function ERAHUD:AddTrackedCooldown(spellID, talent, ...)
     return ERACooldown:create(self, spellID, talent, ...)
 end
 
+---@param itemID integer
+---@param talent ERALIBTalent|nil
+---@return ERACooldownBagItem
+function ERAHUD:AddBagItemCooldown(itemID, talent)
+    return ERACooldownBagItem:create(self, itemID, talent)
+end
+
+---@param slotID integer
+---@return ERACooldownEquipment
+function ERAHUD:AddEquipmentCooldown(slotID)
+    return ERACooldownEquipment:create(self, slotID)
+end
+
 --#endregion
 
 --#region DISPLAY
+
+--- rotation ---
 
 ---@param timer ERATimerWithID
 ---@param iconID integer|nil
@@ -1888,6 +2056,14 @@ end
 ---@return ERAHUDRotationCooldownIcon
 function ERAHUD:AddRotationCooldown(data, iconID, talent)
     return ERAHUDRotationCooldownIcon:create(data, iconID, talent)
+end
+
+---@param data ERACooldownBase
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDRotationKickIcon
+function ERAHUD:AddKick(data, iconID, talent)
+    return ERAHUDRotationKickIcon:create(data, iconID, talent)
 end
 
 ---@param data ERAAura
@@ -1914,21 +2090,74 @@ function ERAHUD:AddPriority(iconID, talent)
     return ERAHUDRawPriority:create(self, iconID, talent)
 end
 
+--- utility ---
+
 ---@param data ERACooldownBase
----@param iconID integer|nil
 ---@param group ERAHUDUtilityGroup
+---@param iconID integer|nil
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDUtilityCooldownInGroup
-function ERAHUD:AddUtilityCooldown(data, iconID, group, talent)
-    return ERAHUDUtilityCooldownInGroup:create(group, data, iconID, talent)
+function ERAHUD:AddUtilityCooldown(data, group, iconID, displayOrder, talent)
+    return ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
 end
 
 ---@param data ERACooldownBase
+---@param group ERAHUDUtilityGroup
 ---@param iconID integer|nil
+---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
----@return ERAHUDRotationKickIcon
-function ERAHUD:AddKick(data, iconID, talent)
-    return ERAHUDRotationKickIcon:create(data, iconID, talent)
+---@param magic boolean
+---@param poison boolean
+---@param disease boolean
+---@param curse boolean
+---@param bleed boolean
+---@return ERAHUDUtilityDispellInGroup
+function ERAHUD:AddUtilityDispell(data, group, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
+    return ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
+end
+
+---@param aura ERAAura
+---@param group ERAHUDUtilityGroup
+---@param iconID integer|nil
+---@param displayOrder number|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityGenericTimerInGroup
+function ERAHUD:AddUtilityAura(aura, group, iconID, displayOrder, talent)
+    if not iconID then
+        local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
+        iconID = spellInfo.iconID
+    end
+    return ERAHUDUtilityGenericTimerInGroup:create(group, aura, iconID, displayOrder, talent)
+end
+
+---@param timer ERACooldownEquipment
+---@param group ERAHUDUtilityGroup
+---@param iconID integer
+---@param displayOrder number|nil
+---@return ERAHUDUtilityEquipmentInGroup
+function ERAHUD:AddEquipmentIcon(timer, group, iconID, displayOrder)
+    return ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder)
+end
+
+---@param timer ERACooldownBagItem
+---@param group ERAHUDUtilityGroup
+---@param iconID integer
+---@param displayOrder number|nil
+---@param warningIfMissing boolean
+---@return ERAHUDUtilityBagItemInGroup
+function ERAHUD:AddBagItemIcon(timer, group, iconID, displayOrder, warningIfMissing)
+    return ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing)
+end
+
+---@param timer ERATimer
+---@param group ERAHUDUtilityGroup
+---@param iconID integer
+---@param displayOrder number|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityExternalTimerInGroup
+function ERAHUD:AddBagExternalTimerIcon(timer, group, iconID, displayOrder, talent)
+    return ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayOrder, talent)
 end
 
 --#endregion
