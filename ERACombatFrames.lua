@@ -23,6 +23,8 @@ end
 --/run print(C_Spell.GetSpellInfo("").spellID)
 --PlaySound(SOUNDKIT.UI_POWER_AURA_GENERIC);
 
+ERA_TALENTS_DO_PRINT_N = 0
+
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")
 end

@@ -768,6 +768,7 @@ end
 ---@class (exact) ERAHUDRotationCooldownIconPriority : ERAHUDTimerItem
 ---@field private __index unknown
 ---@field cd ERAHUDRotationCooldownIcon
+---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownIconPriority, t:number): number
 ERAHUDRotationCooldownIconPriority = {}
 ERAHUDRotationCooldownIconPriority.__index = ERAHUDRotationCooldownIconPriority
 setmetatable(ERAHUDRotationCooldownIconPriority, { __index = ERAHUDTimerItem })
@@ -814,6 +815,7 @@ end
 ---@class (exact) ERAHUDRotationCooldownIconChargedPriority : ERAHUDTimerItem
 ---@field private __index unknown
 ---@field cd ERAHUDRotationCooldownIcon
+---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownIconChargedPriority, t:number): number
 ERAHUDRotationCooldownIconChargedPriority = {}
 ERAHUDRotationCooldownIconChargedPriority.__index = ERAHUDRotationCooldownIconChargedPriority
 setmetatable(ERAHUDRotationCooldownIconChargedPriority, { __index = ERAHUDTimerItem })
@@ -1041,6 +1043,7 @@ end
 ---@field private __index unknown
 ---@field data ERAStacks
 ---@field maxStacks integer
+---@field highlightAt integer
 ---@field private currentStacks integer
 ERAHUDRotationStacksIcon = {}
 ERAHUDRotationStacksIcon.__index = ERAHUDRotationStacksIcon
@@ -1048,15 +1051,17 @@ setmetatable(ERAHUDRotationStacksIcon, { __index = ERAHUDRotationIcon })
 
 ---@param data ERAStacks
 ---@param maxStacks integer
+---@param highlightAt integer
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationStacksIcon
-function ERAHUDRotationStacksIcon:create(data, maxStacks, iconID, talent)
+function ERAHUDRotationStacksIcon:create(data, maxStacks, highlightAt, iconID, talent)
     local buff = {}
     setmetatable(buff, ERAHUDRotationStacksIcon)
     ---@cast buff ERAHUDRotationStacksIcon
     buff.data = data
     buff.maxStacks = maxStacks
+    buff.highlightAt = highlightAt
     if not iconID then
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
@@ -1085,7 +1090,12 @@ function ERAHUDRotationStacksIcon:update(combat, t)
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks
             self.icon:SetMainText(tostring(self.currentStacks))
-            self.icon:SetOverlayValue(self.currentStacks / self.maxStacks)
+            self.icon:SetOverlayValue((self.maxStacks - self.currentStacks) / self.maxStacks)
+            if self.currentStacks >= self.highlightAt then
+                self.icon:Highlight();
+            else
+                self.icon:StopHighlight();
+            end
         end
         self.icon:Show()
     else

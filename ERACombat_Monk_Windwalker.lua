@@ -16,6 +16,9 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local talent_combat_wisdom = ERALIBTalent:Create(125025)
     local talent_freespinning = ERALIBTalent:Create(124834)
     local talent_xuen = ERALIBTalent:Create(125013)
+    local talent_teachings = ERALIBTalent:Create(124827)
+    local talent_knowledge = ERALIBTalent:Create(125009)
+    local talent_not_knowledge = ERALIBTalent:CreateAnd(talent_teachings, ERALIBTalent:CreateNotTalent(125009))
     local htalent_conduit = ERALIBTalent:Create(125062)
 
     local hud = ERAHUD:Create(cFrame, 1.0, true, false, 3, 1.0, 1.0, 0.0, false, 3)
@@ -43,7 +46,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local freebok = hud:AddTrackedBuff(116768)
     hud:AddAuraOverlay(freebok, 1, 1001511, false, "TOP", false, false, false, true, nil)
 
-    local freespinning = hud:AddTrackedBuff(325202)
+    local freespinning = hud:AddTrackedBuff(325202, talent_freespinning)
     hud:AddAuraOverlay(freespinning, 1, 1001512, false, "LEFT", false, false, false, false, nil)
     hud:AddAuraOverlay(freespinning, 2, 1001512, false, "RIGHT", true, false, false, false, nil)
 
@@ -55,32 +58,105 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     ----------------
 
     local rsk = hud:AddTrackedCooldown(107428)
-    hud:AddRotationCooldown(rsk)
+    local rskIcon = hud:AddRotationCooldown(rsk)
 
     local fof = hud:AddTrackedCooldown(113656)
-    hud:AddRotationCooldown(fof)
+    local fofIcon = hud:AddRotationCooldown(fof)
 
     local whirling = hud:AddTrackedCooldown(152175, talent_whirling)
-    hud:AddRotationCooldown(whirling)
+    local whirlingIcon = hud:AddRotationCooldown(whirling)
 
     local spinningStacks = hud:AddSpellStacks(101546)
-    hud:AddRotationStacks(spinningStacks, 5, 606543)
+    hud:AddRotationStacks(spinningStacks, 5, 6, 606543)
 
     local windlord = hud:AddTrackedCooldown(392983, talent_windlord)
-    hud:AddRotationCooldown(windlord)
+    local windlordIcon = hud:AddRotationCooldown(windlord)
 
     local faeCooldown = hud:AddTrackedCooldown(388193, talent_fae_active)
-    hud:AddRotationCooldown(faeCooldown)
+    local faeIcon = hud:AddRotationCooldown(faeCooldown)
 
-    --local teachings = hud:AddTrackedBuff(393057, talent_sning_ignition)
-    local chibIcon = hud:AddRotationBuff(chib)
-    chibIcon.icon:Highlight()
-    function chibIcon:ShowWhenMissing(t, combat)
-        return true
-    end
+    local teachings = hud:AddTrackedBuff(202090)
+    hud:AddRotationStacks(teachings, 4, 4, nil, talent_not_knowledge)
+    hud:AddRotationStacks(teachings, 8, 8, nil, talent_knowledge)
+
+    local capacitor = hud:AddTrackedBuff(393039, talent_capacitor)
+    hud:AddRotationStacks(capacitor, 20, 20)
 
     local spinningIgnition = hud:AddTrackedBuff(393057, talent_spinning_ignition)
-    hud:AddRotationStacks(spinningIgnition, 30)
+    hud:AddRotationStacks(spinningIgnition, 30, 30, 988193)
+
+    --[[
+
+    PRIO
+
+    1 - touch of death
+    2 - rsk
+    3 - bok consume TotM
+    4 - windlord
+    5 - fae exposure
+    6 - fof
+    7 - whirling
+    8 - CJL
+    9 - sck (TODO)
+    10 : chi burst
+
+    ]]
+
+    function rskIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 2
+    end
+
+    local bokPrioTotM = hud:AddPriority(574575)
+    function bokPrioTotM:ComputeAvailablePriorityOverride(t)
+        if
+            (teachings.stacks >= 4 and talent_not_knowledge:PlayerHasTalent())
+            or
+            (teachings.stacks >= 8 and talent_knowledge:PlayerHasTalent())
+        then
+            return 3
+        else
+            return 0
+        end
+    end
+
+    function windlordIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 4
+    end
+
+    function faeIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 5
+    end
+
+    function fofIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 6
+    end
+
+    function whirlingIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        if C_Spell.IsSpellUsable(self.cd.data.spellID) then
+            self.icon:SetDesaturated(false)
+        else
+            self.icon:SetDesaturated(true)
+        end
+        return 7
+    end
+
+    local cjlPrio = hud:AddPriority(606542)
+    function cjlPrio:ComputeAvailablePriorityOverride(t)
+        if capacitor.stacks >= 20 then
+            return 8
+        else
+            return 0
+        end
+    end
+
+    local chibPrio = hud:AddPriority(135734)
+    function chibPrio:ComputeAvailablePriorityOverride(t)
+        if (chib.remDuration > 0) then
+            return 10
+        else
+            return 0
+        end
+    end
 
     ------------
     --- BARS ---

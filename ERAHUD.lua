@@ -2264,11 +2264,12 @@ end
 
 ---@param data ERAStacks
 ---@param maxStacks integer
+---@param highlightAt integer
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDRotationStacksIcon
-function ERAHUD:AddRotationStacks(data, maxStacks, iconID, talent)
-    return ERAHUDRotationStacksIcon:create(data, maxStacks, iconID, talent)
+function ERAHUD:AddRotationStacks(data, maxStacks, highlightAt, iconID, talent)
+    return ERAHUDRotationStacksIcon:create(data, maxStacks, highlightAt, iconID, talent)
 end
 
 ---@param iconID integer
