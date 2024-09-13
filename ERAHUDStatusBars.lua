@@ -529,6 +529,7 @@ function ERAHUDStatusMarking:constructMarking(bar, baseValue, talent)
     self.value = -1
     local frameOverlay = bar:addMarking(self)
     self.line = frameOverlay:CreateLine(nil, "OVERLAY", "ERACombatPowerTick")
+    self.line:Hide()
 end
 
 function ERAHUDStatusMarking:hide()
@@ -551,7 +552,7 @@ function ERAHUDStatusMarking:update(t, frameOverlay)
                 self.line:Show()
             end
             self.line:SetStartPoint("BOTTOMLEFT", frameOverlay, x, 0)
-            self.line:SetStartPoint("TOPLEFT", frameOverlay, x, 0)
+            self.line:SetEndPoint("TOPLEFT", frameOverlay, x, 0)
             self.x = x
         end
         self:UpdatedOverride(t, self.line)
@@ -584,7 +585,7 @@ end
 ---@param t number
 ---@param line Line
 function ERAHUDStatusMarkingFrom0:UpdatedOverride(t, line)
-    if self.value >= self.bar.value then
+    if self.value <= self.bar.value then
         if not self.isGreen then
             self.isGreen = true
             line:SetVertexColor(0.0, 1.0, 0.0)
@@ -623,7 +624,7 @@ end
 ---@param t number
 ---@param line Line
 function ERAHUDStatusMarkingFromMax:UpdatedOverride(t, line)
-    if self.value >= self.bar.value then
+    if self.value <= self.bar.value then
         if not self.isRed then
             self.isRed = true
             line:SetVertexColor(1.0, 0.0, 0.0)

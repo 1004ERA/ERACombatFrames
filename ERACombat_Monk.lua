@@ -27,7 +27,7 @@
 ---@field paralysis ERACooldown
 
 function ERACombatFrames_MonkSetup(cFrame)
-    cFrame.hideAlertsForSpec = { 1 }
+    cFrame.hideAlertsForSpec = { 1, 3 }
 
     ERACombatGlobals_SpecID1 = 268
     ERACombatGlobals_SpecID2 = 270

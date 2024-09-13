@@ -241,7 +241,7 @@ setmetatable(ERACooldownEquipment, { __index = ERATimer })
 ---@return ERACooldownEquipment
 function ERACooldownEquipment:create(hud, slotID)
     local cd = {}
-    setmetatable(cd, ERACooldown)
+    setmetatable(cd, ERACooldownEquipment)
     ---@cast cd ERACooldownEquipment
     cd:constructTimer(hud)
     cd.slotID = slotID
@@ -311,7 +311,7 @@ end
 
 ---@return boolean
 function ERACooldownBagItem:checkDataItemTalent()
-    return self.talent:PlayerHasTalent()
+    return self.hasItem and ((not self.talent) or self.talent:PlayerHasTalent())
 end
 
 function ERACooldownBagItem:bagUpdateOrReset()

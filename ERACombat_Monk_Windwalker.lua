@@ -24,7 +24,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     ERACombatFrames_MonkCommonSetup(hud, monkTalents, true, true)
 
-    local chi = ERAHUDModulePointsUnitPower:Create(hud, 5, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
+    local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
     function chi:GetIdlePointsOverride()
         if talent_combat_wisdom:PlayerHasTalent() then
             return 2
@@ -35,6 +35,20 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     hud.power.bar:AddMarkingFrom0(55, talent_inner_peace)
     hud.power.bar:AddMarkingFrom0(60, ERALIBTalent:CreateNot(talent_inner_peace))
+
+    -------------
+    --- PROCS ---
+    -------------
+
+    local freebok = hud:AddTrackedBuff(116768)
+    hud:AddAuraOverlay(freebok, 1, 1001511, false, "TOP", false, false, false, true, nil)
+
+    local freespinning = hud:AddTrackedBuff(325202)
+    hud:AddAuraOverlay(freespinning, 1, 1001512, false, "LEFT", false, false, false, false, nil)
+    hud:AddAuraOverlay(freespinning, 2, 1001512, false, "RIGHT", true, false, false, false, nil)
+
+    local chib = hud:AddTrackedBuff(460490, talent_chib)
+    hud:AddAuraOverlay(chib, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
 
     ----------------
     --- ROTATION ---
@@ -58,11 +72,11 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local faeCooldown = hud:AddTrackedCooldown(388193, talent_fae_active)
     hud:AddRotationCooldown(faeCooldown)
 
-    local chib = hud:AddTrackedBuff(460490, talent_chib)
+    --local teachings = hud:AddTrackedBuff(393057, talent_sning_ignition)
     local chibIcon = hud:AddRotationBuff(chib)
     chibIcon.icon:Highlight()
     function chibIcon:ShowWhenMissing(t, combat)
-        return false
+        return true
     end
 
     local spinningIgnition = hud:AddTrackedBuff(393057, talent_spinning_ignition)
@@ -72,8 +86,16 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     --- BARS ---
     ------------
 
-    local freebok = hud:AddTrackedBuff(116768)
-    hud:AddBarWithID(freebok, nil, 0.7, 0.0, 0.1)
+    hud:AddChannelInfo(113656, 1)
+
+    local freebokBar = hud:AddBarWithID(freebok, nil, 0.7, 0.0, 0.1)
+    function freebokBar:ComputeDurationOverride(t)
+        if self.timer.remDuration < self.hud.timerDuration then
+            return self.timer.remDuration
+        else
+            return 0
+        end
+    end
 
     local karmaBuff = hud:AddTrackedBuff(125174)
     hud:AddBarWithID(karmaBuff, nil, 1.0, 1.0, 1.0)
@@ -81,11 +103,26 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local sefBuff = hud:AddTrackedBuff(137639, talent_sef)
     hud:AddBarWithID(sefBuff, nil, 1.0, 0.0, 1.0)
 
-    local freespinning = hud:AddTrackedBuff(325202)
-    hud:AddBarWithID(freespinning, nil, 0.0, 0.8, 0.2)
+    local freespinningBar = hud:AddBarWithID(freespinning, 606543, 0.0, 0.8, 0.2)
+    function freespinningBar:ComputeDurationOverride(t)
+        if self.timer.remDuration < self.hud.timerDuration then
+            return self.timer.remDuration
+        else
+            return 0
+        end
+    end
 
-    local ignitionBar = hud:AddBarWithID(spinningIgnition, 606543, 0.0, 0.8, 0.2)
+    local ignitionBar = hud:AddBarWithID(spinningIgnition, 988193, 0.5, 1.0, 0.2)
     function ignitionBar:ComputeDurationOverride(t)
+        if self.timer.remDuration < self.hud.timerDuration then
+            return self.timer.remDuration
+        else
+            return 0
+        end
+    end
+
+    local chibBar = hud:AddBarWithID(chib, nil, 1.0, 0.2, 0.8)
+    function chibBar:ComputeDurationOverride(t)
         if self.timer.remDuration < self.hud.timerDuration then
             return self.timer.remDuration
         else

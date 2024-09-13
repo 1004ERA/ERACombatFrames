@@ -75,7 +75,8 @@
         "ERACombatFrameMain",
         "ERACombatOptionsFrame",
         "PLAYER",
-        "RATED_BG_BLITZ_SIZE"
+        "RATED_BG_BLITZ_SIZE",
+        "Settings"
     ],
     "Lua.runtime.version": "Lua 5.1",
     "Lua.runtime.builtin": {

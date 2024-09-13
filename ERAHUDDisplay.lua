@@ -87,8 +87,8 @@ function ERAHUDBar:constructBar(hud, iconID, r, g, b, texture)
     self.r = r
     self.g = g
     self.b = b
-    bar:SetStatusBarColor(r, g, b, 1)
     bar:SetStatusBarTexture(texture)
+    bar:SetStatusBarColor(r, g, b, 1)
     bar:SetWidth(1.5 * ERAHUD_TimerWidth)
     self.visible = false
     bar:Hide()
@@ -421,6 +421,7 @@ end
 ---@field private lineVisible boolean
 ---@field private talent ERALIBTalent|nil
 ---@field private iconID integer
+---@field preventVisible boolean
 ERAHUDTimerItem = {}
 ERAHUDTimerItem.__index = ERAHUDTimerItem
 
@@ -431,6 +432,7 @@ function ERAHUDTimerItem:constructItem(hud, iconID, talent)
     self.hud = hud
     self.talent = talent
     self.iconID = iconID
+    self.preventVisible = false
     hud:addTimerItem(self)
 end
 
@@ -478,30 +480,36 @@ end
 
 ---@param t number
 function ERAHUDTimerItem:update(t)
-    local duration = self:ComputeDurationOverride(t)
-    if self.hud.timerDuration < duration or duration < 0 then
+    if self.preventVisible then
         self.pixel = 1
+        self.priority = 0
         self:hide()
-        self.priority = 0
-    elseif duration == 0 then
-        self.pixel = 0
-        if self.lineVisible then
-            self.lineVisible = false
-            self.line:Hide()
-        end
-        self.priority = self:ComputeAvailablePriorityOverride(t)
-        if self.priority > 0 then
-            self.icon:Show()
-        else
-            self.icon:Hide()
-        end
     else
-        self.pixel = self.hud:calcTimerPixel(duration)
-        if not self.lineVisible then
-            self.lineVisible = true
-            self.line:Show()
+        local duration = self:ComputeDurationOverride(t)
+        if self.hud.timerDuration < duration or duration < 0 then
+            self.pixel = 1
+            self:hide()
+            self.priority = 0
+        elseif duration == 0 then
+            self.pixel = 0
+            if self.lineVisible then
+                self.lineVisible = false
+                self.line:Hide()
+            end
+            self.priority = self:ComputeAvailablePriorityOverride(t)
+            if self.priority > 0 then
+                self.icon:Show()
+            else
+                self.icon:Hide()
+            end
+        else
+            self.pixel = self.hud:calcTimerPixel(duration)
+            if not self.lineVisible then
+                self.lineVisible = true
+                self.line:Show()
+            end
+            self.priority = 0
         end
-        self.priority = 0
     end
 end
 
@@ -750,6 +758,7 @@ function ERAHUDRotationCooldownIcon:update(combat, t)
     ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
+    self:UpdatedOverride(combat, t)
 end
 ---@param combat boolean
 ---@param t number
@@ -917,9 +926,19 @@ function ERAHUDRotationKickIcon:UpdatedOverride(combat, t)
         else
             self.hud.targetCastBar:kickWillBeAvailable()
         end
+        self.icon:SetAlpha(1.0)
         self.icon:Show()
+        self.onTimer.preventVisible = false
+        self.availableChargePriority.preventVisible = false
+    elseif self.data.remDuration > 0 then
+        self.icon:SetAlpha(0.5)
+        self.icon:Show()
+        self.onTimer.preventVisible = true
+        self.availableChargePriority.preventVisible = true
     else
         self.icon:Hide()
+        self.onTimer.preventVisible = true
+        self.availableChargePriority.preventVisible = true
     end
 end
 
@@ -991,6 +1010,7 @@ function ERAHUDRotationAuraIcon:update(combat, t)
             end
         end
         self.icon:SetOverlayValue(self.data.remDuration / self.data.totDuration)
+        self.icon:Show()
     else
         if self.currentStacks ~= 0 then
             self.currentStacks = 0
@@ -1567,6 +1587,187 @@ end
 --#endregion UTILITY
 
 --#endregion ICONS
+
+--------------------------------
+--- SPELL ACTIVATION OVERLAY ---
+--------------------------------
+
+--#region SAO
+
+---@alias ERASAOPosition "MIDDLE" | "LEFT" | "TOP" | "RIGHT" | "BOTTOM"
+
+---@class (exact) ERASAO
+---@field private __index unknown
+---@field private talent ERALIBTalent|nil
+---@field protected checkTalentSAO fun(this:ERASAO): boolean
+---@field protected getIsActive fun(this:ERASAO, combat:boolean, t:number): boolean
+---@field talentActive boolean
+---@field hud ERAHUD
+---@field private display Texture
+---@field private isActive boolean
+---@field private animGroup AnimationGroup
+ERASAO = {}
+ERASAO.__index = ERASAO
+
+---@param hud ERAHUD
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    local parentFrame = hud:addSAO(self)
+    self.display = parentFrame:CreateTexture(nil, "OVERLAY")
+    if isAtlas then
+        ---@cast texture string
+        self.display:SetAtlas(texture)
+    else
+        self.display:SetTexture(texture)
+    end
+
+    if flipH or flipV then
+        local texLeft, texRight, texTop, texBottom = 0, 1, 0, 1
+        if flipH then
+            texLeft, texRight = 1, 0
+        end
+        if flipV then
+            texTop, texBottom = 1, 0
+        end
+        self.display:SetTexCoord(texLeft, texRight, texTop, texBottom)
+    end
+
+    ---@type number, number
+    local width, height
+    local widthSides = math.min(-ERAHUD_OffsetX - ERAHUD_TimerIconSize, ERAHUD_UtilityMinRightX) / 2
+    local heightSides = 2 * widthSides
+    local heightTopDown = (-ERAHUD_OffsetY - ERAHUD_UtilityMinBottomY) / 2
+    local widthTopDown = 2 * heightTopDown
+    if position == "LEFT" then
+        width = widthSides
+        height = heightSides
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -1.5 * width - ERAHUD_OffsetX, -ERAHUD_OffsetY)
+    elseif position == "RIGHT" then
+        width = widthSides
+        height = heightSides
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", 1.5 * width - ERAHUD_OffsetX, -ERAHUD_OffsetY)
+    elseif position == "TOP" then
+        width = widthTopDown
+        height = heightTopDown
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, 1.5 * height - ERAHUD_OffsetY)
+    elseif position == "BOTTOM" then
+        width = widthTopDown
+        height = heightTopDown
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, -1.5 * height - ERAHUD_OffsetY)
+    else -- MIDDLE
+        width = math.min(heightSides, widthTopDown)
+        height = width
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, -ERAHUD_OffsetY)
+    end
+
+    if rotateLeft then
+        self.display:SetSize(height, width)
+        self.display:SetRotation(math.rad(90))
+    elseif rotateRight then
+        self.display:SetSize(height, width)
+        self.display:SetRotation(math.rad(-90))
+    else
+        self.display:SetSize(width, height)
+    end
+
+    self.animGroup = self.display:CreateAnimationGroup()
+    local animPulseBig = self.animGroup:CreateAnimation("Scale")
+    ---@cast animPulseBig Scale
+    animPulseBig:SetDuration(0.5)
+    animPulseBig:SetScale(1.25, 1.25)
+    animPulseBig:SetSmoothing("IN_OUT")
+    animPulseBig:SetOrder(1)
+    local animPulseSmall = self.animGroup:CreateAnimation("Scale")
+    ---@cast animPulseSmall Scale
+    animPulseSmall:SetDuration(0.5)
+    animPulseSmall:SetScale(0.8, 0.8)
+    animPulseSmall:SetSmoothing("IN_OUT")
+    animPulseSmall:SetOrder(2)
+    self.animGroup:SetLooping("REPEAT")
+
+    self.display:Hide()
+    self.isActive = false
+    self.talent = talent
+end
+
+---@return boolean
+function ERASAO:checkTalentOrHide()
+    if ((not self.talent) or self.talent:PlayerHasTalent()) and self:checkTalentSAO() then
+        return true
+    else
+        self.display:Hide()
+        return false
+    end
+end
+
+---@param combat boolean
+---@param t number
+function ERASAO:update(combat, t)
+    if self:getIsActive(combat, t) then
+        if not self.isActive then
+            self.isActive = true
+            self.display:Show()
+            self.animGroup:Play()
+        end
+    else
+        if self.isActive then
+            self.isActive = false
+            self.display:Hide()
+            self.animGroup:Stop()
+        end
+    end
+end
+
+--- BASED ON AURA ---
+
+---@class (exact) ERASAOAura:ERASAO
+---@field private __index unknown
+---@field private aura ERAAura
+---@field private minStacks integer
+ERASAOAura = {}
+ERASAOAura.__index = ERASAOAura
+setmetatable(ERASAOAura, { __index = ERASAO })
+
+---@param aura ERAAura
+---@param minStacks integer
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@return ERASAOAura
+function ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    local a = {}
+    setmetatable(a, ERASAOAura)
+    ---@cast a ERASAOAura
+    a.aura = aura
+    a.minStacks = minStacks
+    a:constructSAO(aura.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return a
+end
+
+---@return boolean
+function ERASAOAura:checkTalentSAO()
+    return self.aura.talentActive
+end
+
+---@param combat boolean
+---@param t number
+function ERASAOAura:getIsActive(combat, t)
+    return self.aura.stacks >= self.minStacks
+end
+
+--#endregion
 
 ------------
 --- MISC ---

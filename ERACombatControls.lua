@@ -310,8 +310,10 @@ function ERAPieIcon:Create(parentFrame, relativePoint, size, iconID)
     i.border:SetVertexColor(ERAPieIcon_BorderR, ERAPieIcon_BorderG, ERAPieIcon_BorderB, 1.0)
 
     -- highlight
+    i.frame.BHIGH:SetAtlas("PowerSwirlAnimation-SpinningGlowys")
     i.highlightAnim = i.frame.BHIGH.HighlightGroup
     i.highlight = i.highlightAnim.Highlight
+    i.frame.BHIGH:Hide()
 
     return i
 end
@@ -533,7 +535,9 @@ end
 
 function ERAPieIcon:doHighlight()
     self.highlightAnim:Play()
+    self.frame.BHIGH:Show()
 end
 function ERAPieIcon:doNotHighlight()
     self.highlightAnim:Stop()
+    self.frame.BHIGH:Hide()
 end
