@@ -34,7 +34,7 @@
 ---@field SetSize fun(this:ERAHUDBar, s:number)
 ---@field SetText fun(this:ERAHUDBar, txt:string|nil)
 ---@field protected checkTalentsOverride fun(this:ERAHUDBar): boolean
----@field protected ComputeDurationOverride fun(this:ERAHUDBar, t:number)
+---@field protected computeDuration fun(this:ERAHUDBar, t:number)
 ---@field private hide fun(this:ERAHUDBar)
 ---@field draw fun(this:ERAHUDBar, y:number): number
 ERAHUDBar = {}
@@ -209,7 +209,7 @@ end
 ---@param t number
 ---@return boolean
 function ERAHUDBar:computeDurationAndHideIf0_return_visible(t)
-    self.remDuration = self:ComputeDurationOverride(t)
+    self.remDuration = self:computeDuration(t)
     if self.remDuration > 0 then
         return true
     else
@@ -244,6 +244,7 @@ end
 
 ---@class (exact) ERAHUDTargetCastBar : ERAHUDBar
 ---@field private __index unknown
+---@field private computeDuration fun(this:ERAHUDSpellIDBar, t:number): number
 ---@field private kick_is_available boolean
 ---@field private kick_will_be_available boolean
 ERAHUDTargetCastBar = {}
@@ -274,7 +275,7 @@ end
 
 ---@param t number
 ---@return number
-function ERAHUDTargetCastBar:ComputeDurationOverride(t)
+function ERAHUDTargetCastBar:computeDuration(t)
     if self.kick_is_available then
         self.kick_is_available = false
         self.kick_will_be_available = false
@@ -300,6 +301,7 @@ end
 ---@class (exact) ERAHUDLOCBar : ERAHUDBar
 ---@field private __index unknown
 ---@field private foundDuration number
+---@field private computeDuration fun(this:ERAHUDSpellIDBar, t:number): number
 ---@field found fun(this:ERAHUDLOCBar, locTypeDescription:string|nil, remDuration:number, icon:integer|nil)
 ERAHUDLOCBar = {}
 ERAHUDLOCBar.__index = ERAHUDLOCBar
@@ -330,7 +332,7 @@ end
 
 ---@param t number
 ---@return number
-function ERAHUDLOCBar:ComputeDurationOverride(t)
+function ERAHUDLOCBar:computeDuration(t)
     if self.foundDuration > 0 then
         local result = self.foundDuration
         self.foundDuration = -1
@@ -352,6 +354,7 @@ end
 ---@field private __index unknown
 ---@field private talent ERALIBTalent|nil
 ---@field timer ERATimerWithID
+---@field private computeDuration fun(this:ERAHUDSpellIDBar, t:number): number
 ---@field ComputeDurationOverride fun(this:ERAHUDSpellIDBar, t:number): number
 ERAHUDSpellIDBar = {}
 ERAHUDSpellIDBar.__index = ERAHUDSpellIDBar
@@ -391,8 +394,48 @@ end
 
 ---@param t number
 ---@return number
+function ERAHUDSpellIDBar:computeDuration(t)
+    return self:ComputeDurationOverride(t)
+end
+---@param t number
+---@return number
 function ERAHUDSpellIDBar:ComputeDurationOverride(t)
     return self.timer.remDuration
+end
+
+---@class ERAHUDAuraBar : ERAHUDSpellIDBar
+---@field private __index unknown
+---@field aura ERAAura
+---@field private computeDuration fun(this:ERAHUDAuraBar, t:number): number
+---@field ComputeDurationOverride fun(this:ERAHUDAuraBar, t:number): number
+ERAHUDAuraBar = {}
+ERAHUDAuraBar.__index = ERAHUDAuraBar
+setmetatable(ERAHUDAuraBar, { __index = ERAHUDSpellIDBar })
+
+---@param aura ERAAura
+---@param iconID integer|nil
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDAuraBar
+function ERAHUDAuraBar:create(aura, iconID, r, g, b, talent)
+    local x = ERAHUDSpellIDBar:create(aura, iconID, r, g, b, talent)
+    setmetatable(x, ERAHUDAuraBar)
+    ---@cast x ERAHUDAuraBar
+    x.aura = aura
+    return x
+end
+
+---@param t number
+---@return number
+function ERAHUDAuraBar:computeDuration(t)
+    if self.aura.stacks > 1 then
+        self:SetText(tostring(self.aura.stacks))
+    else
+        self:SetText(nil)
+    end
+    return self:ComputeDurationOverride(t)
 end
 
 --#endregion
@@ -466,7 +509,6 @@ function ERAHUDTimerItem:checkTalentOrHide()
         return true
     end
 end
-
 ---@return boolean
 function ERAHUDTimerItem:checkAdditionalTalent()
     return true
@@ -542,6 +584,7 @@ function ERAHUDTimerItem_comparePriority(ti1, ti2)
 end
 
 ---@class (exact) ERAHUDRawPriority : ERAHUDTimerItem
+---@field ComputeDurationOverride fun(this:ERAHUDRawPriority, t:number): number
 ---@field private __index unknown
 ERAHUDRawPriority = {}
 ERAHUDRawPriority.__index = ERAHUDRawPriority
@@ -765,13 +808,36 @@ end
 function ERAHUDRotationCooldownIcon:UpdatedOverride(combat, t)
 end
 
----@class (exact) ERAHUDRotationCooldownIconPriority : ERAHUDTimerItem
+---@class (exact) ERAHUDRotationCooldownTimerItem : ERAHUDTimerItem
 ---@field private __index unknown
 ---@field cd ERAHUDRotationCooldownIcon
+---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownTimerItem, t:number): number
+ERAHUDRotationCooldownTimerItem = {}
+ERAHUDRotationCooldownTimerItem.__index = ERAHUDRotationCooldownTimerItem
+setmetatable(ERAHUDRotationCooldownTimerItem, { __index = ERAHUDTimerItem })
+
+function ERAHUDRotationCooldownTimerItem:constructCooldown(cd)
+    self:constructItem(cd.hud, cd.iconID, cd.talent)
+    self.cd = cd
+end
+
+---@return boolean
+function ERAHUDRotationCooldownTimerItem:checkAdditionalTalent()
+    return self.cd.talentActive
+end
+
+---@param t number
+---@return number
+function ERAHUDRotationCooldownTimerItem:ComputeAvailablePriorityOverride(t)
+    return 0
+end
+
+---@class (exact) ERAHUDRotationCooldownIconPriority : ERAHUDRotationCooldownTimerItem
+---@field private __index unknown
 ---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownIconPriority, t:number): number
 ERAHUDRotationCooldownIconPriority = {}
 ERAHUDRotationCooldownIconPriority.__index = ERAHUDRotationCooldownIconPriority
-setmetatable(ERAHUDRotationCooldownIconPriority, { __index = ERAHUDTimerItem })
+setmetatable(ERAHUDRotationCooldownIconPriority, { __index = ERAHUDRotationCooldownTimerItem })
 
 ---@param cd ERAHUDRotationCooldownIcon
 ---@return ERAHUDRotationCooldownIconPriority
@@ -779,8 +845,7 @@ function ERAHUDRotationCooldownIconPriority:create(cd)
     local p = {}
     setmetatable(p, ERAHUDRotationCooldownIconPriority)
     ---@cast p ERAHUDRotationCooldownIconPriority
-    p:constructItem(cd.hud, cd.iconID, cd.talent)
-    p.cd = cd
+    p:constructCooldown(cd)
     return p
 end
 
@@ -806,19 +871,12 @@ function ERAHUDRotationCooldownIconPriority:ComputeDurationOverride(t)
     end
 end
 
----@param t number
----@return number
-function ERAHUDRotationCooldownIconPriority:ComputeAvailablePriorityOverride(t)
-    return 0
-end
-
----@class (exact) ERAHUDRotationCooldownIconChargedPriority : ERAHUDTimerItem
+---@class (exact) ERAHUDRotationCooldownIconChargedPriority : ERAHUDRotationCooldownTimerItem
 ---@field private __index unknown
----@field cd ERAHUDRotationCooldownIcon
 ---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownIconChargedPriority, t:number): number
 ERAHUDRotationCooldownIconChargedPriority = {}
 ERAHUDRotationCooldownIconChargedPriority.__index = ERAHUDRotationCooldownIconChargedPriority
-setmetatable(ERAHUDRotationCooldownIconChargedPriority, { __index = ERAHUDTimerItem })
+setmetatable(ERAHUDRotationCooldownIconChargedPriority, { __index = ERAHUDRotationCooldownTimerItem })
 
 ---@param cd ERAHUDRotationCooldownIcon
 ---@return ERAHUDRotationCooldownIconChargedPriority
@@ -826,8 +884,7 @@ function ERAHUDRotationCooldownIconChargedPriority:create(cd)
     local p = {}
     setmetatable(p, ERAHUDRotationCooldownIconChargedPriority)
     ---@cast p ERAHUDRotationCooldownIconChargedPriority
-    p:constructItem(cd.hud, cd.iconID, cd.talent)
-    p.cd = cd
+    p:constructCooldown(cd)
     return p
 end
 
@@ -1044,6 +1101,7 @@ end
 ---@field data ERAStacks
 ---@field maxStacks integer
 ---@field highlightAt integer
+---@field soundOnHighlight number
 ---@field private currentStacks integer
 ERAHUDRotationStacksIcon = {}
 ERAHUDRotationStacksIcon.__index = ERAHUDRotationStacksIcon
@@ -1091,8 +1149,12 @@ function ERAHUDRotationStacksIcon:update(combat, t)
             self.currentStacks = self.data.stacks
             self.icon:SetMainText(tostring(self.currentStacks))
             self.icon:SetOverlayValue((self.maxStacks - self.currentStacks) / self.maxStacks)
-            if self.currentStacks >= self.highlightAt then
-                self.icon:Highlight();
+            if combat and self.currentStacks >= self.highlightAt then
+                if self.soundOnHighlight and self.soundOnHighlight > 0 then
+                    self.icon:Highlight(self.soundOnHighlight);
+                else
+                    self.icon:Highlight();
+                end
             else
                 self.icon:StopHighlight();
             end
@@ -1651,7 +1713,7 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
 
     ---@type number, number
     local width, height
-    local widthSides = math.min(-ERAHUD_OffsetX - ERAHUD_TimerIconSize, ERAHUD_UtilityMinRightX) / 2
+    local widthSides = math.min(-ERAHUD_OffsetX, ERAHUD_UtilityMinRightX) / 2
     local heightSides = 2 * widthSides
     local heightTopDown = (-ERAHUD_OffsetY - ERAHUD_UtilityMinBottomY) / 2
     local widthTopDown = 2 * heightTopDown
@@ -1823,7 +1885,6 @@ function ERAHUDTimerMarker:create(hud, r, g, b, talent)
     m.talent = talent
     m.pixel = 1
     m.timerMaxY = 0
-    hud:addMarker(m)
     return m
 end
 

@@ -42,7 +42,8 @@ function ERACombatFrames_MonkSetup_OLD(cFrame)
         healingTaken4 = ERALIBTalent:Create(124936),
         vivify_30pct = ERALIBTalent:Create(125076),
         strongEH = ERALIBTalent:Create(124948),
-        scalingEH = ERALIBTalent:Create(124924)
+        scalingEH = ERALIBTalent:Create(124924),
+        tod15 = ERALIBTalent:Create(124930),
     }
 
     local enemies = ERACombatEnemies:Create(cFrame, bmActive, wwActive)

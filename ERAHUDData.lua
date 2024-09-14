@@ -251,6 +251,8 @@ end
 
 ---@return boolean
 function ERACooldownEquipment:checkDataItemTalent()
+    local _, _, enable = GetInventoryItemCooldown("player", self.slotID)
+    self.hasCooldown = enable and enable ~= 0
     return self.hasCooldown
 end
 
@@ -457,10 +459,15 @@ end
 ---@param t number
 ---@param data AuraData
 function ERAAura:auraFound(t, data)
-    local remDur = data.expirationTime - t
-    if remDur > self.foundDuration then
-        self.foundDuration = remDur
-        self.totDuration = data.duration
+    if data.expirationTime and data.expirationTime > 0 then
+        local remDur = data.expirationTime - t
+        if remDur > self.foundDuration then
+            self.foundDuration = remDur
+            self.totDuration = data.duration
+        end
+    else
+        self.foundDuration = 1004
+        self.totDuration = 1004
     end
     self.foundStacks = math.max(self.foundStacks, data.applications, 1)
 end

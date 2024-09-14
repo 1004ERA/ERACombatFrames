@@ -14,15 +14,10 @@
 ---@field SetDesaturated fun(this:ERAIcon, desat:boolean)
 ---@field SetAlpha fun(this:ERAIcon, a:number)
 ---@field SetVertexColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
----@field Hide function
----@field Show function
 ---@field Draw fun(this:ERAIcon, x:number, y:number, translateIfMoved:boolean)
----@field Beam function
----@field StopBeam function
----@field Highlight function
----@field StopHighlight function
+---@field protected doHighlight fun(this:ERAIcon)
+---@field protected doNotHighlight fun(this:ERAIcon)
 ---@field frame unknown
-
 ERAIcon = {}
 ERAIcon.__index = ERAIcon
 
@@ -33,9 +28,9 @@ function ERAIcon:constructIcon(parentFrame, relativePoint, size, iconID)
     self.mainText = self.frame.MainText
     ERALIB_SetFont(self.mainText, size * 0.4)
     self.secondaryText = self.frame.SecondaryText
-    ERALIB_SetFont(self.secondaryText, size * 0.25)
+    ERALIB_SetFont(self.secondaryText, size * 0.32)
     self.icon = self.frame.Icon
-    self:SetIconTexture(iconID)
+    self:SetIconTexture(iconID, true)
 
     -- position
     self.parentFrame = parentFrame
@@ -217,10 +212,15 @@ function ERAIcon:StopBeam()
     end
 end
 
-function ERAIcon:Highlight()
+---@param soundKitID number|nil
+function ERAIcon:Highlight(soundKitID)
     if (not self.highlighting) then
         self.highlighting = true
         if (self.visible) then
+            if soundKitID then
+                PlaySound(soundKitID, "SFX", true)
+                --PlaySound(soundKitID)
+            end
             self:doHighlight()
         end
     end
@@ -310,9 +310,11 @@ function ERAPieIcon:Create(parentFrame, relativePoint, size, iconID)
     i.border:SetVertexColor(ERAPieIcon_BorderR, ERAPieIcon_BorderG, ERAPieIcon_BorderB, 1.0)
 
     -- highlight
-    i.frame.BHIGH:SetAtlas("PowerSwirlAnimation-SpinningGlowys")
-    i.highlightAnim = i.frame.BHIGH.HighlightGroup
-    i.highlight = i.highlightAnim.Highlight
+    --i.frame.BHIGH:SetAtlas("PowerSwirlAnimation-SpinningGlowys")
+    --i.frame.BHIGH:SetAtlas("UF-Essence-SpinnerOut")
+    i.frame.BHIGH:SetAtlas("Spinner_Ring")
+    i.highlightAnim1 = i.frame.BHIGH.HighlightGroup1
+    i.highlightAnim2 = i.frame.BHIGH.HighlightGroup2
     i.frame.BHIGH:Hide()
 
     return i
@@ -534,10 +536,12 @@ function ERAPieControl_SetOverlayValue(x, value)
 end
 
 function ERAPieIcon:doHighlight()
-    self.highlightAnim:Play()
+    self.highlightAnim1:Play()
+    self.highlightAnim2:Play()
     self.frame.BHIGH:Show()
 end
 function ERAPieIcon:doNotHighlight()
-    self.highlightAnim:Stop()
+    self.highlightAnim1:Stop()
+    self.highlightAnim2:Stop()
     self.frame.BHIGH:Hide()
 end

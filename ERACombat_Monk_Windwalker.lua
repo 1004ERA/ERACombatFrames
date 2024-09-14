@@ -25,7 +25,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     ---@cast hud MonkHUD
     hud.power.hideFullOutOfCombat = true
 
-    ERACombatFrames_MonkCommonSetup(hud, monkTalents, true, true)
+    ERACombatFrames_MonkCommonSetup(hud, monkTalents, 1.4, true)
 
     local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
     function chi:GetIdlePointsOverride()
@@ -76,14 +76,24 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local faeIcon = hud:AddRotationCooldown(faeCooldown)
 
     local teachings = hud:AddTrackedBuff(202090)
-    hud:AddRotationStacks(teachings, 4, 4, nil, talent_not_knowledge)
-    hud:AddRotationStacks(teachings, 8, 8, nil, talent_knowledge)
+    hud:AddRotationStacks(teachings, 4, 4, nil, talent_not_knowledge).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddRotationStacks(teachings, 8, 8, nil, talent_knowledge).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     local capacitor = hud:AddTrackedBuff(393039, talent_capacitor)
-    hud:AddRotationStacks(capacitor, 20, 20)
+    hud:AddRotationStacks(capacitor, 20, 20).soundOnHighlight = SOUNDKIT.UI_VOID_STORAGE_UNLOCK
 
     local spinningIgnition = hud:AddTrackedBuff(393057, talent_spinning_ignition)
     hud:AddRotationStacks(spinningIgnition, 30, 30, 988193)
+
+
+    local fofMarker = hud:AddMarker(0.8, 0.0, 1.0)
+    function fofMarker:ComputeTimeOr0IfInvisibleOverride(t)
+        if fof.remDuration < self.hud.timerDuration then
+            return 4 * self.hud.hasteMultiplier
+        else
+            return 0
+        end
+    end
 
     --[[
 
@@ -164,7 +174,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     hud:AddChannelInfo(113656, 1)
 
-    local freebokBar = hud:AddBarWithID(freebok, nil, 0.7, 0.0, 0.1)
+    local freebokBar = hud:AddAuraBar(freebok, nil, 0.7, 0.0, 0.1)
     function freebokBar:ComputeDurationOverride(t)
         if self.timer.remDuration < self.hud.timerDuration then
             return self.timer.remDuration
@@ -174,12 +184,12 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 
     local karmaBuff = hud:AddTrackedBuff(125174)
-    hud:AddBarWithID(karmaBuff, nil, 1.0, 1.0, 1.0)
+    hud:AddAuraBar(karmaBuff, nil, 1.0, 1.0, 1.0)
 
     local sefBuff = hud:AddTrackedBuff(137639, talent_sef)
-    hud:AddBarWithID(sefBuff, nil, 1.0, 0.0, 1.0)
+    hud:AddAuraBar(sefBuff, nil, 1.0, 0.0, 1.0)
 
-    local freespinningBar = hud:AddBarWithID(freespinning, 606543, 0.0, 0.8, 0.2)
+    local freespinningBar = hud:AddAuraBar(freespinning, 606543, 0.0, 0.8, 0.2)
     function freespinningBar:ComputeDurationOverride(t)
         if self.timer.remDuration < self.hud.timerDuration then
             return self.timer.remDuration
@@ -188,7 +198,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
         end
     end
 
-    local ignitionBar = hud:AddBarWithID(spinningIgnition, 988193, 0.5, 1.0, 0.2)
+    local ignitionBar = hud:AddAuraBar(spinningIgnition, 988193, 0.5, 1.0, 0.2)
     function ignitionBar:ComputeDurationOverride(t)
         if self.timer.remDuration < self.hud.timerDuration then
             return self.timer.remDuration
@@ -197,9 +207,9 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
         end
     end
 
-    local chibBar = hud:AddBarWithID(chib, nil, 1.0, 0.2, 0.8)
+    local chibBar = hud:AddAuraBar(chib, nil, 1.0, 0.2, 0.8)
     function chibBar:ComputeDurationOverride(t)
-        if self.timer.remDuration < self.hud.timerDuration then
+        if chib.stacks > 1 or self.timer.remDuration < self.hud.timerDuration then
             return self.timer.remDuration
         else
             return 0
@@ -211,8 +221,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     ---------------
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(101545), hud.movementGroup, nil, 2.5) -- fsk
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(137639, talent_sef, nil, -3), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(123904, talent_xuen, nil, -2), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit, nil, -1), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(137639, talent_sef), hud.powerUpGroup, nil, -3)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(123904, talent_xuen), hud.powerUpGroup, nil, -2)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit), hud.powerUpGroup, nil, -1)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(122470), hud.defenseGroup, nil, 0) -- karma
 end

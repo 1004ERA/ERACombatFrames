@@ -18,6 +18,7 @@
 ---@field vivify_30pct ERALIBTalent
 ---@field strongEH ERALIBTalent
 ---@field scalingEH ERALIBTalent
+---@field tod15 ERALIBTalent
 
 ---@class MonkHUD : ERAHUD
 ---@field lastInstaVivify number
@@ -61,7 +62,8 @@ function ERACombatFrames_MonkSetup(cFrame)
         healingTaken4 = ERALIBTalent:Create(124936),
         vivify_30pct = ERALIBTalent:Create(125076),
         strongEH = ERALIBTalent:Create(124948),
-        scalingEH = ERALIBTalent:Create(124924)
+        scalingEH = ERALIBTalent:Create(124924),
+        tod15 = ERALIBTalent:Create(124930),
     }
 
     local enemies = ERACombatEnemies:Create(cFrame, bmActive, wwActive)
@@ -83,9 +85,9 @@ end
 
 ---@param hud MonkHUD
 ---@param talents MonkCommonTalents
----@param vivifyPrediction boolean
+---@param vivificationMultiplier number|nil
 ---@param detox boolean
-function ERACombatFrames_MonkCommonSetup(hud, talents, vivifyPrediction, detox)
+function ERACombatFrames_MonkCommonSetup(hud, talents, vivificationMultiplier, detox)
     hud.tod = hud:AddTrackedCooldown(322109)
 
     local instaVivifyID = 392883
@@ -103,10 +105,10 @@ function ERACombatFrames_MonkCommonSetup(hud, talents, vivifyPrediction, detox)
     end
     hud.nextInstaVifify = MonkInstaVivify:create(hud, talents.vivification)
 
-    if vivifyPrediction then
+    if vivificationMultiplier then
         function hud:PreUpdateDisplayOverride(t, combat)
             if self.instaVivify.remDuration > 0 then
-                self.health.bar:SetForecast(ERACombatFrames_InstaVivifyHealing(talents))
+                self.health.bar:SetForecast(ERACombatFrames_InstaVivifyHealing(talents, vivificationMultiplier))
             else
                 self.health.bar:SetForecast(0)
             end
@@ -120,17 +122,40 @@ function ERACombatFrames_MonkCommonSetup(hud, talents, vivifyPrediction, detox)
     hud:AddChannelInfo(115175, 1.0) -- soothing mist
     hud:AddChannelInfo(117952, 1.0) -- crackling jade lightning
 
-    hud:AddBarWithID(hud:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
-    hud:AddBarWithID(hud:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(122783, talents.diffuse), nil, 0.7, 0.6, 1.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(120954, talents.fortify), nil, 0.8, 0.8, 0.0)
 
     local todPrio = hud:AddPriority(606552)
+    function todPrio:ComputeDurationOverride(t)
+        if hud.tod.remDuration <= 0 then
+            if C_Spell.IsSpellUsable(hud.tod.spellID) then
+                return hud.tod.remDuration
+            else
+                return -1
+            end
+        else
+            local tarH = UnitHealth("target")
+            if tarH and tarH > 0 and (
+                    (tarH < self.hud.health.currentHealth)
+                    or
+                    (talents.tod15:PlayerHasTalent() and tarH / UnitHealthMax("target") < 0.15)
+                )
+            then
+                return hud.tod.remDuration
+            else
+                return -1
+            end
+        end
+    end
     function todPrio:ComputeAvailablePriorityOverride(t)
+        --[[
         local u, nomana = C_Spell.IsSpellUsable(hud.tod.spellID)
         if (u or nomana) then
-            return 1
         else
             return 0
         end
+        ]]
+        return 1
     end
 
     hud:AddKick(hud:AddTrackedCooldown(116705), nil, talents.kick)
@@ -162,9 +187,10 @@ function ERACombatFrames_MonkCommonSetup(hud, talents, vivifyPrediction, detox)
 end
 
 ---@param talents MonkCommonTalents
+---@param vivificationMultiplier number
 ---@return number
-function ERACombatFrames_InstaVivifyHealing(talents)
-    local mult = 1.2 * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100)
+function ERACombatFrames_InstaVivifyHealing(talents, vivificationMultiplier)
+    local mult = vivificationMultiplier * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100)
     mult = mult * (1 + talents.healingDone2.rank * 0.02)
     mult = mult * (1 + talents.healingTaken4.rank * 0.04)
     mult = mult * (1 + talents.vivify_30pct.rank * 0.3)

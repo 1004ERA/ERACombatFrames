@@ -78,8 +78,12 @@
 
                 <Texture parentKey="BHIGH" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
                     <Animations>
-                        <AnimationGroup parentKey="HighlightGroup" looping="REPEAT">
-                            <Rotation parentKey="Highlight" duration="0.8" degrees="-360"/>
+                        <AnimationGroup parentKey="HighlightGroup1" looping="REPEAT">
+                            <Rotation duration="0.8" degrees="-360"/>
+                        </AnimationGroup>
+                        <AnimationGroup parentKey="HighlightGroup2" looping="REPEAT">
+                            <Scale duration="0.8" scaleX="1.25" scaleY="1.25" smoothing="IN_OUT" order="1"/>
+                            <Scale duration="0.8" scaleX="0.8" scaleY="0.8" smoothing="IN_OUT" order="2"/>
                         </AnimationGroup>
                     </Animations>
                 </Texture>

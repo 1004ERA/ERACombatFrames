@@ -28,7 +28,7 @@ ERAHUD_UtilityGoupIconSize = 22
 ERAHUD_UtilityGoupBorder = 2
 ERAHUD_UtilityGoupPadding = 4
 ERAHUD_UtilityMinBottomY = -181
-ERAHUD_UtilityMinRightX = 144
+ERAHUD_UtilityMinRightX = 181
 ERAHUD_OffsetX = -144
 ERAHUD_OffsetY = 0
 ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
@@ -444,7 +444,7 @@ function ERAHUD:Pack()
 
     if self.isHealer then
         local paradoxTimer = self:AddTrackedBuffAnyCaster(406732)
-        self:AddBarWithID(paradoxTimer, nil, 1, 0.9, 0.7)
+        self:AddAuraBar(paradoxTimer, nil, 1, 0.9, 0.7)
     end
 
     -- warlock health stone
@@ -1196,6 +1196,7 @@ function ERAHUD:UpdateCombat(t)
         prvTI = ti
     end
 
+    table.sort(self.availablePriority, ERAHUDTimerItem_comparePriority)
     local yPrio
     if self.topdown then
         yPrio = 1.5 * ERAHUD_TimerIconSize
@@ -1205,9 +1206,9 @@ function ERAHUD:UpdateCombat(t)
     for _, ti in ipairs(self.availablePriority) do
         ti:drawPriority(yPrio)
         if self.topdown then
-            yPrio = yPrio - 2 * ERAHUD_TimerIconSize
+            yPrio = yPrio + ERAHUD_TimerIconSize
         else
-            yPrio = yPrio + 2 * ERAHUD_TimerIconSize
+            yPrio = yPrio - ERAHUD_TimerIconSize
         end
     end
 
@@ -1594,11 +1595,6 @@ function ERAHUD:addBar(b)
     return self.timerFrame
 end
 
----@param m ERAHUDTimerMarker
-function ERAHUD:addMarker(m)
-    table.insert(self.markers, m)
-end
-
 ---@param t number
 ---@return number
 function ERAHUD:calcTimerPixel(t)
@@ -1855,17 +1851,18 @@ end
 ---@param givenDisplayOrder number|nil
 ---@return number
 function ERAHUDUtilityGroup:addIcon(i, givenDisplayOrder)
-    local maxDisplay = 0
-    for _, existing in ipairs(self.icons) do
-        ---@cast existing ERAHUDUtilityIconInGroup
-        if existing.displayOrder > maxDisplay then
-            maxDisplay = existing.displayOrder
-        end
-    end
-    table.insert(self.icons, i)
-    if givenDisplayOrder then
+    if givenDisplayOrder ~= nil then
+        table.insert(self.icons, i)
         return givenDisplayOrder
     else
+        local maxDisplay = 0
+        for _, existing in ipairs(self.icons) do
+            ---@cast existing ERAHUDUtilityIconInGroup
+            if existing.displayOrder > maxDisplay then
+                maxDisplay = existing.displayOrder
+            end
+        end
+        table.insert(self.icons, i)
         return maxDisplay + 1
     end
 end
@@ -2216,6 +2213,17 @@ end
 
 --- rotation ---
 
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDTimerMarker
+function ERAHUD:AddMarker(r, g, b, talent)
+    local m = ERAHUDTimerMarker:create(self, r, g, b, talent)
+    table.insert(self.markers, m)
+    return m
+end
+
 ---@param timer ERATimerWithID
 ---@param iconID integer|nil
 ---@param r number
@@ -2225,6 +2233,17 @@ end
 ---@return ERAHUDSpellIDBar
 function ERAHUD:AddBarWithID(timer, iconID, r, g, b, talent)
     return ERAHUDSpellIDBar:create(timer, iconID, r, g, b, talent)
+end
+
+---@param aura ERAAura
+---@param iconID integer|nil
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDAuraBar
+function ERAHUD:AddAuraBar(aura, iconID, r, g, b, talent)
+    return ERAHUDAuraBar:create(aura, iconID, r, g, b, talent)
 end
 
 ---@param data ERACooldownBase

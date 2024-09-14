@@ -13,6 +13,7 @@ ERAHUDModulePoints_PointSpacing = 4
 ---@field private bP number
 ---@field updateData fun(this:ERAHUDModulePoints, combat:boolean, t:number)
 ---@field updateDisplay fun(this:ERAHUDModulePoints, combat:boolean, t:number)
+---@field private updateMaxPoints fun(this:ERAHUDModulePoints)
 ---@field protected getMaxPoints fun(this:ERAHUDModulePoints): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePoints): integer
 ---@field GetIdlePointsOverride fun(this:ERAHUDModulePoints): integer
@@ -45,6 +46,11 @@ function ERAHUDModulePoints:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent)
 end
 
 function ERAHUDModulePoints:checkTalentOverride()
+    self:updateMaxPoints()
+    return true
+end
+
+function ERAHUDModulePoints:updateMaxPoints()
     local maxPoints = self:getMaxPoints()
     if maxPoints ~= self.maxPoints then
         if maxPoints > self.maxPoints then
@@ -67,7 +73,6 @@ function ERAHUDModulePoints:checkTalentOverride()
             x = x + pointSize
         end
     end
-    return true
 end
 
 ---@return integer
@@ -78,6 +83,7 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDModulePoints:updateData(combat, t)
+    self:updateMaxPoints()
     self.currentPoints = self:getCurrentPoints()
 end
 
