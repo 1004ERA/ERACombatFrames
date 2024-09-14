@@ -380,6 +380,7 @@ end
 ---@field private __index unknown
 ---@field private talent ERALIBTalent|nil
 ---@field private slot integer
+---@field lastStackGain number
 ERASpellStacks = {}
 ERASpellStacks.__index = ERASpellStacks
 setmetatable(ERASpellStacks, { __index = ERADataItem })
@@ -395,6 +396,7 @@ function ERASpellStacks:create(hud, spellID, talent)
     s:constructItem(hud)
     s.spellID = spellID
     s.talent = talent
+    s.stacks = 0
     return s
 end
 
@@ -414,7 +416,11 @@ end
 ---@param t number
 function ERASpellStacks:updateData(t)
     if self.slot >= 0 then
-        self.stacks = GetActionCount(self.slot)
+        local stacks = GetActionCount(self.slot)
+        if self.stacks < stacks then
+            self.lastStackGain = t
+        end
+        self.stacks = stacks
     else
         self.stacks = 0
     end

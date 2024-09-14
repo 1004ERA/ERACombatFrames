@@ -500,7 +500,7 @@ function ERACombatFrames_PseudoResourceBar:constructPseudoResource(cFrame, x, y,
 
     self.background = self.frame:CreateTexture(nil, "BACKGROUND")
     self.background:SetColorTexture(0, 0, 0, 0.5)
-    self.background:SetAllPoints() -- CHANGE 11 GetNumRaidMembers()SetAllPoints(true)
+    self.background:SetAllPoints() -- CHANGE 11 SetAllPoints(true)
 
     self.bar = self.frame:CreateTexture(nil, "ARTWORK")
     self.bar:SetColorTexture(1, 0, 0, 1)

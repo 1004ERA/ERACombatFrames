@@ -562,6 +562,7 @@ end
 ---@class ERAHUDStatusMarkingFrom0 : ERAHUDStatusMarking
 ---@field private __index unknown
 ---@field private isGreen boolean
+---@field ComputeValueOverride fun(this:ERAHUDStatusMarkingFrom0, t:number): number
 ERAHUDStatusMarkingFrom0 = {}
 ERAHUDStatusMarkingFrom0.__index = ERAHUDStatusMarkingFrom0
 setmetatable(ERAHUDStatusMarkingFrom0, { __index = ERAHUDStatusMarking })
@@ -601,6 +602,7 @@ end
 ---@class ERAHUDStatusMarkingFromMax : ERAHUDStatusMarking
 ---@field private __index unknown
 ---@field private isRed boolean
+---@field ComputeValueOverride fun(this:ERAHUDStatusMarkingFromMax, t:number): number
 ERAHUDStatusMarkingFromMax = {}
 ERAHUDStatusMarkingFromMax.__index = ERAHUDStatusMarkingFromMax
 setmetatable(ERAHUDStatusMarkingFromMax, { __index = ERAHUDStatusMarking })

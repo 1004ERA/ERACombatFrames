@@ -40,6 +40,7 @@ ERAHUDDisplay.lua
 ERAHUDStatusBars.lua
 ERAHUD.lua
 ERAHUDModulePoints.lua
+ERAHUDPseudoResourceBar.lua
 
 ERACombat_Monk.lua
 ERACombat_Monk_OLD.lua

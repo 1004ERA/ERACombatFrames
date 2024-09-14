@@ -25,7 +25,7 @@
 ---@field instaVivify ERAAura
 ---@field nextInstaVifify MonkInstaVivify
 ---@field tod ERACooldown
----@field paralysis ERACooldown
+---@field MonkCLEU fun(this:MonkHUD, t:number)
 
 function ERACombatFrames_MonkSetup(cFrame)
     cFrame.hideAlertsForSpec = { 1, 3 }
@@ -72,10 +72,10 @@ function ERACombatFrames_MonkSetup(cFrame)
         ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     end
     if (mwActive) then
-        ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
+        --ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     end
     if (wwActive) then
-        ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
+        --ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 end
 
@@ -102,6 +102,9 @@ function ERACombatFrames_MonkCommonSetup(hud, talents, vivificationMultiplier, d
                 self.lastInstaVivify = t
             end
         end
+        self:MonkCLEU(t)
+    end
+    function hud:MonkCLEU(t)
     end
     hud.nextInstaVifify = MonkInstaVivify:create(hud, talents.vivification)
 

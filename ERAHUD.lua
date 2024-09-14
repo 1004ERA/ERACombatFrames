@@ -164,6 +164,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private modules ERAHUDResourceModule[]
 ---@field private activeModules ERAHUDResourceModule[]
 ---@field PreUpdateDataOverride fun(this:ERAHUD, t:number, combat:boolean)
+---@field PreUpdateModuleDataOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field DataUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field PreUpdateDisplayOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field DisplayUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
@@ -191,6 +192,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     setmetatable(hud, ERAHUD)
     ---@cast hud ERAHUD
     hud:construct(cFrame, 0.2, 0.02, requireCLEU, spec)
+    hud.spec_debug = spec
 
     if isHealer then
         hud.isHealer = true
@@ -401,6 +403,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
         end
     )
 
+    mainFrame:Hide()
+
     return hud
 end
 
@@ -599,6 +603,7 @@ function ERAHUD:ExitCombat()
 end
 
 function ERAHUD:ResetToIdle()
+    print(self.spec_debug, "reset")
     for k, v in pairs(self.events) do
         self.mainFrame:RegisterEvent(k)
     end
@@ -612,6 +617,7 @@ function ERAHUD:OnResetToIdleOverride()
 end
 
 function ERAHUD:SpecInactive(wasActive)
+    print(self.spec_debug, "inactive", wasActive)
     if (wasActive) then
         self.mainFrame:Hide()
         self.mainFrame:UnregisterAllEvents()
@@ -619,6 +625,8 @@ function ERAHUD:SpecInactive(wasActive)
 end
 
 function ERAHUD:CheckTalents()
+    print("check talents", self.spec_debug)
+
     table.wipe(self.activeDataItems)
     for _, t in ipairs(self.dataItems) do
         if (t:checkTalent()) then
@@ -724,30 +732,32 @@ function ERAHUD:CheckTalents()
     for _, i in ipairs(self.activeRotation) do
         if i.specialPosition then
             i.icon:Draw(xSpecial, ySpecial, false)
-            countSpecial = countSpecial + 1
-            local newColumn
-            if largeSpecial then
-                if countSpecial >= maxSpecial then
-                    largeSpecial = false
-                    ySpecial = -ERAHUD_OffsetY + iconSpace / 2
-                    newColumn = true
+            if not i.overlapPrevious then
+                countSpecial = countSpecial + 1
+                local newColumn
+                if largeSpecial then
+                    if countSpecial >= maxSpecial then
+                        largeSpecial = false
+                        ySpecial = -ERAHUD_OffsetY + iconSpace / 2
+                        newColumn = true
+                    else
+                        newColumn = false
+                    end
                 else
-                    newColumn = false
+                    if countSpecial + 1 >= maxSpecial then
+                        largeSpecial = true
+                        ySpecial = -ERAHUD_OffsetY
+                        newColumn = true
+                    else
+                        newColumn = false
+                    end
                 end
-            else
-                if countSpecial + 1 >= maxSpecial then
-                    largeSpecial = true
-                    ySpecial = -ERAHUD_OffsetY
-                    newColumn = true
+                if newColumn then
+                    countSpecial = 0
+                    xSpecial = xSpecial + iconSpace * ERAHUD_IconDeltaDiagonal
                 else
-                    newColumn = false
+                    ySpecial = ySpecial + iconSpace
                 end
-            end
-            if newColumn then
-                countSpecial = 0
-                xSpecial = xSpecial + iconSpace * ERAHUD_IconDeltaDiagonal
-            else
-                ySpecial = ySpecial + iconSpace
             end
         end
     end
@@ -762,30 +772,32 @@ function ERAHUD:CheckTalents()
         for _, i in ipairs(self.activeRotation) do
             if not i.specialPosition then
                 i.icon:Draw(xRotation, yRotation, false)
-                countInColumn = countInColumn + 1
-                local newColumn
-                if largeColumn then
-                    if countInColumn >= self.maxRotationInHealerColumn then
-                        largeColumn = false
-                        yRotation = ERAHUD_RotationHealerY + iconSpace / 2
-                        newColumn = true
+                if not i.overlapPrevious then
+                    countInColumn = countInColumn + 1
+                    local newColumn
+                    if largeColumn then
+                        if countInColumn >= self.maxRotationInHealerColumn then
+                            largeColumn = false
+                            yRotation = ERAHUD_RotationHealerY + iconSpace / 2
+                            newColumn = true
+                        else
+                            newColumn = false
+                        end
                     else
-                        newColumn = false
+                        if countInColumn + 1 >= self.maxRotationInHealerColumn then
+                            largeColumn = true
+                            yRotation = ERAHUD_RotationHealerY
+                            newColumn = true
+                        else
+                            newColumn = false
+                        end
                     end
-                else
-                    if countInColumn + 1 >= self.maxRotationInHealerColumn then
-                        largeColumn = true
-                        yRotation = ERAHUD_RotationHealerY
-                        newColumn = true
+                    if newColumn then
+                        countInColumn = 0
+                        xRotation = xRotation + iconSpace * ERAHUD_IconDeltaDiagonal
                     else
-                        newColumn = false
+                        yRotation = yRotation + iconSpace
                     end
-                end
-                if newColumn then
-                    countInColumn = 0
-                    xRotation = xRotation + iconSpace * ERAHUD_IconDeltaDiagonal
-                else
-                    yRotation = yRotation + iconSpace
                 end
             end
         end
@@ -802,30 +814,32 @@ function ERAHUD:CheckTalents()
         for _, i in ipairs(self.activeRotation) do
             if not i.specialPosition then
                 i.icon:Draw(xRotation, yRotation, false)
-                countInRow = countInRow + 1
-                local newRow
-                if largeRow then
-                    if countInRow >= self.maxRotationInRow then
-                        largeRow = false
-                        xRotation = xRotationInit - iconSpace / 2
-                        newRow = true
+                if not i.overlapPrevious then
+                    countInRow = countInRow + 1
+                    local newRow
+                    if largeRow then
+                        if countInRow >= self.maxRotationInRow then
+                            largeRow = false
+                            xRotation = xRotationInit - iconSpace / 2
+                            newRow = true
+                        else
+                            newRow = false
+                        end
                     else
-                        newRow = false
+                        if countInRow + 1 >= self.maxRotationInRow then
+                            largeRow = true
+                            xRotation = xRotationInit
+                            newRow = true
+                        else
+                            newRow = false
+                        end
                     end
-                else
-                    if countInRow + 1 >= self.maxRotationInRow then
-                        largeRow = true
-                        xRotation = xRotationInit
-                        newRow = true
+                    if newRow then
+                        countInRow = 0
+                        yRotation = yRotation - iconSpace * ERAHUD_IconDeltaDiagonal
                     else
-                        newRow = false
+                        xRotation = xRotation - iconSpace
                     end
-                end
-                if newRow then
-                    countInRow = 0
-                    yRotation = yRotation - iconSpace * ERAHUD_IconDeltaDiagonal
-                else
-                    xRotation = xRotation - iconSpace
                 end
             end
         end
@@ -1535,6 +1549,8 @@ function ERAHUD:updateData(t, combat)
         tim:updateData(t)
     end
 
+    self:PreUpdateModuleDataOverride(t, combat)
+
     for _, m in ipairs(self.activeModules) do
         m:updateData(combat, t)
     end
@@ -1558,6 +1574,10 @@ end
 ---@param t number
 ---@param inCombat boolean
 function ERAHUD:PreUpdateDataOverride(t, inCombat)
+end
+---@param t number
+---@param inCombat boolean
+function ERAHUD:PreUpdateModuleDataOverride(t, inCombat)
 end
 ---@param t number
 ---@param inCombat boolean
@@ -2244,6 +2264,17 @@ end
 ---@return ERAHUDAuraBar
 function ERAHUD:AddAuraBar(aura, iconID, r, g, b, talent)
     return ERAHUDAuraBar:create(aura, iconID, r, g, b, talent)
+end
+
+---@param timer ERATimer
+---@param iconID integer
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDGenericBar
+function ERAHUD:AddGenericBar(timer, iconID, r, g, b, talent)
+    return ERAHUDGenericBar:create(timer, iconID, r, g, b, talent)
 end
 
 ---@param data ERACooldownBase

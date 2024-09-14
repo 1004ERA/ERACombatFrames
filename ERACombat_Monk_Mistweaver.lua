@@ -1,36 +1,17 @@
----@class ERACombatGridMonkParams
----@field vivifyHealing number
+---@class ERACombatGrid_MonkMistweaver : ERACombatGrid
 ---@field invigoratingStandardHealing number
 ---@field invigoratingPredictedHealing number
 
----@class ERACombatGrid_MonkMistweaver : ERACombatGrid
----@field monkParams ERACombatGridMonkParams
-
----@class ERACombatTimers_MonkMistweaver : ERACombatTimers
----@field offsetIconsX number
----@field offsetIconsY number
----@field lastInstaVivify number
+---@class MonkMistweaverHUD : MonkHUD
 ---@field lastInvoke number
----@field sheilunSlot number
----@field sheilunStacks number
----@field lastSheilunGain number
 
 ---@class MonkMistweaverInvigoratingStep
 ---@field chance number
 ---@field value number
 
----comment
----@param s1 MonkMistweaverInvigoratingStep
----@param s2 MonkMistweaverInvigoratingStep
----@return boolean
-function ERAMonkMistweaver_SortInvigoratingSteps(s1, s2)
-    return s1.value < s2.value
-end
-
----comment
----@param cFrame any
----@param monkTalents MonkCommonTalents
-function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
+---@param cFrame ERACombatFrame
+---@param talents MonkCommonTalents
+function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local talent_rsk = ERALIBTalent:Create(124984)
     local talent_renewing = ERALIBTalent:Create(124888)
     local talent_invigorating = ERALIBTalent:Create(124891)
@@ -59,167 +40,27 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     local htalent_conduit = ERALIBTalent:Create(125062)
     local htalent_blackox = ERALIBTalent:Create(125060)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, -144, -44, 1.5, true, true, 2)
-    ---@cast timers ERACombatTimers_MonkMistweaver
-    timers.offsetIconsX = -32
-    timers.offsetIconsY = -93
-    local first_column_X = 0.5
-    local first_column_X_delta = -0.1
-    local first_column_Y = 2
+    local hud = ERAHUD:Create(cFrame, 1.5, true, true, 0, 1.0, 1.0, 0.0, false, 2)
+    ---@cast hud MonkMistweaverHUD
+    hud.power.hideFullOutOfCombat = true
+    hud.lastInvoke = 0
 
-    ---@type MonkCommonTimerIconParams
-    local timerParams = {
-        kickX = first_column_X + 1,
-        kickY = first_column_Y + 3,
-        paraX = first_column_X + 1,
-        paraY = first_column_Y + 4,
-        todPrio = 1,
-        todX = first_column_X,
-        todY = first_column_Y - 1
-    }
+    ERACombatFrames_MonkCommonSetup(hud, talents, 0, false)
 
-    ERACombatFrames_MonkTimerBars(timers, monkTalents, timerParams)
+    local instaVivifyTimer = hud:AddPriority(1360980, talents.vivification)
+    function instaVivifyTimer:ComputeDurationOverride(t)
+        self.icon:SetDesaturated(hud.instaVivify.stacks == 0)
+        return hud.nextInstaVifify.remDuration
+    end
 
-    ERAOutOfCombatStatusBars:Create(cFrame, 0, -77, 144, 22, 22, 0, true, 0.0, 0.0, 1.0, 0, 2)
-
-    local health = ERACombatHealth:Create(cFrame, 0, -111, 144, 20, 2)
-    local mana = ERACombatPower:Create(cFrame, 0, -131, 144, 16, 0, false, 0.0, 0.0, 1.0, 2)
-
-    --local sheilunBar = ERACombatFrames_MonkSheilunBar:create(cFrame, -72, -104, 144, 8, health, timers, talent_sheilun, monkTalents)
+    ------------------
+    --#region grid ---
+    ------------------
 
     local grid = ERACombatGrid:Create(cFrame, -151, -16, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
     ---@cast grid ERACombatGrid_MonkMistweaver
-    grid.monkParams = {
-        vivifyHealing = 0,
-        invigoratingStandardHealing = 0,
-        invigoratingPredictedHealing = 0
-    }
-
-    timers:AddAuraBar(timers:AddTrackedBuff(197908, talent_manatea), nil, 0.2, 0.2, 1.0)
-    ERACombatTimerMonkInvokeBar:create(timers, 574571, 0.0, 1.0, 0.2, talent_yulon, talent_short_invoke)
-    ERACombatTimerMonkInvokeBar:create(timers, 877514, 1.0, 0.2, 0.0, talent_chiji, talent_short_invoke)
-
-    timers.sheilunSlot = -1
-    timers.sheilunStacks = 0
-    timers.lastSheilunGain = 0
-
-    local instaVivifyTimer = timers:AddTrackedBuff(392883, monkTalents.vivification)
-    ERACombatFrames_MonkRecurringIcon_instaVivify(timers, monkTalents.vivification, instaVivifyTimer)
-
-    timers:AddKick(116705, first_column_X + 1.8, first_column_Y + 3, ERALIBTalent:Create(101504))
-
-    local chibCooldown = timers:AddTrackedCooldown(123986, talent_chib)
-    local chibIcon = timers:AddCooldownIcon(chibCooldown, nil, first_column_X, first_column_Y + 1, true, true)
-
-    local renewingCooldown = timers:AddTrackedCooldown(115151, talent_renewing)
-    local renewingIcon = timers:AddCooldownIcon(renewingCooldown, nil, first_column_X, first_column_Y + 2, true, true)
-
-    local faeCooldown = timers:AddTrackedCooldown(388193, talent_fae)
-    local faeIcon = timers:AddCooldownIcon(faeCooldown, nil, first_column_X, first_column_Y + 3, true, true)
-
-    ERACombatFrames_MonkSheilunIcon:create(timers, first_column_X, first_column_Y + 5, talent_sheilun, talent_fast_sheilun)
-
-    timers:AddStacksProgressIcon(timers:AddTrackedBuff(115867, talent_manatea), nil, first_column_X + 0.9, first_column_Y + 4.5, 20)
-
-    local ehCooldown = timers:AddTrackedCooldown(322101)
-    local ehIcon = timers:AddCooldownIcon(ehCooldown, nil, first_column_X, first_column_Y, true, true)
-
-    timers:AddProc(timers:AddTrackedBuff(392883, monkTalents.vivification), nil, first_column_X + 1, first_column_Y + 0.5, false, false)
-
-    local tftBuff = timers:AddTrackedBuff(116680, talent_tft)
-    local tftCooldown = timers:AddTrackedCooldown(116680, talent_tft)
-    local tftIcon = timers:AddCooldownIcon(tftCooldown, nil, first_column_X, first_column_Y + 4, true, true)
-    function tftIcon:HighlightOverride(t)
-        if (tftBuff.remDuration > self.group.occupied) then
-            self.icon:Highlight()
-        else
-            self.icon:StopHighlight()
-        end
-        return true
-    end
-
-    local instaRenewingChijiTimer = timers:AddTrackedBuff(343820, talent_chiji)
-    timers:AddStacksProgressIcon(instaRenewingChijiTimer, 877514, first_column_X + 1.9, first_column_Y + 0.5, 3, talent_chiji).highlightWhenFull = true
-
-    local selfRenewingBar = timers:AddAuraBar(timers:AddTrackedBuff(119611, talent_renewing), nil, 0.0, 1.0, 0.0)
-    function selfRenewingBar:GetRemDurationOr0IfInvisibleOverride(t)
-        if (grid.isSolo) then
-            return self.aura.remDuration
-        else
-            return 0
-        end
-    end
-    local selfEnvelopingBar = timers:AddAuraBar(timers:AddTrackedBuff(124682), nil, 0.6, 0.7, 0.0)
-    function selfEnvelopingBar:GetRemDurationOr0IfInvisibleOverride(t)
-        if (grid.isSolo) then
-            return self.aura.remDuration
-        else
-            return 0
-        end
-    end
-
-    timers:AddAuraBar(timers:AddTrackedBuff(388026, talent_ancient_teachings), nil, 1.0, 0.2, 0.8)
-    --timers:AddAuraBar(timers:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
-    timers:AddAuraBar(timers:AddTrackedBuff(443112, htalent_blackox), nil, 0.5, 0.6, 0.0)
-    timers:AddAuraBar(timers:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
-
-    -- anger
-    timers:AddProc(timers:AddTrackedBuff(405807, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
-    timers:AddAuraBar(timers:AddTrackedBuff(400106, talent_sheilun_shaohao), nil, 0.6, 0.0, 0.0)
-    -- doubt
-    timers:AddProc(timers:AddTrackedBuff(405808, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
-    timers:AddAuraBar(timers:AddTrackedBuff(400097, talent_sheilun_shaohao), nil, 0.0, 0.3, 0.2)
-    -- despair
-    timers:AddProc(timers:AddTrackedBuff(405810, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
-    timers:AddAuraBar(timers:AddTrackedBuff(400100, talent_sheilun_shaohao), nil, 0.5, 0.6, 0.8)
-    -- fear
-    timers:AddProc(timers:AddTrackedBuff(405809, talent_sheilun_shaohao), nil, first_column_X, first_column_Y + 6, false, false)
-    timers:AddAuraBar(timers:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
-
-
-    timers.lastInvoke = 0
-    timers.lastInstaVivify = 0
-    function timers:CLEU(t)
-        local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if (sourceGUY == self.cFrame.playerGUID) then
-            if (evt == "SPELL_AURA_APPLIED") then
-                if (spellID == 392883) then
-                    self.lastInstaVivify = t
-                end
-            elseif (evt == "SPELL_CAST_SUCCESS" and (spellID == 322118 or spellID == 325197)) then
-                self.lastInvoke = t
-            end
-        end
-    end
-
-    function timers:PreUpdateCombatOverride(t)
-        if (self.sheilunSlot and self.sheilunSlot > 0) then
-            local s = GetActionCount(self.sheilunSlot)
-            if (self.sheilunStacks < s) then
-                self.lastSheilunGain = t
-            end
-            self.sheilunStacks = s
-        else
-            self.sheilunStacks = 0
-        end
-    end
-
-    function timers:OnResetToIdle()
-        self.lastInstaVivify = 0
-        self.sheilunSlot = ERALIB_GetSpellSlot(399491)
-    end
-
-    local rskIcon = timers:AddCooldownIcon(timers:AddTrackedCooldown(107428, talent_rsk), nil, 0, 0, true, true)
-    function rskIcon:ShouldShowMainIconOverride()
-        return false
-    end
-    function rskIcon:ComputeAvailablePriorityOverride()
-        return 2
-    end
-
-    function tftIcon:ComputeAvailablePriorityOverride()
-        return 3
-    end
+    grid.invigoratingStandardHealing = 0
+    grid.invigoratingPredictedHealing = 0
 
     -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
     local renewingDef = grid:AddTrackedBuff(119611, 0, 1, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, talent_renewing)
@@ -233,14 +74,14 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     end
 
     function grid:UpdatedInCombatOverride(t)
-        local baseH = GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100) * (1 + monkTalents.healingDone2.rank * 0.02)
+        local baseH = GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100) * (1 + talents.healingDone2.rank * 0.02)
         local crit = GetCritChance() / 100
         local nocrit = 1 - crit
         local minDur
-        if (instaVivifyTimer.remDuration > 0) then
-            minDur = timers.occupied
+        if (hud.instaVivify.remDuration > 0) then
+            minDur = hud.occupied
         else
-            minDur = timers.occupied + 1.5 / timers.haste
+            minDur = hud.occupied + hud.totGCD
         end
 
         local targetsCount = 0
@@ -292,211 +133,198 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
             end
         end
 
-        self.monkParams.invigoratingStandardHealing = 5 * (1.2 * baseH + 0.3 * 1.5 * baseH) * (1 + crit)
-        self.monkParams.invigoratingPredictedHealing = acc
+        self.invigoratingStandardHealing = 5 * (1.2 * baseH + 0.3 * 1.5 * baseH) * (1 + crit)
+        self.invigoratingPredictedHealing = acc
     end
 
-    ERACombatFrames_MonkInvigoratingBar:create(cFrame, -64, -32, 100, 20, grid, instaVivifyTimer, talent_invigorating)
+    --#endregion
 
-    local utility = ERACombatFrames_MonkUtility(cFrame, 2, false, monkTalents)
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_better_detox, "Magic", "Poison", "Disease")
-    utility:AddDefensiveDispellCooldown(3, 5, 115450, nil, talent_normal_detox, "Magic")
-    utility:AddCooldown(-1, 0, 116849, nil, true, talent_cocoon)
-    utility:AddCooldown(0, 0, 443028, nil, true, htalent_conduit)
-    utility:AddCooldown(-1.5, -0.9, 322118, nil, true, talent_yulon)
-    utility:AddCooldown(-1.5, -0.9, 325197, nil, true, talent_chiji)
-    utility:AddCooldown(-0.5, -0.9, 115310, nil, true, talent_revival)
-    utility:AddCooldown(-0.5, -0.9, 388615, nil, true, talent_restoral)
-    -- out of combat
-    utility:AddCooldown(-3, 1.8, 123986, nil, false, talent_chib)
-    utility:AddCooldown(-4, 1.8, 116680, nil, false, talent_tft)
-    utility:AddCooldown(-2.5, 2.7, 115151, nil, false, talent_renewing)
-    utility:AddCooldown(-3.5, 2.7, 388193, nil, false, talent_fae)
-end
+    ERAHUD_MonkInvigoratingBar:create(hud, grid, talent_invigorating)
 
--- invigorating --
+    --- SAO ---
 
-ERACombatFrames_MonkInvigoratingBar = {}
-ERACombatFrames_MonkInvigoratingBar.__index = ERACombatFrames_MonkInvigoratingBar
-setmetatable(ERACombatFrames_MonkInvigoratingBar, { __index = ERACombatFrames_PseudoResourceBar })
+    hud:AddAuraOverlay(hud.instaVivify, 1, 623951, false, "TOP", false, false, false, false)
 
-function ERACombatFrames_MonkInvigoratingBar:create(cFrame, x, y, width, height, grid, instaVivifyTimer, talent_invigorating)
-    local inv = {}
-    setmetatable(inv, ERACombatFrames_MonkInvigoratingBar)
-    inv:constructPseudoResource(cFrame, x, y, width, height, 2, 0, false, 2)
-    inv.grid = grid
-    inv.instaVivifyTimer = instaVivifyTimer
-    inv.talent = talent_invigorating
-    return inv
-end
+    --- rotation ---
 
-function ERACombatFrames_MonkInvigoratingBar:GetMax(t)
-    return self.grid.monkParams.invigoratingStandardHealing
-end
-function ERACombatFrames_MonkInvigoratingBar:GetValue(t)
-    return self.grid.monkParams.invigoratingPredictedHealing
-end
+    local chibIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(123986, talent_chib))
 
-function ERACombatFrames_MonkInvigoratingBar:Updated(t)
-    if (self.grid.isSolo or not self.talent:PlayerHasTalent()) then
-        self:Hide()
-    else
-        if (self.instaVivifyTimer.remDuration > self.instaVivifyTimer.group.occupied) then
-            self:SetBarColor(0.0, 1.0, 0.0)
+    hud:AddRotationCooldown(hud:AddTrackedCooldown(115151, talent_renewing))
+
+    local faeIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(388193, talent_fae))
+
+    local sheilunStacks = hud:AddSpellStacks(399491, talent_sheilun)
+    hud:AddRotationStacks(sheilunStacks, 10, 9).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    local sheilunTimer = hud:AddPriority(1242282, talent_sheilun)
+    function sheilunTimer:ComputeDurationOverride(t)
+        local interval
+        if talent_fast_sheilun:PlayerHasTalent() then
+            interval = 4
         else
-            self:SetBarColor(0.0, 0.5, 1.0)
+            interval = 8
         end
-        self:Show()
+        local delta = t - sheilunStacks.lastStackGain
+        local ratio = delta / interval
+        return delta * (1 - (ratio - math.floor(ratio)))
     end
-end
 
--- invoke --
+    hud:AddRotationStacks(hud:AddTrackedBuff(115867, talent_manatea), 20, 18).soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
 
-ERACombatTimerMonkInvokeBar = {}
-ERACombatTimerMonkInvokeBar.__index = ERACombatTimerMonkInvokeBar
-setmetatable(ERACombatTimerMonkInvokeBar, { __index = ERACombatTimerStatusBar })
+    local tftBuff = hud:AddTrackedBuff(116680, talent_tft)
+    local tftCooldown = hud:AddTrackedCooldown(116680, talent_tft)
+    local tftIcon = hud:AddRotationCooldown(tftCooldown)
+    --tftIcon.truc()
 
-function ERACombatTimerMonkInvokeBar:create(group, iconID, r, g, b, talent, talent_short_invoke)
-    local bar = {}
-    setmetatable(bar, ERACombatTimerMonkInvokeBar)
-    bar:construct(group, iconID, r, g, b, "Interface\\TargetingFrame\\UI-StatusBar-Glow")
-    -- assignation
-    bar.talent = talent
-    bar.talent_short_invoke = talent_short_invoke
-    return bar
-end
+    local instaRenewingBuff = hud:AddTrackedBuff(343820, talent_chiji)
+    hud:AddRotationStacks(instaRenewingBuff, 3, 3).soundOnHighlight = SOUNDKIT.UI_9_0_ANIMA_DIVERSION_REVENDRETH_CONFIRM_CHANNEL
 
-function ERACombatTimerMonkInvokeBar:checkTalentsOrHide()
-    if ((not self.talent) or self.talent:PlayerHasTalent()) then
-        return true
-    else
-        self:hide()
-        return false
+    --[[
+    prio
+    1 - tod
+    2 - rsk
+    3 - fae
+    4 - chib
+    5 - tft
+    ]]
+
+    local rskCooldown = hud:AddTrackedCooldown(107428, talent_rsk)
+    local rskIcon = hud:AddPriority(642415, talent_rsk)
+    function rskIcon:ComputeDurationOverride(t)
+        return rskCooldown.remDuration
     end
-end
-
-function ERACombatTimerMonkInvokeBar:GetRemDurationOr0IfInvisibleOverride(t)
-    local std
-    if (self.talent_short_invoke:PlayerHasTalent()) then
-        std = 12
-    else
-        std = 25
+    function rskIcon:ComputeAvailablePriorityOverride(t)
+        return 2
     end
-    local dur = std - (t - self.group.lastInvoke)
-    if (dur > 0) then
-        return dur
-    else
-        return 0
+
+    function faeIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 3
     end
-end
 
--- sheilun --
-
-ERACombatFrames_MonkSheilunBar = {}
-ERACombatFrames_MonkSheilunBar.__index = ERACombatFrames_MonkSheilunBar
-setmetatable(ERACombatFrames_MonkSheilunBar, { __index = ERACombatFrames_PseudoResourceBar })
-
----comment
----@param cFrame ERACombatFrame
----@param x number
----@param y number
----@param length number
----@param thickness number
----@param combatHealth ERACombatHealth
----@param timers ERACombatTimers_MonkMistweaver
----@param talent_sheilun ERALIBTalent
----@param monkTalents MonkCommonTalents
----@return table
-function ERACombatFrames_MonkSheilunBar:create(cFrame, x, y, length, thickness, combatHealth, timers, talent_sheilun, monkTalents)
-    local sh = {}
-    setmetatable(sh, ERACombatFrames_MonkSheilunBar)
-    sh:constructPseudoResource(cFrame, x, y, length, thickness, 1, 0, false, 2)
-    sh.talent = talent_sheilun
-    sh:updateSlot()
-    sh.timers = timers
-    sh.monkTalents = monkTalents
-    sh.combatHealth = combatHealth
-    sh:SetBarColor(0.0, 0.8, 0.5)
-    return sh
-end
-
-function ERACombatFrames_MonkSheilunBar:GetMax(t)
-    return self.combatHealth.maxHealth
-end
-function ERACombatFrames_MonkSheilunBar:GetValue(t)
-    return self.timers.sheilunStacks * 1.14 * GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100) * (1 + self.monkTalents.healingDone2 * 0.02)
-end
-
-function ERACombatFrames_MonkSheilunBar:Updated(t)
-    if (self.talent:PlayerHasTalent()) then
-        self:Show()
-    else
-        self:Hide()
+    function chibIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 4
     end
-end
 
-ERACombatFrames_MonkSheilunIcon = {}
-ERACombatFrames_MonkSheilunIcon.__index = ERACombatFrames_MonkSheilunIcon
-setmetatable(ERACombatFrames_MonkSheilunIcon, { __index = ERACombatTimerIcon })
-
----comment
----@param group ERACombatTimers_MonkMistweaver
----@param x number
----@param y number
----@param talent_sheilun ERALIBTalent
----@param talent_fast_sheilun ERALIBTalent
----@return ERACombatTimersIcon
-function ERACombatFrames_MonkSheilunIcon:create(group, x, y, talent_sheilun, talent_fast_sheilun)
-    local i = {}
-    setmetatable(i, ERACombatFrames_MonkSheilunIcon)
-    i:construct(group, x, y, 1242282, true)
-    i.talent = talent_sheilun
-    i.talent_fast = talent_fast_sheilun
-    i.stacks = 0
-    return i
-end
-
-function ERACombatFrames_MonkSheilunIcon:checkTalentsOrHide()
-    if ((not self.talent) or self.talent:PlayerHasTalent()) then
-        self.talentActive = true
-        return true
-    else
-        self:hide()
-        self.talentActive = false
-        return false
+    function tftIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 5
     end
-end
 
-function ERACombatFrames_MonkSheilunIcon:updateIconCooldownTexture()
-    return 1242282
-end
+    --- bars ---
 
-function ERACombatFrames_MonkSheilunIcon:updateAfterReset(t)
-    self:updateIconCooldownTexture()
-end
-
-function ERACombatFrames_MonkSheilunIcon:updateTimerDurationAndMainIconVisibility(t, timerStandardDuration)
-    local s = self.group.sheilunStacks
-    if (s > 0) then
-        self.shouldShowMainIcon = true
-        if (s ~= self.stacks) then
-            self.stacks = s
-            self.icon:SetMainText(self.stacks)
+    function hud:MonkCLEU(t)
+        local _, evt, _, sourceGUY, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if (sourceGUY == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" and (spellID == 322118 or spellID == 325197)) then
+            self.lastInvoke = t
         end
-        self.icon:SetOverlayValue((10 - s) / 10)
-    else
-        self.shouldShowMainIcon = false
     end
-    if (s < 10 and self.group.lastSheilunGain > 0) then
-        local dur
-        if (self.talent_fast:PlayerHasTalent()) then
-            dur = 4
+    local invokeTimer = MistweaverInvokeTimer:create(hud, talent_short_invoke)
+    hud:AddGenericBar(invokeTimer, 574571, 0.0, 1.0, 0.2, talent_yulon)
+    hud:AddGenericBar(invokeTimer, 877514, 1.0, 0.2, 0.0, talent_chiji)
+
+    local selfRenewingBar = hud:AddAuraBar(hud:AddTrackedBuff(119611, talent_renewing), nil, 0.0, 1.0, 0.0)
+    function selfRenewingBar:ComputeDurationOverride(t)
+        if (grid.isSolo) then
+            return self.aura.remDuration
         else
-            dur = 8
+            return 0
         end
-        local elapsed = t - self.group.lastSheilunGain
-        self.timerDuration = dur - (elapsed - dur * math.floor(elapsed / dur))
-    else
-        self.timerDuration = -1
     end
+    local selfEnvelopingBar = hud:AddAuraBar(hud:AddTrackedBuff(124682), nil, 0.6, 0.7, 0.0)
+    function selfEnvelopingBar:ComputeDurationOverride(t)
+        if (grid.isSolo) then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
+
+    hud:AddAuraBar(hud:AddTrackedBuff(388026, talent_ancient_teachings), nil, 1.0, 0.2, 0.8)
+    --hud:AddAuraBar(hud:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
+    hud:AddAuraBar(hud:AddTrackedBuff(443112, htalent_blackox), nil, 0.5, 0.6, 0.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
+
+    -- anger
+    hud:AddRotationBuff(hud:AddTrackedBuff(405807, talent_sheilun_shaohao))
+    hud:AddAuraBar(hud:AddTrackedBuff(400106, talent_sheilun_shaohao), nil, 0.6, 0.0, 0.0)
+    -- doubt
+    hud:AddRotationBuff(hud:AddTrackedBuff(405808, talent_sheilun_shaohao)).overlapPrevious = true
+    hud:AddAuraBar(hud:AddTrackedBuff(400097, talent_sheilun_shaohao), nil, 0.0, 0.3, 0.2)
+    -- despair
+    hud:AddRotationBuff(hud:AddTrackedBuff(405810, talent_sheilun_shaohao)).overlapPrevious = true
+    hud:AddAuraBar(hud:AddTrackedBuff(400100, talent_sheilun_shaohao), nil, 0.5, 0.6, 0.8)
+    -- fear
+    hud:AddRotationBuff(hud:AddTrackedBuff(405809, talent_sheilun_shaohao)).overlapPrevious = true
+    hud:AddAuraBar(hud:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
+
+    --- utility ---
+
+    local detoxCooldown = hud:AddTrackedCooldown(115450)
+    hud:AddUtilityDispell(detoxCooldown, hud.specialGroup, nil, -1, talent_better_detox, true, true, true, false, false)
+    hud:AddUtilityDispell(detoxCooldown, hud.specialGroup, nil, -1, talent_normal_detox, true, false, false, false, false)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(322118, talent_yulon), hud.powerUpGroup, nil, -1)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(325197, talent_chiji), hud.powerUpGroup, nil, -1)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(116849, talent_cocoon), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115310, talent_revival), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(388615, talent_restoral), hud.healGroup)
+end
+
+---@class MistweaverInvokeTimer : ERATimer
+---@field private __index unknown
+---@field private talentShortInvoke ERALIBTalent
+---@field private mhud MonkMistweaverHUD
+MistweaverInvokeTimer = {}
+MistweaverInvokeTimer.__index = MistweaverInvokeTimer
+setmetatable(MistweaverInvokeTimer, { __index = ERATimer })
+
+---@param hud MonkMistweaverHUD
+---@return MistweaverInvokeTimer
+function MistweaverInvokeTimer:create(hud, talentShortInvoke)
+    local x = {}
+    setmetatable(x, MistweaverInvokeTimer)
+    ---@cast x MistweaverInvokeTimer
+    x:constructTimer(hud)
+    x.talentShortInvoke = talentShortInvoke
+    x.mhud = hud
+    return x
+end
+
+---@param t number
+function MistweaverInvokeTimer:updateData(t)
+    if self.talentShortInvoke:PlayerHasTalent() then
+        self.totDuration = 12
+    else
+        self.totDuration = 25
+    end
+    local remDur = self.totDuration - (t - self.mhud.lastInvoke)
+    if remDur > 0 then
+        self.remDuration = remDur
+    else
+        self.remDuration = 0
+    end
+end
+
+---@class ERAHUD_MonkInvigoratingBar : ERAHUD_PseudoResourceBar
+---@field private __index unknown
+---@field private grid ERACombatGrid_MonkMistweaver
+ERAHUD_MonkInvigoratingBar = {}
+ERAHUD_MonkInvigoratingBar.__index = ERAHUD_MonkInvigoratingBar
+setmetatable(ERAHUD_MonkInvigoratingBar, { __index = ERAHUD_PseudoResourceBar })
+
+---@param hud MonkMistweaverHUD
+---@param grid ERACombatGrid_MonkMistweaver
+---@param talentInvigorating ERALIBTalent
+---@return ERAHUD_MonkInvigoratingBar
+function ERAHUD_MonkInvigoratingBar:create(hud, grid, talentInvigorating)
+    local c = {}
+    setmetatable(c, ERAHUD_MonkInvigoratingBar)
+    ---@cast c ERAHUD_MonkInvigoratingBar
+    c:constructPseudoResource(hud, 12, 2, 0.2, 1.0, 0.7, false, talentInvigorating)
+    c.grid = grid
+    return c
+end
+function ERAHUD_MonkInvigoratingBar:getValue(t, combat)
+    return self.grid.invigoratingPredictedHealing
+end
+function ERAHUD_MonkInvigoratingBar:getMax(t, combat)
+    return self.grid.invigoratingStandardHealing
 end

@@ -21,7 +21,9 @@ end
 --/run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
 --/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
 --/run print(C_Spell.GetSpellInfo("").spellID)
---PlaySound(SOUNDKIT.UI_POWER_AURA_GENERIC);
+
+--/run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
+--/run PlaySound(SOUNDKIT.)
 
 ERA_TALENTS_DO_PRINT_N = 0
 

@@ -1,7 +1,7 @@
 ---@param cFrame ERACombatFrame
 ---@param enemies ERACombatEnemiesCount
----@param monkTalents MonkCommonTalents
-function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
+---@param talents MonkCommonTalents
+function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local talent_whirling = ERALIBTalent:Create(125011)
     local talent_not_whirling = ERALIBTalent:CreateNotTalent(125011)
     local talent_windlord = ERALIBTalent:Create(125022)
@@ -25,7 +25,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     ---@cast hud MonkHUD
     hud.power.hideFullOutOfCombat = true
 
-    ERACombatFrames_MonkCommonSetup(hud, monkTalents, 1.4, true)
+    ERACombatFrames_MonkCommonSetup(hud, talents, 1.4, true)
 
     local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
     function chi:GetIdlePointsOverride()
@@ -67,7 +67,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     local whirlingIcon = hud:AddRotationCooldown(whirling)
 
     local spinningStacks = hud:AddSpellStacks(101546)
-    hud:AddRotationStacks(spinningStacks, 5, 6, 606543)
+    hud:AddRotationStacks(spinningStacks, 5, 1004, 606543)
 
     local windlord = hud:AddTrackedCooldown(392983, talent_windlord)
     local windlordIcon = hud:AddRotationCooldown(windlord)
@@ -77,10 +77,10 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
 
     local teachings = hud:AddTrackedBuff(202090)
     hud:AddRotationStacks(teachings, 4, 4, nil, talent_not_knowledge).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddRotationStacks(teachings, 8, 8, nil, talent_knowledge).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddRotationStacks(teachings, 8, 7, nil, talent_knowledge).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     local capacitor = hud:AddTrackedBuff(393039, talent_capacitor)
-    hud:AddRotationStacks(capacitor, 20, 20).soundOnHighlight = SOUNDKIT.UI_VOID_STORAGE_UNLOCK
+    hud:AddRotationStacks(capacitor, 20, 18).soundOnHighlight = SOUNDKIT.UI_VOID_STORAGE_UNLOCK
 
     local spinningIgnition = hud:AddTrackedBuff(393057, talent_spinning_ignition)
     hud:AddRotationStacks(spinningIgnition, 30, 30, 988193)

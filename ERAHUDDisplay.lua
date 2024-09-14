@@ -234,6 +234,39 @@ function ERAHUDBar_compare(b1, b2)
     return b1.remDuration < b2.remDuration
 end
 
+---@class ERAHUDGenericBar : ERAHUDBar
+---@field private __index unknown
+---@field timer ERATimer
+---@field talent ERALIBTalent|nil
+ERAHUDGenericBar = {}
+ERAHUDGenericBar.__index = ERAHUDGenericBar
+setmetatable(ERAHUDGenericBar, { __index = ERAHUDBar })
+
+---@param timer ERATimer
+---@param iconID integer
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDGenericBar
+function ERAHUDGenericBar:create(timer, iconID, r, g, b, talent)
+    local bar = {}
+    setmetatable(bar, ERAHUDGenericBar)
+    ---@cast bar ERAHUDGenericBar
+    bar:constructBar(timer.hud, iconID, r, g, b, "Interface\\TargetingFrame\\UI-StatusBar-Glow")
+    bar.timer = timer
+    bar.talent = talent
+    return bar
+end
+
+function ERAHUDGenericBar:checkTalentsOverride()
+    return self.timer.talentActive and not (self.talent and not self.talent:PlayerHasTalent())
+end
+
+function ERAHUDGenericBar:computeDuration(t)
+    return self.timer.remDuration
+end
+
 --#endregion
 
 -----------------------
@@ -585,6 +618,7 @@ end
 
 ---@class (exact) ERAHUDRawPriority : ERAHUDTimerItem
 ---@field ComputeDurationOverride fun(this:ERAHUDRawPriority, t:number): number
+---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRawPriority, t:number): number
 ---@field private __index unknown
 ERAHUDRawPriority = {}
 ERAHUDRawPriority.__index = ERAHUDRawPriority
@@ -602,7 +636,13 @@ function ERAHUDRawPriority:create(hud, iconID, talent)
 end
 
 ---@param t number
+---@return number
 function ERAHUDRawPriority:ComputeDurationOverride(t)
+    return 0
+end
+---@param t number
+---@return number
+function ERAHUDRawPriority:ComputeAvailablePriorityOverride(t)
     return 0
 end
 
@@ -729,6 +769,7 @@ end
 ---@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
 ---@field update fun(this:ERAHUDRotationIcon, combat:boolean, t:number)
 ---@field specialPosition boolean
+---@field overlapPrevious boolean
 ERAHUDRotationIcon = {}
 ERAHUDRotationIcon.__index = ERAHUDRotationIcon
 setmetatable(ERAHUDRotationIcon, { __index = ERAHUDIcon })
@@ -740,6 +781,7 @@ function ERAHUDRotationIcon:constructRotationIcon(hud, iconID, talent)
     local frame = hud:addRotation(self)
     self:constructIcon(hud, iconID, ERAHUD_RotationIconSize, frame, talent)
     self.specialPosition = false
+    self.overlapPrevious = false
 end
 
 ----------------
@@ -757,7 +799,7 @@ end
 ---@field data ERACooldownBase
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
----@field protected UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, combat:boolean, t:number)
+---@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, combat:boolean, t:number)
 ERAHUDRotationCooldownIcon = {}
 ERAHUDRotationCooldownIcon.__index = ERAHUDRotationCooldownIcon
 setmetatable(ERAHUDRotationCooldownIcon, { __index = ERAHUDRotationIcon })
@@ -1271,7 +1313,7 @@ function ERAHUDUtilityGenericTimerInGroup:update(combat, t)
         if self.timer.remDuration <= 0 then
             self.icon:SetMainText(nil)
         else
-            self.icon:SetMainText(tostring(self.timer.remDuration))
+            self.icon:SetMainText(tostring(math.floor(self.timer.remDuration)))
         end
         if self.timer.remDuration <= 0 and not combat then
             self.icon:Hide()
@@ -1560,7 +1602,7 @@ function ERAHUDUtilityExternalTimerInGroup:update(combat, t)
         if self.timer.remDuration <= 0 then
             self.icon:SetMainText(nil)
         else
-            self.icon:SetMainText(tostring(self.timer.remDuration))
+            self.icon:SetMainText(tostring(math.floor(self.timer.remDuration)))
         end
     else
         if self.timerActive then
