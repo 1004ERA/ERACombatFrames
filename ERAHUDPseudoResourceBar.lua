@@ -47,14 +47,14 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUD_PseudoResourceBar:updateData(combat, t)
+function ERAHUD_PseudoResourceBar:updateData(t, combat)
     self.value = self:getValue(t, combat)
     self.max = self:getMax(t, combat)
 end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUD_PseudoResourceBar:updateDisplay(combat, t)
+function ERAHUD_PseudoResourceBar:updateDisplay(t, combat)
     if self.value > 0 then
         local ratio = self.value / self.max
         if ratio > 1 then ratio = 1 end

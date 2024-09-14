@@ -73,21 +73,19 @@ ERACombatGrid_counter = 0
 
 ---comment
 ---@param cFrame ERACombatFrame
----@param x number
----@param y number
 ---@param anchor string
 ---@param spec number
 ---@param dispellID number
 ---@param ... string dispell types
 ---@return ERACombatGrid
-function ERACombatGrid:Create(cFrame, x, y, anchor, spec, dispellID, ...)
+function ERACombatGrid:Create(cFrame, anchor, spec, dispellID, ...)
     local g = {}
     setmetatable(g, ERACombatGrid)
 
     g.isGridVisible = true -- ERACombatOptions_IsSpecModuleActive(spec, ERACombatOptions_Grid)
     g.anchor = anchor
-    g.x = x
-    g.y = y
+    g.x = ERAHUD_HealerOffsetX - ERAHUD_TimerIconSize
+    g.y = ERAHUD_HealerTimerOffsetY + 2 * ERAHUD_TimerIconSize
 
     -- unités
     g.units = {}

@@ -16,11 +16,7 @@ ERAHUD_TimerBarSpacing = 4
 ERAHUD_TimerIconSize = 22
 ERAHUD_RotationIconSize = 42
 ERAHUD_RotationIconSpacing = 2
---ERAHUD_RotationSpecialX = ERAHUD_TimerIconSize + ERAHUD_RotationIconSize
---ERAHUD_RotationSpecialY = 0
-ERAHUD_RotationHealerY = -ERAHUD_RotationIconSize / 2
---ERAHUD_RotationSpecialHealerX = 3 * ERAHUD_RotationIconSize
---ERAHUD_RotationSpecialHealerY = 0
+ERAHUD_RotationHealerY = ERAHUD_RotationIconSize
 ERAHUD_UtilityIconSize = 50
 ERAHUD_UtilityIconSpacing = 4
 ERAHUD_UtilityGoupSpacing = 8
@@ -31,6 +27,9 @@ ERAHUD_UtilityMinBottomY = -181
 ERAHUD_UtilityMinRightX = 181
 ERAHUD_OffsetX = -144
 ERAHUD_OffsetY = 0
+ERAHUD_HealerOffsetX = -181
+ERAHUD_HealerTimerOffsetY = -64
+ERAHUD_HealerMainOffsetY = -8
 ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 
 ---@class (exact) ERAHUDHealth
@@ -104,6 +103,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private CheckTalents fun(this:ERAHUD)
 ---@field private CLEU fun(this:ERAHUD, t:number)
 ---@field AdditionalCLEU fun(this:ERAHUD, t:number)
+---@field private placePetAndPower fun(this:ERAHUD, statusY:number): number
 ---@field private updateHealthStatus fun(this:ERAHUD, h:ERAHUDHealth, t:number)
 ---@field private updateHealthStatusIdle fun(this:ERAHUD, h:ERAHUDHealth, t:number)
 ---@field private updatePowerStatus fun(this:ERAHUD, t:number)
@@ -135,6 +135,8 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private castBackground Texture
 ---@field private castVisible boolean
 ---@field private events unknown
+---@field private offsetX number
+---@field private offsetY number
 ---@field private SAO ERASAO[]
 ---@field private activeSAO ERASAO[]
 ---@field private rotation ERAHUDRotationIcon[]
@@ -192,14 +194,22 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     setmetatable(hud, ERAHUD)
     ---@cast hud ERAHUD
     hud:construct(cFrame, 0.2, 0.02, requireCLEU, spec)
-    hud.spec_debug = spec
 
+    hud.barsWidth = 144
     if isHealer then
         hud.isHealer = true
         hud.topdown = true
+        hud.offsetX = ERAHUD_HealerOffsetX
+        hud.offsetY = ERAHUD_HealerTimerOffsetY
+        hud.statusBaseX = 1.5 * ERAHUD_TimerIconSize + hud.barsWidth / 2
+        hud.statusBaseY = ERAHUD_HealerMainOffsetY
     else
         hud.isHealer = false
         hud.topdown = false
+        hud.offsetX = ERAHUD_OffsetX
+        hud.offsetY = ERAHUD_OffsetY
+        hud.statusBaseX = -ERAHUD_TimerIconSize - hud.barsWidth / 2
+        hud.statusBaseY = -1.5 * ERAHUD_TimerIconSize
     end
 
     -- data
@@ -251,7 +261,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     local mainFrame = CreateFrame("Frame", nil, UIParent, "ERAHUDFrame")
     ---@cast mainFrame Frame
     hud.mainFrame = mainFrame
-    mainFrame:SetPoint("CENTER", UIParent, "CENTER", ERAHUD_OffsetX, ERAHUD_OffsetY)
+    mainFrame:SetPoint("CENTER", UIParent, "CENTER", hud.offsetX, hud.offsetY)
 
     hud.timerMaxY = 0
     local timerFrame = CreateFrame("Frame", nil, mainFrame, "ERAHUDFrame")
@@ -308,14 +318,6 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     -- status
 
     hud.powerType = powerType
-    hud.barsWidth = 144
-    if hud.isHealer then
-        hud.statusBaseX = 0
-        hud.statusBaseY = 0
-    else
-        hud.statusBaseX = -ERAHUD_TimerIconSize - hud.barsWidth / 2
-        hud.statusBaseY = -1.5 * ERAHUD_TimerIconSize
-    end
     hud.healthHeight = 22
     hud.petHeight = 11
     hud.powerHeight = 16
@@ -326,7 +328,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
         currentHealth = 0,
         absorb = 0,
         healAbsorb = 0,
-        bar = ERAHUDStatusBar:create(mainFrame, hud.statusBaseX, statusY, hud.barsWidth, hud.healthHeight, 0.0, 1.0, 0.0)
+        bar = ERAHUDStatusBar:create(mainFrame, 1004, 1004, hud.barsWidth, hud.healthHeight, 0.0, 1.0, 0.0)
     }
     statusY = statusY - hud.healthHeight - hud.statusSpacing
     if showPet == true then
@@ -342,14 +344,14 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
         currentHealth = 0,
         absorb = 0,
         healAbsorb = 0,
-        bar = ERAHUDStatusBar:create(mainFrame, hud.statusBaseX, 0, hud.barsWidth, hud.petHeight, 0.0, 1.0, 0.0)
+        bar = ERAHUDStatusBar:create(mainFrame, 1004, 1004, hud.barsWidth, hud.petHeight, 0.0, 1.0, 0.0)
     }
     if powerType >= 0 then
         hud.power = {
             currentPower = 0,
             maxPower = 1,
             hideFullOutOfCombat = false,
-            bar = ERAHUDStatusBar:create(mainFrame, hud.statusBaseX, statusY, hud.barsWidth, hud.powerHeight, rPower, gPower, bPower)
+            bar = ERAHUDStatusBar:create(mainFrame, 1004, 1004, hud.barsWidth, hud.powerHeight, rPower, gPower, bPower)
         }
         statusY = statusY - hud.powerHeight - hud.statusSpacing
     end
@@ -603,7 +605,6 @@ function ERAHUD:ExitCombat()
 end
 
 function ERAHUD:ResetToIdle()
-    print(self.spec_debug, "reset")
     for k, v in pairs(self.events) do
         self.mainFrame:RegisterEvent(k)
     end
@@ -617,7 +618,6 @@ function ERAHUD:OnResetToIdleOverride()
 end
 
 function ERAHUD:SpecInactive(wasActive)
-    print(self.spec_debug, "inactive", wasActive)
     if (wasActive) then
         self.mainFrame:Hide()
         self.mainFrame:UnregisterAllEvents()
@@ -625,8 +625,6 @@ function ERAHUD:SpecInactive(wasActive)
 end
 
 function ERAHUD:CheckTalents()
-    print("check talents", self.spec_debug)
-
     table.wipe(self.activeDataItems)
     for _, t in ipairs(self.dataItems) do
         if (t:checkTalent()) then
@@ -684,33 +682,32 @@ function ERAHUD:CheckTalents()
     end
 
     self.health.bar:checkTalents()
-    self.health.bar:place(self.statusBaseX, self.statusBaseY, self.healthHeight, self.mainFrame)
-    local statusY = self.statusBaseY - self.healthHeight - self.statusSpacing
-    if self.petHealthTalent:PlayerHasTalent() then
-        self.petHealth.bar:place(self.statusBaseX, statusY, self.petHeight, self.mainFrame)
-        self.petHealth.bar:checkTalents()
-        statusY = statusY - self.petHeight - self.statusSpacing
-        if self.power then
-            self.power.bar:checkTalents()
-            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
-            statusY = statusY - self.powerHeight - self.statusSpacing
+    local statusY
+    if self.isHealer then
+        statusY = self.statusBaseY
+        table.wipe(self.activeModules)
+        for _, m in ipairs(self.modules) do
+            if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
+                statusY = statusY - m.height - self.statusSpacing
+                table.insert(self.activeModules, m)
+            end
         end
+        self.health.bar:place(self.statusBaseX, statusY, self.healthHeight, self.mainFrame)
+        statusY = statusY - self.healthHeight - self.statusSpacing
+        self.statusMaxY = self:placePetAndPower(statusY)
     else
-        self.petHealth.bar:hide()
-        if self.power then
-            self.power.bar:checkTalents()
-            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
-            statusY = statusY - self.powerHeight - self.statusSpacing
+        self.health.bar:place(self.statusBaseX, self.statusBaseY, self.healthHeight, self.mainFrame)
+        statusY = self.statusBaseY - self.healthHeight - self.statusSpacing
+        statusY = self:placePetAndPower(statusY)
+        table.wipe(self.activeModules)
+        for _, m in ipairs(self.modules) do
+            if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
+                statusY = statusY - m.height - self.statusSpacing
+                table.insert(self.activeModules, m)
+            end
         end
+        self.statusMaxY = statusY
     end
-    table.wipe(self.activeModules)
-    for _, m in ipairs(self.modules) do
-        if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
-            statusY = statusY - m.height - self.statusSpacing
-            table.insert(self.activeModules, m)
-        end
-    end
-    self.statusMaxY = statusY
 
     table.wipe(self.activeNested)
     for _, n in ipairs(self.nested) do
@@ -725,8 +722,8 @@ function ERAHUD:CheckTalents()
     local iconSpace = ERAHUD_RotationIconSize + ERAHUD_RotationIconSpacing
 
     local maxSpecial = 4
-    local xSpecial = -ERAHUD_OffsetX
-    local ySpecial = -ERAHUD_OffsetY
+    local xSpecial = -self.offsetX
+    local ySpecial = -self.offsetY
     local largeSpecial = true
     local countSpecial = 0
     for _, i in ipairs(self.activeRotation) do
@@ -738,7 +735,7 @@ function ERAHUD:CheckTalents()
                 if largeSpecial then
                     if countSpecial >= maxSpecial then
                         largeSpecial = false
-                        ySpecial = -ERAHUD_OffsetY + iconSpace / 2
+                        ySpecial = -self.offsetY + iconSpace / 2
                         newColumn = true
                     else
                         newColumn = false
@@ -746,7 +743,7 @@ function ERAHUD:CheckTalents()
                 else
                     if countSpecial + 1 >= maxSpecial then
                         largeSpecial = true
-                        ySpecial = -ERAHUD_OffsetY
+                        ySpecial = -self.offsetY
                         newColumn = true
                     else
                         newColumn = false
@@ -850,7 +847,27 @@ function ERAHUD:CheckTalents()
     self:updateUtilityLayout()
 end
 
-function ERAHUD:drawSpecialIcons()
+---@param statusY number
+---@return number
+function ERAHUD:placePetAndPower(statusY)
+    if self.petHealthTalent:PlayerHasTalent() then
+        self.petHealth.bar:place(self.statusBaseX, statusY, self.petHeight, self.mainFrame)
+        self.petHealth.bar:checkTalents()
+        statusY = statusY - self.petHeight - self.statusSpacing
+        if self.power then
+            self.power.bar:checkTalents()
+            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
+            statusY = statusY - self.powerHeight - self.statusSpacing
+        end
+    else
+        self.petHealth.bar:hide()
+        if self.power then
+            self.power.bar:checkTalents()
+            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
+            statusY = statusY - self.powerHeight - self.statusSpacing
+        end
+    end
+    return statusY
 end
 
 ---@param t number
@@ -891,13 +908,13 @@ function ERAHUD:UpdateIdle(t)
     end
 
     for _, sao in ipairs(self.activeSAO) do
-        sao:update(false, t)
+        sao:update(t, false)
     end
 
     self:updateIcons(t, false)
 
     for _, m in ipairs(self.activeModules) do
-        m:updateDisplay(false, t)
+        m:updateDisplay(t, false)
     end
 
     self:DisplayUpdatedOverride(t, false)
@@ -985,8 +1002,8 @@ function ERAHUD:UpdateCombat(t)
         table.sort(self.visibleBars, ERAHUDBar_compare)
     end
 
-    local barsY = ERAHUD_TimerBarSpacing
-    for _, b in ipairs(self.visibleBars) do
+    local barsY = -ERAHUD_TimerBarSpacing
+    for index, b in ipairs(self.visibleBars) do
         local height = b:draw(barsY)
         if self.topdown then
             barsY = barsY - height - ERAHUD_TimerBarSpacing
@@ -1146,7 +1163,7 @@ function ERAHUD:UpdateCombat(t)
     --#endregion
 
     for _, sao in ipairs(self.activeSAO) do
-        sao:update(false, t)
+        sao:update(t, true)
     end
 
     self:updateIcons(t, true)
@@ -1154,7 +1171,7 @@ function ERAHUD:UpdateCombat(t)
     --#region ROTATION
 
     for _, r in ipairs(self.activeRotation) do
-        r:update(true, t)
+        r:update(t, true)
     end
 
     table.wipe(self.availablePriority)
@@ -1229,7 +1246,7 @@ function ERAHUD:UpdateCombat(t)
     --#endregion
 
     for _, m in ipairs(self.activeModules) do
-        m:updateDisplay(true, t)
+        m:updateDisplay(t, true)
     end
 
     self:DisplayUpdatedOverride(t, true)
@@ -1241,10 +1258,10 @@ end
 ---@param combat boolean
 function ERAHUD:updateIcons(t, combat)
     for _, r in ipairs(self.activeRotation) do
-        r:update(combat, t)
+        r:update(t, combat)
     end
     for _, i in ipairs(self.activeUtilityIcons) do
-        i:update(combat, t)
+        i:update(t, combat)
     end
 end
 
@@ -1552,7 +1569,7 @@ function ERAHUD:updateData(t, combat)
     self:PreUpdateModuleDataOverride(t, combat)
 
     for _, m in ipairs(self.activeModules) do
-        m:updateData(combat, t)
+        m:updateData(t, combat)
     end
 
     for _, n in ipairs(self.activeNested) do
@@ -1718,7 +1735,34 @@ function ERAHUD:updateUtilityLayout()
     if self.isHealer then
         --#region HEALER LAYOUT
 
-
+        local x = ERAHUD_TimerIconSize
+        local y = self.statusMaxY
+        if self.healGroup.width > 0 and self.healGroup.height > 0 then
+            self.healGroup:arrange(x, y, self.mainFrame)
+            y = y - self.healGroup.height - ERAHUD_UtilityGoupSpacing
+        end
+        if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
+            self.powerUpGroup:arrange(x, y, self.mainFrame)
+        end
+        x = math.max(math.max(self.healGroup.width, self.powerUpGroup.width) + ERAHUD_UtilityGoupSpacing, self.statusBaseX + self.barsWidth / 2)
+        y = math.min(y, ERAHUD_UtilityMinBottomY)
+        if self.defenseGroup.width > 0 and self.defenseGroup.height > 0 then
+            self.defenseGroup:arrange(x, y, self.mainFrame)
+            x = x + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
+        end
+        if self.specialGroup.width > 0 and self.specialGroup.height > 0 then
+            self.specialGroup:arrange(x, y, self.mainFrame)
+        end
+        if x < ERAHUD_UtilityMinRightX - self.offsetX then
+            x = ERAHUD_UtilityMinRightX - self.offsetX
+        end
+        if self.controlGroup.width > 0 and self.controlGroup.height > 0 then
+            y = y + self.controlGroup.height + ERAHUD_UtilityGoupSpacing
+            self.controlGroup:arrange(x, y, self.mainFrame)
+        end
+        if self.movementGroup.width > 0 and self.movementGroup.height > 0 then
+            self.movementGroup:arrange(x, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
+        end
 
         --#endregion
     else
@@ -1730,7 +1774,7 @@ function ERAHUD:updateUtilityLayout()
         end
 
         local xBottom = self.statusBaseX + self.barsWidth / 2 + ERAHUD_RotationIconSize
-        local y = ERAHUD_OffsetY + ERAHUD_UtilityMinBottomY
+        local y = self.offsetY + ERAHUD_UtilityMinBottomY
         if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
             self.powerUpGroup:arrange(xBottom, y, self.mainFrame)
             xBottom = xBottom + self.powerUpGroup.width + ERAHUD_UtilityGoupSpacing
@@ -1740,8 +1784,8 @@ function ERAHUD:updateUtilityLayout()
             xBottom = xBottom + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
         end
         local xRight
-        if xBottom < ERAHUD_UtilityMinRightX - ERAHUD_OffsetX then
-            xRight = ERAHUD_UtilityMinRightX - ERAHUD_OffsetX
+        if xBottom < ERAHUD_UtilityMinRightX - self.offsetX then
+            xRight = ERAHUD_UtilityMinRightX - self.offsetX
         else
             xRight = xBottom
         end
@@ -2083,8 +2127,8 @@ end
 ---@field protected show fun(this:ERAHUDResourceModule)
 ---@field private visible boolean
 ---@field height number
----@field updateData fun(this:ERAHUDResourceModule, combat:boolean, t:number)
----@field updateDisplay fun(this:ERAHUDResourceModule, combat:boolean, t:number)
+---@field updateData fun(this:ERAHUDResourceModule, t:number, combat:boolean)
+---@field updateDisplay fun(this:ERAHUDResourceModule, t:number, combat:boolean)
 ---@field hud ERAHUD
 ERAHUDResourceModule = {}
 ERAHUDResourceModule.__index = ERAHUDResourceModule
@@ -2228,7 +2272,7 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return ERASAOAura
 function ERAHUD:AddAuraOverlay(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
-    return ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
 --- rotation ---

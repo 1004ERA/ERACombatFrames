@@ -23,6 +23,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local talent_not_manatea = ERALIBTalent:CreateNotTalent(124920)
     local talent_yulon = ERALIBTalent:Create(124915)
     local talent_chiji = ERALIBTalent:Create(124914)
+    local talent_invoke = ERALIBTalent:CreateOr(talent_yulon, talent_chiji)
     local talent_chiji_sck = ERALIBTalent:Create(124887)
     local talent_short_invoke = ERALIBTalent:Create(124894)
     local talent_revival = ERALIBTalent:Create(124919)
@@ -40,12 +41,13 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local htalent_conduit = ERALIBTalent:Create(125062)
     local htalent_blackox = ERALIBTalent:Create(125060)
 
-    local hud = ERAHUD:Create(cFrame, 1.5, true, true, 0, 1.0, 1.0, 0.0, false, 2)
+    local hud = ERAHUD:Create(cFrame, 1.5, true, true, 0, 0.0, 0.0, 1.0, false, 2)
     ---@cast hud MonkMistweaverHUD
     hud.power.hideFullOutOfCombat = true
+    hud.powerHeight = 12
     hud.lastInvoke = 0
 
-    ERACombatFrames_MonkCommonSetup(hud, talents, 0, false)
+    ERACombatFrames_MonkCommonSetup(hud, talents, 0, nil)
 
     local instaVivifyTimer = hud:AddPriority(1360980, talents.vivification)
     function instaVivifyTimer:ComputeDurationOverride(t)
@@ -57,7 +59,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     --#region grid ---
     ------------------
 
-    local grid = ERACombatGrid:Create(cFrame, -151, -16, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
+    local grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
     ---@cast grid ERACombatGrid_MonkMistweaver
     grid.invigoratingStandardHealing = 0
     grid.invigoratingPredictedHealing = 0
@@ -143,7 +145,15 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
 
     --- SAO ---
 
-    hud:AddAuraOverlay(hud.instaVivify, 1, 623951, false, "TOP", false, false, false, false)
+    local instaVivivySAO = hud:AddAuraOverlay(hud.instaVivify, 1, 623951, false, "RIGHT", true, false, false, false)
+    ---@param combat boolean
+    ---@param t number
+    function instaVivivySAO:ConfirmIsActiveOverride(t, combat)
+        return combat or self.hud.health.currentHealth < self.hud.health.maxHealth
+    end
+
+    local blackOxBuff = hud:AddTrackedBuff(443112, htalent_blackox)
+    hud:AddAuraOverlay(blackOxBuff, 1, 623950, false, "TOP", false, false, false, true)
 
     --- rotation ---
 
@@ -157,15 +167,19 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     hud:AddRotationStacks(sheilunStacks, 10, 9).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
     local sheilunTimer = hud:AddPriority(1242282, talent_sheilun)
     function sheilunTimer:ComputeDurationOverride(t)
-        local interval
-        if talent_fast_sheilun:PlayerHasTalent() then
-            interval = 4
+        if sheilunStacks.lastStackGain > 0 and sheilunStacks.stacks > 6 then
+            local interval
+            if talent_fast_sheilun:PlayerHasTalent() then
+                interval = 4
+            else
+                interval = 8
+            end
+            local delta = t - sheilunStacks.lastStackGain
+            local ratio = delta / interval
+            return interval * (1 - (ratio - math.floor(ratio)))
         else
-            interval = 8
+            return -1
         end
-        local delta = t - sheilunStacks.lastStackGain
-        local ratio = delta / interval
-        return delta * (1 - (ratio - math.floor(ratio)))
     end
 
     hud:AddRotationStacks(hud:AddTrackedBuff(115867, talent_manatea), 20, 18).soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
@@ -173,7 +187,9 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local tftBuff = hud:AddTrackedBuff(116680, talent_tft)
     local tftCooldown = hud:AddTrackedCooldown(116680, talent_tft)
     local tftIcon = hud:AddRotationCooldown(tftCooldown)
-    --tftIcon.truc()
+    function tftIcon:HighlightOverride(t, combat)
+        return tftBuff.remDuration > 0
+    end
 
     local instaRenewingBuff = hud:AddTrackedBuff(343820, talent_chiji)
     hud:AddRotationStacks(instaRenewingBuff, 3, 3).soundOnHighlight = SOUNDKIT.UI_9_0_ANIMA_DIVERSION_REVENDRETH_CONFIRM_CHANNEL
@@ -216,7 +232,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
             self.lastInvoke = t
         end
     end
-    local invokeTimer = MistweaverInvokeTimer:create(hud, talent_short_invoke)
+    local invokeTimer = MistweaverInvokeTimer:create(hud, talent_invoke, talent_short_invoke)
     hud:AddGenericBar(invokeTimer, 574571, 0.0, 1.0, 0.2, talent_yulon)
     hud:AddGenericBar(invokeTimer, 877514, 1.0, 0.2, 0.0, talent_chiji)
 
@@ -239,7 +255,14 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(388026, talent_ancient_teachings), nil, 1.0, 0.2, 0.8)
     --hud:AddAuraBar(hud:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
-    hud:AddAuraBar(hud:AddTrackedBuff(443112, htalent_blackox), nil, 0.5, 0.6, 0.0)
+    local blackOxBar = hud:AddAuraBar(blackOxBuff, nil, 0.5, 0.6, 0.0)
+    function blackOxBar:ComputeDurationOverride()
+        if self.aura.remDuration < self.hud.timerDuration then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
     hud:AddAuraBar(hud:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
 
     -- anger
@@ -254,6 +277,8 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     -- fear
     hud:AddRotationBuff(hud:AddTrackedBuff(405809, talent_sheilun_shaohao)).overlapPrevious = true
     hud:AddAuraBar(hud:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(197908, talent_manatea), nil, 0.1, 0.5, 1.0)
 
     --- utility ---
 
@@ -270,6 +295,7 @@ end
 
 ---@class MistweaverInvokeTimer : ERATimer
 ---@field private __index unknown
+---@field private talentEitherInvoke ERALIBTalent
 ---@field private talentShortInvoke ERALIBTalent
 ---@field private mhud MonkMistweaverHUD
 MistweaverInvokeTimer = {}
@@ -277,15 +303,22 @@ MistweaverInvokeTimer.__index = MistweaverInvokeTimer
 setmetatable(MistweaverInvokeTimer, { __index = ERATimer })
 
 ---@param hud MonkMistweaverHUD
+---@param talentEitherInvoke ERALIBTalent
+---@param talentShortInvoke ERALIBTalent
 ---@return MistweaverInvokeTimer
-function MistweaverInvokeTimer:create(hud, talentShortInvoke)
+function MistweaverInvokeTimer:create(hud, talentEitherInvoke, talentShortInvoke)
     local x = {}
     setmetatable(x, MistweaverInvokeTimer)
     ---@cast x MistweaverInvokeTimer
     x:constructTimer(hud)
+    x.talentEitherInvoke = talentEitherInvoke
     x.talentShortInvoke = talentShortInvoke
     x.mhud = hud
     return x
+end
+
+function MistweaverInvokeTimer:checkDataItemTalent()
+    return self.talentEitherInvoke:PlayerHasTalent()
 end
 
 ---@param t number

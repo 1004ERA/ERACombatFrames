@@ -25,7 +25,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     ---@cast hud MonkHUD
     hud.power.hideFullOutOfCombat = true
 
-    ERACombatFrames_MonkCommonSetup(hud, talents, 1.4, true)
+    ERACombatFrames_MonkCommonSetup(hud, talents, 1.4, ERALIBTalent:Create(124941))
 
     local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
     function chi:GetIdlePointsOverride()
@@ -67,7 +67,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local whirlingIcon = hud:AddRotationCooldown(whirling)
 
     local spinningStacks = hud:AddSpellStacks(101546)
-    hud:AddRotationStacks(spinningStacks, 5, 1004, 606543)
+    hud:AddRotationStacks(spinningStacks, 5, 1004, 606543).minStacksToShowOutOfCombat = 2
 
     local windlord = hud:AddTrackedCooldown(392983, talent_windlord)
     local windlordIcon = hud:AddRotationCooldown(windlord)

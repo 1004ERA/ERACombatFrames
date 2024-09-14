@@ -175,7 +175,7 @@ end
 ---@param t number
 function ERACooldown:updateCooldownData(t)
     local chargesInfo = C_Spell.GetSpellCharges(self.spellID)
-    if chargesInfo then
+    if chargesInfo and chargesInfo.maxCharges > 1 then
         self.hasCharges = true
         self.maxCharges = chargesInfo.maxCharges
         self.currentCharges = chargesInfo.currentCharges
@@ -193,15 +193,21 @@ function ERACooldown:updateCooldownData(t)
         local cdInfo = C_Spell.GetSpellCooldown(self.spellID)
         if cdInfo and cdInfo.startTime and cdInfo.startTime > 0 and cdInfo.duration and cdInfo.duration > 0 then
             local remDur = cdInfo.duration - (t - cdInfo.startTime)
-            if remDur <= self.hud.remGCD + 0.1 and self.lastGoodUpdate > 0 then
+            if remDur <= self.hud.remGCD + 0.1 then
                 self.isAvailable = true
                 self.currentCharges = 1
                 -- totDuration reste inchangé
-                self.remDuration = self.lastGoodRemdur - (t - self.lastGoodUpdate)
-                if self.remDuration < 0 then
+                if self.lastGoodUpdate > 0 then
+                    self.remDuration = self.lastGoodRemdur - (t - self.lastGoodUpdate)
+                    if self.remDuration < 0 then
+                        self.remDuration = 0
+                    elseif self.remDuration > self.hud.remGCD - 0.1 then
+                        self.remDuration = 0
+                    elseif self.remDuration > remDur then
+                        self.remDuration = remDur
+                    end
+                else
                     self.remDuration = 0
-                elseif self.remDuration > remDur then
-                    self.remDuration = remDur
                 end
             else
                 self.isAvailable = false
@@ -397,6 +403,7 @@ function ERASpellStacks:create(hud, spellID, talent)
     s.spellID = spellID
     s.talent = talent
     s.stacks = 0
+    s.lastStackGain = 0
     return s
 end
 

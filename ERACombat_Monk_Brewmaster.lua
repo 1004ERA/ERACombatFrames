@@ -27,9 +27,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     ---@cast hud MonkBrewmasterHUD
     hud.power.hideFullOutOfCombat = true
 
-    ERACombatFrames_MonkCommonSetup(hud, talents, 0, true)
-
-    local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
+    ERACombatFrames_MonkCommonSetup(hud, talents, 0, ERALIBTalent:Create(124867))
 
     local kegCooldown = hud:AddTrackedCooldown(121253)
     hud.purifCooldown = hud:AddTrackedCooldown(119582)
@@ -97,6 +95,8 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     bokAlternative.talent = talent_no_shuffle
     local bokCooldown = hud:AddTrackedCooldown(205523, nil, bokAlternative) -- 100784 (basic) or 205523 (with shuffle)
     local bokIcon = hud:AddRotationCooldown(bokCooldown)
+
+    local rjwCooldown = hud:AddTrackedCooldown(116847, talent_rjw)
 
     --[[
 
@@ -200,10 +200,14 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
 
     local rjwPrio = hud:AddPriority(606549, talent_rjw)
     function rjwPrio:ComputeAvailablePriorityOverride(t)
-        if enemies:GetCount() > 3 then
-            return 10
+        if rjwCooldown.remDuration > 0 then
+            return 0
         else
-            return 14
+            if enemies:GetCount() > 3 then
+                return 10
+            else
+                return 14
+            end
         end
     end
 
@@ -230,7 +234,6 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     --- bars ---
 
     local rjwBuff = hud:AddTrackedBuff(116847, talent_rjw)
-    local rjwCooldown = hud:AddTrackedCooldown(116847, talent_rjw)
     local rjwLongBar = hud:AddAuraBar(rjwBuff, nil, 0.0, 0.6, 0.2)
     function rjwLongBar:ComputeDurationOverride(t)
         if rjwCooldown.remDuration <= self.hud.totGCD then
@@ -291,7 +294,7 @@ function ERABMStagger:create(hud)
     ---@cast s ERABMStagger
     s:constructModule(hud, 12)
     s.mhud = hud
-    s.bar = ERAHUDStatusBar:create(self.frame, 0, 0, hud.barsWidth, 12, 1.0, 1.0, 1.0)
+    s.bar = ERAHUDStatusBar:create(s.frame, 0, 6, hud.barsWidth, 12, 1.0, 1.0, 1.0)
     s.bar:show()
     s.staggerValue = 0
     s.staggerPercent = 0
@@ -304,14 +307,14 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERABMStagger:updateData(combat, t)
+function ERABMStagger:updateData(t, combat)
     self.staggerValue = UnitStagger("player")
     self.staggerPercent = self.staggerValue / self.mhud.health.maxHealth
 end
 
 ---@param combat boolean
 ---@param t number
-function ERABMStagger:updateDisplay(combat, t)
+function ERABMStagger:updateDisplay(t, combat)
     if self.staggerValue > 0 then
         self.bar:SetValueAndMax(self.staggerValue, self.hud.health.maxHealth)
         self:show()

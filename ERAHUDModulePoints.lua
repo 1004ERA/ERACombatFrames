@@ -11,8 +11,8 @@ ERAHUDModulePoints_PointSpacing = 4
 ---@field private rP number
 ---@field private gP number
 ---@field private bP number
----@field updateData fun(this:ERAHUDModulePoints, combat:boolean, t:number)
----@field updateDisplay fun(this:ERAHUDModulePoints, combat:boolean, t:number)
+---@field updateData fun(this:ERAHUDModulePoints, t:number, combat:boolean)
+---@field updateDisplay fun(this:ERAHUDModulePoints, t:number, combat:boolean)
 ---@field private updateMaxPoints fun(this:ERAHUDModulePoints)
 ---@field protected getMaxPoints fun(this:ERAHUDModulePoints): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePoints): integer
@@ -82,14 +82,14 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDModulePoints:updateData(combat, t)
+function ERAHUDModulePoints:updateData(t, combat)
     self:updateMaxPoints()
     self.currentPoints = self:getCurrentPoints()
 end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDModulePoints:updateDisplay(combat, t)
+function ERAHUDModulePoints:updateDisplay(t, combat)
     if combat or self.currentPoints ~= self:GetIdlePointsOverride() then
         for i = 1, self.currentPoints do
             self.points[i]:update(true)

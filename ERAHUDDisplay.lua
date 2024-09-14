@@ -36,7 +36,6 @@
 ---@field protected checkTalentsOverride fun(this:ERAHUDBar): boolean
 ---@field protected computeDuration fun(this:ERAHUDBar, t:number)
 ---@field private hide fun(this:ERAHUDBar)
----@field draw fun(this:ERAHUDBar, y:number): number
 ERAHUDBar = {}
 ERAHUDBar.__index = ERAHUDBar
 
@@ -158,7 +157,7 @@ end
 
 function ERAHUDBar:endAnimate()
     if (self.hud.topdown) then
-        self.display:SetPoint("TOPRIGHT", self.parentFrame, "RIGHT", 0, -self.y)
+        self.display:SetPoint("TOPRIGHT", self.parentFrame, "RIGHT", 0, self.y)
     else
         self.display:SetPoint("BOTTOMRIGHT", self.parentFrame, "RIGHT", 0, self.y)
     end
@@ -181,16 +180,12 @@ function ERAHUDBar:draw(y)
     end
     if (wasVisible) then
         if (self.y ~= y) then
-            if (self.hud.topdown) then
-                self.translation:SetOffset(0, self.y - y)
-            else
-                self.translation:SetOffset(0, y - self.y)
-            end
+            self.translation:SetOffset(0, y - self.y)
             self.anim:Play()
         end
     else
         if (self.hud.topdown) then
-            self.display:SetPoint("TOPRIGHT", self.parentFrame, "RIGHT", 0, -y)
+            self.display:SetPoint("TOPRIGHT", self.parentFrame, "RIGHT", 0, y)
         else
             self.display:SetPoint("BOTTOMRIGHT", self.parentFrame, "RIGHT", 0, y)
         end
@@ -713,8 +708,10 @@ end
 ---@param maxCharges integer
 ---@param remdurDesat number
 ---@param hideIfAvailable boolean
+---@param forceHighlight boolean
+---@param forceHighlightValue boolean
 ---@param t number
-function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, hideIfAvailable, t)
+function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, hideIfAvailable, forceHighlight, forceHighlightValue, t)
     if data.isKnown then
         local available
         if data.hasCharges then
@@ -746,10 +743,18 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
             else
                 icon:SetMainText(nil)
             end
-            if IsSpellOverlayed(data.spellID) then
-                icon:Highlight()
+            if forceHighlight then
+                if forceHighlightValue then
+                    icon:Highlight()
+                else
+                    icon:StopHighlight()
+                end
             else
-                icon:StopHighlight()
+                if IsSpellOverlayed(data.spellID) then
+                    icon:Highlight()
+                else
+                    icon:StopHighlight()
+                end
             end
             icon:Show()
         end
@@ -767,7 +772,7 @@ end
 ---@class (exact) ERAHUDRotationIcon : ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
----@field update fun(this:ERAHUDRotationIcon, combat:boolean, t:number)
+---@field update fun(this:ERAHUDRotationIcon, t:number, combat:boolean)
 ---@field specialPosition boolean
 ---@field overlapPrevious boolean
 ERAHUDRotationIcon = {}
@@ -799,7 +804,8 @@ end
 ---@field data ERACooldownBase
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
----@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, combat:boolean, t:number)
+---@field HighlightOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
+---@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean)
 ERAHUDRotationCooldownIcon = {}
 ERAHUDRotationCooldownIcon.__index = ERAHUDRotationCooldownIcon
 setmetatable(ERAHUDRotationCooldownIcon, { __index = ERAHUDRotationIcon })
@@ -839,15 +845,24 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationCooldownIcon:update(combat, t)
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, t)
+function ERAHUDRotationCooldownIcon:update(t, combat)
+    local forceHighlight
+    local forceHighlightValue = false
+    if self.HighlightOverride then
+        forceHighlight = true
+        forceHighlightValue = self:HighlightOverride(t, combat)
+    else
+        forceHighlight = false
+        forceHighlightValue = false
+    end
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
-    self:UpdatedOverride(combat, t)
+    self:UpdatedOverride(t, combat)
 end
----@param combat boolean
 ---@param t number
-function ERAHUDRotationCooldownIcon:UpdatedOverride(combat, t)
+---@param combat boolean
+function ERAHUDRotationCooldownIcon:UpdatedOverride(t, combat)
 end
 
 ---@class (exact) ERAHUDRotationCooldownTimerItem : ERAHUDTimerItem
@@ -979,7 +994,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(combat, t)
+function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(t, combat)
     if
         (self.magic and self.hud.targetDispellableMagic)
         or
@@ -1020,7 +1035,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationKickIcon:UpdatedOverride(combat, t)
+function ERAHUDRotationKickIcon:UpdatedOverride(t, combat)
     if self.hud.targetCast > self.data.remDuration then
         if self.data.remDuration <= 0 then
             self.hud.targetCastBar:kickIsAvailable()
@@ -1098,7 +1113,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationAuraIcon:update(combat, t)
+function ERAHUDRotationAuraIcon:update(t, combat)
     if self.data.stacks > 0 then
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks
@@ -1144,6 +1159,7 @@ end
 ---@field maxStacks integer
 ---@field highlightAt integer
 ---@field soundOnHighlight number
+---@field minStacksToShowOutOfCombat integer
 ---@field private currentStacks integer
 ERAHUDRotationStacksIcon = {}
 ERAHUDRotationStacksIcon.__index = ERAHUDRotationStacksIcon
@@ -1168,6 +1184,7 @@ function ERAHUDRotationStacksIcon:create(data, maxStacks, highlightAt, iconID, t
     end
     buff:constructRotationIcon(data.hud, iconID, talent)
     buff.currentStacks = -1
+    buff.minStacksToShowOutOfCombat = 1
     return buff
 end
 
@@ -1185,21 +1202,25 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationStacksIcon:update(combat, t)
+function ERAHUDRotationStacksIcon:update(t, combat)
     if self.data.stacks > 0 then
+        if self.data.stacks < self.minStacksToShowOutOfCombat and not combat then
+            self.icon:Hide()
+            return
+        end
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks
             self.icon:SetMainText(tostring(self.currentStacks))
             self.icon:SetOverlayValue((self.maxStacks - self.currentStacks) / self.maxStacks)
-            if combat and self.currentStacks >= self.highlightAt then
-                if self.soundOnHighlight and self.soundOnHighlight > 0 then
-                    self.icon:Highlight(self.soundOnHighlight);
-                else
-                    self.icon:Highlight();
-                end
+        end
+        if combat and self.currentStacks >= self.highlightAt then
+            if self.soundOnHighlight and self.soundOnHighlight > 0 then
+                self.icon:Highlight(self.soundOnHighlight);
             else
-                self.icon:StopHighlight();
+                self.icon:Highlight();
             end
+        else
+            self.icon:StopHighlight();
         end
         self.icon:Show()
     else
@@ -1220,7 +1241,7 @@ end
 ---@class (exact) ERAHUDUtilityIcon : ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructUtilityIcon fun(this:ERAHUDUtilityIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
----@field update fun(this:ERAHUDUtilityIcon, combat:boolean, t:number)
+---@field update fun(this:ERAHUDUtilityIcon, t:number, combat:boolean)
 ERAHUDUtilityIcon = {}
 ERAHUDUtilityIcon.__index = ERAHUDUtilityIcon
 setmetatable(ERAHUDUtilityIcon, { __index = ERAHUDIcon })
@@ -1238,7 +1259,7 @@ end
 ---@class (exact) ERAHUDUtilityIconInGroup : ERAHUDUtilityIcon
 ---@field private __index unknown
 ---@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, displayOrder:number|nil, talent:ERALIBTalent|nil)
----@field update fun(this:ERAHUDUtilityIconInGroup, combat:boolean, t:number)
+---@field update fun(this:ERAHUDUtilityIconInGroup, t:number, combat:boolean)
 ---@field private group ERAHUDUtilityGroup
 ---@field displayOrder number
 ERAHUDUtilityIconInGroup = {}
@@ -1270,7 +1291,7 @@ end
 ---@field private timerActive boolean
 ---@field protected timerActive_returnIconID fun(this:ERAHUDUtilityGenericTimerInGroup): integer
 ---@field protected mustStillShowIfTimerTalentInactive fun(this:ERAHUDUtilityGenericTimerInGroup): boolean
----@field protected GenericUpdatedOverride fun(this:ERAHUDUtilityGenericTimerInGroup, combat:boolean, t:number)
+---@field protected GenericUpdatedOverride fun(this:ERAHUDUtilityGenericTimerInGroup, t:number, combat:boolean)
 ERAHUDUtilityGenericTimerInGroup = {}
 ERAHUDUtilityGenericTimerInGroup.__index = ERAHUDUtilityGenericTimerInGroup
 setmetatable(ERAHUDUtilityGenericTimerInGroup, { __index = ERAHUDUtilityIconInGroup })
@@ -1298,7 +1319,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityGenericTimerInGroup:update(combat, t)
+function ERAHUDUtilityGenericTimerInGroup:update(t, combat)
     if self.timer.talentActive then
         if not self.timerActive then
             self.timerActive = true
@@ -1331,7 +1352,7 @@ function ERAHUDUtilityGenericTimerInGroup:update(combat, t)
             self.hud:mustUpdateUtilityLayout()
         end
     end
-    self:GenericUpdatedOverride(combat, t)
+    self:GenericUpdatedOverride(t, combat)
 end
 ---@return integer
 function ERAHUDUtilityGenericTimerInGroup:timerActive_returnIconID()
@@ -1343,7 +1364,7 @@ function ERAHUDUtilityGenericTimerInGroup:mustStillShowIfTimerTalentInactive()
 end
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityGenericTimerInGroup:GenericUpdatedOverride(combat, t)
+function ERAHUDUtilityGenericTimerInGroup:GenericUpdatedOverride(t, combat)
 end
 
 --#endregion
@@ -1354,8 +1375,8 @@ end
 
 ---@class (exact) ERAHUDUtilityCooldownInGroup : ERAHUDUtilityIconInGroup
 ---@field private __index unknown
----@field update fun(this:ERAHUDUtilityCooldownInGroup, combat:boolean, t:number)
----@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, combat:boolean, t:number)
+---@field update fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
+---@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field data ERACooldownBase
 ---@field private currentCharges integer
 ---@field private maxCharges integer
@@ -1397,15 +1418,15 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityCooldownInGroup:update(combat, t)
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, t)
+function ERAHUDUtilityCooldownInGroup:update(t, combat)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, false, false, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
-    self:UpdatedOverride(combat, t)
+    self:UpdatedOverride(t, combat)
 end
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityCooldownInGroup:UpdatedOverride(combat, t)
+function ERAHUDUtilityCooldownInGroup:UpdatedOverride(t, combat)
 end
 
 ---------------
@@ -1416,7 +1437,7 @@ end
 
 ---@class (exact) ERAHUDUtilityDispellInGroup : ERAHUDUtilityCooldownInGroup
 ---@field private __index unknown
----@field private UpdatedOverride fun(this:ERAHUDUtilityDispellInGroup, combat:boolean, t:number)
+---@field private UpdatedOverride fun(this:ERAHUDUtilityDispellInGroup, t:number, combat:boolean)
 ---@field private magic boolean
 ---@field private disease boolean
 ---@field private poison boolean
@@ -1451,7 +1472,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityDispellInGroup:UpdatedOverride(combat, t)
+function ERAHUDUtilityDispellInGroup:UpdatedOverride(t, combat)
     if
         (self.hud.selfDispellableMagic and self.magic)
         or
@@ -1542,7 +1563,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityBagItemInGroup:GenericUpdatedOverride(combat, t)
+function ERAHUDUtilityBagItemInGroup:GenericUpdatedOverride(t, combat)
     if self.bagItem.hasItem then
         self.icon:SetVertexColor(1.0, 1.0, 1.0, 1.0)
         self.icon:SetSecondaryText(tostring(self.bagItem.stacks))
@@ -1592,7 +1613,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityExternalTimerInGroup:update(combat, t)
+function ERAHUDUtilityExternalTimerInGroup:update(t, combat)
     if self.timer.talentActive and self.timer.remDuration > 0 then
         if not self.timerActive then
             self.timerActive = true
@@ -1623,7 +1644,7 @@ end
 ---@class (exact) ERAHUDUtilityIconOutOfCombat : ERAHUDUtilityIcon
 ---@field private __index unknown
 ---@field protected constructUtilityIconOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
----@field private update fun(this:ERAHUDUtilityIconOutOfCombat, combat:boolean, t:number)
+---@field private update fun(this:ERAHUDUtilityIconOutOfCombat, t:number, combat:boolean)
 ---@field protected updateOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, t:number)
 ERAHUDUtilityIconOutOfCombat = {}
 ERAHUDUtilityIconOutOfCombat.__index = ERAHUDUtilityIconOutOfCombat
@@ -1637,7 +1658,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityIconOutOfCombat:update(combat, t)
+function ERAHUDUtilityIconOutOfCombat:update(t, combat)
     if combat then
         self.icon:Hide()
     else
@@ -1714,7 +1735,8 @@ end
 ---@field private __index unknown
 ---@field private talent ERALIBTalent|nil
 ---@field protected checkTalentSAO fun(this:ERASAO): boolean
----@field protected getIsActive fun(this:ERASAO, combat:boolean, t:number): boolean
+---@field protected getIsActive fun(this:ERASAO, t:number, combat:boolean): boolean
+---@field ConfirmIsActiveOverride fun(this:ERASAO, t:number, combat:boolean): boolean
 ---@field talentActive boolean
 ---@field hud ERAHUD
 ---@field private display Texture
@@ -1732,7 +1754,10 @@ ERASAO.__index = ERASAO
 ---@param rotateLeft boolean
 ---@param rotateRight boolean
 ---@param talent ERALIBTalent|nil
-function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+---@param offsetX number
+---@param offsetY number
+function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    self.hud = hud
     local parentFrame = hud:addSAO(self)
     self.display = parentFrame:CreateTexture(nil, "OVERLAY")
     if isAtlas then
@@ -1755,30 +1780,30 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
 
     ---@type number, number
     local width, height
-    local widthSides = math.min(-ERAHUD_OffsetX, ERAHUD_UtilityMinRightX) / 2
+    local widthSides = math.min(-offsetX, ERAHUD_UtilityMinRightX) / 2
     local heightSides = 2 * widthSides
-    local heightTopDown = (-ERAHUD_OffsetY - ERAHUD_UtilityMinBottomY) / 2
+    local heightTopDown = (-offsetY - ERAHUD_UtilityMinBottomY) / 2
     local widthTopDown = 2 * heightTopDown
     if position == "LEFT" then
         width = widthSides
         height = heightSides
-        self.display:SetPoint("CENTER", parentFrame, "CENTER", -1.5 * width - ERAHUD_OffsetX, -ERAHUD_OffsetY)
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -1.5 * width - offsetX, -offsetY)
     elseif position == "RIGHT" then
         width = widthSides
         height = heightSides
-        self.display:SetPoint("CENTER", parentFrame, "CENTER", 1.5 * width - ERAHUD_OffsetX, -ERAHUD_OffsetY)
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", 1.5 * width - offsetX, -offsetY)
     elseif position == "TOP" then
         width = widthTopDown
         height = heightTopDown
-        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, 1.5 * height - ERAHUD_OffsetY)
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -offsetX, 1.5 * height - offsetY)
     elseif position == "BOTTOM" then
         width = widthTopDown
         height = heightTopDown
-        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, -1.5 * height - ERAHUD_OffsetY)
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -offsetX, -1.5 * height - offsetY)
     else -- MIDDLE
         width = math.min(heightSides, widthTopDown)
         height = width
-        self.display:SetPoint("CENTER", parentFrame, "CENTER", -ERAHUD_OffsetX, -ERAHUD_OffsetY)
+        self.display:SetPoint("CENTER", parentFrame, "CENTER", -offsetX, -offsetY)
     end
 
     if rotateLeft then
@@ -1823,8 +1848,8 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERASAO:update(combat, t)
-    if self:getIsActive(combat, t) then
+function ERASAO:update(t, combat)
+    if self:getIsActive(t, combat) and self:ConfirmIsActiveOverride(t, combat) then
         if not self.isActive then
             self.isActive = true
             self.display:Show()
@@ -1837,6 +1862,11 @@ function ERASAO:update(combat, t)
             self.animGroup:Stop()
         end
     end
+end
+---@param combat boolean
+---@param t number
+function ERASAO:ConfirmIsActiveOverride(t, combat)
+    return true
 end
 
 --- BASED ON AURA ---
@@ -1859,14 +1889,16 @@ setmetatable(ERASAOAura, { __index = ERASAO })
 ---@param rotateLeft boolean
 ---@param rotateRight boolean
 ---@param talent ERALIBTalent|nil
+---@param offsetX number
+---@param offsetY number
 ---@return ERASAOAura
-function ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+function ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     local a = {}
     setmetatable(a, ERASAOAura)
     ---@cast a ERASAOAura
     a.aura = aura
     a.minStacks = minStacks
-    a:constructSAO(aura.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    a:constructSAO(aura.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     return a
 end
 
@@ -1877,9 +1909,10 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERASAOAura:getIsActive(combat, t)
+function ERASAOAura:getIsActive(t, combat)
     return self.aura.stacks >= self.minStacks
 end
+
 
 --#endregion
 

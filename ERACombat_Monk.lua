@@ -10,7 +10,6 @@
 ---@field disenrage ERALIBTalent
 ---@field rop ERALIBTalent
 ---@field sleep ERALIBTalent
----@field detox ERALIBTalent
 ---@field kick ERALIBTalent
 ---@field vivification ERALIBTalent
 ---@field healingTaken4 ERALIBTalent
@@ -28,7 +27,7 @@
 ---@field MonkCLEU fun(this:MonkHUD, t:number)
 
 function ERACombatFrames_MonkSetup(cFrame)
-    cFrame.hideAlertsForSpec = { 1, 3 }
+    cFrame.hideAlertsForSpec = { 1, 2, 3 }
 
     ERACombatGlobals_SpecID1 = 268
     ERACombatGlobals_SpecID2 = 270
@@ -55,7 +54,6 @@ function ERACombatFrames_MonkSetup(cFrame)
         disenrage = ERALIBTalent:Create(124931),
         rop = ERALIBTalent:Create(124926),
         sleep = ERALIBTalent:Create(124925),
-        detox = ERALIBTalent:Create(124941),
         kick = ERALIBTalent:Create(124943),
         vivification = ERALIBTalent:Create(124935),
         healingDone2 = ERALIBTalent:Create(124964),
@@ -72,10 +70,10 @@ function ERACombatFrames_MonkSetup(cFrame)
         ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     end
     if (mwActive) then
-        --ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
+        ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     end
     if (wwActive) then
-        --ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
+        ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 end
 
@@ -86,7 +84,7 @@ end
 ---@param hud MonkHUD
 ---@param talents MonkCommonTalents
 ---@param vivificationMultiplier number|nil
----@param detox boolean
+---@param detox ERALIBTalent|nil
 function ERACombatFrames_MonkCommonSetup(hud, talents, vivificationMultiplier, detox)
     hud.tod = hud:AddTrackedCooldown(322109)
 
@@ -184,7 +182,7 @@ function ERACombatFrames_MonkCommonSetup(hud, talents, vivificationMultiplier, d
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(119996, talents.transcendence), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(101643, talents.transcendence), hud.movementGroup)
     if detox then
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(218164, talents.detox), hud.specialGroup, nil, nil, nil, false, true, true, false, false)
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(218164, detox), hud.specialGroup, nil, nil, nil, false, true, true, false, false)
     end
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(115546), hud.specialGroup) -- taunt
 end
