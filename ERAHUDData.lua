@@ -439,13 +439,18 @@ end
 --- AURA ---
 ------------
 
+--#region AURA
+
 ---@class ERAAura : ERATimerWithID, ERAStacks
 ---@field private __index unknown
 ---@field private clearTimer fun(this:ERAAura)
 ---@field stacks integer
----@field auraFound fun(this:ERAAura, t:number, data:AuraData)
 ---@field private foundDuration number
 ---@field private foundStacks integer
+---@field private foundCount integer
+---@field private requiredCount integer
+---@field private last_checked number
+---@field private not_checked boolean
 ERAAura = {}
 ERAAura.__index = ERAAura
 setmetatable(ERAAura, { __index = ERATimerWithID })
@@ -462,6 +467,10 @@ function ERAAura:create(hud, spellID, talent, ...)
     a:constructID(hud, spellID, talent, ...)
     a.foundDuration = -1
     a.foundStacks = 0
+    a.not_checked = false
+    a.last_checked = 0
+    a.foundCount = 0
+    a.requiredCount = 0
     return a
 end
 
@@ -482,19 +491,115 @@ function ERAAura:auraFound(t, data)
         self.foundDuration = 1004
         self.totDuration = 1004
     end
+    self.foundCount = self.foundCount + 1
     self.foundStacks = math.max(self.foundStacks, data.applications, 1)
+end
+
+function ERAAura:notChecked()
+    self.not_checked = true
+end
+
+---@param cpt integer
+function ERAAura:requireCount(cpt)
+    self.requiredCount = cpt
 end
 
 ---@param t number
 function ERAAura:updateData(t)
-    if self.foundDuration > 0 then
+    if self.requiredCount <= self.foundCount and self.foundDuration > 0 then
         self.remDuration = self.foundDuration
         self.stacks = self.foundStacks
         self.foundDuration = -1
         self.foundStacks = 0
+        self.last_checked = t
     else
-        self.remDuration = 0
-        self.stacks = 0
-        self.foundStacks = 0
+        if self.not_checked then
+            self.not_checked = false
+            if self.remDuration > 0 then
+                self.remDuration = self.remDuration - (t - self.last_checked)
+                if self.remDuration <= 0 then
+                    self.remDuration = 0.1
+                end
+            end
+        else
+            self.remDuration = 0
+            self.stacks = 0
+            self.foundStacks = 0
+            self.last_checked = t
+        end
     end
 end
+
+--#endregion
+
+-----------------
+--- AGGREGATE ---
+-----------------
+
+--#region AGGREGATE
+
+---@class (exact) ERAAggregateTimer : ERATimer
+---@field private __index unknown
+---@field protected timers ERATimer[]
+---@field shortest boolean
+ERAAggregateTimer = {}
+ERAAggregateTimer.__index = ERAAggregateTimer
+setmetatable(ERAAggregateTimer, { __index = ERATimer })
+
+---@param shortest boolean
+---@param ... ERATimer
+function ERAAggregateTimer:constructAggregate(shortest, ...)
+    self.shortest = shortest
+    self.timers = { ... }
+end
+
+---@class ERATimerOr : ERAAggregateTimer
+---@field private __index unknown
+ERATimerOr = {}
+ERATimerOr.__index = ERATimerOr
+setmetatable(ERATimerOr, { __index = ERAAggregateTimer })
+
+---@param shortest boolean
+---@param ... ERATimer
+---@return ERATimerOr
+function ERATimerOr:create(shortest, ...)
+    local o = {}
+    setmetatable(o, ERATimerOr)
+    ---@cast o ERATimerOr
+    o:constructAggregate(shortest, ...)
+    return o
+end
+
+function ERATimerOr:checkDataItemTalent()
+    for _, t in ipairs(self.timers) do
+        if t.talentActive then
+            return true
+        end
+    end
+    return false
+end
+
+---@param t number
+function ERATimerOr:updateData(t)
+    local foundDuration = 0
+    local foundTotDuration = 0
+    for _, tim in ipairs(self.timers) do
+        if tim.talentActive and tim.remDuration > 0 then
+            if self.shortest then
+                if foundDuration <= 0 or foundDuration > tim.remDuration then
+                    foundDuration = tim.remDuration
+                    foundTotDuration = tim.totDuration
+                end
+            else
+                if foundDuration < tim.remDuration then
+                    foundDuration = tim.remDuration
+                    foundTotDuration = tim.totDuration
+                end
+            end
+        end
+    end
+    self.remDuration = foundDuration
+    self.totDuration = foundTotDuration
+end
+
+--#endregion

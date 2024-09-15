@@ -14,6 +14,7 @@ end
 ---@field Pack function
 ---@field playerGUID string
 ---@field inCombat boolean
+---@field hideAlertsForSpec integer[]
 
 ERACombatFrame = {}
 ERACombatFrame.__index = ERACombatFrame

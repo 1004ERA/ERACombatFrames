@@ -26,9 +26,8 @@
 ---@field tod ERACooldown
 ---@field MonkCLEU fun(this:MonkHUD, t:number)
 
+---@param cFrame ERACombatFrame
 function ERACombatFrames_MonkSetup(cFrame)
-    cFrame.hideAlertsForSpec = { 1, 2, 3 }
-
     ERACombatGlobals_SpecID1 = 268
     ERACombatGlobals_SpecID2 = 270
     ERACombatGlobals_SpecID3 = 269
@@ -40,6 +39,8 @@ function ERACombatFrames_MonkSetup(cFrame)
     local bmActive = ERACombatOptions_IsSpecActive(1)
     local mwActive = ERACombatOptions_IsSpecActive(2)
     local wwActive = ERACombatOptions_IsSpecActive(3)
+
+    cFrame.hideAlertsForSpec = { bmActive, mwActive, wwActive }
 
     ---@type MonkCommonTalents
     local monkTalents = {

@@ -891,6 +891,7 @@ end
 
 ---@class (exact) ERAHUDRotationCooldownIconPriority : ERAHUDRotationCooldownTimerItem
 ---@field private __index unknown
+---@field ComputeDurationOverride fun(this:ERAHUDRotationCooldownIconPriority, t:number): number
 ---@field ComputeAvailablePriorityOverride fun(this:ERAHUDRotationCooldownIconPriority, t:number): number
 ERAHUDRotationCooldownIconPriority = {}
 ERAHUDRotationCooldownIconPriority.__index = ERAHUDRotationCooldownIconPriority
@@ -1711,6 +1712,43 @@ function ERAHUDUtilityAuraOutOfCombat:updateOutOfCombat(t)
             self.icon:SetMainText(nil)
         end
         self.icon:SetOverlayAlpha(self.aura.remDuration / self.aura.totDuration)
+        self.icon:Show()
+    else
+        self.icon:Hide()
+    end
+end
+
+--#endregion
+
+--#region MISSING
+
+---@class (exact) ERAHUDEmptyTimer : ERAHUDUtilityIcon
+---@field private __index unknown
+---@field timer ERATimer
+---@field private update fun(this:ERAHUDUtilityIconOutOfCombat, t:number, combat:boolean)
+---@field onlyIfPartyHasAnotherHealer boolean
+ERAHUDEmptyTimer = {}
+ERAHUDEmptyTimer.__index = ERAHUDEmptyTimer
+setmetatable(ERAHUDEmptyTimer, { __index = ERAHUDUtilityIcon })
+
+---@param timer ERATimer
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+---@return ERAHUDEmptyTimer
+function ERAHUDEmptyTimer:create(timer, iconID, talent)
+    local et = {}
+    setmetatable(et, ERAHUDEmptyTimer)
+    ---@cast et ERAHUDEmptyTimer
+    et.timer = timer
+    self:constructUtilityIcon(timer.hud, iconID, talent)
+    return et
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDEmptyTimer:update(t, combat)
+    if self.timer.remDuration <= 0 and self.hud.partyHasAnotherHealer or not self.onlyIfPartyHasAnotherHealer then
+        self.icon:Beam()
         self.icon:Show()
     else
         self.icon:Hide()

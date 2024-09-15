@@ -48,10 +48,10 @@ ERACombat_Monk_Mistweaver.lua
 ERACombat_Monk_Windwalker.lua
 
 ERACombat_Evoker.xml
-ERACombat_Evoker.lua
-ERACombat_Evoker_Devastation.lua
-ERACombat_Evoker_Preservation.lua
-ERACombat_Evoker_Augmentation.lua
+ERACombat_Evoker_OLD.lua
+ERACombat_Evoker_Devastation_OLD.lua
+ERACombat_Evoker_Preservation_OLD.lua
+ERACombat_Evoker_Augmentation_OLD.lua
 
 ERACombat_DeathKnight.lua
 ERACombat_DeathKnight_Blood.lua

@@ -93,6 +93,14 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private activeDebuffs table<number, ERAAura>
 ---@field private debuffsOnSelf ERAAura[]
 ---@field private activeDebuffsOnSelf table<number, ERAAura>
+---@field private buffsOnParty ERAAura[]
+---@field private activeBuffsOnParty table<number, ERAAura>
+---@field private hasActiveBuffsOnParty boolean
+---@field private lastParseParty number
+---@field partyHasAnotherTank boolean
+---@field partyHasAnotherHealer boolean
+---@field partyHasAnotherDPS boolean
+---@field isInGroup boolean
 ---@field private bagItems ERACooldownBagItem[]
 ---@field private updateData fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private resetEmpower fun(this:ERAHUD)
@@ -148,6 +156,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private utilityIcons ERAHUDUtilityIcon[]
 ---@field private activeUtilityIcons ERAHUDUtilityIcon[]
 ---@field private outOfCombat ERAHUDUtilityIconOutOfCombat[]
+---@field private emptyTimers ERAHUDEmptyTimer[]
 ---@field private utilityGroups ERAHUDUtilityGroup[]
 ---@field private must_update_utility_layout boolean
 ---@field mustUpdateUtilityLayout fun(this:ERAHUD)
@@ -254,6 +263,14 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.activeDebuffs = {}
     hud.debuffsOnSelf = {}
     hud.activeDebuffsOnSelf = {}
+    hud.buffsOnParty = {}
+    hud.activeBuffsOnParty = {}
+    hud.hasActiveBuffsOnParty = false
+    hud.partyHasAnotherTank = false
+    hud.partyHasAnotherHealer = false
+    hud.partyHasAnotherDPS = false
+    hud.lastParseParty = 0
+    hud.isInGroup = false
     hud.bagItems = {}
 
     -- display
@@ -310,6 +327,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.activeUtilityIcons = {}
     hud.utilityGroups = {}
     hud.outOfCombat = {}
+    hud.emptyTimers = {}
     hud.modules = {}
     hud.activeModules = {}
 
@@ -647,6 +665,13 @@ function ERAHUD:CheckTalents()
     for _, a in ipairs(self.debuffsOnSelf) do
         if a.talentActive then
             self.activeDebuffsOnSelf[a.spellID] = a
+        end
+    end
+    self.hasActiveBuffsOnParty = false
+    for _, a in ipairs(self.buffsOnParty) do
+        if a.talentActive then
+            self.hasActiveBuffsOnParty = true
+            self.activeBuffsOnParty[a.spellID] = a
         end
     end
 
@@ -1369,11 +1394,15 @@ function ERAHUD:updateData(t, combat)
         end
     end
     i = 1
-    if self.hasBuffsAnyCaster then
+    if self.hasBuffsAnyCaster or self.hasActiveBuffsOnParty then
         while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
+                if (a ~= nil) then
+                    a:auraFound(t, auraInfo)
+                end
+                a = self.activeBuffsOnParty[auraInfo.spellId]
                 if (a ~= nil) then
                     a:auraFound(t, auraInfo)
                 end
@@ -1423,6 +1452,61 @@ function ERAHUD:updateData(t, combat)
             i = i + 1
         else
             break
+        end
+    end
+
+    if self.hasActiveBuffsOnParty then
+        if t - self.lastParseParty < 2 then
+            for _, v in pairs(self.activeBuffsOnParty) do
+                v:notChecked()
+            end
+        else
+            self.isInGroup = false
+            self.lastParseParty = t
+            local friendsCount = GetNumGroupMembers()
+            self.partyHasAnotherTank = false
+            self.partyHasAnotherHealer = false
+            self.partyHasAnotherDPS = false
+            local cpt = 1
+            if friendsCount and friendsCount > 0 then
+                local prefix
+                if (IsInRaid()) then
+                    prefix = "raid"
+                else
+                    prefix = "party"
+                end
+                for f = 1, friendsCount do
+                    local unit = prefix .. f
+                    if (not UnitIsUnit("player", unit)) and UnitInRange(unit) then
+                        cpt = cpt + 1
+                        self.isInGroup = true
+                        local role = UnitGroupRolesAssigned(unit)
+                        if (role == "TANK") then
+                            self.partyHasAnotherTank = true
+                        elseif (role == "HEALER") then
+                            self.partyHasAnotherHealer = true
+                        else
+                            self.partyHasAnotherDPS = true
+                        end
+                        i = 1
+                        while true do
+                            local auraInfo = C_UnitAuras.GetBuffDataByIndex(unit, i)
+                            if (auraInfo) then
+                                local a = self.activeBuffsOnParty[auraInfo.spellId]
+                                if (a ~= nil) then
+                                    a:auraFound(t, auraInfo)
+                                end
+                                i = i + 1
+                            else
+                                break
+                            end
+                        end
+                    end
+                end
+            end
+            for _, v in pairs(self.activeBuffsOnParty) do
+                v:requireCount(cpt)
+            end
         end
     end
 
@@ -1661,6 +1745,11 @@ function ERAHUD:addOutOfCombat(i)
     table.insert(self.outOfCombat, i)
 end
 
+---@param i ERAHUDEmptyTimer
+function ERAHUD:addEmpty(i)
+    table.insert(self.emptyTimers, i)
+end
+
 --#endregion
 
 --------------
@@ -1732,7 +1821,11 @@ function ERAHUD:updateUtilityLayout()
         g:measure()
     end
 
+    ---@type number, number
+    local xMissing, yOutOfCombat
+
     if self.isHealer then
+        yOutOfCombat = -ERAHUD_UtilityIconSize / 2
         --#region HEALER LAYOUT
 
         local x = ERAHUD_TimerIconSize
@@ -1753,6 +1846,7 @@ function ERAHUD:updateUtilityLayout()
         if self.specialGroup.width > 0 and self.specialGroup.height > 0 then
             self.specialGroup:arrange(x, y, self.mainFrame)
         end
+        local xBottom = x + self.specialGroup.width
         if x < ERAHUD_UtilityMinRightX - self.offsetX then
             x = ERAHUD_UtilityMinRightX - self.offsetX
         end
@@ -1764,8 +1858,11 @@ function ERAHUD:updateUtilityLayout()
             self.movementGroup:arrange(x, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
         end
 
+        xMissing = math.max(xBottom, x + math.max(self.controlGroup.width, self.movementGroup.width))
+
         --#endregion
     else
+        yOutOfCombat = ERAHUD_UtilityIconSize / 2
         --#region NON-HEALER LAYOUT
 
         if self.healGroup.width > 0 and self.healGroup.height > 0 then
@@ -1800,44 +1897,89 @@ function ERAHUD:updateUtilityLayout()
             self.movementGroup:arrange(xRight, y + self.movementGroup.height + ERAHUD_UtilityGoupSpacing, self.mainFrame)
         end
 
-        local xOutOfCombat = -ERAHUD_UtilityIconSize
-        local outOfCombatIconSize = ERAHUD_UtilityIconSize + ERAHUD_UtilityIconSpacing
-        local yOutOfCombat = ERAHUD_UtilityIconSize / 2
-        local largeRow = true
-        local count = 0
-        for _, i in ipairs(self.outOfCombat) do
-            if i.talentActive then
-                i.icon:Draw(xOutOfCombat, yOutOfCombat, false)
-                count = count + 1
-                local newRow
-                if largeRow then
-                    if count >= 5 then
-                        xOutOfCombat = -1.5 * ERAHUD_UtilityIconSize
-                        largeRow = false
-                        newRow = true
-                    else
-                        newRow = false
-                    end
-                else
-                    if count >= 4 then
-                        xOutOfCombat = -ERAHUD_UtilityIconSize
-                        largeRow = true
-                        newRow = true
-                    else
-                        newRow = false
-                    end
-                end
-                if newRow then
-                    count = 0
-                    yOutOfCombat = yOutOfCombat + outOfCombatIconSize * ERAHUD_IconDeltaDiagonal
-                else
-                    xOutOfCombat = xOutOfCombat - outOfCombatIconSize
-                end
-            end
-        end
+        xMissing = math.max(xBottom + self.specialGroup.width, xRight + math.max(self.controlGroup.width, self.movementGroup.width))
 
         --#endregion
     end
+
+    local utilityIconSize = ERAHUD_UtilityIconSize + ERAHUD_UtilityIconSpacing
+
+    --#region out of combat
+
+    local xOutOfCombat = -ERAHUD_UtilityIconSize
+    local largeRow = true
+    local count = 0
+    for _, i in ipairs(self.outOfCombat) do
+        if i.talentActive then
+            i.icon:Draw(xOutOfCombat, yOutOfCombat, false)
+            count = count + 1
+            local newRow
+            if largeRow then
+                if count >= 5 then
+                    xOutOfCombat = -1.5 * ERAHUD_UtilityIconSize
+                    largeRow = false
+                    newRow = true
+                else
+                    newRow = false
+                end
+            else
+                if count >= 4 then
+                    xOutOfCombat = -ERAHUD_UtilityIconSize
+                    largeRow = true
+                    newRow = true
+                else
+                    newRow = false
+                end
+            end
+            if newRow then
+                count = 0
+                yOutOfCombat = yOutOfCombat + utilityIconSize * ERAHUD_IconDeltaDiagonal
+            else
+                xOutOfCombat = xOutOfCombat - utilityIconSize
+            end
+        end
+    end
+
+    --#endregion
+
+    --#region missing
+
+    xMissing = xMissing + ERAHUD_UtilityGoupSpacing + ERAHUD_UtilityIconSize / 2
+    local yMissing = ERAHUD_UtilityMinBottomY
+    local largeColumn = true
+    count = 0
+    for _, i in ipairs(self.emptyTimers) do
+        if i.talentActive then
+            i.icon:Draw(xOutOfCombat, yOutOfCombat, false)
+            count = count + 1
+            local newColumn
+            if largeColumn then
+                if count >= 5 then
+                    yMissing = ERAHUD_UtilityMinBottomY + utilityIconSize / 2
+                    largeColumn = false
+                    newColumn = true
+                else
+                    newColumn = false
+                end
+            else
+                if count >= 4 then
+                    yMissing = ERAHUD_UtilityMinBottomY
+                    largeColumn = true
+                    newColumn = true
+                else
+                    newColumn = false
+                end
+            end
+            if newColumn then
+                count = 0
+                xMissing = xMissing + utilityIconSize * ERAHUD_IconDeltaDiagonal
+            else
+                yMissing = yMissing + utilityIconSize
+            end
+        end
+    end
+
+    --#endregion
 
     self.must_update_utility_layout = false
 end
@@ -2226,6 +2368,28 @@ function ERAHUD:AddTrackedDebuffOnSelf(spellID, talent, ...)
     return a
 end
 
+---@return ERATimerOr
+function ERAHUD:AddSatedDebuff()
+    return ERATimerOr:create(false,
+        self:AddTrackedDebuffOnSelf(57723),
+        self:AddTrackedDebuffOnSelf(57724),
+        self:AddTrackedDebuffOnSelf(80354),
+        self:AddTrackedDebuffOnSelf(288293),
+        self:AddTrackedDebuffOnSelf(264689),
+        self:AddTrackedDebuffOnSelf(390435)
+    )
+end
+
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@param ... ERACooldownAdditionalID
+---@return ERAAura
+function ERAHUD:AddBuffOnAllPartyMembers(spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
+    table.insert(self.buffsOnParty, a)
+    return a
+end
+
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
 ---@param ... ERACooldownAdditionalID
@@ -2252,6 +2416,13 @@ end
 ---@return ERASpellStacks
 function ERAHUD:AddSpellStacks(spellID, talent)
     return ERASpellStacks:create(self, spellID, talent)
+end
+
+---@param shortest boolean
+---@param ... ERATimer
+---@return ERATimerOr
+function ERAHUD:AddOrTimer(shortest, ...)
+    return ERATimerOr:create(shortest, ...)
 end
 
 --#endregion
@@ -2441,6 +2612,22 @@ end
 ---@return ERAHUDUtilityExternalTimerInGroup
 function ERAHUD:AddBagExternalTimerIcon(timer, group, iconID, displayOrder, talent)
     return ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayOrder, talent)
+end
+
+---@param aura ERAAura
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityAuraOutOfCombat
+function ERAHUD:AddUtilityAuraOutOfCombat(aura, iconID, talent)
+    return ERAHUDUtilityAuraOutOfCombat:create(aura, iconID, talent)
+end
+
+---@param timer ERATimer
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+---@return ERAHUDEmptyTimer
+function ERAHUD:AddEmptyTimer(timer, iconID, talent)
+    return ERAHUDEmptyTimer:create(timer, iconID, talent)
 end
 
 --#endregion
