@@ -1727,30 +1727,43 @@ end
 ---@field timer ERATimer
 ---@field private update fun(this:ERAHUDUtilityIconOutOfCombat, t:number, combat:boolean)
 ---@field onlyIfPartyHasAnotherHealer boolean
+---@field fadeAfterSeconds number
+---@field private lastAppeared number
 ERAHUDEmptyTimer = {}
 ERAHUDEmptyTimer.__index = ERAHUDEmptyTimer
 setmetatable(ERAHUDEmptyTimer, { __index = ERAHUDUtilityIcon })
 
 ---@param timer ERATimer
+---@param fadeAfterSeconds number
 ---@param iconID integer
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDEmptyTimer
-function ERAHUDEmptyTimer:create(timer, iconID, talent)
+function ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
     local et = {}
     setmetatable(et, ERAHUDEmptyTimer)
     ---@cast et ERAHUDEmptyTimer
     et.timer = timer
     self:constructUtilityIcon(timer.hud, iconID, talent)
+    self.lastAppeared = 0
+    self.fadeAfterSeconds = fadeAfterSeconds
     return et
 end
 
 ---@param combat boolean
 ---@param t number
 function ERAHUDEmptyTimer:update(t, combat)
-    if self.timer.remDuration <= 0 and self.hud.partyHasAnotherHealer or not self.onlyIfPartyHasAnotherHealer then
-        self.icon:Beam()
-        self.icon:Show()
+    if self.timer.remDuration <= 0 and (self.hud.otherHealersInGroup > 0 or not self.onlyIfPartyHasAnotherHealer) then
+        if self.lastAppeared > 0 and t - self.lastAppeared > self.fadeAfterSeconds then
+            self.icon:Hide()
+        else
+            if self.lastAppeared <= 0 then
+                self.lastAppeared = t
+            end
+            self.icon:Beam()
+            self.icon:Show()
+        end
     else
+        self.lastAppeared = 0
         self.icon:Hide()
     end
 end

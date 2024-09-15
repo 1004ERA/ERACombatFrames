@@ -89,7 +89,8 @@ end
 ---@param essenceDirection EvokerEssenceDirection
 ---@param talents ERACombat_EvokerCommonTalents
 ---@param talent_big_empower ERALIBTalent|nil
-function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower)
+---@param spec integer
+function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower, spec)
     hud.evoker_essence = ERAEvokerEssenceModule:create(hud, essenceDirection)
 
     local additionalFirebreath
@@ -117,7 +118,6 @@ function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower
             return 0
         end
     end
-    hud:AddUtilityAuraOutOfCombat(hud.evoker_leapingBuff)
 
     hud.evoker_burnout = hud:AddTrackedBuff(375802, talents.burnout_or_onslaught)
     local burnoutBar = hud:AddAuraBar(hud.evoker_burnout, nil, 0, 1, 0)
@@ -128,7 +128,7 @@ function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower
             return 0
         end
     end
-    hud:AddAuraOverlay(hud.evoker_burnout, 1, x, true, "MIDDLE", false, false, false, false)
+    hud:AddAuraOverlay(hud.evoker_burnout, 1, 457658, false, "MIDDLE", false, false, false, false)
     hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
 
     --- rotation ---
@@ -179,6 +179,34 @@ function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower
     end
 
     --- utility ---
+
+    hud:AddEmptyTimer(hud:AddBuffOnAllPartyMembers(381748, ERALIBTalent:CreateLevel(60)), 8, 4622448)
+    hud:AddEmptyTimer(hud:AddBuffOnFriendlyHealer(369459, talents.source), 8, 4630412)
+
+    hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
+    hud:AddUtilityAuraOutOfCombat(hud.evoker_leapingBuff)
+
+    hud:AddGenericTimer(hud:AddOrTimer(false, hud:AddTrackedCooldown(390386), hud:AddSatedDebuff()), hud.powerUpGroup, 4723908)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(363916, talents.obsidian), hud.defenseGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(358267), hud.movementGroup) -- hover
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(406732, talents.paradox), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(374968, talents.spiral), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(374227, talents.zephyr), hud.movementGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(358385, talents.landslide), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(360806, talents.sleep), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(357214), hud.controlGroup) -- buffet
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(368970), hud.controlGroup) -- swipe
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(372048, talents.roar), hud.controlGroup)
+
+    if spec == 2 then
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, true, true, false, false, false)
+    else
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, true, false, false, false, false)
+    end
+    hud:AddUtilityDispell(hud:AddTrackedCooldown(374251, talents.cauterize), hud.specialGroup, nil, nil, nil, false, true, true, true, true)
 end
 
 ---------------

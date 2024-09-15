@@ -445,12 +445,10 @@ end
 ---@field private __index unknown
 ---@field private clearTimer fun(this:ERAAura)
 ---@field stacks integer
----@field private foundDuration number
----@field private foundStacks integer
----@field private foundCount integer
----@field private requiredCount integer
----@field private last_checked number
----@field private not_checked boolean
+---@field protected foundDuration number
+---@field protected foundStacks integer
+---@field auraFound fun(this:ERAAura, t:number, data:AuraData)
+---@field updateData fun(this:ERAAura, t:number)
 ERAAura = {}
 ERAAura.__index = ERAAura
 setmetatable(ERAAura, { __index = ERATimerWithID })
@@ -467,10 +465,6 @@ function ERAAura:create(hud, spellID, talent, ...)
     a:constructID(hud, spellID, talent, ...)
     a.foundDuration = -1
     a.foundStacks = 0
-    a.not_checked = false
-    a.last_checked = 0
-    a.foundCount = 0
-    a.requiredCount = 0
     return a
 end
 
@@ -486,47 +480,162 @@ function ERAAura:auraFound(t, data)
         if remDur > self.foundDuration then
             self.foundDuration = remDur
             self.totDuration = data.duration
+            self.foundStacks = math.max(self.foundStacks, data.applications, 1)
         end
     else
         self.foundDuration = 1004
         self.totDuration = 1004
+        self.foundStacks = math.max(self.foundStacks, data.applications, 1)
     end
-    self.foundCount = self.foundCount + 1
-    self.foundStacks = math.max(self.foundStacks, data.applications, 1)
-end
-
-function ERAAura:notChecked()
-    self.not_checked = true
-end
-
----@param cpt integer
-function ERAAura:requireCount(cpt)
-    self.requiredCount = cpt
 end
 
 ---@param t number
 function ERAAura:updateData(t)
-    if self.requiredCount <= self.foundCount and self.foundDuration > 0 then
+    if self.foundDuration > 0 then
         self.remDuration = self.foundDuration
         self.stacks = self.foundStacks
         self.foundDuration = -1
-        self.foundStacks = 0
-        self.last_checked = t
     else
-        if self.not_checked then
-            self.not_checked = false
-            if self.remDuration > 0 then
-                self.remDuration = self.remDuration - (t - self.last_checked)
-                if self.remDuration <= 0 then
-                    self.remDuration = 0.1
-                end
-            end
-        else
-            self.remDuration = 0
-            self.stacks = 0
-            self.foundStacks = 0
-            self.last_checked = t
+        self.remDuration = 0
+        self.stacks = 0
+    end
+    self.foundStacks = 0
+end
+
+---@class ERAAuraOnGroupMembers : ERAAura
+---@field private __index unknown
+---@field protected constructOnGroupMembers fun(this:ERAAuraOnGroupMembers, ...:integer)
+---@field private foundCount integer
+---@field private last_checked number
+---@field private not_checked boolean
+---@field private found_by_self boolean
+---@field private found_on_current_member boolean
+---@field alternativeIDAuraIDs integer[]
+---@field protected computeParty fun(this:ERAAuraOnGroupMembers, groupMembersCount: integer, foundCount:integer, foundBySelf:boolean)
+ERAAuraOnGroupMembers = {}
+ERAAuraOnGroupMembers.__index = ERAAuraOnGroupMembers
+setmetatable(ERAAuraOnGroupMembers, { __index = ERAAura })
+
+---@param ... integer
+function ERAAuraOnGroupMembers:constructOnGroupMembers(...)
+    self.not_checked = false
+    self.last_checked = 0
+    self.foundCount = 0
+    self.found_by_self = false
+    self.alternativeIDAuraIDs = { ... }
+end
+
+function ERAAuraOnGroupMembers:notChecked()
+    self.not_checked = true
+end
+
+---@param t number
+---@param data AuraData
+function ERAAuraOnGroupMembers:auraFound(t, data)
+    if data.expirationTime and data.expirationTime > 0 then
+        local remDur = data.expirationTime - t
+        if remDur > self.foundDuration then
+            self.foundDuration = remDur
+            self.totDuration = data.duration
+            self.foundStacks = math.max(self.foundStacks, data.applications, 1)
         end
+    else
+        self.foundDuration = 1004
+        self.totDuration = 1004
+        self.foundStacks = math.max(self.foundStacks, data.applications, 1)
+    end
+    self.found_on_current_member = true
+    if data.isFromPlayerOrPlayerPet then
+        self.found_by_self = true
+    end
+end
+
+function ERAAuraOnGroupMembers:memberParsed()
+    if self.found_on_current_member then
+        self.found_on_current_member = false
+        self.foundCount = self.foundCount + 1
+    end
+end
+
+---@param groupMembersCount integer
+---@param t number
+function ERAAuraOnGroupMembers:partyParsed(groupMembersCount, t)
+    self.last_checked = t
+    self:computeParty(groupMembersCount, self.foundCount, self.found_by_self)
+    self.found_by_self = false
+    self.foundCount = 0
+    self.foundDuration = 0
+    self.foundStacks = 0
+end
+
+---@param t number
+function ERAAuraOnGroupMembers:updateData(t)
+    if self.not_checked then
+        self.not_checked = false
+        if self.remDuration > 0 then
+            self.remDuration = self.remDuration - (t - self.last_checked)
+            if self.remDuration <= 0 then
+                self.remDuration = 0.1
+            end
+        end
+    end
+end
+
+---@class ERAAuraOnAllGroupMembers : ERAAuraOnGroupMembers
+---@field private __index unknown
+ERAAuraOnAllGroupMembers = {}
+ERAAuraOnAllGroupMembers.__index = ERAAuraOnAllGroupMembers
+setmetatable(ERAAuraOnAllGroupMembers, { __index = ERAAuraOnGroupMembers })
+
+---@param hud ERAHUD
+---@param talent ERALIBTalent|nil
+---@param mainSpellID integer
+---@param ... integer
+---@return ERAAuraOnAllGroupMembers
+function ERAAuraOnAllGroupMembers:create(hud, talent, mainSpellID, ...)
+    local a = ERAAura:create(hud, mainSpellID, talent)
+    setmetatable(a, ERAAuraOnAllGroupMembers)
+    ---@cast a ERAAuraOnAllGroupMembers
+    a:constructOnGroupMembers(...)
+    return a
+end
+
+---@param groupMembersCount integer
+---@param foundCount integer
+---@param foundBySelf boolean
+function ERAAuraOnAllGroupMembers:computeParty(groupMembersCount, foundCount, foundBySelf)
+    if foundCount <= groupMembersCount then
+        self.remDuration = 0
+        self.stacks = 0
+    end
+end
+
+---@class ERAAuraOnFriendlyHealer : ERAAuraOnGroupMembers
+---@field private __index unknown
+ERAAuraOnFriendlyHealer = {}
+ERAAuraOnFriendlyHealer.__index = ERAAuraOnFriendlyHealer
+setmetatable(ERAAuraOnFriendlyHealer, { __index = ERAAuraOnGroupMembers })
+
+---@param hud ERAHUD
+---@param talent ERALIBTalent|nil
+---@param mainSpellID integer
+---@param ... integer
+---@return ERAAuraOnFriendlyHealer
+function ERAAuraOnFriendlyHealer:create(hud, talent, mainSpellID, ...)
+    local a = ERAAura:create(hud, mainSpellID, talent)
+    setmetatable(a, ERAAuraOnFriendlyHealer)
+    ---@cast a ERAAuraOnFriendlyHealer
+    a:constructOnGroupMembers(...)
+    return a
+end
+
+---@param groupMembersCount integer
+---@param foundCount integer
+---@param foundBySelf boolean
+function ERAAuraOnFriendlyHealer:computeParty(groupMembersCount, foundCount, foundBySelf)
+    if foundCount < self.hud.otherHealersInGroup and not foundBySelf then
+        self.remDuration = 0
+        self.stacks = 0
     end
 end
 

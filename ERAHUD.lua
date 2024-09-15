@@ -93,13 +93,13 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private activeDebuffs table<number, ERAAura>
 ---@field private debuffsOnSelf ERAAura[]
 ---@field private activeDebuffsOnSelf table<number, ERAAura>
----@field private buffsOnParty ERAAura[]
----@field private activeBuffsOnParty table<number, ERAAura>
+---@field private buffsOnParty ERAAuraOnGroupMembers[]
+---@field private activeBuffsOnParty table<number, ERAAuraOnGroupMembers>
 ---@field private hasActiveBuffsOnParty boolean
 ---@field private lastParseParty number
----@field partyHasAnotherTank boolean
----@field partyHasAnotherHealer boolean
----@field partyHasAnotherDPS boolean
+---@field otherTanksInGroup integer
+---@field otherHealersInGroup integer
+---@field otherDPSsInGroup integer
 ---@field isInGroup boolean
 ---@field private bagItems ERACooldownBagItem[]
 ---@field private updateData fun(this:ERAHUD, t:number, combat:boolean)
@@ -266,9 +266,9 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.buffsOnParty = {}
     hud.activeBuffsOnParty = {}
     hud.hasActiveBuffsOnParty = false
-    hud.partyHasAnotherTank = false
-    hud.partyHasAnotherHealer = false
-    hud.partyHasAnotherDPS = false
+    hud.otherTanksInGroup = 0
+    hud.otherHealersInGroup = 0
+    hud.otherDPSsInGroup = 0
     hud.lastParseParty = 0
     hud.isInGroup = false
     hud.bagItems = {}
@@ -672,6 +672,9 @@ function ERAHUD:CheckTalents()
         if a.talentActive then
             self.hasActiveBuffsOnParty = true
             self.activeBuffsOnParty[a.spellID] = a
+            for _, alternative in ipairs(a.alternativeIDAuraIDs) do
+                self.activeBuffsOnParty[alternative] = a
+            end
         end
     end
 
@@ -1411,6 +1414,9 @@ function ERAHUD:updateData(t, combat)
                 break
             end
         end
+        for _, v in pairs(self.activeBuffsOnParty) do
+            v:memberParsed()
+        end
     else
         while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
@@ -1464,9 +1470,9 @@ function ERAHUD:updateData(t, combat)
             self.isInGroup = false
             self.lastParseParty = t
             local friendsCount = GetNumGroupMembers()
-            self.partyHasAnotherTank = false
-            self.partyHasAnotherHealer = false
-            self.partyHasAnotherDPS = false
+            self.otherTanksInGroup = 0
+            self.otherHealersInGroup = 0
+            self.otherDPSsInGroup = 0
             local cpt = 1
             if friendsCount and friendsCount > 0 then
                 local prefix
@@ -1482,11 +1488,11 @@ function ERAHUD:updateData(t, combat)
                         self.isInGroup = true
                         local role = UnitGroupRolesAssigned(unit)
                         if (role == "TANK") then
-                            self.partyHasAnotherTank = true
+                            self.otherTanksInGroup = self.otherTanksInGroup + 1
                         elseif (role == "HEALER") then
-                            self.partyHasAnotherHealer = true
+                            self.otherHealersInGroup = self.otherHealersInGroup + 1
                         else
-                            self.partyHasAnotherDPS = true
+                            self.otherDPSsInGroup = self.otherDPSsInGroup + 1
                         end
                         i = 1
                         while true do
@@ -1501,11 +1507,14 @@ function ERAHUD:updateData(t, combat)
                                 break
                             end
                         end
+                        for _, v in pairs(self.activeBuffsOnParty) do
+                            v:memberParsed()
+                        end
                     end
                 end
             end
             for _, v in pairs(self.activeBuffsOnParty) do
-                v:requireCount(cpt)
+                v:partyParsed(cpt, t)
             end
         end
     end
@@ -2380,12 +2389,22 @@ function ERAHUD:AddSatedDebuff()
     )
 end
 
----@param spellID integer
+---@param mainSpellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
----@return ERAAura
-function ERAHUD:AddBuffOnAllPartyMembers(spellID, talent, ...)
-    local a = ERAAura:create(self, spellID, talent, ...)
+---@param ... integer alternative spell IDs
+---@return ERAAuraOnAllGroupMembers
+function ERAHUD:AddBuffOnAllPartyMembers(mainSpellID, talent, ...)
+    local a = ERAAuraOnAllGroupMembers:create(self, talent, mainSpellID, ...)
+    table.insert(self.buffsOnParty, a)
+    return a
+end
+
+---@param mainSpellID integer
+---@param talent ERALIBTalent|nil
+---@param ... integer alternative spell IDs
+---@return ERAAuraOnFriendlyHealer
+function ERAHUD:AddBuffOnFriendlyHealer(mainSpellID, talent, ...)
+    local a = ERAAuraOnFriendlyHealer:create(self, talent, mainSpellID, ...)
     table.insert(self.buffsOnParty, a)
     return a
 end
@@ -2623,11 +2642,22 @@ function ERAHUD:AddUtilityAuraOutOfCombat(aura, iconID, talent)
 end
 
 ---@param timer ERATimer
+---@param fadeAfterSeconds number
 ---@param iconID integer
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDEmptyTimer
-function ERAHUD:AddEmptyTimer(timer, iconID, talent)
-    return ERAHUDEmptyTimer:create(timer, iconID, talent)
+function ERAHUD:AddEmptyTimer(timer, fadeAfterSeconds, iconID, talent)
+    return ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
+end
+
+---@param timer ERATimer
+---@param group ERAHUDUtilityGroup
+---@param iconID integer
+---@param displayOrder number|nil
+---@param talent ERALIBTalent|nil
+---@return ERAHUDUtilityGenericTimerInGroup
+function ERAHUD:AddGenericTimer(timer, group, iconID, displayOrder, talent)
+    return ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, talent)
 end
 
 --#endregion

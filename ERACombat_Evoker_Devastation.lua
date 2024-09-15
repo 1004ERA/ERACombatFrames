@@ -20,5 +20,5 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
         return self.power.currentPower / self.power.maxPower <= 0.75
     end
 
-    ERAEvokerCommonSetup(hud, "TO_LEFT", talents, talent_big_empower)
+    ERAEvokerCommonSetup(hud, "TO_LEFT", talents, talent_big_empower, 1)
 end
