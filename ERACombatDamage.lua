@@ -102,12 +102,12 @@ function ERACombatDamageTaken:CLEU(t)
     end
 end
 
----@param w ERACombatDamageTakenWindow
+---@param w ERAHUDDamageTakenWindow
 function ERACombatDamageTaken:setupWindow(w)
     local current = self.link
-    ---@cast current ERACombatDamageEventLine
+    ---@cast current ERAHUDDamageEventLine
     repeat
-        ERACombatDamageEventLine_setupLine(current, w)
+        ERAHUDDamageEventLine_setupLine(current, w)
         current = current.nxt
     until (current == self.link)
 end
@@ -152,7 +152,7 @@ function ERACombatDamageTaken:hasEvents()
     return self.first ~= nil
 end
 
----@param p ERACombatDamageCurvePoint
+---@param p ERAHUDDamageCurvePoint
 function ERACombatDamageTaken:prepareCurvePoint(p)
     local current = self.first
     ---@cast current ERACombatDamageEventLine
@@ -171,98 +171,6 @@ function ERACombatDamageTaken:drawLines(max, tPast)
         current:draw(max, tPast)
         current = current.nxt
     until (current == nxtlast)
-end
-
---------------------------------------------------------------------------------------------------------------------------------
--- DAMAGE WINDOW ---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-
----@class ERACombatDamageTakenWindow
----@field timers ERACombatTimers
----@field dt ERACombatDamageTaken
----@field private frame Frame
----@field chart Frame
----@field height number
----@field scaleY number
----@field width number
----@field pointsCount number
----@field private points ERACombatDamageCurvePoint[]
-
----@class ERACombatDamageTakenWindow
-ERACombatDamageTakenWindow = {}
-ERACombatDamageTakenWindow.__index = ERACombatDamageTakenWindow
-setmetatable(ERACombatDamageTakenWindow, { __index = ERACombatModuleNestedInTimers })
-
----@param timers ERACombatTimers
----@param dt ERACombatDamageTaken
----@param height number
----@param initWidth number
----@param spec number
-function ERACombatDamageTakenWindow:Create(timers, dt, height, initWidth, spec)
-    local w = {}
-    w.frame = CreateFrame("Frame", nil, timers.frame, "ERACombatDamageWindowFrame")
-    w.brText = w.frame.BRText
-    w.chart = w.frame.Chart
-    setmetatable(w, ERACombatDamageTakenWindow)
-    w:constructNested(timers, 0, 0, "BOTTOMRIGHT", false, spec)
-    ---@cast w ERACombatDamageTakenWindow
-    w.dt = dt
-    w.frame:SetSize(initWidth, height)
-    w.width = initWidth
-    w.height = height
-    w.scaleY = 0.5
-
-    -- points
-    w.points = {}
-    w.pointsCount = 64
-    for i = 1, w.pointsCount do
-        table.insert(w.points, ERACombatDamageCurvePoint:create(w))
-    end
-
-    dt:setupWindow(w)
-
-    ERALIB_SetFont(w.brText, 50)
-end
-
-function ERACombatDamageTakenWindow:updateAsNested_returnHeightForTimerOverlay(t)
-    self.dt:updateIfNecessary(t)
-
-    local w = ERACombat_TimerWidth * (self.dt.windowDuration / self.timers.timerStandardDuration)
-    if (self.width ~= w) then
-        self.width = w
-        self.frame:SetSize(w, self.height)
-    end
-
-    if (not self.dt:hasEvents()) then
-        for i, p in ipairs(self.points) do
-            p.dmg = 0
-            p:draw(1, 1, i)
-        end
-        return 0
-    end
-
-    local tPast = t - self.dt.windowDuration
-    local delta = self.dt.windowDuration / self.pointsCount
-
-    for i, p in ipairs(self.points) do
-        p:prepareUpdate(tPast + i * delta)
-    end
-
-    local max = UnitHealthMax("player") * self.scaleY
-
-    for _, p in ipairs(self.points) do
-        self.dt:prepareCurvePoint(p)
-    end
-
-    local prv = 0
-    for i, p in ipairs(self.points) do
-        p:draw(max, prv, i)
-        prv = p.y
-    end
-
-    self.dt:drawLines(max, tPast)
-
-    return 0
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -298,7 +206,7 @@ end
 
 ---@class ERACombatDamageEventLine : ERACombatDamageEvent
 ---@field line Line
----@field w ERACombatDamageTakenWindow
+---@field w ERAHUDDamageTakenWindow
 ---@field visible boolean
 
 ---@class ERACombatDamageEventLine
@@ -307,7 +215,7 @@ ERACombatDamageEventLine.__index = ERACombatDamageEventLine
 setmetatable(ERACombatDamageEventLine, { __index = ERACombatDamageEvent })
 
 ---@param x ERACombatDamageEvent
----@param w ERACombatDamageTakenWindow
+---@param w ERAHUDDamageTakenWindow
 function ERACombatDamageEventLine_setupLine(x, w)
     ---@cast x ERACombatDamageEventLine
     x.w = w
@@ -340,59 +248,4 @@ function ERACombatDamageEventLine:draw(max, tPast)
         self.visible = true
         self.line:Show()
     end
-end
-
---------------------------------------------------------------------------------------------------------------------------------
--- CURVE POINT -----------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-
----@class ERACombatDamageCurvePoint
----@field dmg number
----@field private t number
----@field  y number
----@field private w ERACombatDamageTakenWindow
----@field private line Line
-
----@class ERACombatDamageCurvePoint
-ERACombatDamageCurvePoint = {}
-ERACombatDamageCurvePoint.__index = ERACombatDamageCurvePoint
-
----@param w ERACombatDamageTakenWindow
----@return ERACombatDamageCurvePoint
-function ERACombatDamageCurvePoint:create(w)
-    local p = {}
-    setmetatable(p, ERACombatDamageCurvePoint)
-    p.dmg = 0
-    p.w = w
-    p.y = 0
-    p.line = w.chart:CreateLine(nil, "OVERLAY", "ERACombatDamageWindowCurveLine")
-    return p
-end
-
----@param tPoint number
-function ERACombatDamageCurvePoint:prepareUpdate(tPoint)
-    self.t = tPoint
-    self.dmg = 0
-end
-
----@param de ERACombatDamageEvent
-function ERACombatDamageCurvePoint:add(de)
-    self.dmg = self.dmg + de.dmg / (1 + math.pow(4 * math.abs(de.t - self.t), 4))
-end
-
----@param max number
----@param prvY number
----@param i number
-function ERACombatDamageCurvePoint:draw(max, prvY, i)
-    if (self.dmg > 0) then
-        if (self.dmg >= max) then
-            self.y = self.w.height - 1
-        else
-            self.y = self.w.height * self.dmg / max
-        end
-    else
-        self.y = 1
-    end
-    self.line:SetStartPoint("BOTTOMLEFT", self.w.chart, self.w.width * (1 - ((i - 1) / self.w.pointsCount)), prvY)
-    self.line:SetEndPoint("BOTTOMLEFT", self.w.chart, self.w.width * (1 - (i / self.w.pointsCount)), self.y)
 end

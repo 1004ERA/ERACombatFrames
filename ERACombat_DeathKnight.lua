@@ -1,29 +1,13 @@
---[[
+---@class ERADKSoulReaperCooldown : ERACooldownIgnoringRunes
+---@field targetIsLowHealth boolean
 
-------------
---- TODO ---
-------------
-
-* COMMON *
-- (test) cleaving strikes (cleave dnd)
-- (test) lichborne buff
-
-* BLOOD *
-- (test) drw duration
-- (test) voracious (death strike +15% heal)
-- (test) sanguine ground (+5% heal)
-
-* FROST *
-- (test) cold heart (damaging ice chains)
-- (test) enduring strength (extended pof)
-- (test) bonegrinder buff
-
-* UNHOLY *
-- (test) transfo duration only if "eternal agony" is chosen
-- (test) festering scythe proc
-- (test) ebon fever (refresh plague time)
-
-]]
+---@class ERADKHUD : ERAHUD
+---@field runes ERADKRunesModule
+---@field enemies ERACombatEnemiesCount
+---@field damageTaken ERACombatDamageTaken
+---@field soulReaperCooldown ERADKSoulReaperCooldown
+---@field blooddrawBuff ERAAura
+---@field succor ERAAura
 
 ---@class (exact) DKCommonTalents
 ---@field kick ERALIBTalent
@@ -32,6 +16,7 @@
 ---@field pact ERALIBTalent
 ---@field fortitude ERALIBTalent
 ---@field raisedead ERALIBTalent
+---@field unholyRaisedead ERALIBTalent
 ---@field blinding ERALIBTalent
 ---@field vader ERALIBTalent
 ---@field necrolimb ERALIBTalent
@@ -48,21 +33,9 @@
 ---@field reapermark1rune ERALIBTalent
 ---@field reapermark2rune ERALIBTalent
 
----comment
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_DeathKnightSetup(cFrame)
     ERADK_RuneSize = 24
-    ERADK_BarsHeight = 36
-    ERADK_BarsWidth = 6 * ERADK_RuneSize
-    ERADK_BarsX = -151
-    ERADK_BarsTopY = -36
-    ERADK_RunesTopY = ERADK_BarsTopY - ERADK_BarsHeight - 4
-    ERADK_TimersX = -60
-    ERADK_TimersY = -12
-    ERADK_TimersSpecialX0 = 2
-    ERADK_TimersSpecialY0 = 4
-    ERADK_UtilityBaseX = -4.4
-    ERADK_UtilityBaseY = 2.1
     ERADK_SuccorR = 0.8
     ERADK_SuccorG = 0.7
     ERADK_SuccorB = 0.5
@@ -71,6 +44,11 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
     local frostActive = 2  --ERACombatOptions_IsSpecActive(2)
     local unholyActive = 3 --ERACombatOptions_IsSpecActive(3)
 
+    cFrame.hideAlertsForSpec = { bloodActive, frostActive, unholyActive }
+
+    local rd = ERALIBTalent:Create(96201)
+    local urd = ERALIBTalent:Create(96325)
+
     ---@type DKCommonTalents
     local talents = {
         kick = ERALIBTalent:Create(96213),
@@ -78,7 +56,8 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         wraithwalk = ERALIBTalent:Create(96206),
         pact = ERALIBTalent:Create(96204),
         fortitude = ERALIBTalent:Create(96210),
-        raisedead = ERALIBTalent:Create(96201),
+        raisedead = ERALIBTalent:CreateAnd(rd, ERALIBTalent:CreateNot(urd)),
+        unholyRaisedead = urd,
         blinding = ERALIBTalent:Create(96172),
         vader = ERALIBTalent:Create(96193),
         necrolimb = ERALIBTalent:Create(96177),
@@ -96,181 +75,164 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         reapermark1rune = ERALIBTalent:Create(117629),
     }
 
-    ERAOutOfCombatStatusBars:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY, ERADK_BarsWidth, 2 * ERADK_BarsHeight / 3, ERADK_BarsHeight / 3, 6, false, 0.2, 0.7, 1.0, 0, bloodActive, frostActive)
-    local runes = ERARunes:Create(cFrame, bloodActive, frostActive, unholyActive)
+    local enemies = ERACombatEnemies:Create(cFrame, bloodActive, frostActive, unholyActive)
 
     if (bloodActive) then
-        ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
+        ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     end
     if (frostActive) then
-        ERACombatFrames_DeathKnightFrostSetup(cFrame, runes, talents)
+        ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     end
     if (unholyActive) then
-        ERACombatFrames_DeathKnightUnholySetup(cFrame, runes, talents)
+        ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     end
 end
 
----@class ERACombat_DeathKnight
----@field timers ERACombatTimers
----@field utility ERACombatUtilityFrame
----@field damageTaken ERACombatDamageTaken
----@field enemies ERACombatEnemiesCount
----@field soulreaper ERACombat_DK_SoulReaperIcon
----@field combatHealth ERACombatHealth
----@field combatPower ERACombatPower
----@field blooddraw ERACombatTimersAura
----@field succor ERACombatTimersAura
-
----@class ERACombat_DK_SoulReaperIcon : ERACombatTimersCooldownIcon
----@field ComputeLowHealthPrioOverride fun(this:ERACombat_DK_SoulReaperIcon): number
-
----comment
 ---@param cFrame ERACombatFrame
----@param runes ERACombatRunes
----@param soulReaperBasePrio number
+---@param enemies ERACombatEnemiesCount
 ---@param talents DKCommonTalents
----@param healthHeight number
----@param petHeight number
----@param powerHeight number
----@param spec number
----@return ERACombat_DeathKnight
-function ERACombat_CommonDK(cFrame, runes, soulReaperBasePrio, talents, healthHeight, petHeight, powerHeight, spec)
-    local combatHealth = ERACombatHealth:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY, ERADK_BarsWidth, healthHeight, spec)
-    if (petHeight > 0) then
-        local pet = ERACombatHealth:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY - healthHeight, ERADK_BarsWidth, petHeight, spec)
-        pet:SetUnitID("pet")
+---@param spec integer
+---@return ERADKHUD
+function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
+    local hud = ERAHUD:Create(cFrame, 1.5, true, false, 6, 0.2, 0.7, 1.0, spec == 3, spec)
+    ---@cast hud ERADKHUD
+
+    hud.enemies = enemies
+    hud.runes = ERADKRunesModule:create(hud)
+    hud.damageTaken = ERACombatDamageTaken:Create(hud.cFrame, 5, spec)
+
+    --- rotation ---
+
+    hud:AddKick(hud:AddTrackedCooldown(47528, talents.kick))
+
+    local soulReaperCooldown = ERACooldownIgnoringRunes:Create(hud, 343294, 1, talents.soulreaper)
+    ---@cast soulReaperCooldown ERADKSoulReaperCooldown
+    hud.soulReaperCooldown = soulReaperCooldown
+    function hud:PreUpdateDataOverride(t)
+        hud.soulReaperCooldown.targetIsLowHealth = UnitExists("target") and UnitHealth("target") / UnitHealthMax("target") <= 0.35
     end
-    local combatPower = ERACombatPower:Create(cFrame, ERADK_BarsX, ERADK_BarsTopY - healthHeight - petHeight, ERADK_BarsWidth, powerHeight, 6, true, 0.2, 0.7, 1.0, spec)
 
-    local damageTaken = ERACombatDamageTaken:Create(cFrame, 5, spec)
+    --- bars ---
 
+    hud.blooddrawBuff = hud:AddTrackedBuff(454871, talents.blooddraw)
+    hud:AddAuraBar(hud.blooddrawBuff, nil, 0.8, 0.4, 0.5)
 
-    local timers = ERACombatTimersGroup:Create(cFrame, ERADK_TimersX, ERADK_TimersY, 1.5, false, false, spec)
-    function timers:PreUpdateCombatOverride(t)
-        runes:updateCombatBeforeTimers(t)
-    end
-    timers.offsetIconsX = -80
-    timers.offsetIconsY = -55
+    hud.succor = hud:AddTrackedBuff(101568)
+    hud:AddAuraBar(hud.succor, nil, ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
 
-    timers:AddKick(47528, ERADK_TimersSpecialX0, ERADK_TimersSpecialY0, talents.kick)
+    hud:AddAuraBar(hud:AddTrackedBuff(48792, talents.fortitude), nil, 0.2, 0.0, 0.8)
+    hud:AddAuraBar(hud:AddTrackedBuff(49039), nil, 0.4, 0.4, 0.4)     -- lichborne
+    hud:AddAuraBar(hud:AddTrackedBuff(188290), 136144, 0.8, 0.5, 0.0) -- cleave dnd
+    hud:AddAuraBar(hud:AddTrackedBuff(444347, talents.deathcharger), nil, 0.8, 1.0, 0.9)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(434765, talents.reapermark), nil, 0.6, 0.2, 0.4)
 
-    local soulreaper = ERACombatCooldownIgnoringRunes:Create(timers, runes, 1, 343294, talents.soulreaper)
-    local soulreaperIcon = timers:AddCooldownIcon(soulreaper, nil, 0.9, 0.5, true, true)
-    ---@cast soulreaperIcon ERACombat_DK_SoulReaperIcon
-    function soulreaperIcon:TimerVisibilityOverride(t)
-        return UnitExists("target") and UnitHealth("target") / UnitHealthMax("target") <= 0.35
-    end
-    function soulreaperIcon:ComputeLowHealthPrioOverride()
-        return soulReaperBasePrio
-    end
-    function soulreaperIcon:ComputeAvailablePriorityOverride()
-        if UnitExists("target") then
-            if UnitHealth("target") / UnitHealthMax("target") <= 0.35 then
-                return self:ComputeLowHealthPrioOverride()
-            else
-                return 0
-            end
+    --- utility ---
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(48743, talents.pact), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(327574, talents.sacrifice), hud.healGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(383269, talents.necrolimb), hud.powerUpGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(48707), hud.defenseGroup) -- ams
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(51052, talents.amz), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(48792, talents.fortitude), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49039), hud.defenseGroup) -- lichborne
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(56222), hud.specialGroup) -- taunt
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(46585, talents.raisedead), hud.specialGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(46584, talents.unholyRaisedead), hud.specialGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(61999), hud.specialGroup) -- raise ally
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49576), hud.controlGroup) -- grip
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(45524, talents.rootchains), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(207167, talents.blinding), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(221562, talents.vader), hud.controlGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(48265, talents.not_deathcharger), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(444347, talents.deathcharger), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(212552, talents.wraithwalk), hud.movementGroup)
+
+    return hud
+end
+
+---@param hud ERADKHUD
+---@param prio integer
+function ERACombatFrames_DKSoulReaper(hud, prio)
+    local soulReaperIcon = hud:AddRotationCooldown(hud.soulReaperCooldown)
+    function soulReaperIcon.onTimer:ComputeDurationOverride(t)
+        if hud.soulReaperCooldown.targetIsLowHealth then
+            return self.cd.data.remDuration
         else
             return 0
         end
     end
-
-    local blooddraw = timers:AddTrackedBuff(454871, talents.blooddraw)
-    timers:AddAuraBar(blooddraw, nil, 0.8, 0.4, 0.5)
-
-    local succor = timers:AddTrackedBuff(101568)
-    timers:AddAuraBar(succor, nil, ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
-
-    timers:AddAuraBar(timers:AddTrackedBuff(48792, talents.fortitude), nil, 0.2, 0.0, 0.8)
-
-    timers:AddAuraBar(timers:AddTrackedBuff(49039), nil, 0.4, 0.4, 0.4)     -- lichborne
-
-    timers:AddAuraBar(timers:AddTrackedBuff(188290), 136144, 0.8, 0.5, 0.0) -- cleave dnd
-
-    timers:AddAuraBar(timers:AddTrackedBuff(444347, talents.deathcharger), nil, 0.8, 1.0, 0.9)
-
-    timers:AddAuraBar(timers:AddTrackedDebuff(434765, talents.reapermark), nil, 0.6, 0.2, 0.4)
-
-    local utility = ERACombatUtilityFrame:Create(cFrame, 0, -181, spec)
-
-    utility:AddTrinket1Cooldown(-1, -2)
-    utility:AddTrinket2Cooldown(-1, -1)
-    utility:AddCooldown(0, 0, 48707, nil, true) -- ams
-    utility:AddCooldown(0, -1, 51052, nil, true, talents.amz)
-    utility:AddCooldown(1, 0, 48792, nil, true, talents.fortitude)
-    utility:AddCooldown(1, -1, 48743, nil, true, talents.pact)
-    utility:AddCooldown(2, 0, 49039, nil, true)  -- lichborne
-
-    utility:AddCooldown(4, -1, 61999, nil, true) -- raise dead
-    utility:AddRacial(4, 0)
-    utility:AddWarlockHealthStone(3, -1)
-
-    utility:AddCooldown(1, 1, 45524, nil, true, talents.rootchains)
-    utility:AddCooldown(3, 0, 207167, nil, true, talents.blinding)
-
-    utility:AddCooldown(3, 1, 49576, nil, true)                           -- grip
-    utility:AddCooldown(4, 1, 221562, nil, true, talents.vader)
-    utility:AddCooldown(3, 2, 48265, nil, true, talents.not_deathcharger) -- advance
-    utility:AddCooldown(3, 2, 444347, nil, true, talents.deathcharger)
-    utility:AddCooldown(4, 2, 212552, nil, true, talents.wraithwalk)
-    utility:AddWarlockPortal(5, 2)
-    utility:AddCooldown(2.5, 2.9, 56222, nil, true).alphaWhenOffCooldown = 0.1 -- taunt
-    utility:AddCooldown(3.5, 2.9, 383269, nil, true, talents.necrolimb)
-
-    ---@type ERACombat_DeathKnight
-    return {
-        timers = timers,
-        utility = utility,
-        soulreaper = soulreaperIcon,
-        combatHealth = combatHealth,
-        combatPower = combatPower,
-        damageTaken = damageTaken,
-        enemies = ERACombatEnemies:Create(cFrame, spec),
-        blooddraw = blooddraw,
-        succor = succor
-    }
+    function soulReaperIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        if hud.soulReaperCooldown.targetIsLowHealth then
+            return prio
+        else
+            return 0
+        end
+    end
 end
 
----@param combatHealth ERACombatHealth
----@param combatPower ERACombatPower
----@param damageTaken ERACombatDamageTaken
----@param succor ERACombatTimersAura
----@param blooddraw ERACombatTimersAura
+---@param hud ERADKHUD
 ---@param talents DKCommonTalents
-function ERACombat_DPSDK(combatHealth, combatPower, damageTaken, succor, blooddraw, talents)
-    function damageTaken:DamageUpdatedOverride(t)
+---@param prio number
+function ERACombatFrames_DK_ReaperMark(hud, talents, prio)
+    local reapermark1rune = ERACooldownIgnoringRunes:Create(hud, 439843, 1, talents.reapermark1rune)
+    local reapermark2rune = ERACooldownIgnoringRunes:Create(hud, 439843, 2, talents.reapermark2rune)
+    local reapermarkIcons = {}
+    table.insert(reapermarkIcons, hud:AddRotationCooldown(reapermark1rune))
+    table.insert(reapermarkIcons, hud:AddRotationCooldown(reapermark2rune))
+    for _, i in ipairs(reapermarkIcons) do
+        function i.onTimer:ComputeAvailablePriorityOverride(t)
+            return prio
+        end
+    end
+end
+
+---@param hud ERADKHUD
+---@param debuff ERAAura
+function ERACombatFrames_DK_MissingDisease(hud, debuff)
+    hud:AddMissingAuraOverlay(debuff, true, "PowerSwirlAnimation-Whirls-Soulbinds", true, "MIDDLE", false, false, false, false)
+end
+
+---@param hud ERADKHUD
+---@param talents DKCommonTalents
+function ERACombatFrames_DK_DPS(hud, talents)
+    function hud:PreUpdateDisplayOverride(t, combat)
         local strikeCost
         local additionalH
-        if succor.remDuration > succor.group.occupied + 0.1 then
+        if hud.succor.remDuration > hud.occupied + 0.1 then
             strikeCost = 0
-            combatHealth:SetHealingColor(ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
-            additionalH = 0.1 * combatHealth.maxHealth
+            hud.health.bar:SetPrevisionColor(ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
+            additionalH = 0.1 * hud.health.maxHealth
         else
             if talents.improved_deathstrike:PlayerHasTalent() then
                 strikeCost = 40
             else
                 strikeCost = 45
             end
-            if blooddraw.remDuration > blooddraw.group.occupied + 0.1 then
+            if hud.blooddrawBuff.remDuration > hud.occupied + 0.1 then
                 strikeCost = strikeCost - 10
             end
-            combatHealth:SetHealingColor(0.5, 0.5, 1.0)
+            hud.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
             additionalH = 0
         end
-        if combatPower.currentPower >= strikeCost then
-            local baseH = combatHealth.maxHealth * 0.07
-            local dmgH = 0.25 * self.currentDamage
+        if hud.power.currentPower >= strikeCost then
+            local baseH = hud.health.maxHealth * 0.07
+            local dmgH = 0.25 * hud.damageTaken.currentDamage
             if (dmgH > baseH or additionalH > 0) then
                 local healing = math.max(baseH, dmgH)
                 if (talents.improved_deathstrike:PlayerHasTalent()) then
                     healing = healing * 1.6
                 end
-                combatHealth:SetHealing(healing + additionalH)
+                hud.health.bar:SetForecast(healing + additionalH)
             else
-                combatHealth:SetHealing(0)
+                hud.health.bar:SetForecast(0)
             end
         else
-            combatHealth:SetHealing(0)
+            hud.health.bar:SetForecast(0)
         end
     end
 end
@@ -279,28 +241,26 @@ end
 --- RUNES ---
 -------------
 
-ERARunes = {}
-ERARunes.__index = ERARunes
-setmetatable(ERARunes, { __index = ERACombatModule })
+---@class ERADKRuneInfo
+---@field remDur number
+---@field totDur number
 
----@class ERACombatRunes
+---@class (exact) ERADKRunesModule : ERAHUDResourceModule
+---@field private __index unknown
 ---@field availableRunes number
 ---@field nextRuneDuration number
 ---@field secondNextRuneDuration number
----@field updateCombatBeforeTimers fun(this:ERACombatRunes, t:number))
+---@field private icons ERAPieIcon[]
+---@field private infos ERADKRuneInfo[]
+ERADKRunesModule = {}
+ERADKRunesModule.__index = ERADKRunesModule
+setmetatable(ERADKRunesModule, { __index = ERAHUDResourceModule })
 
----comment
----@param cFrame ERACombatFrame
----@param ... number specializations
----@return ERACombatRunes
-function ERARunes:Create(cFrame, ...)
+function ERADKRunesModule:create(hud)
     local ru = {}
-    setmetatable(ru, ERARunes)
-
-    -- frame
-    ru.frame = CreateFrame("Frame", nil, UIParent, nil)
-    ru.frame:SetSize(ERADK_RuneSize * 6, ERADK_RuneSize)
-    ru.frame:SetPoint("TOP", UIParent, "CENTER", ERADK_BarsX, ERADK_RunesTopY)
+    setmetatable(ru, ERADKRunesModule)
+    ---@cast ru ERADKRunesModule
+    ru:constructModule(hud, ERADK_RuneSize)
 
     ru.icons = {}
     ru.infos = {}
@@ -308,9 +268,9 @@ function ERARunes:Create(cFrame, ...)
         -- rune : 1121021
         -- rune violette forte : 252272
         -- rune violette faible : 1323037
-        local icon = ERAPieIcon:Create(ru.frame, "TOPRIGHT", ERADK_RuneSize, 252272)
+        local icon = ERAPieIcon:Create(ru.frame, "CENTER", ERADK_RuneSize, 252272)
         icon:SetOverlayAlpha(0.95)
-        icon:Draw(-(i - 0.5) * ERADK_RuneSize, -ERADK_RuneSize / 2, false)
+        icon:Draw((i - 3.5) * ERADK_RuneSize, 0, false)
         table.insert(ru.icons, icon)
         local info = {}
         info.remDur = 0
@@ -322,49 +282,16 @@ function ERARunes:Create(cFrame, ...)
     ru.secondNextRuneDuration = 0
     ru.availableRunes = 0
 
-    ru:construct(cFrame, 0.5, -1, false, ...)
     return ru
 end
 
-function ERARunes:SpecInactive(wasActive)
-    self.frame:Hide()
-end
-function ERARunes:ResetToIdle()
-    self.frame:Show()
-end
-function ERARunes:EnterIdle(fromCombat)
-    if (not fromCombat) then
-        self.frame:Show()
-    end
-end
-function ERARunes:ExitIdle(toCombat)
-    if (not toCombat) then
-        self.frame:Hide()
-    end
-end
-function ERARunes:EnterCombat(fromIdle)
-    self.frame:Show()
-end
-function ERARunes:ExitCombat(toIdle)
-    if (not toIdle) then
-        self.frame:Hide()
-    end
+function ERADKRunesModule:checkTalentOverride()
+    return true
 end
 
-function ERARunes:UpdateIdle(t)
-    self:updateData(t)
-    if (self.availableRunes < 6) then
-        self:updateDisplay()
-        self.frame:Show()
-    else
-        self.frame:Hide()
-    end
-end
-function ERARunes:updateCombatBeforeTimers(t)
-    self:updateData(t)
-    self:updateDisplay()
-end
-function ERARunes:updateData(t)
+---@param t number
+---@param combat boolean
+function ERADKRunesModule:preUpdateData(t, combat)
     for i, info in ipairs(self.infos) do
         local start, duration, runeReady = GetRuneCooldown(i)
         if (start and start > 0 and not runeReady) then
@@ -375,30 +302,49 @@ function ERARunes:updateData(t)
         end
     end
     table.sort(self.infos, ERARunes_sort)
-    self.nextRuneDuration = self.infos[1].remDur
-    self.secondNextRuneDuration = self.infos[2].remDur
     self.availableRunes = 0
-    for i, info in ipairs(self.infos) do
+    self.nextRuneDuration = 1004
+    self.secondNextRuneDuration = 1004
+    for _, info in ipairs(self.infos) do
         if (info.remDur <= 0) then
             self.availableRunes = self.availableRunes + 1
         else
-            break
+            if info.remDur < self.nextRuneDuration then
+                self.secondNextRuneDuration = self.nextRuneDuration
+                self.nextRuneDuration = info.remDur
+            elseif info.remDur < self.secondNextRuneDuration then
+                self.secondNextRuneDuration = info.remDur
+            end
         end
     end
 end
 function ERARunes_sort(r1, r2)
     return r1.remDur < r2.remDur
 end
-function ERARunes:updateDisplay()
-    for i, info in ipairs(self.infos) do
-        local icon = self.icons[i]
-        if (info.remDur <= 0) then
-            icon:SetIconTexture(1121021)
-            icon:SetOverlayValue(0)
-        else
-            icon:SetIconTexture(1323037)
-            icon:SetOverlayValue(info.remDur / info.totDur)
+
+---@param t number
+---@param combat boolean
+function ERADKRunesModule:updateData(t, combat)
+    -- fait dans preUpdateData
+end
+
+---@param t number
+---@param combat boolean
+function ERADKRunesModule:updateDisplay(t, combat)
+    if self.availableRunes >= 6 and not combat then
+        self:hide()
+    else
+        for i, info in ipairs(self.infos) do
+            local icon = self.icons[i]
+            if (info.remDur <= 0) then
+                icon:SetIconTexture(1121021)
+                icon:SetOverlayValue(0)
+            else
+                icon:SetIconTexture(1323037)
+                icon:SetOverlayValue(info.remDur / info.totDur)
+            end
         end
+        self:show()
     end
 end
 
@@ -406,170 +352,117 @@ end
 -- fucking blizzard API considering spells are on cooldown when runes are not available --------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-ERACombatCooldownIgnoringRunes = {}
-ERACombatCooldownIgnoringRunes.__index = ERACombatCooldownIgnoringRunes
-setmetatable(ERACombatCooldownIgnoringRunes, { __index = ERACombatTimer })
+---@class ERACooldownIgnoringRunes : ERACooldownBase
+---@field private __index unknown
+---@field private runeCost integer
+---@field private lastGoodUpdate number
+---@field private lastGoodRemdur number
+ERACooldownIgnoringRunes = {}
+ERACooldownIgnoringRunes.__index = ERACooldownIgnoringRunes
+setmetatable(ERACooldownIgnoringRunes, { __index = ERACooldownBase })
 
-
----@class ERACombatTimersCooldownIgnoringRunes : ERACombatTimersCooldown
----@field runeCost number
----@field PreUpdateOverride fun(this:ERACombatTimersCooldownIgnoringRunes, t:number)
-
----comment
----@param group ERACombatTimers
----@param runes ERACombatRunes
----@param runeCost number
----@param spellID number
+---@param hud ERADKHUD
+---@param spellID integer
+---@param runeCost integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACombatTimersAdditionalID
----@return ERACombatTimersCooldownIgnoringRunes
-function ERACombatCooldownIgnoringRunes:Create(group, runes, runeCost, spellID, talent, ...)
-    local t = {}
-    setmetatable(t, ERACombatCooldownIgnoringRunes)
-    t:constructTimer(group, talent)
-    t.mainSpellID = spellID
-    t.spellID = spellID
-    t.additionalIDs = { ... }
-    t.runes = runes
-    t.runeCost = runeCost
-    ERACombatCooldown_UpdateKind(t)
-    return t
+---@param ... ERACooldownAdditionalID
+---@return ERACooldownIgnoringRunes
+function ERACooldownIgnoringRunes:Create(hud, spellID, runeCost, talent, ...)
+    local cd = {}
+    setmetatable(cd, ERACooldownIgnoringRunes)
+    ---@cast cd ERACooldownIgnoringRunes
+    cd:constructCooldownBase(hud, spellID, talent, ...)
+    cd.lastGoodRemdur = 0
+    cd.lastGoodUpdate = 0
+    cd.runeCost = runeCost
+    return cd
 end
 
-function ERACombatCooldownIgnoringRunes:TalentCheck()
-    ERACombatCooldown_UpdateKind(self)
-    if (not self.talentActive) then
-        self.currentCharges = 0
-    end
-end
-
-function ERACombatCooldownIgnoringRunes:updateAfterReset(t)
-    ERACombatCooldown_UpdateKind(self)
-end
-
-function ERACombatCooldownIgnoringRunes:PreUpdateOverride(t)
-end
-
-function ERACombatCooldownIgnoringRunes:updateDurations(t)
-    self:PreUpdateOverride(t)
-    ERACooldownIgnoringRunes_updateDurations(self, self.runes, self.runeCost, t, self.group.totGCD)
-end
-
----comment
----@param cd any
----@param runes ERACombatRunes
----@param runeCost number
 ---@param t number
----@param totGCD number
-function ERACooldownIgnoringRunes_updateDurations(cd, runes, runeCost, t, totGCD)
-    if (cd.hasCharges) then
-        local chargesInfo = C_Spell.GetSpellCharges(cd.spellID)
-        if (chargesInfo) then
-            cd.currentCharges = chargesInfo.currentCharges
-            cd.maxCharges = chargesInfo.maxCharges
-            cd.totDuration = chargesInfo.cooldownDuration
-            if (cd.currentCharges >= cd.maxCharges) then
-                cd.remDuration = 0
-                cd.isAvailable = true
-            else
-                cd.remDuration = chargesInfo.cooldownDuration - (t - chargesInfo.cooldownStartTime)
-                cd.isAvailable = cd.currentCharges > 0
-            end
-            cd.lastGoodUpdate = t
-            cd.lastGoodDuration = cd.remDuration
-            return
-        end
-    end
-    local cdInfo = C_Spell.GetSpellCooldown(cd.spellID)
-    if (cdInfo and cdInfo.startTime and cdInfo.startTime > 0) then
-        local remDur = cdInfo.duration - (t - cdInfo.startTime)
-        local hasRunes = runes.availableRunes >= runeCost
-        local durDiff
-        if (not hasRunes) then
-            if runeCost == 1 then
-                durDiff = math.abs(remDur - runes.nextRuneDuration)
-            else
-                durDiff = math.abs(remDur - runes.secondNextRuneDuration)
-            end
-        end
-        if (hasRunes or (not (cd.lastGoodUpdate)) or durDiff > 0.1) then
-            if (cdInfo.duration <= totGCD + 0.2 and cd.lastGoodUpdate) then
-                cd.isAvailable = true
-                cd.currentCharges = 1
-                -- cd.totDuration reste inchangé
-                cd.remDuration = cd.lastGoodDuration - (t - cd.lastGoodUpdate)
-                if (cd.remDuration < 0) then
-                    cd.remDuration = 0
-                elseif (cd.remDuration > remDur) then
-                    cd.remDuration = remDur
-                end
-                return
-            end
-            cd.currentCharges = 0
-            cd.isAvailable = false
-            cd.totDuration = cdInfo.duration
-            cd.remDuration = remDur
-            cd.lastGoodDuration = remDur
-            cd.lastGoodUpdate = t
+function ERACooldownIgnoringRunes:updateCooldownData(t)
+    local hud = self.hud
+    ---@cast hud ERADKHUD
+    local chargesInfo = C_Spell.GetSpellCharges(self.spellID)
+    if chargesInfo and chargesInfo.maxCharges > 1 then
+        self.hasCharges = true
+        self.maxCharges = chargesInfo.maxCharges
+        self.currentCharges = chargesInfo.currentCharges
+        self.totDuration = chargesInfo.cooldownDuration
+        if chargesInfo.currentCharges >= chargesInfo.maxCharges then
+            self.remDuration = 0
+            self.isAvailable = true
         else
-            -- cd.totDuration reste inchangé
-            cd.remDuration = cd.lastGoodDuration - (t - cd.lastGoodUpdate)
-            if (cd.remDuration < 0) then
-                cd.remDuration = 0
-                cd.currentCharges = 1
-                cd.isAvailable = true
-                return
-            end
-            if (cd.remDuration > remDur) then
-                cd.remDuration = remDur
-            end
-            cd.currentCharges = 0
-            cd.isAvailable = false
+            self.remDuration = chargesInfo.cooldownDuration - (t - chargesInfo.cooldownStartTime)
+            self.isAvailable = chargesInfo.currentCharges > 0
         end
     else
-        cd.isAvailable = true
-        if (cdInfo) then
-            cd.totDuration = cdInfo.duration or 1
+        self.hasCharges = false
+        self.maxCharges = 1
+        local cdInfo = C_Spell.GetSpellCooldown(self.spellID)
+        if cdInfo and cdInfo.startTime and cdInfo.startTime > 0 and cdInfo.duration and cdInfo.duration > 0 then
+            local remDur = cdInfo.duration - (t - cdInfo.startTime)
+            local hasRunes = hud.runes.availableRunes >= self.runeCost
+            local durDiff
+            if hasRunes then
+                durDiff = 0
+            else
+                if self.runeCost == 1 then
+                    durDiff = remDur - hud.runes.nextRuneDuration
+                else
+                    durDiff = remDur - hud.runes.secondNextRuneDuration
+                end
+            end
+            if hasRunes or (not self.lastGoodUpdate) or durDiff > 0.1 then
+                if remDur <= self.hud.remGCD + 0.1 then
+                    self.isAvailable = true
+                    self.currentCharges = 1
+                    -- totDuration reste inchangé
+                    if self.lastGoodUpdate > 0 then
+                        self.remDuration = self.lastGoodRemdur - (t - self.lastGoodUpdate)
+                        if self.remDuration < 0 then
+                            self.remDuration = 0
+                        elseif self.remDuration > self.hud.remGCD - 0.1 then
+                            self.remDuration = 0
+                        elseif self.remDuration > remDur then
+                            self.remDuration = remDur
+                        end
+                    else
+                        self.remDuration = 0
+                    end
+                else
+                    self.isAvailable = false
+                    self.currentCharges = 0
+                    self.totDuration = cdInfo.duration
+                    self.remDuration = remDur
+                    if durDiff > 0.1 then
+                        self.lastGoodRemdur = remDur
+                        self.lastGoodUpdate = t
+                    end
+                end
+            else
+                -- cd.totDuration reste inchangé
+                self.remDuration = self.lastGoodRemdur - (t - self.lastGoodUpdate)
+                if (self.remDuration < 0) then
+                    self.remDuration = 0
+                    self.currentCharges = 1
+                    self.isAvailable = true
+                    return
+                end
+                if (self.remDuration > remDur) then
+                    self.remDuration = remDur
+                end
+                self.currentCharges = 0
+                self.isAvailable = false
+            end
         else
-            cd.totDuration = 1
+            self.isAvailable = true
+            self.currentCharges = 1
+            self.remDuration = 0
+            if cdInfo.duration and cdInfo.duration > 0 then
+                self.totDuration = cdInfo.duration
+            end
+            self.lastGoodRemdur = 0
+            self.lastGoodUpdate = t
         end
-        cd.remDuration = 0
-        cd.currentCharges = 1
-        cd.lastGoodUpdate = t
-        cd.lastGoodDuration = 0
     end
-end
-
----@class ERACombatUtilityCooldownIgnoringRunes : ERACombatUtilityCooldown
----@field private runes ERACombatRunes
----@field private runeCost number
-
----@class ERACombatUtilityCooldownIgnoringRunes
-ERACombatUtilityCooldownIgnoringRunes = {}
-ERACombatUtilityCooldownIgnoringRunes.__index = ERACombatUtilityCooldownIgnoringRunes
-setmetatable(ERACombatUtilityCooldownIgnoringRunes, { __index = ERACombatUtilityCooldown })
-
----comment
----@param owner ERACombatUtilityFrame
----@param x number
----@param y number
----@param spellID number
----@param iconID number|nil
----@param showInCombat boolean
----@param runes ERACombatRunes
----@param runeCost number
----@param talent ERALIBTalent | nil
----@param ... ERACombatTimersAdditionalID
----@return ERACombatUtilityCooldownIgnoringRunes
-function ERACombatUtilityCooldownIgnoringRunes:Create(owner, x, y, spellID, iconID, showInCombat, runes, runeCost, talent, ...)
-    local c = ERACombatUtilityCooldown:create(owner, x, y, spellID, iconID, showInCombat, talent, ...)
-    setmetatable(c, ERACombatUtilityCooldownIgnoringRunes)
-    ---@cast c ERACombatUtilityCooldownIgnoringRunes
-    c.runes = runes
-    c.runeCost = runeCost
-    return c
-end
-
-function ERACombatUtilityCooldownIgnoringRunes:specialUpdate(t, totGCD)
-    ERACooldownIgnoringRunes_updateDurations(self, self.runes, self.runeCost, t, totGCD)
 end

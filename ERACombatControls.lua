@@ -6,7 +6,7 @@
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERAIcon
----@field SetIconTexture fun(this:ERAIcon, iconID:number,force:boolean)
+---@field SetIconTexture fun(this:ERAIcon, iconID:number, force:boolean|nil)
 ---@field SetMainText fun(this:ERAIcon, txt:string|nil)
 ---@field SetMainTextColor fun(this:ERAIcon, r:number, g:number, b:number, a:number)
 ---@field SetSecondaryText fun(this:ERAIcon, txt:string|nil)

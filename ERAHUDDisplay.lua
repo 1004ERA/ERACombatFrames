@@ -307,11 +307,11 @@ function ERAHUDTargetCastBar:computeDuration(t)
     if self.kick_is_available then
         self.kick_is_available = false
         self.kick_will_be_available = false
-        self.display:SetVertexColor(1.0, 1.0, 1.0, 1.0)
+        self.display:SetStatusBarColor(1.0, 1.0, 1.0, 1.0)
         return self.hud.targetCast
     elseif self.kick_will_be_available then
         self.kick_will_be_available = false
-        self.display:SetVertexColor(0.8, 0.0, 0.0, 1.0)
+        self.display:SetStatusBarColor(0.8, 0.0, 0.0, 1.0)
         return self.hud.targetCast
     else
         return 0
@@ -482,6 +482,7 @@ end
 ---@field ComputeAvailablePriorityOverride fun(this:ERAHUDTimerItem, t:number): number
 ---@field protected checkAdditionalTalent fun(this:ERAHUDTimerItem): boolean
 ---@field protected updateIconID fun(this:ERAHUDTimerItem, currentIconID:integer): integer
+---@field protected overlayConstructed fun(this:ERAHUDTimerItem)
 ---@field ComputeDurationOverride fun(this:ERAHUDTimerItem, t:number): number
 ---@field private hide fun(this:ERAHUDTimerItem)
 ---@field hud ERAHUD
@@ -513,6 +514,9 @@ function ERAHUDTimerItem:constructOverlay(frame)
     self.line = frame:CreateLine(nil, "OVERLAY", "ERAHUDVerticalTick")
     self.lineVisible = true
     self:hide()
+    self:overlayConstructed()
+end
+function ERAHUDTimerItem:overlayConstructed()
 end
 
 function ERAHUDTimerItem:hide()
@@ -946,6 +950,10 @@ function ERAHUDRotationCooldownIconChargedPriority:create(cd)
     return p
 end
 
+function ERAHUDRotationCooldownIconChargedPriority:overlayConstructed()
+    self.icon:SetDesaturated(true)
+end
+
 ---@param t number
 function ERAHUDRotationCooldownIconChargedPriority:ComputeDurationOverride(t)
     if self.cd.data.hasCharges then
@@ -1126,7 +1134,7 @@ function ERAHUDRotationAuraIcon:update(t, combat)
                 self.icon:SetMainText(tostring(self.currentStacks))
             end
         end
-        self.icon:SetOverlayValue(self.data.remDuration / self.data.totDuration)
+        self.icon:SetOverlayValue((self.data.totDuration - self.data.remDuration) / self.data.totDuration)
         self.icon:Show()
     else
         if self.currentStacks ~= 0 then
@@ -1161,6 +1169,7 @@ end
 ---@field highlightAt integer
 ---@field soundOnHighlight number
 ---@field minStacksToShowOutOfCombat integer
+---@field ShowCombatMissing fun(this:ERAHUDRotationStacksIcon, t): boolean
 ---@field private currentStacks integer
 ERAHUDRotationStacksIcon = {}
 ERAHUDRotationStacksIcon.__index = ERAHUDRotationStacksIcon
@@ -1211,6 +1220,8 @@ function ERAHUDRotationStacksIcon:update(t, combat)
         end
         if self.currentStacks ~= self.data.stacks then
             self.currentStacks = self.data.stacks
+            self.icon:SetDesaturated(false)
+            self.icon:SetMainTextColor(1.0, 1.0, 1.0, 1.0)
             self.icon:SetMainText(tostring(self.currentStacks))
             self.icon:SetOverlayValue((self.maxStacks - self.currentStacks) / self.maxStacks)
         end
@@ -1225,8 +1236,21 @@ function ERAHUDRotationStacksIcon:update(t, combat)
         end
         self.icon:Show()
     else
-        self.icon:Hide()
+        if combat and self:ShowCombatMissing(t) then
+            if self.currentStacks ~= 0 then
+                self.icon:SetMainTextColor(1.0, 0.0, 0.0, 1.0)
+                self.icon:SetMainText("X")
+                self.icon:SetDesaturated(true)
+            end
+            self.icon:Show()
+        else
+            self.icon:Hide()
+        end
+        self.currentStacks = 0
     end
+end
+function ERAHUDRotationStacksIcon:ShowCombatMissing(t)
+    return false
 end
 
 --#endregion
@@ -1377,6 +1401,7 @@ end
 ---@class (exact) ERAHUDUtilityCooldownInGroup : ERAHUDUtilityIconInGroup
 ---@field private __index unknown
 ---@field update fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
+---@field HighlightOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean): boolean
 ---@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field data ERACooldownBase
 ---@field private currentCharges integer
@@ -1420,7 +1445,16 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDUtilityCooldownInGroup:update(t, combat)
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, false, false, t)
+    local forceHighlight
+    local forceHighlightValue = false
+    if self.HighlightOverride then
+        forceHighlight = true
+        forceHighlightValue = self:HighlightOverride(t, combat)
+    else
+        forceHighlight = false
+        forceHighlightValue = false
+    end
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     self:UpdatedOverride(t, combat)
@@ -1682,6 +1716,7 @@ function ERAHUDUtilityAuraOutOfCombat:create(aura, iconID, talent)
     local a = {}
     setmetatable(a, ERAHUDUtilityAuraOutOfCombat)
     ---@cast a ERAHUDUtilityAuraOutOfCombat
+    a.aura = aura
     if not iconID then
         local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
         iconID = spellInfo.iconID
@@ -1711,7 +1746,7 @@ function ERAHUDUtilityAuraOutOfCombat:updateOutOfCombat(t)
         else
             self.icon:SetMainText(nil)
         end
-        self.icon:SetOverlayAlpha(self.aura.remDuration / self.aura.totDuration)
+        self.icon:SetOverlayValue((self.aura.totDuration - self.aura.remDuration) / self.aura.totDuration)
         self.icon:Show()
     else
         self.icon:Hide()
@@ -1725,7 +1760,7 @@ end
 ---@class (exact) ERAHUDEmptyTimer : ERAHUDUtilityIcon
 ---@field private __index unknown
 ---@field timer ERATimer
----@field private update fun(this:ERAHUDUtilityIconOutOfCombat, t:number, combat:boolean)
+---@field private update fun(this:ERAHUDEmptyTimer, t:number, combat:boolean)
 ---@field onlyIfPartyHasAnotherHealer boolean
 ---@field fadeAfterSeconds number
 ---@field private lastAppeared number
@@ -1743,9 +1778,10 @@ function ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
     setmetatable(et, ERAHUDEmptyTimer)
     ---@cast et ERAHUDEmptyTimer
     et.timer = timer
-    self:constructUtilityIcon(timer.hud, iconID, talent)
-    self.lastAppeared = 0
-    self.fadeAfterSeconds = fadeAfterSeconds
+    et:constructUtilityIcon(timer.hud, iconID, talent)
+    et.lastAppeared = 0
+    et.fadeAfterSeconds = fadeAfterSeconds
+    timer.hud:addEmpty(et)
     return et
 end
 
@@ -1922,7 +1958,7 @@ end
 
 --- BASED ON AURA ---
 
----@class (exact) ERASAOAura:ERASAO
+---@class (exact) ERASAOAura : ERASAO
 ---@field private __index unknown
 ---@field private aura ERAAura
 ---@field private minStacks integer
@@ -1964,6 +2000,47 @@ function ERASAOAura:getIsActive(t, combat)
     return self.aura.stacks >= self.minStacks
 end
 
+---@class (exact) ERASAOMissingAura : ERASAO
+---@field private __index unknown
+---@field private aura ERAAura
+---@field private onlyIfHasTarget boolean
+ERASAOMissingAura = {}
+ERASAOMissingAura.__index = ERASAOMissingAura
+setmetatable(ERASAOMissingAura, { __index = ERASAO })
+
+---@param aura ERAAura
+---@param onlyIfHasTarget boolean
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@param offsetX number
+---@param offsetY number
+---@return ERASAOMissingAura
+function ERASAOMissingAura:create(aura, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    local a = {}
+    setmetatable(a, ERASAOMissingAura)
+    ---@cast a ERASAOMissingAura
+    a.aura = aura
+    a.onlyIfHasTarget = onlyIfHasTarget
+    a:constructSAO(aura.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    return a
+end
+
+---@return boolean
+function ERASAOMissingAura:checkTalentSAO()
+    return self.aura.talentActive
+end
+
+---@param combat boolean
+---@param t number
+function ERASAOMissingAura:getIsActive(t, combat)
+    return self.aura.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
+end
 
 --#endregion
 

@@ -1,10 +1,10 @@
----@class ERACombatTimers_DK_Blood : ERACombatTimers
+---@class ERADKBloodHUD : ERADKHUD
 ---@field strikeCost number
 
 ---@param cFrame ERACombatFrame
----@param runes ERACombatRunes
+---@param enemies ERACombatEnemiesCount
 ---@param talents DKCommonTalents
-function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
+function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     local talent_ossuary = ERALIBTalent:Create(96277)
     local talent_bloodmark = ERALIBTalent:Create(96271)
     local talent_tombstone = ERALIBTalent:Create(96270)
@@ -20,23 +20,26 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
     local talent_voracious = ERALIBTalent:Create(96171)
     local talent_sanground = ERALIBTalent:Create(96169)
 
-    local dk = ERACombat_CommonDK(cFrame, runes, 1, talents, 2 * ERADK_BarsHeight / 3, 0, ERADK_BarsHeight / 3, 1)
+    local hud = ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, 1)
+    ---@cast hud ERADKBloodHUD
+    hud.strikeCost = 0
 
-    local timers = dk.timers
-    ---@cast timers ERACombatTimers_DK_Blood
-    timers.strikeCost = 40
+    local damageTaken = ERAHUDDamageTakenWindow:Create(hud, hud.damageTaken, 222, 333)
 
-    local boneshield = timers:AddTrackedBuff(195181)
+    local plague = hud:AddTrackedDebuffOnTarget(55078)
 
-    local vblood = timers:AddTrackedBuff(55233, talent_vblood)
-    local sanground = timers:AddTrackedBuff(391459, talent_sanground)
+    local boneshield = hud:AddTrackedBuff(195181)
+    local vblood = hud:AddTrackedBuff(55233, talent_vblood)
+    local sanground = hud:AddTrackedBuff(391459, talent_sanground)
 
-    function timers:DataUpdatedOverride(t)
+    --- death strike ---
+
+    function hud:DataUpdatedOverride(t)
         local cost = 45
         if talents.improved_deathstrike:PlayerHasTalent() then
             cost = cost - 5
         end
-        if dk.blooddraw.remDuration > self.occupied + 0.1 then
+        if self.blooddrawBuff.remDuration > self.occupied + 0.1 then
             cost = cost - 10
         end
         if (talent_ossuary:PlayerHasTalent() and boneshield.stacks >= 5) then
@@ -45,21 +48,27 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
         self.strikeCost = cost
     end
 
-    function dk.damageTaken:DamageUpdatedOverride(t)
+    hud.power.bar:AddMarkingFromMax(20)
+    local strikeConsumer = hud.power.bar:AddMarkingFrom0(40)
+    function strikeConsumer:ComputeValueOverride(t)
+        return hud.strikeCost
+    end
+
+    function hud:PreUpdateDisplayOverride(t)
         local additionalH
         local strikeCost
-        if dk.succor.remDuration > dk.succor.group.occupied + 0.1 then
+        if hud.succor.remDuration > hud.occupied + 0.1 then
             strikeCost = 0
-            dk.combatHealth:SetHealingColor(ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
-            additionalH = 0.1 * dk.combatHealth.maxHealth
+            hud.health.bar:SetPrevisionColor(ERADK_SuccorR, ERADK_SuccorG, ERADK_SuccorB)
+            additionalH = 0.1 * hud.health.maxHealth
         else
-            strikeCost = timers.strikeCost
-            dk.combatHealth:SetHealingColor(0.5, 0.5, 1.0)
+            strikeCost = hud.strikeCost
+            hud.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
             additionalH = 0
         end
-        if dk.combatPower.currentPower >= strikeCost or additionalH > 0 then
-            local baseH = dk.combatHealth.maxHealth * 0.07
-            local dmgH = 0.25 * self.currentDamage
+        if hud.power.currentPower >= strikeCost or additionalH > 0 then
+            local baseH = hud.health.maxHealth * 0.07
+            local dmgH = 0.25 * hud.damageTaken.currentDamage
             if (dmgH > baseH) then
                 local healing = math.max(baseH, dmgH)
                 if (talents.improved_deathstrike:PlayerHasTalent()) then
@@ -68,83 +77,65 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
                 if (talent_voracious:PlayerHasTalent()) then
                     healing = healing * 1.15
                 end
-                if (sanground.remDuration > dk.timers.occupied + 0.1) then
+                if (sanground.remDuration > hud.occupied + 0.1) then
                     healing = healing * 1.05
                 end
-                if (vblood.remDuration > dk.timers.occupied + 0.1) then
+                if (vblood.remDuration > hud.occupied + 0.1) then
                     healing = healing * (1 + (0.3 + talent_improved_vblood.rank * 0.05))
                 end
-                dk.combatHealth:SetHealing(healing + additionalH)
+                hud.health.bar:SetForecast(healing + additionalH)
             else
-                dk.combatHealth:SetHealing(0)
+                hud.health.bar:SetForecast(0)
             end
         else
-            dk.combatHealth:SetHealing(0)
+            hud.health.bar:SetForecast(0)
         end
     end
 
-    local strikeConsumer = dk.combatPower:AddConsumer(35, nil, nil)
-    strikeConsumer.requireContinuousUpdate = true
-    function strikeConsumer:ComputeValueOverride(t)
-        return timers.strikeCost
-    end
-    dk.combatPower:AddThreashold(20, nil, nil)
+    -- bars ---
 
-    local window = ERACombatDamageTakenWindow:Create(timers, dk.damageTaken, 222, 333, 1)
+    local bloodmark = hud:AddTrackedDebuffOnTarget(206940, talent_bloodmark)
+    hud:AddAuraBar(bloodmark, nil, 0.9, 0.3, 0.3)
 
-    timers:AddAuraIcon(boneshield, 0, 0)
-    --timers:AddMissingAura(boneshield, nil, 0, 0, false)
+    local drw = hud:AddAuraBar(hud:AddTrackedBuff(81256, talent_drw), nil, 1.0, 0.8, 0.6)
 
-    local bloodboil = timers:AddTrackedCooldown(50842)
-    local bloodboilIcon = timers:AddCooldownIcon(bloodboil, nil, -1, 0, true, true)
+    hud:AddAuraBar(vblood, nil, 1.0, 0.0, 0.0)
 
-    local dnd = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 43265)
-    local dndIcon = dk.timers:AddCooldownIcon(dnd, nil, -2, 0, true, true)
+    --- SAO ---
 
-    local drinker = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 206931, talent_drinker)
-    local drinkerIcon = dk.timers:AddCooldownIcon(drinker, nil, -0.5, -0.9, true, true)
-    local consumption = timers:AddTrackedCooldown(274156, talent_consumption)
-    local consumptionIcon = dk.timers:AddCooldownIcon(consumption, nil, -0.5, -0.9, true, true)
+    local crimson = hud:AddTrackedBuff(81141)
+    hud:AddAuraOverlay(crimson, 1, 511104, false, "LEFT", false, false, false, false)
 
-    local runetap = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 194679, talent_runetap)
-    local runetapIcon = dk.timers:AddCooldownIcon(runetap, nil, -2.5, -0.9, true, true)
+    ERACombatFrames_DK_MissingDisease(hud, plague)
 
-    local caress = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 195292)
-    local caressIcon = dk.timers:AddCooldownIcon(caress, nil, -1, -1.8, true, true)
+    --- rotation ---
 
-    local reapermark1rune = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 439843, talents.reapermark1rune)
-    local reapermark2rune = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 2, 439843, talents.reapermark2rune)
-    local reapermarkIcons = {}
-    table.insert(reapermarkIcons, dk.timers:AddCooldownIcon(reapermark1rune, nil, 0, -1.8, true, true))
-    table.insert(reapermarkIcons, dk.timers:AddCooldownIcon(reapermark2rune, nil, 0, -1.8, true, true))
+    hud:AddRotationBuff(boneshield)
 
-    local tombstone = timers:AddTrackedCooldown(219809, talent_tombstone)
-    local tombstoneIcon = dk.timers:AddCooldownIcon(tombstone, nil, -1.5, -0.9, true, true)
+    local boilIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(50842))
 
-    local bloodmarkDebuff = timers:AddTrackedDebuff(206940, talent_bloodmark)
-    timers:AddAuraBar(bloodmarkDebuff, nil, 0.9, 0.3, 0.3)
-    local bloodmarkCooldown = timers:AddTrackedCooldown(206940, talent_bloodmark)
-    local bloodmarkIcon = timers:AddCooldownIcon(bloodmarkCooldown, nil, -1.5, -0.9, true, true)
+    local dndIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 43265, 1))
 
-    local bonestorm = timers:AddTrackedCooldown(194844, talent_bonestorm)
-    local bonestormIcon = dk.timers:AddCooldownIcon(bonestorm, nil, -2, -1.8, true, true)
+    local drinkerIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 206931, 1, talent_drinker))
+    local consumptionIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(274156, talent_consumption))
 
-    local bloodtap = timers:AddTrackedCooldown(221699, talent_bloodtap)
-    local bloodtapIcon = dk.timers:AddCooldownIcon(bloodtap, nil, 1.9, 0.5, true, true)
+    local runetapIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 194679, 1, talent_runetap))
 
-    local crimson = timers:AddTrackedBuff(81141)
-    timers:AddAuraBar(crimson, nil, 0.5, 1.0, 0.1)
+    ERACombatFrames_DK_ReaperMark(hud, talents, 6)
 
-    local drw = timers:AddTrackedBuff(81256, talent_drw)
-    timers:AddAuraBar(drw, nil, 1.0, 0.8, 0.6)
+    hud:AddRotationCooldown(hud:AddTrackedCooldown(219809, talent_tombstone))
 
-    timers:AddAuraBar(vblood, nil, 1.0, 0.0, 0.0)
+    local bloodmarkIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(206940, talent_bloodmark))
 
-    --------------
-    -- priority --
-    --------------
+    local bonestormIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(194844, talent_bonestorm))
+
+    local bloodtapIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(221699, talent_bloodtap))
+
+    hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 195292, 1)) -- caress
 
     --[[
+
+    PRIO
 
     1 - soul reaper
     2 - bloodmark
@@ -155,78 +146,62 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, runes, talents)
     7 - dnd
     8 - consumption
     9 - drinker
-    10 - runetap
+    10 - boil charged
     11 - bloodmark refresh
+    12 - runetap
 
     ]]
 
-    function bloodmarkIcon:ComputeAvailablePriorityOverride()
-        if bloodmarkDebuff.remDuration <= self.group.occupied then
+    function bloodmarkIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        if bloodmark.remDuration <= self.hud.occupied then
             return 2
-        elseif bloodmarkDebuff.remDuration <= 4 then
+        elseif bloodmark.remDuration <= 2 then
             return 11
         else
             return 0
         end
     end
 
-    function bloodboilIcon:ComputeAvailablePriorityOverride()
-        if self.cd.currentCharges == self.cd.maxCharges or self.cd.currentCharges + 1 == self.cd.maxCharges and self.cd.remDuration <= self.group.occupied + 0.1 then
-            return 3
-        else
-            return 0
-        end
+    function boilIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 3
+    end
+    function boilIcon.availableChargePriority:ComputeAvailablePriorityOverride(t)
+        return 10
     end
 
-    function dndIcon:ComputeAvailablePriorityOverride()
-        if crimson.remDuration > self.group.occupied + 0.1 then
+    function dndIcon.onTimer:ComputeAvailablePriorityOverride()
+        if crimson.remDuration > self.hud.occupied + 0.1 then
             return 4
         else
             return 7
         end
     end
 
-    function bloodtapIcon:ComputeAvailablePriorityOverride()
-        if runes.availableRunes == 0 and runes.nextRuneDuration > self.group.occupied then
+    function bloodtapIcon.onTimer:ComputeAvailablePriorityOverride()
+        if hud.runes.availableRunes == 0 and hud.runes.nextRuneDuration > self.hud.occupied then
             return 5
         else
             return 0
         end
     end
 
-    for _, icon in ipairs(reapermarkIcons) do
-        function icon:ComputeAvailablePriorityOverride()
-            return 6
-        end
-    end
-
-    function consumptionIcon:ComputeAvailablePriorityOverride()
+    function consumptionIcon.onTimer:ComputeAvailablePriorityOverride()
         return 8
     end
 
-    function drinkerIcon:ComputeAvailablePriorityOverride()
+    function drinkerIcon.onTimer:ComputeAvailablePriorityOverride()
         return 9
     end
 
-    function runetapIcon:ComputeAvailablePriorityOverride()
+    function runetapIcon.onTimer:ComputeAvailablePriorityOverride()
         return 10
     end
 
-    -------------
-    -- utility --
-    -------------
+    --- utility ---
 
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY, 55233, nil, true, talent_vblood)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY - 1, 49028, nil, true, talent_drw)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY, 46585, nil, true, talents.raisedead)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY - 1, 327574, nil, true, talents.sacrifice)
-    dk.utility:AddCooldown(2, 1, 108199, nil, true, talent_gorefiend)
-    -- out of combat
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX + 1, ERADK_UtilityBaseY + 1, 195292, nil, false, runes, 1) -- caress
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY + 1, 50842, nil, false)                                                  -- boil
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY + 1, 43265, nil, false, runes, 1)  -- dnd
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY + 2, 194844, nil, false, talent_bonestorm)
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX, ERADK_UtilityBaseY + 2, 206931, nil, false, runes, 1, talent_drinker)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY + 2, 274156, nil, false, talent_consumption)
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX + 1, ERADK_UtilityBaseY + 2, 194679, nil, false, runes, 1, talent_runetap)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(55233, talent_vblood), hud.healGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49028, talent_drw), hud.powerUpGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(108199, talent_gorefiend), hud.controlGroup)
 end

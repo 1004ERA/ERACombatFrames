@@ -1,8 +1,7 @@
----comment
 ---@param cFrame ERACombatFrame
----@param runes ERACombatRunes
+---@param enemies ERACombatEnemiesCount
 ---@param talents DKCommonTalents
-function ERACombatFrames_DeathKnightFrostSetup(cFrame, runes, talents)
+function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     local talent_pof = ERALIBTalent:Create(125874)
     local talent_scythe = ERALIBTalent:Create(96225)
     local talent_horn = ERALIBTalent:Create(96218)
@@ -15,118 +14,122 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, runes, talents)
     local talent_enduring_pof = ERALIBTalent:Create(96230)
     local talent_bonegrinder = ERALIBTalent:Create(96253)
 
-    local dk = ERACombat_CommonDK(cFrame, runes, 1, talents, 2 * ERADK_BarsHeight / 3, 0, ERADK_BarsHeight / 3, 2)
-    ERACombat_DPSDK(dk.combatHealth, dk.combatPower, dk.damageTaken, dk.succor, dk.blooddraw, talents)
+    local hud = ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, 2)
 
-    dk.combatPower:AddConsumer(30, nil, nil)
-    dk.combatPower:AddThreashold(20, nil, nil)
+    hud.power.bar:AddMarkingFrom0(30)
+    hud.power.bar:AddMarkingFromMax(20)
 
-    local fever = dk.timers:AddTrackedDebuff(55095)
-    local missingFever = dk.timers:AddMissingAura(fever, nil, ERADK_TimersSpecialX0, ERADK_TimersSpecialY0 - 1.5, false)
-    missingFever.icon:SetVertexColor(1.0, 0.2, 0.2, 1.0)
-    local feverShortBar = dk.timers:AddAuraBar(fever, nil, 1.0, 0.0, 1.0)
-    function feverShortBar:GetRemDurationOr0IfInvisibleOverride(t)
-        if (fever.remDuration <= 6) then
+    ERACombatFrames_DK_DPS(hud, talents)
+
+    local fever = hud:AddTrackedDebuffOnTarget(55095)
+
+    --- bars ---
+
+    local feverShortBar = hud:AddAuraBar(fever, nil, 1.0, 0.0, 1.0)
+    function feverShortBar:ComputeDurationOverride(t)
+        if (fever.remDuration > 6) then
             return 0
         else
             return fever.remDuration
         end
     end
 
-    local dnd = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 43265)
-    local dndIcon = dk.timers:AddCooldownIcon(dnd, nil, 0, 0, true, true)
+    hud:AddAuraBar(hud:AddTrackedBuff(51271, talent_pof), nil, 0.8, 0.8, 1.0)
 
-    local remorseless = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 196770)
-    local remorselessIcon = dk.timers:AddCooldownIcon(remorseless, nil, -1, 0, true, true)
-    local remorselessBuff = dk.timers:AddTrackedBuff(196770)
-    dk.timers:AddAuraBar(remorselessBuff, nil, 0.5, 0.8, 1.0, talent_remorseless_important)
+    hud:AddAuraBar(hud:AddTrackedBuff(377192, talent_enduring_pof), 136213, 0.6, 0.6, 0.8)
 
-    local scythe = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 2, 207230, talent_scythe)
-    local scytheIcon = dk.timers:AddCooldownIcon(scythe, nil, -2, 0, true, true)
+    hud:AddAuraBar(hud:AddTrackedBuff(377103, talent_bonegrinder), nil, 0.0, 0.0, 1.0)
 
-    local chillstreak = ERACombatCooldownIgnoringRunes:Create(dk.timers, runes, 1, 305392, talent_chillstreak)
-    local chillstreakIcon = dk.timers:AddCooldownIcon(chillstreak, nil, -1, -1.8, true, true)
+    hud:AddAuraBar(hud:AddTrackedBuff(196770, talent_remorseless_important), nil, 0.5, 0.8, 1.0)
 
-    local pof = dk.timers:AddTrackedCooldown(51271, talent_pof)
-    local pofIcon = dk.timers:AddCooldownIcon(pof, nil, -0.5, -0.9, true, true)
-    local pofbuff = dk.timers:AddTrackedBuff(51271, talent_pof)
-    dk.timers:AddAuraBar(pofbuff, nil, 0.8, 0.8, 1.0)
+    --- SAO ---
 
-    local horn = dk.timers:AddTrackedCooldown(57330, talent_horn)
-    local hornIcon = dk.timers:AddCooldownIcon(horn, nil, -1.5, -0.9, true, true)
+    local killingMachine = hud:AddTrackedBuff(51124)
+    hud:AddAuraOverlay(killingMachine, 1, 458740, false, "LEFT", false, false, false, false)
+    hud:AddAuraOverlay(killingMachine, 2, 458740, false, "RIGHT", true, false, false, false)
 
-    local coldheart = dk.timers:AddTrackedBuff(281209, talent_coldheart)
-    dk.timers:AddStacksProgressIcon(coldheart, nil, 1.9, 0.5, 20)
+    local rime = hud:AddTrackedBuff(59052)
+    hud:AddAuraOverlay(rime, 1, 450930, false, "TOP", false, false, false, false)
 
-    dk.timers:AddAuraBar(dk.timers:AddTrackedBuff(377192, talent_enduring_pof), 136213, 0.6, 0.6, 0.8)
-    dk.timers:AddAuraBar(dk.timers:AddTrackedBuff(377103, talent_bonegrinder), nil, 0.0, 0.0, 1.0)
+    ERACombatFrames_DK_MissingDisease(hud, fever)
 
-    --------------
-    -- priority --
-    --------------
+    --- rotation ---
+
+    local remorselessIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 196770, 1))
+
+    local dndIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 43265, 1))
+
+    local scytheIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 207230, 2, talent_scythe))
+
+    local streakIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 305392, 2, talent_chillstreak))
+
+    ERACombatFrames_DKSoulReaper(hud, 1)
+
+    ERACombatFrames_DK_ReaperMark(hud, talents, 3)
+
+    local pofIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(51271, talent_pof))
+
+    local hornIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(57330, talent_horn))
+
+    local coldheart = hud:AddTrackedBuff(281209, talent_coldheart)
+    hud:AddRotationStacks(coldheart, 20, 18).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --[[
 
+    PRIO
+
     1 - soul reaper
     2 - pof
-    3 - remorseless
-    4 - scythe
-    5 - streak
-    6 - chains of ice all stacks
-    7 - dnd
-    8 - chains of ice most stacks
-    9 - horn
+    3 - reapermark
+    4 - remorseless
+    5 - scythe
+    6 - streak
+    7 - chains of ice all stacks
+    8 - dnd
+    9 - chains of ice most stacks
+    10 - horn
 
     ]]
 
-    function pofIcon:ComputeAvailablePriorityOverride()
+    function pofIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 2
     end
-    function remorselessIcon:ComputeAvailablePriorityOverride()
-        return 3
-    end
-    function scytheIcon:ComputeAvailablePriorityOverride()
+    function remorselessIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 4
     end
-    function chillstreakIcon:ComputeAvailablePriorityOverride()
+    function scytheIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 5
     end
-    function dndIcon:ComputeAvailablePriorityOverride()
-        return 7
+    function streakIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 6
     end
-    function hornIcon:ComputeAvailablePriorityOverride()
-        if (runes.availableRunes <= 1 and dk.combatPower.maxPower - dk.combatPower.currentPower > 30) then
+    function dndIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 8
+    end
+    function hornIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        local hud = self.hud
+        ---@cast hud ERADKHUD
+        if (hud.runes.availableRunes <= 1 and hud.power.maxPower - hud.power.currentPower > 30) then
+            return 10
+        else
+            return 0
+        end
+    end
+
+    local coldheartPrio = hud:AddPriority(135834)
+    function coldheartPrio:ComputeAvailablePriorityOverride(t)
+        if coldheart.stacks >= 19 then
+            return 7
+        elseif coldheart.stacks >= 16 then
             return 9
         else
             return 0
         end
     end
 
-    local coldheartPrio = dk.timers:AddPriority(135834)
-    function coldheartPrio:ComputePriority(t)
-        if coldheart.stacks >= 19 then
-            return 6
-        elseif coldheart.stacks >= 16 then
-            return 8
-        else
-            return 0
-        end
-    end
+    --- utility ---
 
-    -------------
-    -- utility --
-    -------------
-
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY, 279302, nil, true, talent_frostwyrm)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX, ERADK_UtilityBaseY - 1, 47568, nil, true, talent_empower)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY, 152279, nil, true, talent_sindragosa)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY - 1, 46585, nil, true, talents.raisedead)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1.9, ERADK_UtilityBaseY - 0.5, 327574, nil, true, talents.sacrifice)
-    -- out of combat
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX, ERADK_UtilityBaseY + 1, 305392, nil, false, runes, 1, talent_chillstreak)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY + 1, 51271, nil, false, talent_pof)
-    dk.utility:AddCooldown(ERADK_UtilityBaseX - 2, ERADK_UtilityBaseY + 1, 57330, nil, false, talent_horn)
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX, ERADK_UtilityBaseY + 2, 43265, nil, false, runes, 1)      -- dnd
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX - 1, ERADK_UtilityBaseY + 2, 196770, nil, false, runes, 1) -- remorseless
-    ERACombatUtilityCooldownIgnoringRunes:Create(dk.utility, ERADK_UtilityBaseX - 2, ERADK_UtilityBaseY + 2, 207230, nil, false, runes, 2, talent_scythe)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(279302, talent_frostwyrm), hud.powerUpGroup, -3)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(47568, talent_empower), hud.powerUpGroup, -2)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(152279, talent_sindragosa), hud.powerUpGroup, -1)
 end

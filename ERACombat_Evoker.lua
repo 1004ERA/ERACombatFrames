@@ -1,14 +1,14 @@
 ---@alias EvokerEssenceDirection "TO_LEFT" | "TO_RIGHT"
 
----@class ERAEvokerUnravelIcon : ERAHUDRotationCooldownIcon
----@field unravelUsable boolean
-
 ---@class (exact) ERAEvokerHUD : ERAHUD
 ---@field evoker_essence ERAEvokerEssenceModule
+---@field evoker_essenceBurst ERAAura
 ---@field evoker_leapingBuff ERAAura
 ---@field evoker_burnout ERAAura
 ---@field evoker_firebreathCooldown ERACooldown
----@field evoker_unravelIcon ERAEvokerUnravelIcon
+---@field evoker_unravelIcon ERAHUDRotationCooldownIcon
+---@field evoker_unravelUsable boolean
+---@field evoker_unravelAbsorbValue number
 
 ---@class (exact) ERACombat_EvokerCommonTalents
 ---@field quell ERALIBTalent
@@ -36,6 +36,9 @@
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_EvokerSetup(cFrame)
+    ERACombatEvokerEssence_size = 22
+    ERACombatEvokerEssence_spacing = 2
+
     local devastationActive = 1
     local preservationActive = 2
     local augmentationActive = 3
@@ -74,10 +77,10 @@ function ERACombatFrames_EvokerSetup(cFrame)
         ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
     end
     if (preservationActive) then
-        --ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
+        ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     end
     if (augmentationActive) then
-        --ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
+        ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
     end
 end
 
@@ -87,27 +90,63 @@ end
 
 ---@param hud ERAEvokerHUD
 ---@param essenceDirection EvokerEssenceDirection
+---@param burstID integer
+---@param unravelPrio number
 ---@param talents ERACombat_EvokerCommonTalents
 ---@param talent_big_empower ERALIBTalent|nil
 ---@param spec integer
-function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower, spec)
+function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talents, talent_big_empower, spec)
     hud.evoker_essence = ERAEvokerEssenceModule:create(hud, essenceDirection)
 
-    local additionalFirebreath
     if talent_big_empower then
-        additionalFirebreath = {
+        local additionalFirebreath = {
             id = 382266,
             talent = talent_big_empower
         }
+        hud.evoker_firebreathCooldown = hud:AddTrackedCooldown(357208, nil, additionalFirebreath)
     else
-        additionalFirebreath = nil
+        hud.evoker_firebreathCooldown = hud:AddTrackedCooldown(357208)
     end
-    hud.evoker_firebreathCooldown = hud:AddTrackedCooldown(357208, nil, additionalFirebreath)
+
+    function hud:PreUpdateDataOverride(t)
+        if talents.unravel:PlayerHasTalent() then
+            local a = UnitGetTotalAbsorbs("target")
+            if a and a > 0 then
+                hud.evoker_unravelAbsorbValue = a
+            else
+                hud.evoker_unravelAbsorbValue = 0
+            end
+            hud.evoker_unravelUsable = C_Spell.IsSpellUsable(368432)
+        else
+            hud.evoker_unravelAbsorbValue = 0
+            hud.evoker_unravelUsable = false
+        end
+    end
+
+    --- SAO ---
+
+    hud.evoker_essenceBurst = hud:AddTrackedBuff(burstID)
+    local essenceBurstAlert = 4699056
+    if spec == 2 then
+        hud:AddAuraOverlay(hud.evoker_essenceBurst, 1, essenceBurstAlert, false, "TOP", false, true, false, true)
+    else
+        hud:AddAuraOverlay(hud.evoker_essenceBurst, 1, essenceBurstAlert, false, "LEFT", false, false, false, false)
+    end
+    hud:AddAuraOverlay(hud.evoker_essenceBurst, 2, essenceBurstAlert, false, "RIGHT", true, false, false, false)
 
     --- bars ---
 
     hud:AddChannelInfo(356995, 0.75)                         -- disintegrate
     hud:AddAuraBar(hud:AddTrackedBuff(358267), nil, 1, 1, 1) -- hover
+
+    local burstBar = hud:AddAuraBar(hud.evoker_essenceBurst, nil, 0.7, 1.0, 0.7)
+    function burstBar:ComputeDurationOverride(t)
+        if self.aura.remDuration < self.hud.timerDuration then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     hud.evoker_leapingBuff = hud:AddTrackedBuff(370901, talents.leaping)
     local leapingBar = hud:AddAuraBar(hud.evoker_leapingBuff, nil, 1, 0.7, 0)
@@ -128,51 +167,45 @@ function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower
             return 0
         end
     end
-    hud:AddAuraOverlay(hud.evoker_burnout, 1, 457658, false, "MIDDLE", false, false, false, false)
-    hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
+    --hud:AddAuraOverlay(hud.evoker_burnout, 1, 457658, false, "MIDDLE", false, false, false, false)
+    hud:AddAuraOverlay(hud.evoker_burnout, 1, 449491, false, "MIDDLE", false, false, false, true)
 
     --- rotation ---
 
     hud:AddKick(hud:AddTrackedCooldown(351338, talents.quell))
 
     local unravelIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(368432, talents.unravel))
-    ---@cast unravelIcon ERAEvokerUnravelIcon
-    unravelIcon.unravelUsable = false
     hud.evoker_unravelIcon = unravelIcon
-    hud.evoker_unravelIcon.specialPosition = true
-    function hud.evoker_unravelIcon:UpdatedOverride(t, combat)
+    unravelIcon.specialPosition = true
+    function unravelIcon:UpdatedOverride(t, combat)
         if self.data.remDuration > 0 then
-            if C_Spell.IsSpellUsable(self.data.spellID) then
+            if hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0 then
                 self.icon:SetAlpha(1.0)
-                self.unravelUsable = true
             else
                 self.icon:SetAlpha(0.4)
-                self.unravelUsable = false
             end
             self.icon:StopHighlight()
             self.icon:Show()
         else
-            if combat and C_Spell.IsSpellUsable(self.data.spellID) then
+            if combat and (hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0) then
                 self.icon:SetAlpha(1.0)
                 self.icon:Highlight()
                 self.icon:Show()
-                self.unravelUsable = true
             else
                 self.icon:Hide()
-                self.unravelUsable = false
             end
         end
     end
-    function hud.evoker_unravelIcon.onTimer:ComputeDurationOverride(t)
-        if unravelIcon.unravelUsable then
+    function unravelIcon.onTimer:ComputeDurationOverride(t)
+        if hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0 then
             return self.cd.data.remDuration
         else
             return -1
         end
     end
-    function hud.evoker_unravelIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        if unravelIcon.unravelUsable then
-            return 2
+    function unravelIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        if hud.evoker_unravelUsable then
+            return unravelPrio
         else
             return 0
         end
@@ -180,12 +213,17 @@ function ERAEvokerCommonSetup(hud, essenceDirection, talents, talent_big_empower
 
     --- utility ---
 
-    hud:AddEmptyTimer(hud:AddBuffOnAllPartyMembers(381748, ERALIBTalent:CreateLevel(60)), 8, 4622448)
-    hud:AddEmptyTimer(hud:AddBuffOnFriendlyHealer(369459, talents.source), 8, 4630412)
+    local bronzeBuffCooldown = hud:AddTrackedCooldown(364342)
+    hud:AddEmptyTimer(hud:AddOrTimer(false, bronzeBuffCooldown, hud:AddBuffOnAllPartyMembers(381748)), 8, 4622448, ERALIBTalent:CreateLevel(60))
+    hud:AddEmptyTimer(hud:AddBuffOnFriendlyHealer(369459, talents.source), 8, 4630412, talents.source)
 
     hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
     hud:AddUtilityAuraOutOfCombat(hud.evoker_leapingBuff)
 
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(374348, talents.renewing), hud.healGroup)
+    if spec ~= 2 then hud:AddUtilityCooldown(hud:AddTrackedCooldown(360995, talents.embrace), hud.healGroup) end
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(370553, talents.tip), hud.powerUpGroup)
     hud:AddGenericTimer(hud:AddOrTimer(false, hud:AddTrackedCooldown(390386), hud:AddSatedDebuff()), hud.powerUpGroup, 4723908)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(363916, talents.obsidian), hud.defenseGroup)
@@ -213,9 +251,6 @@ end
 --- ESSENCE ---
 ---------------
 
-ERACombatEvokerEssence_size = 22
-ERACombatEvokerEssence_spacing = 2
-
 ---@class (exact) ERAEvokerEssenceModule : ERAHUDResourceModule
 ---@field private __index unknown
 ---@field maxEssence integer
@@ -226,6 +261,7 @@ ERACombatEvokerEssence_spacing = 2
 ---@field private points ERAEvokerEssencePoint[]
 ---@field private activePoints integer
 ---@field private direction EvokerEssenceDirection
+---@field private updateMax fun(this:ERAEvokerEssenceModule)
 ERAEvokerEssenceModule = {}
 ERAEvokerEssenceModule.__index = ERAEvokerEssenceModule
 setmetatable(ERAEvokerEssenceModule, { __index = ERAHUDResourceModule })
@@ -248,28 +284,36 @@ function ERAEvokerEssenceModule:create(hud, direction)
 end
 
 function ERAEvokerEssenceModule:checkTalentOverride()
-    self.maxEssence = UnitPowerMax("player", 19)
-    for i = 1 + #(self.points), self.maxEssence do
-        table.insert(self.points, ERAEvokerEssencePoint:create(self, self.frame))
-    end
-    local x
-    local delta = ERACombatEvokerEssence_size + ERACombatEvokerEssence_spacing
-    if self.direction == "TO_LEFT" then
-        x = self.hud.barsWidth - delta * self.maxEssence + delta / 2
-    else
-        x = delta / 2
-    end
-    for i, p in ipairs(self.points) do
-        p:updateTalent(self.frame, i, self.maxEssence, x)
-        x = x + delta
-    end
+    self:updateMax()
     return true
+end
+
+function ERAEvokerEssenceModule:updateMax()
+    local max = UnitPowerMax("player", 19)
+    if max ~= self.maxEssence then
+        self.maxEssence = max
+        for i = 1 + #(self.points), max do
+            table.insert(self.points, ERAEvokerEssencePoint:create(self, self.frame))
+        end
+        local x
+        local delta = ERACombatEvokerEssence_size + ERACombatEvokerEssence_spacing
+        if self.direction == "TO_LEFT" then
+            x = self.hud.barsWidth - delta * max + delta / 2
+        else
+            x = delta / 2
+        end
+        for i, p in ipairs(self.points) do
+            p:updateTalent(self.frame, i, max, x)
+            x = x + delta
+        end
+    end
 end
 
 ---@param t number
 ---@param combat boolean
 function ERAEvokerEssenceModule:updateData(t, combat)
     local points = UnitPower("player", 19)
+    self:updateMax()
     if (points < self.maxEssence) then
         local partial = UnitPartialPower("player", 19) / 1000
         if (self.currentEssence + 1 == points and partial < 0.1) then
@@ -312,8 +356,13 @@ end
 ---@param combat boolean
 function ERAEvokerEssenceModule:updateDisplay(t, combat)
     if self.currentEssence >= self.maxEssence then
-        for i = 1, self.maxEssence do
-            self.points[i]:drawAvailable()
+        if combat then
+            for i = 1, self.maxEssence do
+                self.points[i]:drawAvailable()
+            end
+            self:show()
+        else
+            self:hide()
         end
     else
         for i = 1, self.currentEssence do
@@ -323,6 +372,7 @@ function ERAEvokerEssenceModule:updateDisplay(t, combat)
         for i = self.currentEssence + 2, self.maxEssence do
             self.points[i]:drawEmpty()
         end
+        self:show()
     end
 end
 
@@ -348,9 +398,20 @@ function ERAEvokerEssencePoint:create(owner, parentFrame)
 
     local frame = CreateFrame("Frame", nil, parentFrame, "ERAEvokerEssencePointFrame")
     local point = frame.FULL_POINT
+
+    p.size = ERACombatEvokerEssence_size
+    p.trt = frame.TRT
+    p.trr = frame.TRR
+    p.tlt = frame.TLT
+    p.tlr = frame.TLR
+    p.blr = frame.BLR
+    p.blt = frame.BLT
+    p.brt = frame.BRT
+    p.brr = frame.BRR
+    ERAPieControl_Init(p)
+
     ---@cast frame Frame
     frame:SetSize(ERACombatEvokerEssence_size, ERACombatEvokerEssence_size)
-    ERAPieControl_Init(p)
 
     setmetatable(p, ERAEvokerEssencePoint)
     ---@cast p ERAEvokerEssencePoint

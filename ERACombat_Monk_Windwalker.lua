@@ -19,6 +19,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local talent_teachings = ERALIBTalent:Create(124827)
     local talent_knowledge = ERALIBTalent:Create(125009)
     local talent_not_knowledge = ERALIBTalent:CreateAnd(talent_teachings, ERALIBTalent:CreateNotTalent(125009))
+    local talent_galeforce = ERALIBTalent:Create(124817)
+    local talent_xuensbattlegear = ERALIBTalent:Create(125017)
     local htalent_conduit = ERALIBTalent:Create(125062)
 
     local hud = ERAHUD:Create(cFrame, 1.0, true, false, 3, 1.0, 1.0, 0.0, false, 3)
@@ -173,6 +175,16 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     ------------
 
     hud:AddChannelInfo(113656, 1)
+
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(451582, talent_galeforce), nil, 0.0, 0.6, 0.2)
+    local battelgearBar = hud:AddAuraBar(hud:AddTrackedBuff(393053, talent_xuensbattlegear), nil, 1.0, 1.0, 0.6)
+    function battelgearBar:ComputeDurationOverride(t)
+        if self.aura.remDuration > rsk.remDuration and self.aura.remDuration > self.hud.remGCD then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     local freebokBar = hud:AddAuraBar(freebok, nil, 0.7, 0.0, 0.1)
     function freebokBar:ComputeDurationOverride(t)
