@@ -1166,7 +1166,11 @@ function ERAHUD:UpdateCombat(t)
                     tickLine = self.channelTicks[i]
                 end
                 local x = self:calcTimerPixel(t_channelTick - t)
-                tickLine:SetStartPoint("RIGHT", self.timerFrameOverlay, x, -ERAHUD_TimerIconSize)
+                if self.topdown then
+                    tickLine:SetStartPoint("RIGHT", self.timerFrameOverlay, x, ERAHUD_TimerIconSize)
+                else
+                    tickLine:SetStartPoint("RIGHT", self.timerFrameOverlay, x, -ERAHUD_TimerIconSize)
+                end
                 tickLine:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timerMaxY)
                 t_channelTick = t_channelTick - tickInfo
             end

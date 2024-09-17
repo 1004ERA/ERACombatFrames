@@ -24,7 +24,9 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     ---@cast hud ERADKBloodHUD
     hud.strikeCost = 0
 
-    local damageTaken = ERAHUDDamageTakenWindow:Create(hud, hud.damageTaken, 222, 333)
+    if ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_TankWindow) then
+        local damageTaken = ERAHUDDamageTakenWindow:Create(hud, hud.damageTaken, 222, 333)
+    end
 
     local plague = hud:AddTrackedDebuffOnTarget(55078)
 

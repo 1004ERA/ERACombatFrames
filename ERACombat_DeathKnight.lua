@@ -40,9 +40,9 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
     ERADK_SuccorG = 0.7
     ERADK_SuccorB = 0.5
 
-    local bloodActive = 1  --ERACombatOptions_IsSpecActive(1)
-    local frostActive = 2  --ERACombatOptions_IsSpecActive(2)
-    local unholyActive = 3 --ERACombatOptions_IsSpecActive(3)
+    local bloodActive = ERACombatOptions_IsSpecActive(1)
+    local frostActive = ERACombatOptions_IsSpecActive(2)
+    local unholyActive = ERACombatOptions_IsSpecActive(3)
 
     cFrame.hideAlertsForSpec = { bloodActive, frostActive, unholyActive }
 

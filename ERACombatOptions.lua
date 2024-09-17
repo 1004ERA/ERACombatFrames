@@ -74,12 +74,16 @@ function ERACombatOptions_initialize()
                 class[s] = spec
             end
 
+            local specID, name = GetSpecializationInfoForClassID(c, s)
+            local fullName = className .. "-" .. name
+            --local frame = CreateFrame("Frame", "ECF_" .. fullName, optionsContent, "ERACombatOptionsSpecFrame")
             local frame = CreateFrame("Frame", nil, optionsContent, "ERACombatOptionsSpecFrame")
             table.insert(frames, frame)
             local cbx = frame.header.checkbox
-            local specID, name = GetSpecializationInfoForClassID(c, s)
-            --cbx.Text:SetText(className .. " - " .. name)
-            cbx:SetText(className .. " - " .. name)
+            cbx.Text:SetText(fullName)
+            --cbx:SetText(className .. " - " .. name)
+            --local cbxName = cbx:GetName()
+            --getglobal(cbx:GetName() .. "Text"):SetText(fullName)
             cbx:SetChecked(not spec.disabled)
             cbx:SetScript(
                 "OnClick",
@@ -92,8 +96,8 @@ function ERACombatOptions_initialize()
             for k, v in pairs(spec) do
                 if (k ~= "disabled") then
                     --local option = CreateFrame("CheckButton", nil, content, "OptionsSmallCheckButtonTemplate")
-                    local option = CreateFrame("CheckButton", nil, content, nil)
-                    --option.Text:SetText(k)
+                    local option = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+                    option.Text:SetText(k)
                     option:SetText(k)
                     option:SetChecked(v)
                     option:SetScript(

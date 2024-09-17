@@ -59,89 +59,96 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     --#region grid ---
     ------------------
 
-    local grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
-    ---@cast grid ERACombatGrid_MonkMistweaver
-    grid.invigoratingStandardHealing = 0
-    grid.invigoratingPredictedHealing = 0
+    ---@type ERACombatGrid|nil
+    local grid
+    if ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_Grid) then
+        grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
+        ---@cast grid ERACombatGrid_MonkMistweaver
+        grid.invigoratingStandardHealing = 0
+        grid.invigoratingPredictedHealing = 0
 
-    -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
-    local renewingDef = grid:AddTrackedBuff(119611, 0, 1, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, talent_renewing)
-    local envelopingDef = grid:AddTrackedBuff(124682, 1, 1, 0.6, 0.7, 0.0, 0.6, 0.7, 0.0, nil)
-    local cocoonDef = grid:AddTrackedBuff(116849, 2, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_cocoon)
+        -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
+        local renewingDef = grid:AddTrackedBuff(119611, 0, 1, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, talent_renewing)
+        local envelopingDef = grid:AddTrackedBuff(124682, 1, 1, 0.6, 0.7, 0.0, 0.6, 0.7, 0.0, nil)
+        local cocoonDef = grid:AddTrackedBuff(116849, 2, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_cocoon)
 
-    ---@type MonkMistweaverInvigoratingStep[]
-    local invigoratingSteps = {}
-    for i = 1, 6 do
-        table.insert(invigoratingSteps, {})
-    end
-
-    function grid:UpdatedInCombatOverride(t)
-        local baseH = GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100) * (1 + talents.healingDone2.rank * 0.02)
-        local crit = GetCritChance() / 100
-        local nocrit = 1 - crit
-        local minDur
-        if (hud.instaVivify.remDuration > 0) then
-            minDur = hud.occupied
-        else
-            minDur = hud.occupied + hud.totGCD
+        ---@type MonkMistweaverInvigoratingStep[]
+        local invigoratingSteps = {}
+        for i = 1, 6 do
+            table.insert(invigoratingSteps, {})
         end
 
-        local targetsCount = 0
-        for _, i in ipairs(renewingDef.instances) do
-            if (i.remDuration > minDur) then
-                targetsCount = targetsCount + 1
+        function grid:UpdatedInCombatOverride(t)
+            local baseH = GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100) * (1 + talents.healingDone2.rank * 0.02)
+            local crit = GetCritChance() / 100
+            local nocrit = 1 - crit
+            local minDur
+            if (hud.instaVivify.remDuration > 0) then
+                minDur = hud.occupied
+            else
+                minDur = hud.occupied + hud.totGCD
             end
-        end
 
-        local invigoratingH
-        if (targetsCount > 5) then
-            invigoratingH = 1.2 * baseH * (4 + math.sqrt(targetsCount - 4))
-        else
-            invigoratingH = 1.2 * baseH
-        end
-        if (talent_stronger_invigorating_10pct:PlayerHasTalent()) then
-            invigoratingH = invigoratingH * 1.1
-        end
-
-        local pulseH
-        if (talent_zenpulse:PlayerHasTalent()) then
-            pulseH = 1.5 * baseH
-        else
-            pulseH = 0
-        end
-        local pulseChance = 0.06 * targetsCount
-
-        invigoratingSteps[1].chance = nocrit * (1 - pulseChance)
-        invigoratingSteps[1].value = invigoratingH
-        invigoratingSteps[2].chance = nocrit * pulseChance * nocrit
-        invigoratingSteps[2].value = invigoratingH + pulseH
-        invigoratingSteps[3].chance = nocrit * pulseChance * crit
-        invigoratingSteps[3].value = invigoratingH + 2 * pulseH
-        invigoratingSteps[4].chance = crit * (1 - pulseChance)
-        invigoratingSteps[4].value = 2 * invigoratingH
-        invigoratingSteps[5].chance = crit * pulseChance * nocrit
-        invigoratingSteps[5].value = 2 * invigoratingH + pulseH
-        invigoratingSteps[6].chance = crit * pulseChance * crit
-        invigoratingSteps[6].value = 2 * invigoratingH + 2 * pulseH
-        --table.sort(invigoratingSteps, ERAMonkMistweaver_SortInvigoratingSteps) -- pas besoin
-
-        local acc = 0
-        for _, i in ipairs(renewingDef.instances) do
-            if (i.remDuration > minDur) then
-                local missing = i.unitframe.absorbHealingValue + i.unitframe.maxHealth - i.unitframe.currentHealth
-                for _, s in ipairs(invigoratingSteps) do
-                    acc = acc + s.chance * math.min(missing, s.value)
+            local targetsCount = 0
+            for _, i in ipairs(renewingDef.instances) do
+                if (i.remDuration > minDur) then
+                    targetsCount = targetsCount + 1
                 end
             end
+
+            local invigoratingH
+            if (targetsCount > 5) then
+                invigoratingH = 1.2 * baseH * (4 + math.sqrt(targetsCount - 4))
+            else
+                invigoratingH = 1.2 * baseH
+            end
+            if (talent_stronger_invigorating_10pct:PlayerHasTalent()) then
+                invigoratingH = invigoratingH * 1.1
+            end
+
+            local pulseH
+            if (talent_zenpulse:PlayerHasTalent()) then
+                pulseH = 1.5 * baseH
+            else
+                pulseH = 0
+            end
+            local pulseChance = 0.06 * targetsCount
+
+            invigoratingSteps[1].chance = nocrit * (1 - pulseChance)
+            invigoratingSteps[1].value = invigoratingH
+            invigoratingSteps[2].chance = nocrit * pulseChance * nocrit
+            invigoratingSteps[2].value = invigoratingH + pulseH
+            invigoratingSteps[3].chance = nocrit * pulseChance * crit
+            invigoratingSteps[3].value = invigoratingH + 2 * pulseH
+            invigoratingSteps[4].chance = crit * (1 - pulseChance)
+            invigoratingSteps[4].value = 2 * invigoratingH
+            invigoratingSteps[5].chance = crit * pulseChance * nocrit
+            invigoratingSteps[5].value = 2 * invigoratingH + pulseH
+            invigoratingSteps[6].chance = crit * pulseChance * crit
+            invigoratingSteps[6].value = 2 * invigoratingH + 2 * pulseH
+            --table.sort(invigoratingSteps, ERAMonkMistweaver_SortInvigoratingSteps) -- pas besoin
+
+            local acc = 0
+            for _, i in ipairs(renewingDef.instances) do
+                if (i.remDuration > minDur) then
+                    local missing = i.unitframe.absorbHealingValue + i.unitframe.maxHealth - i.unitframe.currentHealth
+                    for _, s in ipairs(invigoratingSteps) do
+                        acc = acc + s.chance * math.min(missing, s.value)
+                    end
+                end
+            end
+
+            self.invigoratingStandardHealing = 5 * (1.2 * baseH + 0.3 * 1.5 * baseH) * (1 + crit)
+            self.invigoratingPredictedHealing = acc
         end
 
-        self.invigoratingStandardHealing = 5 * (1.2 * baseH + 0.3 * 1.5 * baseH) * (1 + crit)
-        self.invigoratingPredictedHealing = acc
+        ERAHUD_MonkInvigoratingBar:create(hud, grid, talent_invigorating)
+    else
+        grid = nil
     end
 
     --#endregion
 
-    ERAHUD_MonkInvigoratingBar:create(hud, grid, talent_invigorating)
 
     --- SAO ---
 
@@ -238,7 +245,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
 
     local selfRenewingBar = hud:AddAuraBar(hud:AddTrackedBuff(119611, talent_renewing), nil, 0.0, 1.0, 0.0)
     function selfRenewingBar:ComputeDurationOverride(t)
-        if (grid.isSolo) then
+        if ((not grid) or grid.isSolo) then
             return self.aura.remDuration
         else
             return 0
@@ -246,7 +253,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     end
     local selfEnvelopingBar = hud:AddAuraBar(hud:AddTrackedBuff(124682), nil, 0.6, 0.7, 0.0)
     function selfEnvelopingBar:ComputeDurationOverride(t)
-        if (grid.isSolo) then
+        if ((not grid) or grid.isSolo) then
             return self.aura.remDuration
         else
             return 0

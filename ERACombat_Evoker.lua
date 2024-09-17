@@ -39,9 +39,9 @@ function ERACombatFrames_EvokerSetup(cFrame)
     ERACombatEvokerEssence_size = 22
     ERACombatEvokerEssence_spacing = 2
 
-    local devastationActive = 1
-    local preservationActive = 2
-    local augmentationActive = 3
+    local devastationActive = ERACombatOptions_IsSpecActive(1)
+    local preservationActive = ERACombatOptions_IsSpecActive(2)
+    local augmentationActive = ERACombatOptions_IsSpecActive(3)
 
     cFrame.hideAlertsForSpec = { devastationActive, preservationActive, augmentationActive }
 

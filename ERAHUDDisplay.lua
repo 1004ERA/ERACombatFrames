@@ -6,7 +6,7 @@
 
 ---@class (exact) ERAHUDBar
 ---@field private __index unknown
----@field protected constructBar fun(this:ERAHUDBar, hud:ERAHUD, iconID:integer|nil, r:number, g:number, b:number, texture:string|integer|Texture)
+---@field protected constructBar fun(this:ERAHUDBar, hud:ERAHUD, iconID:integer|nil, r:number, g:number, b:number, texture:string|integer|Texture, frameLevel:integer|nil)
 ---@field hud ERAHUD
 ---@field remDuration number
 ---@field private parentFrame Frame
@@ -47,7 +47,8 @@ ERAHUDBar.__index = ERAHUDBar
 ---@param g number
 ---@param b number
 ---@param texture string|integer|Texture
-function ERAHUDBar:constructBar(hud, iconID, r, g, b, texture)
+---@param frameLevel integer|nil
+function ERAHUDBar:constructBar(hud, iconID, r, g, b, texture, frameLevel)
     self.hud = hud
     self.remDuration = 0
     self.parentFrame = hud:addBar(self)
@@ -63,6 +64,9 @@ function ERAHUDBar:constructBar(hud, iconID, r, g, b, texture)
     ---@cast translation Translation
     ---@cast bar StatusBar
     self.display = bar
+    if frameLevel then
+        self.display:SetFrameLevel(frameLevel)
+    end
     self.anim = anim
     self.translation = translation
     local ea = self.endAnimate
@@ -285,7 +289,7 @@ function ERAHUDTargetCastBar:create(hud)
     local x = {}
     setmetatable(x, ERAHUDTargetCastBar)
     ---@cast x ERAHUDTargetCastBar
-    x:constructBar(hud, nil, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion")
+    x:constructBar(hud, nil, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion", 3)
     ERALIB_SetFont(x.text, ERACombat_TimerBarDefaultSize * 0.5)
     return x
 end
@@ -1009,12 +1013,12 @@ function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(t, combat)
         or
         (self.enrage and self.hud.targetDispellableEnrage)
     then
-        self.icon:Show()
         if self.data.remDuration > 0 then
             self.icon:StopHighlight()
         else
             self.icon:Highlight()
         end
+        self.icon:Show()
     else
         self.icon:Hide()
     end
