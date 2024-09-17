@@ -134,6 +134,9 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
     end
     hud:AddAuraOverlay(hud.evoker_essenceBurst, 2, essenceBurstAlert, false, "RIGHT", true, false, false, false)
 
+    hud.evoker_burnout = hud:AddTrackedBuff(375802, talents.burnout_or_onslaught)
+    hud:AddAuraOverlay(hud.evoker_burnout, 1, 449491, false, "BOTTOM", false, false, true, false)
+
     --- bars ---
 
     hud:AddChannelInfo(356995, 0.75)                         -- disintegrate
@@ -158,7 +161,6 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
         end
     end
 
-    hud.evoker_burnout = hud:AddTrackedBuff(375802, talents.burnout_or_onslaught)
     local burnoutBar = hud:AddAuraBar(hud.evoker_burnout, nil, 0, 1, 0)
     function burnoutBar:ComputeDurationOverride(t)
         if (self.aura.remDuration < self.hud.timerDuration or self.aura.stacks > 1) then
@@ -167,8 +169,6 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
             return 0
         end
     end
-    --hud:AddAuraOverlay(hud.evoker_burnout, 1, 457658, false, "MIDDLE", false, false, false, false)
-    hud:AddAuraOverlay(hud.evoker_burnout, 1, 449491, false, "MIDDLE", false, false, false, true)
 
     --- rotation ---
 
@@ -242,7 +242,7 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
     if spec == 2 then
         hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, true, true, false, false, false)
     else
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, true, false, false, false, false)
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, false, true, false, false, false)
     end
     hud:AddUtilityDispell(hud:AddTrackedCooldown(374251, talents.cauterize), hud.specialGroup, nil, nil, nil, false, true, true, true, true)
 end

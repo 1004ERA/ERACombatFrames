@@ -15,6 +15,7 @@ end
 ---@field playerGUID string
 ---@field inCombat boolean
 ---@field hideAlertsForSpec integer[]
+---@field private talents_changed number
 
 ERACombatFrame = {}
 ERACombatFrame.__index = ERACombatFrame
@@ -34,6 +35,8 @@ function ERACombatFrame:Create()
     c.activeModules = {}
     c.updateableModules = {}
     c.cleuModules = {}
+
+    c.talents_changed = 0
 
     -- évènements
     local events = {}
@@ -144,6 +147,11 @@ end
 
 function ERACombatFrame:updateTalents()
     ERACombatFrame_updateComputeTalents()
+    self:checkModuleTalents()
+    self.talents_changed = GetTime()
+end
+function ERACombatFrame:checkModuleTalents()
+    self.talents_changed = 0
     for _, m in ipairs(self.activeModules) do
         m:CheckTalents()
     end
@@ -280,6 +288,9 @@ function ERACombatFrame:enterCombat(fromIdle)
             function(self, elapsed)
                 local t = GetTime()
                 thisself:checkReset(t)
+                if thisself.talents_changed > 0 then
+                    thisself:checkModuleTalents()
+                end
                 for _, m in ipairs(thisself.updateableModules) do
                     m:updateCombat(t, elapsed)
                 end
@@ -328,6 +339,9 @@ function ERACombatFrame:registerUpdateIdle()
             function(self, elapsed)
                 local t = GetTime()
                 thisself:checkReset(t)
+                if thisself.talents_changed > 0 and t - thisself.talents_changed > 2 then
+                    thisself:checkModuleTalents()
+                end
                 for _, m in ipairs(thisself.updateableModules) do
                     m:updateIdle(t, elapsed)
                 end

@@ -188,7 +188,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
 
     local freebokBar = hud:AddAuraBar(freebok, nil, 0.7, 0.0, 0.1)
     function freebokBar:ComputeDurationOverride(t)
-        if self.timer.remDuration < self.hud.timerDuration then
+        if self.timer.remDuration < self.hud.timerDuration or self.aura.stacks > 1 then
             return self.timer.remDuration
         else
             return 0

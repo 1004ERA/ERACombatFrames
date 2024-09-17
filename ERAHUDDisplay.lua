@@ -1523,7 +1523,11 @@ function ERAHUDUtilityDispellInGroup:UpdatedOverride(t, combat)
         or
         (self.hud.selfDispellableBleed and self.bleed)
     then
-        self.icon:Beam()
+        if self.data.remDuration > 0 then
+            self.icon:StopBeam()
+        else
+            self.icon:Beam()
+        end
         self.icon:Show()
     else
         if self.data.remDuration > 0 then
