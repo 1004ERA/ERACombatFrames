@@ -34,6 +34,25 @@
         </Frames>
     </Frame>
 
+    <Frame name="ERACombatOptionsSlider" virtual="true">
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString inherits="GameFontNormal" parentKey="Text" text="toto">
+                    <Anchors>
+                        <Anchor point="LEFT" relativePoint="LEFT" x="8" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Slider parentKey="Slider" inherits="PropertySliderTemplate">
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="RIGHT" x="-8" y="0"/>
+                </Anchors>
+            </Slider>
+        </Frames>
+    </Frame>
+
     <Frame name="ERACombatOptionsFrame" parent="UIParent" hidden="true" inherits="BackdropTemplate">
         <KeyValues>
             <KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
@@ -53,6 +72,14 @@
                     <OnClick>C_UI.Reload()</OnClick>
                 </Scripts>
             </Button>
+            <!--
+            <Frame inherits="ERACombatOptionsSlider">
+                <Size x="200" y="100"/>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="RIGHT" x="-8" y="0"/>
+                </Anchors>
+            </Frame>
+            -->
             <Button text="close this window, I will reload the UI later" inherits="UIPanelButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativePoint="BOTTOM" x="4" y="36"/>

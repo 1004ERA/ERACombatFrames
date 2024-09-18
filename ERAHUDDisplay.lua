@@ -1875,9 +1875,9 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
 
     ---@type number, number
     local width, height
-    local widthSides = math.min(-offsetX, ERAHUD_UtilityMinRightX) / 2
+    local widthSides = math.min(100, math.min(-offsetX, ERAHUD_UtilityMinRightX) / 2)
     local heightSides = 2 * widthSides
-    local heightTopDown = (-offsetY - ERAHUD_UtilityMinBottomY) / 2
+    local heightTopDown = math.min(100, (-offsetY - ERAHUD_UtilityMinBottomY) / 2)
     local widthTopDown = 2 * heightTopDown
     if position == "LEFT" then
         width = widthSides
@@ -2270,8 +2270,8 @@ function ERAHUDEmpowerLevel:setNotUsed()
 end
 
 ---@param frameOverlay Frame
----@param timerHeight number
-function ERAHUDEmpowerLevel:drawOrHideIfUnused(frameOverlay, timerHeight)
+---@param timerY number
+function ERAHUDEmpowerLevel:drawOrHideIfUnused(frameOverlay, timerY)
     if (self.isUsed) then
         self.isUsed = false
         if (self.isPast) then
@@ -2290,10 +2290,10 @@ function ERAHUDEmpowerLevel:drawOrHideIfUnused(frameOverlay, timerHeight)
             self.text:SetPoint("LEFT", frameOverlay, "CENTER", 8, 0)
             if (self.hud.topdown) then
                 self.tick:SetStartPoint("RIGHT", frameOverlay, endPixel, ERAHUD_TimerIconSize)
-                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, -timerHeight)
+                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerY)
             else
                 self.tick:SetStartPoint("RIGHT", frameOverlay, endPixel, -ERAHUD_TimerIconSize)
-                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerHeight)
+                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerY)
             end
             self:show()
         elseif (self.isFuture) then
@@ -2310,11 +2310,11 @@ function ERAHUDEmpowerLevel:drawOrHideIfUnused(frameOverlay, timerHeight)
             if (self.hud.topdown) then
                 self.text:SetPoint("CENTER", frameOverlay, "RIGHT", (startPixel + endPixel) / 2, ERAHUD_TimerIconSize / 2)
                 self.tick:SetStartPoint("RIGHT", frameOverlay, endPixel, ERAHUD_TimerIconSize)
-                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, -timerHeight)
+                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerY)
             else
                 self.text:SetPoint("CENTER", frameOverlay, "RIGHT", (startPixel + endPixel) / 2, -ERAHUD_TimerIconSize / 2)
                 self.tick:SetStartPoint("RIGHT", frameOverlay, endPixel, -ERAHUD_TimerIconSize)
-                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerHeight)
+                self.tick:SetEndPoint("RIGHT", frameOverlay, endPixel, timerY)
             end
             self:show()
         end

@@ -53,6 +53,7 @@ function ERACombatOptions_initialize()
     ERACombatOptions_addSpecOption(10, 2, ERACombatOptions_Grid)       -- monk heal
     ERACombatOptions_addSpecOption(11, 4, ERACombatOptions_Grid)       -- druid heal
     ERACombatOptions_addSpecOption(12, 2, ERACombatOptions_TankWindow) -- dh vengeance
+    ERACombatOptions_addSpecOption(13, 2, ERACombatOptions_Grid)       -- evo heal
 
     local optionsContent = ERACombatOptionsFrame.ScrollFrame.ScrollChild
     local y = -16
