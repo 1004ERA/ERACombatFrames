@@ -37,7 +37,8 @@ function ERACombatFrames_event(event, ...)
         --ERACombatFrames_PlayerIsNotMaxLevel = UnitLevel("player") < 70
         local _, _, classID = UnitClass("player")
         ERACombatFrames_classID = classID
-        ERACombatOptions_initialize()
+        ERACombatOptions_setup(classID)
+        --ERACombatOptions_initialize()
         local cFrame = ERACombatFrame:Create()
         if (classID == 2) then
             ERACombatFrames_PaladinSetup(cFrame)

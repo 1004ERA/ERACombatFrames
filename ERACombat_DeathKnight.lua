@@ -78,12 +78,21 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
     local enemies = ERACombatEnemies:Create(cFrame, bloodActive, frostActive, unholyActive)
 
     if (bloodActive) then
+        --ERAPieIcon_BorderR = 1.0
+        --ERAPieIcon_BorderG = 0.0
+        --ERAPieIcon_BorderB = 0.0
         ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     end
     if (frostActive) then
+        --ERAPieIcon_BorderR = 0.0
+        --ERAPieIcon_BorderG = 0.0
+        --ERAPieIcon_BorderB = 1.0
         ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     end
     if (unholyActive) then
+        --ERAPieIcon_BorderR = 0.0
+        --ERAPieIcon_BorderG = 1.0
+        --ERAPieIcon_BorderB = 0.0
         ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     end
 end
@@ -319,7 +328,7 @@ function ERADKRunesModule:preUpdateData(t, combat)
     end
 end
 function ERARunes_sort(r1, r2)
-    return r1.remDur < r2.remDur
+    return r1.remDur > r2.remDur
 end
 
 ---@param t number

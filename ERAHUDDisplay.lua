@@ -586,6 +586,7 @@ function ERAHUDTimerItem:update(t)
                 self.lineVisible = true
                 self.line:Show()
             end
+            self.icon:Show()
             self.priority = 0
         end
     end
@@ -660,7 +661,7 @@ end
 ---@class (exact) ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, iconSize:number, frame:Frame, talent:ERALIBTalent|nil)
----@field protected checkAdditionalTalent fun(this:ERAHUDIcon): boolean
+---@field protected checkIconTalent fun(this:ERAHUDIcon): boolean
 ---@field protected updateIconID fun(this:ERAHUDIcon, currentIconID:integer): integer
 ---@field talent ERALIBTalent|nil
 ---@field talentActive boolean
@@ -683,7 +684,7 @@ function ERAHUDIcon:constructIcon(hud, iconID, iconSize, frame, talent)
 end
 
 function ERAHUDIcon:checkTalentOrHide()
-    if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkAdditionalTalent() then
+    if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkIconTalent() then
         self.icon:Hide()
         self.talentActive = false
         return false
@@ -693,15 +694,10 @@ function ERAHUDIcon:checkTalentOrHide()
             self.iconID = i
             self.icon:SetIconTexture(i, true)
         end
-        self.icon:Show()
+        --self.icon:Show()
         self.talentActive = true
         return true
     end
-end
-
----@return boolean
-function ERAHUDIcon:checkAdditionalTalent()
-    return true
 end
 
 ---@param currentIconID integer
@@ -780,6 +776,7 @@ end
 ---@class (exact) ERAHUDRotationIcon : ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected checkAdditionalTalent fun(this:ERAHUDRotationIcon): boolean
 ---@field update fun(this:ERAHUDRotationIcon, t:number, combat:boolean)
 ---@field specialPosition boolean
 ---@field overlapPrevious boolean
@@ -795,6 +792,15 @@ function ERAHUDRotationIcon:constructRotationIcon(hud, iconID, talent)
     self:constructIcon(hud, iconID, ERAHUD_RotationIconSize, frame, talent)
     self.specialPosition = false
     self.overlapPrevious = false
+end
+
+---@return boolean
+function ERAHUDRotationIcon:checkIconTalent()
+    return self:checkAdditionalTalent()
+end
+---@return boolean
+function ERAHUDRotationIcon:checkAdditionalTalent()
+    return true
 end
 
 ----------------
@@ -1270,6 +1276,7 @@ end
 ---@class (exact) ERAHUDUtilityIcon : ERAHUDIcon
 ---@field private __index unknown
 ---@field protected constructUtilityIcon fun(this:ERAHUDUtilityIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected checkAdditionalTalent fun(this:ERAHUDUtilityIcon): boolean
 ---@field update fun(this:ERAHUDUtilityIcon, t:number, combat:boolean)
 ERAHUDUtilityIcon = {}
 ERAHUDUtilityIcon.__index = ERAHUDUtilityIcon
@@ -1281,6 +1288,15 @@ setmetatable(ERAHUDUtilityIcon, { __index = ERAHUDIcon })
 function ERAHUDUtilityIcon:constructUtilityIcon(hud, iconID, talent)
     local parentFrame = hud:addUtilityIcon(self)
     self:constructIcon(hud, iconID, ERAHUD_UtilityIconSize, parentFrame, talent)
+end
+
+---@return boolean
+function ERAHUDUtilityIcon:checkIconTalent()
+    return self.hud.showUtility and self:checkAdditionalTalent()
+end
+---@return boolean
+function ERAHUDUtilityIcon:checkAdditionalTalent()
+    return true
 end
 
 --#region IN GROUP
@@ -1875,9 +1891,9 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
 
     ---@type number, number
     local width, height
-    local widthSides = math.min(100, math.min(-offsetX, ERAHUD_UtilityMinRightX) / 2)
+    local widthSides = math.max(1, math.min(100, math.min(-offsetX, hud.UtilityMinRightX) / 2))
     local heightSides = 2 * widthSides
-    local heightTopDown = math.min(100, (-offsetY - ERAHUD_UtilityMinBottomY) / 2)
+    local heightTopDown = math.max(1, math.min(100, (-offsetY - hud.UtilityMinBottomY) / 2))
     local widthTopDown = 2 * heightTopDown
     if position == "LEFT" then
         width = widthSides
@@ -1929,11 +1945,15 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
     self.display:Hide()
     self.isActive = false
     self.talent = talent
+
+    if widthSides <= 10 or heightTopDown <= 1 then
+        hud.showSAO = false
+    end
 end
 
 ---@return boolean
 function ERASAO:checkTalentOrHide()
-    if ((not self.talent) or self.talent:PlayerHasTalent()) and self:checkTalentSAO() then
+    if self.hud.showSAO and ((not self.talent) or self.talent:PlayerHasTalent()) and self:checkTalentSAO() then
         return true
     else
         self.display:Hide()
@@ -1944,7 +1964,7 @@ end
 ---@param combat boolean
 ---@param t number
 function ERASAO:update(t, combat)
-    if self:getIsActive(t, combat) and self:ConfirmIsActiveOverride(t, combat) then
+    if self.hud.showUtility and self:getIsActive(t, combat) and self:ConfirmIsActiveOverride(t, combat) then
         if not self.isActive then
             self.isActive = true
             self.display:Show()

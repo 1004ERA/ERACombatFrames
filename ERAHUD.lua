@@ -47,6 +47,10 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 
 ---@class (exact) ERAHUD
 ---@field private __index unknown
+---@field showUtility boolean
+---@field showSAO boolean
+---@field UtilityMinRightX number
+---@field UtilityMinBottomY number
 ---@field private isHealer boolean
 ---@field topdown boolean
 ---@field barsWidth number
@@ -202,24 +206,34 @@ setmetatable(ERAHUD, { __index = ERACombatModule })
 ---@param spec integer
 ---@return ERAHUD
 function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower, gPower, bPower, showPet, spec)
+    local specOptions = ERACombatOptions_getOptionsForSpec(nil, spec)
     local hud = {}
     setmetatable(hud, ERAHUD)
     ---@cast hud ERAHUD
     hud:construct(cFrame, 0.2, 0.02, requireCLEU, spec)
 
+    hud.showUtility = not specOptions.hideUtility
+    hud.showSAO = not specOptions.hideSAO
+    hud.UtilityMinRightX = specOptions.rightX
+    if hud.UtilityMinRightX == nil then hud.UtilityMinRightX = ERAHUD_UtilityMinRightX end
+    hud.UtilityMinBottomY = specOptions.bottomY
+    if hud.UtilityMinBottomY == nil then hud.UtilityMinBottomY = ERAHUD_UtilityMinBottomY end
+
     hud.barsWidth = 144
+    hud.offsetX = specOptions.leftX
+    hud.offsetY = specOptions.offsetY
     if isHealer then
         hud.isHealer = true
         hud.topdown = true
-        hud.offsetX = ERAHUD_HealerOffsetX
-        hud.offsetY = ERAHUD_HealerTimerOffsetY
+        if hud.offsetX == nil then hud.offsetX = ERAHUD_HealerOffsetX end
+        if hud.offsetY == nil then hud.offsetY = ERAHUD_HealerTimerOffsetY end
         hud.statusBaseX = 1.5 * ERAHUD_TimerIconSize + hud.barsWidth / 2
         hud.statusBaseY = ERAHUD_HealerMainOffsetY
     else
         hud.isHealer = false
         hud.topdown = false
-        hud.offsetX = ERAHUD_OffsetX
-        hud.offsetY = ERAHUD_OffsetY
+        if hud.offsetX == nil then hud.offsetX = ERAHUD_OffsetX end
+        if hud.offsetY == nil then hud.offsetY = ERAHUD_OffsetY end
         hud.statusBaseX = -ERAHUD_TimerIconSize - hud.barsWidth / 2
         hud.statusBaseY = -1.5 * ERAHUD_TimerIconSize
     end
@@ -623,8 +637,10 @@ function ERAHUD:EnterCombat()
     if self.power then
         self.power.bar:show()
     end
-    for _, g in ipairs(self.utilityGroups) do
-        g:showIfHasContent()
+    if self.showUtility then
+        for _, g in ipairs(self.utilityGroups) do
+            g:showIfHasContent()
+        end
     end
 end
 
@@ -1889,7 +1905,7 @@ function ERAHUD:updateUtilityLayout()
         --#region HEALER LAYOUT
 
         local x = ERAHUD_TimerIconSize
-        local y = math.min(self.statusMaxY, ERAHUD_UtilityMinBottomY)
+        local y = math.min(self.statusMaxY, self.UtilityMinBottomY)
         if self.healGroup.width > 0 and self.healGroup.height > 0 then
             self.healGroup:arrange(x, y, self.mainFrame)
             x = x + self.healGroup.width + ERAHUD_UtilityGoupSpacing
@@ -1906,8 +1922,8 @@ function ERAHUD:updateUtilityLayout()
             self.specialGroup:arrange(x, y, self.mainFrame)
         end
         local xBottom = x + self.specialGroup.width
-        if x < ERAHUD_UtilityMinRightX - self.offsetX then
-            x = ERAHUD_UtilityMinRightX - self.offsetX
+        if x < self.UtilityMinRightX - self.offsetX then
+            x = self.UtilityMinRightX - self.offsetX
         end
         if self.controlGroup.width > 0 and self.controlGroup.height > 0 then
             y = y + self.controlGroup.height + ERAHUD_UtilityGoupSpacing
@@ -1930,7 +1946,7 @@ function ERAHUD:updateUtilityLayout()
         end
 
         local xBottom = self.statusBaseX + self.barsWidth / 2 + ERAHUD_RotationIconSize
-        local y = self.offsetY + ERAHUD_UtilityMinBottomY
+        local y = self.offsetY + self.UtilityMinBottomY
         if self.powerUpGroup.width > 0 and self.powerUpGroup.height > 0 then
             self.powerUpGroup:arrange(xBottom, y, self.mainFrame)
             xBottom = xBottom + self.powerUpGroup.width + ERAHUD_UtilityGoupSpacing
@@ -1940,8 +1956,8 @@ function ERAHUD:updateUtilityLayout()
             xBottom = xBottom + self.defenseGroup.width + ERAHUD_UtilityGoupSpacing
         end
         local xRight
-        if xBottom < ERAHUD_UtilityMinRightX - self.offsetX then
-            xRight = ERAHUD_UtilityMinRightX - self.offsetX
+        if xBottom < self.UtilityMinRightX - self.offsetX then
+            xRight = self.UtilityMinRightX - self.offsetX
         else
             xRight = xBottom
         end
@@ -2004,7 +2020,7 @@ function ERAHUD:updateUtilityLayout()
     --#region missing
 
     xMissing = xMissing + ERAHUD_UtilityGoupSpacing + ERAHUD_UtilityIconSize / 2
-    local yMissing = ERAHUD_UtilityMinBottomY
+    local yMissing = self.UtilityMinBottomY
     local largeColumn = true
     count = 0
     for _, i in ipairs(self.emptyTimers) do
@@ -2014,7 +2030,7 @@ function ERAHUD:updateUtilityLayout()
             local newColumn
             if largeColumn then
                 if count >= 5 then
-                    yMissing = ERAHUD_UtilityMinBottomY + utilityIconSize / 2
+                    yMissing = self.UtilityMinBottomY + utilityIconSize / 2
                     largeColumn = false
                     newColumn = true
                 else
@@ -2022,7 +2038,7 @@ function ERAHUD:updateUtilityLayout()
                 end
             else
                 if count >= 4 then
-                    yMissing = ERAHUD_UtilityMinBottomY
+                    yMissing = self.UtilityMinBottomY
                     largeColumn = true
                     newColumn = true
                 else

@@ -1,7 +1,37 @@
 SLASH_ECF1 = "/ECF"
 SlashCmdList["ECF"] = function(msg)
-    ERACombatOptionsFrame:Show()
+    --ERACombatOptionsFrame:Show()
+    ERACombatOptions_open()
 end
+
+---@class ERACombatSpecOptions
+---@field disabled boolean|nil
+---@field offsetY number|nil
+---@field leftX number|nil
+---@field rightX number|nil
+---@field bottomY number|nil
+---@field hideSAO boolean|nil
+---@field hideUtility boolean|nil
+
+---@class OptionSliderFrame
+---@field Slider Slider
+
+---@class (exact) ERACombatOptionsSlider
+---@field SliderFrame OptionSliderFrame
+---@field Label FontString
+---@field Result FontString
+
+---@class (exact) ERACombatOptionsWindow : Frame
+---@field CBX CheckButton
+---@field YSlider ERACombatOptionsSlider
+---@field LeftSlider ERACombatOptionsSlider
+---@field RightSlider ERACombatOptionsSlider
+---@field BottomSlider ERACombatOptionsSlider
+---@field Utility CheckButton
+---@field SAO CheckButton
+---@field Grid CheckButton
+---@field TankWindow CheckButton
+---@field currentSpec ERACombatSpecOptions|nil
 
 BINDING_HEADER_ERACOMBATFRAMES = "ERACombatFrames"
 BINDING_NAME_ERACOMBATFRAMES_RELOADUI = "Reload UI"
@@ -25,6 +55,9 @@ ERACombatOptions_FrameContentWidth = 1004
 ERACombatOptions_TankWindow = "damage chart"
 ERACombatOptions_Grid = "group/raid frames"
 
+---@param classID integer
+---@param specID integer
+---@param optionName string
 function ERACombatOptions_addSpecOption(classID, specID, optionName)
     local class = ERACombatOptionsVariables[classID]
     if (not class) then
@@ -41,8 +74,15 @@ function ERACombatOptions_addSpecOption(classID, specID, optionName)
     end
 end
 
-function ERACombatOptions_initialize()
-    if (not ERACombatOptionsVariables) then
+---@param spec ERACombatSpecOptions
+---@return boolean
+function ERACombatOptions_isHealer(spec)
+    return spec[ERACombatOptions_Grid] ~= nil
+end
+
+---@param classID integer
+function ERACombatOptions_setup(classID)
+    if ERACombatOptionsVariables == nil then
         ERACombatOptionsVariables = {}
     end
 
@@ -55,77 +95,159 @@ function ERACombatOptions_initialize()
     ERACombatOptions_addSpecOption(12, 2, ERACombatOptions_TankWindow) -- dh vengeance
     ERACombatOptions_addSpecOption(13, 2, ERACombatOptions_Grid)       -- evo heal
 
-    local optionsContent = ERACombatOptionsFrame.ScrollFrame.ScrollChild
-    local y = -16
-    for c = 1, GetNumClasses() do
-        local class = ERACombatOptionsVariables[c]
-        if (not class) then
-            class = {}
-            ERACombatOptionsVariables[c] = class
-        end
-        local className = GetClassInfo(c)
-        local scount = GetNumSpecializationsForClassID(c)
-        local max_spec_height = 36
-        local frames = {}
-        local specWidth = ERACombatOptions_FrameContentWidth / scount
-        for s = 1, scount do
-            local spec = class[s]
-            if (not spec) then
-                spec = {}
-                class[s] = spec
-            end
-
-            local specID, name = GetSpecializationInfoForClassID(c, s)
-            local fullName = className .. "-" .. name
-            --local frame = CreateFrame("Frame", "ECF_" .. fullName, optionsContent, "ERACombatOptionsSpecFrame")
-            local frame = CreateFrame("Frame", nil, optionsContent, "ERACombatOptionsSpecFrame")
-            table.insert(frames, frame)
-            local cbx = frame.header.checkbox
-            cbx.Text:SetText(fullName)
-            --cbx:SetText(className .. " - " .. name)
-            --local cbxName = cbx:GetName()
-            --getglobal(cbx:GetName() .. "Text"):SetText(fullName)
-            cbx:SetChecked(not spec.disabled)
-            cbx:SetScript(
-                "OnClick",
-                function()
-                    spec.disabled = not cbx:GetChecked()
-                end
-            )
-            local y_inner = 0
-            local content = frame.details
-            for k, v in pairs(spec) do
-                if (k ~= "disabled") then
-                    --local option = CreateFrame("CheckButton", nil, content, "OptionsSmallCheckButtonTemplate")
-                    local option = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-                    option.Text:SetText(k)
-                    option:SetText(k)
-                    option:SetChecked(v)
-                    option:SetScript(
-                        "OnClick",
-                        function()
-                            spec[k] = option:GetChecked()
-                        end
-                    )
-                    option:SetPoint("TOPLEFT", content, "TOPLEFT", 8, y_inner - 10)
-                    y_inner = y_inner - 20
-                end
-            end
-            max_spec_height = math.max(max_spec_height, 36 - y_inner)
-        end
-        for s = 1, scount do
-            local frame = frames[s]
-            local xleft = (s - 1) * specWidth + ERACombatOptions_FrameContentOffset
-            local xright = s * specWidth + ERACombatOptions_FrameContentOffset
-            frame:SetSize(specWidth, 36)
-            frame:SetPoint("TOPLEFT", optionsContent, "TOPLEFT", xleft, y)
-            frame:SetPoint("BOTTOMRIGHT", optionsContent, "TOPLEFT", xright, y - max_spec_height)
-        end
-        y = y - max_spec_height - 28
+    local classOptions = ERACombatOptionsVariables[classID]
+    if (not classOptions) then
+        classOptions = {}
+        ERACombatOptionsVariables[classID] = class
     end
-    optionsContent:SetSize(ERACombatOptions_FrameContentWidth, -y)
+
+    local w = ERACombatOptionsWindow
+    local txt = w.CBX.Text
+    ---@cast w ERACombatOptionsWindow
+    ---@cast txt FontString
+
+    ERALIB_SetFont(txt, 22)
+
+    ERACombatOptions_initializeSlider(w.YSlider, "Y offset", -333, 333, ERAHUD_OffsetY)
+    ERACombatOptions_initializeSlider(w.LeftSlider, "left offset (timers)", -444, -111, -ERAHUD_OffsetX)
+    ERACombatOptions_initializeSlider(w.RightSlider, "right offset (utility cooldowns/icons)", 111, 444, ERAHUD_UtilityMinRightX)
+    ERACombatOptions_initializeSlider(w.BottomSlider, "bottom offset (utility cooldowns/icons)", -333, -111, -ERAHUD_UtilityMinBottomY)
+
+    local cbxUtility = w.Utility
+    local cbxSAO = w.SAO
+    local cbxGrid = w.Grid
+    local cbxTankWindow = w.TankWindow
+    ---@cast cbxUtility unknown
+    ---@cast cbxSAO unknown
+    ---@cast cbxGrid unknown
+    ---@cast cbxTankWindow unknown
+    cbxUtility.Text:SetText("utility cooldowns and icons")
+    cbxSAO.Text:SetText("spell activation overlay")
+    cbxGrid.Text:SetText("group/raid frame")
+    cbxTankWindow.Text:SetText("damage taken chart")
 end
 
+---@param s ERACombatOptionsSlider
+---@param label string
+---@param minValue number
+---@param maxValue number
+---@param defaultValue number
+function ERACombatOptions_initializeSlider(s, label, minValue, maxValue, defaultValue)
+    s.Label:SetText(label)
+    s.SliderFrame.Slider:SetMinMaxValues(minValue, maxValue)
+    s.SliderFrame.Slider:SetValueStep(1)
+    s.SliderFrame.Slider:SetScript("OnValueChanged", function(self, value, userInput)
+        s.Result:SetText(tostring(math.floor(value)))
+    end)
+    s.SliderFrame.Slider:SetValue(defaultValue, false)
+end
+
+---@param s ERACombatOptionsSlider
+---@param value number|nil
+---@param defaultValue number
+function ERACombatOptions_setupSlider(s, value, defaultValue)
+    if value == nil then value = defaultValue end
+    s.SliderFrame.Slider:SetValue(value)
+end
+
+function ERACombatOptions_open()
+    local _, _, classID = UnitClass("player")
+    local specID = GetSpecialization()
+    local _, name = GetSpecializationInfoForClassID(classID, specID)
+
+    local w = ERACombatOptionsWindow
+    local txt = w.CBX.Text
+    ---@cast w ERACombatOptionsWindow
+    ---@cast txt FontString
+    txt:SetText("enable for specialization : " .. name)
+
+    local specOptions = ERACombatOptions_getOptionsForSpec(classID, specID)
+
+    w.CBX:SetChecked(not specOptions.disabled)
+
+    local leftX, offY
+    if ERACombatOptions_isHealer(specOptions) then
+        leftX = ERAHUD_HealerOffsetX
+        offY = ERAHUD_HealerTimerOffsetY
+    else
+        leftX = ERAHUD_OffsetX
+        offY = ERAHUD_OffsetY
+    end
+    ERACombatOptions_setupSlider(w.YSlider, specOptions.offsetY, offY)
+    ERACombatOptions_setupSlider(w.LeftSlider, specOptions.leftX, leftX)
+    ERACombatOptions_setupSlider(w.RightSlider, specOptions.rightX, ERAHUD_UtilityMinRightX)
+    ERACombatOptions_setupSlider(w.BottomSlider, specOptions.bottomY, ERAHUD_UtilityMinBottomY)
+
+    w.Utility:SetChecked(not specOptions.hideUtility)
+    w.SAO:SetChecked(not specOptions.hideSAO)
+
+    local grid = specOptions[ERACombatOptions_Grid]
+    if grid == nil then
+        w.Grid:Hide()
+    else
+        w.Grid:SetChecked(grid)
+        w.Grid:Show()
+    end
+
+    local tw = specOptions[ERACombatOptions_TankWindow]
+    if tw == nil then
+        w.TankWindow:Hide()
+    else
+        w.TankWindow:SetChecked(tw)
+        w.TankWindow:Show()
+    end
+
+    w.currentSpec = specOptions
+
+    w:Show()
+end
+
+function ERACombatOptions_confirmAndReload()
+    local w = ERACombatOptionsWindow
+    ---@cast w ERACombatOptionsWindow
+    if w.currentSpec ~= nil then
+        w.currentSpec.disabled = not w.CBX:GetChecked()
+        w.currentSpec.offsetY = w.YSlider.SliderFrame.Slider:GetValue()
+        w.currentSpec.leftX = w.LeftSlider.SliderFrame.Slider:GetValue()
+        w.currentSpec.rightX = w.RightSlider.SliderFrame.Slider:GetValue()
+        w.currentSpec.bottomY = w.BottomSlider.SliderFrame.Slider:GetValue()
+        w.currentSpec.hideUtility = not w.Utility:GetChecked()
+        w.currentSpec.hideSAO = not w.SAO:GetChecked()
+        if w.currentSpec[ERACombatOptions_Grid] ~= nil then
+            w.currentSpec[ERACombatOptions_Grid] = w.Grid:GetChecked()
+        end
+        if w.currentSpec[ERACombatOptions_TankWindow] ~= nil then
+            w.currentSpec[ERACombatOptions_TankWindow] = w.TankWindow:GetChecked()
+        end
+    end
+    C_UI.Reload()
+end
+
+---@param classID integer|nil
+---@param specID integer|nil
+---@return ERACombatSpecOptions
+function ERACombatOptions_getOptionsForSpec(classID, specID)
+    if classID == nil then
+        _, _, classID = UnitClass("player")
+    end
+    if specID == nil then
+        specID = GetSpecialization()
+    end
+    local classData = ERACombatOptionsVariables[classID]
+    if classData == nil then
+        classData = {}
+        ERACombatOptionsVariables[classID] = classData
+    end
+    local specData = classData[specID]
+    if specData == nil then
+        specData = {}
+        classData[specID] = specData
+    end
+    return specData
+end
+
+---@param specID integer
+---@return integer|nil
 function ERACombatOptions_IsSpecActive(specID)
     local c = ERACombatOptionsVariables[ERACombatFrames_classID]
     if (c) then
@@ -144,6 +266,9 @@ function ERACombatOptions_IsSpecActive(specID)
     end
 end
 
+---@param specID integer
+---@param moduleName string
+---@return boolean
 function ERACombatOptions_IsSpecModuleActive(specID, moduleName)
     local c = ERACombatOptionsVariables[ERACombatFrames_classID]
     if (c) then

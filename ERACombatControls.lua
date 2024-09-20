@@ -65,7 +65,7 @@ function ERAIcon:constructIcon(parentFrame, relativePoint, size, iconID)
 
     -- statut
     self.visible = true
-    self:Hide()
+    --self:Hide()
 end
 
 function ERAIcon:SetIconTexture(iconID, force)
@@ -177,8 +177,8 @@ function ERAIcon:Draw(x, y, translateIfMoved)
             self.y = y
         end
     else
-        self.visible = true
-        self.frame:Show()
+        --self.visible = true
+        --self.frame:Show()
         self.x = x
         self.y = y
         self:endTranslate()

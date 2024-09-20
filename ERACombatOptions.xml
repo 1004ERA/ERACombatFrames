@@ -1,6 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\..\FrameXML\UI.xsd">
 
+    <!--
     <Frame name="ERACombatOptionsSpecFrame" virtual="true">
         <Frames>
             <Frame parentKey="header" inherits="BackdropTemplate" frameLevel="2">
@@ -34,25 +35,6 @@
         </Frames>
     </Frame>
 
-    <Frame name="ERACombatOptionsSlider" virtual="true">
-        <Layers>
-            <Layer level="ARTWORK">
-                <FontString inherits="GameFontNormal" parentKey="Text" text="toto">
-                    <Anchors>
-                        <Anchor point="LEFT" relativePoint="LEFT" x="8" y="0"/>
-                    </Anchors>
-                </FontString>
-            </Layer>
-        </Layers>
-        <Frames>
-            <Slider parentKey="Slider" inherits="PropertySliderTemplate">
-                <Anchors>
-                    <Anchor point="RIGHT" relativePoint="RIGHT" x="-8" y="0"/>
-                </Anchors>
-            </Slider>
-        </Frames>
-    </Frame>
-
     <Frame name="ERACombatOptionsFrame" parent="UIParent" hidden="true" inherits="BackdropTemplate">
         <KeyValues>
             <KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
@@ -72,14 +54,6 @@
                     <OnClick>C_UI.Reload()</OnClick>
                 </Scripts>
             </Button>
-            <!--
-            <Frame inherits="ERACombatOptionsSlider">
-                <Size x="200" y="100"/>
-                <Anchors>
-                    <Anchor point="RIGHT" relativePoint="RIGHT" x="-8" y="0"/>
-                </Anchors>
-            </Frame>
-            -->
             <Button text="close this window, I will reload the UI later" inherits="UIPanelButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativePoint="BOTTOM" x="4" y="36"/>
@@ -102,6 +76,137 @@
         <Layers>
             <Layer level="ARTWORK">
                 <FontString inherits="GameFontNormal" text="NOTE 1 : you need to reload your UI to apply the changes immediately |||| NOTE 2 : currently, only Death Knight, Evoker and Monk are implemented for TWW">
+                    <Anchors>
+                        <Anchor point="BOTTOM" relativePoint="BOTTOM" x="0" y="44"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+    -->
+
+    <Frame name="ERACombatOptionsSlider" virtual="true">
+        <Size x="777" y="44"/>
+        <Frames>
+            <Frame parentKey="SliderFrame" inherits="MinimalSliderWithSteppersTemplate">
+                <Size x="555" y="32"/>
+                <Anchors>
+                    <Anchor point="LEFT" x="333" y="0"/>
+                </Anchors>
+            </Frame>
+        </Frames>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString parentKey="Label" inherits="GameFontNormal">
+                    <Size x="256" y="32"/>
+                    <Anchors>
+                        <Anchor point="LEFT" x="4" y="0"/>
+                    </Anchors>
+                </FontString>
+                <FontString parentKey="Result" inherits="GameFontNormal">
+                    <Size x="44" y="32"/>
+                    <Anchors>
+                        <Anchor point="LEFT" x="272" y="0"/>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+
+    <Frame name="ERACombatOptionsWindow" parent="UIParent" hidden="true" inherits="BackdropTemplate">
+        <KeyValues>
+            <KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
+            <KeyValue key="backdropColor" value="TOOLTIP_DEFAULT_BACKGROUND_COLOR" type="global"/>
+        </KeyValues>
+        <Size x="999" y="444"/>
+        <Anchors>
+            <Anchor point="TOP" relativePoint="TOP" x="0" y ="-32"/>
+        </Anchors>
+        <Frames>
+
+            <CheckButton parentKey="CBX" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-16"/>
+                </Anchors>
+            </CheckButton>
+
+            <Frame parentKey="YSlider" inherits="ERACombatOptionsSlider">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-44"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="LeftSlider" inherits="ERACombatOptionsSlider">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-88"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="RightSlider" inherits="ERACombatOptionsSlider">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-132"/>
+                </Anchors>
+            </Frame>
+
+            <Frame parentKey="BottomSlider" inherits="ERACombatOptionsSlider">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="4" y="-176"/>
+                </Anchors>
+            </Frame>
+
+            <CheckButton parentKey="Utility" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-220"/>
+                </Anchors>
+            </CheckButton>
+
+            <CheckButton parentKey="SAO" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-242"/>
+                </Anchors>
+            </CheckButton>
+
+            <CheckButton parentKey="Grid" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-264"/>
+                </Anchors>
+            </CheckButton>
+
+            <CheckButton parentKey="TankWindow" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-286"/>
+                </Anchors>
+            </CheckButton>
+
+            <Button text="confirm changes and reload UI" inherits="UIPanelButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="BOTTOMLEFT" x="16" y="36"/>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOM" x="-4" y="12"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptions_confirmAndReload()</OnClick>
+                </Scripts>
+            </Button>
+            <Button text="discard changes and close window" inherits="UIPanelButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="BOTTOM" x="4" y="36"/>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" x="-16" y="12"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptionsWindow.currentSpec=nil;ERACombatOptionsWindow:Hide()</OnClick>
+                </Scripts>
+            </Button>
+
+        </Frames>
+        <Layers>
+            <Layer level="ARTWORK">
+                <FontString inherits="GameFontNormal" wordwrap="true" text="These options are specific to each class/specialization. You must switch specialization and reopen this window (with the '/ecf' command) to change the settings of other specializations.">
+                    <Size x="505"/>
+                    <Anchors>
+                        <Anchor point="BOTTOM" relativePoint="BOTTOM" x="0" y="88"/>
+                    </Anchors>
+                </FontString>
+                <FontString inherits="GameFontNormal" text="NOTE : the UI must be reloaded to apply the changes">
                     <Anchors>
                         <Anchor point="BOTTOM" relativePoint="BOTTOM" x="0" y="44"/>
                     </Anchors>
