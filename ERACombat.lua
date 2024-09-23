@@ -14,7 +14,7 @@ end
 ---@field Pack function
 ---@field playerGUID string
 ---@field inCombat boolean
----@field hideAlertsForSpec integer[]
+---@field hideAlertsForSpec (ERACombatSpecOptions|nil)[]
 ---@field private talents_changed number
 
 ERACombatFrame = {}
@@ -237,8 +237,9 @@ function ERACombatFrame:resetToIdle(fullReset)
     local specID = GetSpecialization()
     if (self.hideAlertsForSpec) then
         local hideA = false
-        for _, hfs in ipairs(self.hideAlertsForSpec) do
-            if (hfs == specID) then
+        for _, specOptions in ipairs(self.hideAlertsForSpec) do
+            ---@cast specOptions ERACombatSpecOptions|nil
+            if (specOptions and specOptions.specID == specID and not specOptions.hideSAO) then
                 hideA = true
                 break
             end

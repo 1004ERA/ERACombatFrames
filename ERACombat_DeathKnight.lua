@@ -40,11 +40,11 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
     ERADK_SuccorG = 0.7
     ERADK_SuccorB = 0.5
 
-    local bloodActive = ERACombatOptions_IsSpecActive(1)
-    local frostActive = ERACombatOptions_IsSpecActive(2)
-    local unholyActive = ERACombatOptions_IsSpecActive(3)
+    local bloodOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
+    local frostOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
+    local unholyOptions = ERACombatOptions_getOptionsForSpec(nil, 3)
 
-    cFrame.hideAlertsForSpec = { bloodActive, frostActive, unholyActive }
+    cFrame.hideAlertsForSpec = { bloodOptions, frostOptions, unholyOptions }
 
     local rd = ERALIBTalent:Create(96201)
     local urd = ERALIBTalent:Create(96325)
@@ -75,21 +75,21 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         reapermark1rune = ERALIBTalent:Create(117629),
     }
 
-    local enemies = ERACombatEnemies:Create(cFrame, bloodActive, frostActive, unholyActive)
+    local enemies = ERACombatEnemies:Create(cFrame, ERACombatOptions_specIDOrNilIfDisabled(bloodOptions), ERACombatOptions_specIDOrNilIfDisabled(frostOptions), ERACombatOptions_specIDOrNilIfDisabled(unholyOptions))
 
-    if (bloodActive) then
+    if (not bloodOptions.disabled) then
         --ERAPieIcon_BorderR = 1.0
         --ERAPieIcon_BorderG = 0.0
         --ERAPieIcon_BorderB = 0.0
         ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     end
-    if (frostActive) then
+    if (not frostOptions.disabled) then
         --ERAPieIcon_BorderR = 0.0
         --ERAPieIcon_BorderG = 0.0
         --ERAPieIcon_BorderB = 1.0
         ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     end
-    if (unholyActive) then
+    if (not unholyOptions.disabled) then
         --ERAPieIcon_BorderR = 0.0
         --ERAPieIcon_BorderG = 1.0
         --ERAPieIcon_BorderB = 0.0

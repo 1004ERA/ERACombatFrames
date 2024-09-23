@@ -39,11 +39,11 @@ function ERACombatFrames_EvokerSetup(cFrame)
     ERACombatEvokerEssence_size = 22
     ERACombatEvokerEssence_spacing = 2
 
-    local devastationActive = ERACombatOptions_IsSpecActive(1)
-    local preservationActive = ERACombatOptions_IsSpecActive(2)
-    local augmentationActive = ERACombatOptions_IsSpecActive(3)
+    local devastationOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
+    local preservationOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
+    local augmentationOptions = ERACombatOptions_getOptionsForSpec(nil, 3)
 
-    cFrame.hideAlertsForSpec = { devastationActive, preservationActive, augmentationActive }
+    cFrame.hideAlertsForSpec = { devastationOptions, preservationOptions, augmentationOptions }
 
     ---@type ERACombat_EvokerCommonTalents
     local talents = {
@@ -71,15 +71,15 @@ function ERACombatFrames_EvokerSetup(cFrame)
         engulf = ERALIBTalent:Create(117547),
     }
 
-    local enemies = ERACombatEnemies:Create(cFrame, devastationActive, augmentationActive)
+    local enemies = ERACombatEnemies:Create(cFrame, ERACombatOptions_specIDOrNilIfDisabled(devastationOptions), ERACombatOptions_specIDOrNilIfDisabled(augmentationOptions))
 
-    if (devastationActive) then
+    if (not devastationOptions.disabled) then
         ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
     end
-    if (preservationActive) then
+    if (not preservationOptions.disabled) then
         ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     end
-    if (augmentationActive) then
+    if (not augmentationOptions.disabled) then
         ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
     end
 end

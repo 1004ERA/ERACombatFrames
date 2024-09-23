@@ -65,10 +65,10 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
         end
 
         if vivifyHealing > ehHealing then
-            self.health.bar:SetPrevisionColor(1.0, 1.0, 0.0)
+            self.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
             self.health.bar:SetForecast(vivifyHealing)
         else
-            self.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
+            self.health.bar:SetPrevisionColor(0.0, 1.0, 0.8)
             self.health.bar:SetForecast(ehHealing)
         end
     end

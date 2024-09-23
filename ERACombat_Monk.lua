@@ -36,11 +36,11 @@ function ERACombatFrames_MonkSetup(cFrame)
     ERAPieIcon_BorderG = 1.0
     ERAPieIcon_BorderB = 0.8
 
-    local bmActive = ERACombatOptions_IsSpecActive(1)
-    local mwActive = ERACombatOptions_IsSpecActive(2)
-    local wwActive = ERACombatOptions_IsSpecActive(3)
+    local bmOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
+    local mwOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
+    local wwOptions = ERACombatOptions_getOptionsForSpec(nil, 3)
 
-    cFrame.hideAlertsForSpec = { bmActive, mwActive, wwActive }
+    cFrame.hideAlertsForSpec = { bmOptions, mwOptions, wwOptions }
 
     ---@type MonkCommonTalents
     local monkTalents = {
@@ -65,15 +65,15 @@ function ERACombatFrames_MonkSetup(cFrame)
         tod15 = ERALIBTalent:Create(124930),
     }
 
-    local enemies = ERACombatEnemies:Create(cFrame, bmActive, wwActive)
+    local enemies = ERACombatEnemies:Create(cFrame, ERACombatOptions_specIDOrNilIfDisabled(bmOptions), ERACombatOptions_specIDOrNilIfDisabled(wwOptions))
 
-    if (bmActive) then
+    if (not bmOptions.disabled) then
         ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, monkTalents)
     end
-    if (mwActive) then
+    if (not mwOptions.disabled) then
         ERACombatFrames_MonkMistweaverSetup(cFrame, monkTalents)
     end
-    if (wwActive) then
+    if (not wwOptions.disabled) then
         ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, monkTalents)
     end
 end

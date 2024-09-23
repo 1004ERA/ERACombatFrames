@@ -5,6 +5,7 @@ SlashCmdList["ECF"] = function(msg)
 end
 
 ---@class ERACombatSpecOptions
+---@field specID integer
 ---@field disabled boolean|nil
 ---@field offsetY number|nil
 ---@field leftX number|nil
@@ -69,6 +70,7 @@ function ERACombatOptions_addSpecOption(classID, specID, optionName)
         spec = {}
         class[specID] = spec
     end
+    spec.specID = specID
     if (spec[optionName] == nil) then
         spec[optionName] = true
     end
@@ -243,27 +245,8 @@ function ERACombatOptions_getOptionsForSpec(classID, specID)
         specData = {}
         classData[specID] = specData
     end
+    specData.specID = specID
     return specData
-end
-
----@param specID integer
----@return integer|nil
-function ERACombatOptions_IsSpecActive(specID)
-    local c = ERACombatOptionsVariables[ERACombatFrames_classID]
-    if (c) then
-        local s = c[specID]
-        if (s) then
-            if (s.disabled) then
-                return nil
-            else
-                return specID
-            end
-        else
-            return specID
-        end
-    else
-        return specID
-    end
 end
 
 ---@param specID integer
@@ -280,5 +263,15 @@ function ERACombatOptions_IsSpecModuleActive(specID, moduleName)
         end
     else
         return true
+    end
+end
+
+---@param specOptions ERACombatSpecOptions
+---@return integer|nil
+function ERACombatOptions_specIDOrNilIfDisabled(specOptions)
+    if specOptions.disabled then
+        return nil
+    else
+        return specOptions.specID
     end
 end
