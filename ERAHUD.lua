@@ -495,8 +495,9 @@ function ERAHUD:Pack()
 
     if self.isHealer then
         local paradoxTimer = self:AddTrackedBuffAnyCaster(406732)
-        self:AddAuraBar(paradoxTimer, nil, 1, 0.9, 0.7)
+        self:AddAuraBar(paradoxTimer, nil, 1.0, 0.9, 0.7)
     end
+    self:AddAuraBar(self:AddTrackedBuff(435493), nil, 0.5, 0.0, 0.2)
 
     -- warlock health stone
     self:AddBagItemIcon(self:AddBagItemCooldown(5512), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
@@ -1622,10 +1623,17 @@ function ERAHUD:updateData(t, combat)
             end
         else
             name, _, _, _, endTargetCastMS, _, notInterruptible = UnitChannelInfo("target")
-            if (endTargetCastMS and endTargetCastMS > 0 and not notInterruptible) then
-                self.targetCast = endTargetCastMS / 1000 - t
-                if (self.targetCastBar) then
-                    self.targetCastBar:SetText(name)
+            if (endTargetCastMS ~= nil and not notInterruptible) then
+                if endTargetCastMS == 0 then
+                    self.targetCast = 1004
+                    if (self.targetCastBar) then
+                        self.targetCastBar:SetText(name)
+                    end
+                else
+                    self.targetCast = endTargetCastMS / 1000 - t
+                    if (self.targetCastBar) then
+                        self.targetCastBar:SetText(name)
+                    end
                 end
             end
         end

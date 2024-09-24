@@ -121,6 +121,15 @@ function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
         hud.soulReaperCooldown.targetIsLowHealth = UnitExists("target") and UnitHealth("target") / UnitHealthMax("target") <= 0.35
     end
 
+    local nextRune = hud:AddPriority(1121021)
+    function nextRune:ComputeDurationOverride(t)
+        if hud.runes.availableRunes <= 2 then
+            return hud.runes.nextRuneDuration
+        else
+            return 0
+        end
+    end
+
     --- bars ---
 
     hud.blooddrawBuff = hud:AddTrackedBuff(454871, talents.blooddraw)

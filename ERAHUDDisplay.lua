@@ -663,6 +663,7 @@ end
 ---@field protected constructIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, iconSize:number, frame:Frame, talent:ERALIBTalent|nil)
 ---@field protected checkIconTalent fun(this:ERAHUDIcon): boolean
 ---@field protected updateIconID fun(this:ERAHUDIcon, currentIconID:integer): integer
+---@field protected refreshIconID fun(this:ERAHUDIcon)
 ---@field talent ERALIBTalent|nil
 ---@field talentActive boolean
 ---@field hud ERAHUD
@@ -689,14 +690,17 @@ function ERAHUDIcon:checkTalentOrHide()
         self.talentActive = false
         return false
     else
-        local i = self:updateIconID(self.iconID)
-        if self.iconID ~= i then
-            self.iconID = i
-            self.icon:SetIconTexture(i, true)
-        end
+        self:refreshIconID()
         --self.icon:Show()
         self.talentActive = true
         return true
+    end
+end
+function ERAHUDIcon:refreshIconID()
+    local i = self:updateIconID(self.iconID)
+    if self.iconID ~= i then
+        self.iconID = i
+        self.icon:SetIconTexture(i, true)
     end
 end
 
@@ -1561,6 +1565,7 @@ end
 ---@class ERAHUDUtilityEquipmentInGroup : ERAHUDUtilityGenericTimerInGroup
 ---@field private __index unknown
 ---@field private equipment ERACooldownEquipment
+---@field private lastUpdateEquipmentIcon number
 ERAHUDUtilityEquipmentInGroup = {}
 ERAHUDUtilityEquipmentInGroup.__index = ERAHUDUtilityEquipmentInGroup
 setmetatable(ERAHUDUtilityEquipmentInGroup, { __index = ERAHUDUtilityGenericTimerInGroup })
@@ -1575,6 +1580,7 @@ function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder
     setmetatable(c, ERAHUDUtilityEquipmentInGroup)
     ---@cast c ERAHUDUtilityEquipmentInGroup
     c.equipment = timer
+    c.lastUpdateEquipmentIcon = 0
     return c
 end
 
@@ -1585,6 +1591,23 @@ function ERAHUDUtilityEquipmentInGroup:timerActive_returnIconID()
         return fileID
     else
         return self.iconID
+    end
+end
+
+---@param currentIconID integer
+---@return integer
+function ERAHUDUtilityEquipmentInGroup:updateIconID(currentIconID)
+    return self:timerActive_returnIconID()
+end
+
+---@param combat boolean
+---@param t number
+function ERAHUDUtilityEquipmentInGroup:GenericUpdatedOverride(t, combat)
+    if t - self.lastUpdateEquipmentIcon > 5 then
+        self.lastUpdateEquipmentIcon = t
+        ERADEBUG = true
+        self:refreshIconID()
+        ERADEBUG = false
     end
 end
 

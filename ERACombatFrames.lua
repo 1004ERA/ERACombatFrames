@@ -1,29 +1,20 @@
 ERACombatFrames_initialized = false
 
 --[[
+
 ERA_Debug = function()
-    local _, _, _, _, _, _, _, _, castID = UnitCastingInfo("player")
-    if (castID and castID > 0) then
-        print("CASTING")
-    end
-    --local spell, _, icon, startTime, endTime, _, interruptible, spellId, _, stageTotal = WeakAuras.UnitChannelInfo("player")
-    local spell, _, icon, startTime, endTime, _, interruptible, spellId, _, stageTotal = UnitChannelInfo("player")
-    local dur0 = GetUnitEmpowerStageDuration("player", 0)
-    local dur1 = GetUnitEmpowerStageDuration("player", 1)
-    local dur2 = GetUnitEmpowerStageDuration("player", 2)
-    local dur3 = GetUnitEmpowerStageDuration("player", 3)
-    local dur4 = GetUnitEmpowerStageDuration("player", 4)
-    local min = GetUnitEmpowerMinHoldTime("player")
-    local max = GetUnitEmpowerHoldAtMaxTime("player")
+
 end
---]]
 
---/run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
---/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
---/run print(C_Spell.GetSpellInfo("").spellID)
+/run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
+/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
+/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
+/run print(C_Spell.GetSpellInfo("").spellID)
 
---/run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
---/run PlaySound(SOUNDKIT.)
+/run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
+/run PlaySound(SOUNDKIT.)
+
+]]
 
 ERA_TALENTS_DO_PRINT_N = 0
 
