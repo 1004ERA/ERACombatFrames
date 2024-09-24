@@ -512,7 +512,8 @@ end
 ---@field private found_by_self boolean
 ---@field private found_on_current_member boolean
 ---@field alternativeIDAuraIDs integer[]
----@field protected computeParty fun(this:ERAAuraOnGroupMembers, groupMembersCount: integer, totalCount:integer, numberOfGroupMembersIncludingSelf:number, foundBySelf:boolean)
+---@field protected computeParty fun(this:ERAAuraOnGroupMembers, groupMembersCountExcludingSelf: integer, totalCount:integer, numberOfGroupMembersIncludingSelf:number, foundBySelf:boolean)
+---@field private computed boolean
 ERAAuraOnGroupMembers = {}
 ERAAuraOnGroupMembers.__index = ERAAuraOnGroupMembers
 setmetatable(ERAAuraOnGroupMembers, { __index = ERAAura })
@@ -562,17 +563,24 @@ function ERAAuraOnGroupMembers:memberParsed()
     end
 end
 
----@param groupMembersCount integer
+function ERAAuraOnGroupMembers:parsingParty()
+    self.computed = false
+end
+
+---@param groupMembersCountExcludingSelf integer
 ---@param t number
-function ERAAuraOnGroupMembers:partyParsed(groupMembersCount, t)
-    self.last_checked = t
-    self:computeParty(groupMembersCount, self.totalCount, self.numberOfGroupMembersIncludingSelf, self.found_by_self)
-    self.foundCount = 0
-    self.foundDuration = 0
-    self.foundStacks = 0
-    self.totalCount = 0
-    self.numberOfGroupMembersIncludingSelf = 0
-    self.found_by_self = false
+function ERAAuraOnGroupMembers:partyParsed(groupMembersCountExcludingSelf, t)
+    if not self.computed then
+        self.computed = true
+        self.last_checked = t
+        self:computeParty(groupMembersCountExcludingSelf, self.totalCount, self.numberOfGroupMembersIncludingSelf, self.found_by_self)
+        self.foundCount = 0
+        self.foundDuration = 0
+        self.foundStacks = 0
+        self.totalCount = 0
+        self.numberOfGroupMembersIncludingSelf = 0
+        self.found_by_self = false
+    end
 end
 
 ---@param t number
@@ -607,12 +615,12 @@ function ERAAuraOnAllGroupMembers:create(hud, talent, mainSpellID, ...)
     return a
 end
 
----@param groupMembersCount integer
+---@param groupMembersCountExcludingSelf integer
 ---@param totalCount integer
 ---@param numberOfGroupMembersIncludingSelf integer
 ---@param foundBySelf boolean
-function ERAAuraOnAllGroupMembers:computeParty(groupMembersCount, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
-    if numberOfGroupMembersIncludingSelf <= groupMembersCount then
+function ERAAuraOnAllGroupMembers:computeParty(groupMembersCountExcludingSelf, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
+    if numberOfGroupMembersIncludingSelf <= groupMembersCountExcludingSelf then
         self.remDuration = 0
         self.stacks = 0
     else
@@ -640,11 +648,11 @@ function ERAAuraOnFriendlyHealer:create(hud, talent, mainSpellID, ...)
     return a
 end
 
----@param groupMembersCount integer
+---@param groupMembersCountExcludingSelf integer
 ---@param totalCount integer
 ---@param numberOfGroupMembersIncludingSelf integer
 ---@param foundBySelf boolean
-function ERAAuraOnFriendlyHealer:computeParty(groupMembersCount, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
+function ERAAuraOnFriendlyHealer:computeParty(groupMembersCountExcludingSelf, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
     if totalCount < self.hud.otherHealersInGroup and not foundBySelf then
         self.remDuration = 0
         self.stacks = 0

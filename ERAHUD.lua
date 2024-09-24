@@ -1538,6 +1538,9 @@ function ERAHUD:updateData(t, combat)
             self.otherHealersInGroup = 0
             self.otherDPSsInGroup = 0
             local cpt = 0
+            for _, v in pairs(self.activeBuffsOnParty) do
+                v:parsingParty()
+            end
             if friendsCount and friendsCount > 0 then
                 local prefix
                 if (IsInRaid()) then

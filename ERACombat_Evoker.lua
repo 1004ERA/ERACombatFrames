@@ -214,7 +214,9 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
     --- utility ---
 
     local bronzeBuffCooldown = hud:AddTrackedCooldown(364342)
-    hud:AddEmptyTimer(hud:AddOrTimer(false, bronzeBuffCooldown, hud:AddBuffOnAllPartyMembers(381748)), 8, 4622448, ERALIBTalent:CreateLevel(60))
+    hud:AddEmptyTimer(hud:AddOrTimer(false, bronzeBuffCooldown, hud:AddBuffOnAllPartyMembers(381748, nil,
+        442744, 432674, 364342, 381732, 381757, 381754, 381746, 381752, 381741, 381756, 381758, 381753, 381749, 432655, 381751, 381750, 432652, 432658
+    )), 8, 4622448, ERALIBTalent:CreateLevel(60))
     hud:AddEmptyTimer(hud:AddBuffOnFriendlyHealer(369459, talents.source), 8, 4630412, talents.source)
 
     hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
