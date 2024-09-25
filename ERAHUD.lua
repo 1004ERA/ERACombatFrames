@@ -1551,7 +1551,7 @@ function ERAHUD:updateData(t, combat)
                 end
                 for f = 1, friendsCount do
                     local unit = prefix .. f
-                    if (not UnitIsUnit("player", unit)) and UnitInRange(unit) then
+                    if (not UnitIsUnit("player", unit)) and (not UnitIsDead(unit)) and UnitInRange(unit) then
                         cpt = cpt + 1
                         self.isInGroup = true
                         local role = UnitGroupRolesAssigned(unit)

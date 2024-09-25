@@ -232,6 +232,7 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(358267), hud.movementGroup) -- hover
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(406732, talents.paradox), hud.movementGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(370665, talents.rescue), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(374968, talents.spiral), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(374227, talents.zephyr), hud.movementGroup)
 

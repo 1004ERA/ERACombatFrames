@@ -92,9 +92,11 @@ function ERACombatFrame:Create()
         c:updateTalents()
     end
     function events:ACTIVE_COMBAT_CONFIG_CHANGED()
+        ERACombatOptions_close()
         c:updateTalents()
     end
     function events:ACTIVE_PLAYER_SPECIALIZATION_CHANGED()
+        ERACombatOptions_close()
         c:updateTalents()
     end
     function events:TRAIT_CONFIG_UPDATED()

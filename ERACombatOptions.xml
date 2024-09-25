@@ -193,7 +193,7 @@
                     <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT" x="-16" y="12"/>
                 </Anchors>
                 <Scripts>
-                    <OnClick>ERACombatOptionsWindow.currentSpec=nil;ERACombatOptionsWindow:Hide()</OnClick>
+                    <OnClick>ERACombatOptions_close()</OnClick>
                 </Scripts>
             </Button>
 

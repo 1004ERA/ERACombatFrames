@@ -152,6 +152,10 @@ function ERACombatOptions_setupSlider(s, value, defaultValue)
     s.SliderFrame.Slider:SetValue(value)
 end
 
+function ERACombatOptions_close()
+    ERACombatOptionsWindow.currentSpec = nil
+    ERACombatOptionsWindow:Hide()
+end
 function ERACombatOptions_open()
     local _, _, classID = UnitClass("player")
     local specID = GetSpecialization()
