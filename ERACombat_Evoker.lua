@@ -1,5 +1,3 @@
----@alias EvokerEssenceDirection "TO_LEFT" | "TO_RIGHT"
-
 ---@class (exact) ERAEvokerHUD : ERAHUD
 ---@field evoker_essence ERAEvokerEssenceModule
 ---@field evoker_essenceBurst ERAAura
@@ -36,8 +34,9 @@
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_EvokerSetup(cFrame)
-    ERACombatEvokerEssence_size = 22
-    ERACombatEvokerEssence_spacing = 2
+    ERACombatGlobals_SpecID1 = 1467
+    ERACombatGlobals_SpecID2 = 1468
+    ERACombatGlobals_SpecID3 = 1473
 
     local devastationOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
     local preservationOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
@@ -89,7 +88,7 @@ end
 --------------
 
 ---@param hud ERAEvokerHUD
----@param essenceDirection EvokerEssenceDirection
+---@param essenceDirection ERAHUDModulePointsPartialDirection
 ---@param burstID integer
 ---@param unravelPrio number
 ---@param talents ERACombat_EvokerCommonTalents
@@ -256,81 +255,51 @@ end
 --- ESSENCE ---
 ---------------
 
----@class (exact) ERAEvokerEssenceModule : ERAHUDResourceModule
+---@class (exact) ERAEvokerEssenceModule : ERAHUDModulePointsPartial
 ---@field private __index unknown
----@field maxEssence integer
----@field currentEssence integer
 ---@field nextAvailable number
----@field partial number
 ---@field private lastGain number|nil
----@field private points ERAEvokerEssencePoint[]
----@field private activePoints integer
----@field private direction EvokerEssenceDirection
----@field private updateMax fun(this:ERAEvokerEssenceModule)
+---@field private lastWholeValue integer
 ERAEvokerEssenceModule = {}
 ERAEvokerEssenceModule.__index = ERAEvokerEssenceModule
-setmetatable(ERAEvokerEssenceModule, { __index = ERAHUDResourceModule })
+setmetatable(ERAEvokerEssenceModule, { __index = ERAHUDModulePointsPartial })
 
 ---@param hud ERAHUD
----@param direction EvokerEssenceDirection
+---@param direction ERAHUDModulePointsPartialDirection
 ---@return ERAEvokerEssenceModule
 function ERAEvokerEssenceModule:create(hud, direction)
     local e = {}
     setmetatable(e, ERAEvokerEssenceModule)
     ---@cast e ERAEvokerEssenceModule
-    e.direction = direction
-    e.points = {}
-    e.activePoints = 0
-    e.maxEssence = 0
-    e.currentEssence = 0
     e.nextAvailable = 0
-    e:constructModule(hud, ERACombatEvokerEssence_size)
+    e:constructPoints(hud, 0.7, 0.8, 0.3, 0.5, 0.7, 0.9, 0.9, 0.2, 0.5, nil, direction)
+    e.lastWholeValue = 0
     return e
 end
 
-function ERAEvokerEssenceModule:checkTalentOverride()
-    self:updateMax()
-    return true
+function ERAEvokerEssenceModule:GetIdlePointsOverride()
+    return self.maxPoints
 end
 
-function ERAEvokerEssenceModule:updateMax()
-    local max = UnitPowerMax("player", 19)
-    if max ~= self.maxEssence then
-        self.maxEssence = max
-        for i = 1 + #(self.points), max do
-            table.insert(self.points, ERAEvokerEssencePoint:create(self, self.frame))
-        end
-        local x
-        local delta = ERACombatEvokerEssence_size + ERACombatEvokerEssence_spacing
-        if self.direction == "TO_LEFT" then
-            x = self.hud.barsWidth - delta * max + delta / 2
-        else
-            x = delta / 2
-        end
-        for i, p in ipairs(self.points) do
-            p:updateTalent(self.frame, i, max, x)
-            x = x + delta
-        end
-    end
+function ERAEvokerEssenceModule:getMaxPoints()
+    return UnitPowerMax("player", 19)
 end
 
 ---@param t number
----@param combat boolean
-function ERAEvokerEssenceModule:updateData(t, combat)
-    local points = UnitPower("player", 19)
-    self:updateMax()
-    if (points < self.maxEssence) then
+function ERAEvokerEssenceModule:getCurrentPoints(t)
+    ---@type integer
+    local points = math.floor(UnitPower("player", 19))
+    if (points < self.maxPoints) then
         local partial = UnitPartialPower("player", 19) / 1000
-        if (self.currentEssence + 1 == points and partial < 0.1) then
+        if (self.lastWholeValue + 1 == points and partial < 0.1) then
             self.lastGain = t
         end
-        self.currentEssence = points
         local rate = GetPowerRegenForPowerType(19)
         if ((not rate) or rate <= 0) then
             rate = 0.2
         end
         local duration = 1 / rate
-        if (self.lastGain) then
+        if (false and self.lastGain) then
             local delta = t - self.lastGain
             if (delta < 2 * duration) then
                 -- sigmoide : les valeurs basses de UnitPartialPower ont l'air d'être moins fiables que les hautes
@@ -346,129 +315,10 @@ function ERAEvokerEssenceModule:updateData(t, combat)
                 partial = (partial * partial_weight + estimated) / (1 + partial_weight)
             end
         end
-        self.partial = partial
         self.nextAvailable = duration * (1 - partial)
+        return points + partial
     else
-        self.currentEssence = points
         self.nextAvailable = 0
-        for i = 1, points do
-            self.points[i]:drawAvailable()
-        end
+        return points
     end
-end
-
----@param t number
----@param combat boolean
-function ERAEvokerEssenceModule:updateDisplay(t, combat)
-    if self.currentEssence >= self.maxEssence then
-        if combat then
-            for i = 1, self.maxEssence do
-                self.points[i]:drawAvailable()
-            end
-            self:show()
-        else
-            self:hide()
-        end
-    else
-        for i = 1, self.currentEssence do
-            self.points[i]:drawAvailable()
-        end
-        self.points[self.currentEssence + 1]:drawFilling(self.partial)
-        for i = self.currentEssence + 2, self.maxEssence do
-            self.points[i]:drawEmpty()
-        end
-        self:show()
-    end
-end
-
--------------
---- POINT ---
--------------
-
----@class (exact) ERAEvokerEssencePoint
----@field private __index unknown
----@field private frame Frame
----@field private point Texture
----@field private wasAvailable boolean
----@field private wasFilling boolean
----@field private wasEmpty boolean
-ERAEvokerEssencePoint = {}
-ERAEvokerEssencePoint.__index = ERAEvokerEssencePoint
-
----@param owner ERAEvokerEssenceModule
----@param parentFrame Frame
----@return ERAEvokerEssencePoint
-function ERAEvokerEssencePoint:create(owner, parentFrame)
-    local p = {}
-
-    local frame = CreateFrame("Frame", nil, parentFrame, "ERAEvokerEssencePointFrame")
-    local point = frame.FULL_POINT
-
-    p.size = ERACombatEvokerEssence_size
-    p.trt = frame.TRT
-    p.trr = frame.TRR
-    p.tlt = frame.TLT
-    p.tlr = frame.TLR
-    p.blr = frame.BLR
-    p.blt = frame.BLT
-    p.brt = frame.BRT
-    p.brr = frame.BRR
-    ERAPieControl_Init(p)
-
-    ---@cast frame Frame
-    frame:SetSize(ERACombatEvokerEssence_size, ERACombatEvokerEssence_size)
-
-    setmetatable(p, ERAEvokerEssencePoint)
-    ---@cast p ERAEvokerEssencePoint
-    p.frame = frame
-    p.point = point
-    p.wasAvailable = false
-    p.wasFilling = false
-    p.wasEmpty = false
-    return p
-end
-
-function ERAEvokerEssencePoint:updateTalent(frame, index, maxPoints, x)
-    if (index > maxPoints) then
-        self.frame:Hide()
-    else
-        self.frame:SetPoint("CENTER", frame, "LEFT", x, 0)
-        self.frame:Show()
-    end
-end
-
-function ERAEvokerEssencePoint:drawAvailable()
-    if (not self.wasAvailable) then
-        if (self.wasEmpty) then
-            self.wasEmpty = false
-            self.point:Show()
-        end
-        self.wasAvailable = true
-        self.wasFilling = false
-        self.point:SetVertexColor(0.5, 0.7, 0.9, 1)
-    end
-    ERAPieControl_SetOverlayValue(self, 0)
-end
-
-function ERAEvokerEssencePoint:drawFilling(part)
-    if (not self.wasFilling) then
-        if (self.wasEmpty) then
-            self.wasEmpty = false
-            self.point:Show()
-        end
-        self.wasAvailable = false
-        self.wasFilling = true
-        self.point:SetVertexColor(0.9, 0.2, 0.5, 1)
-    end
-    ERAPieControl_SetOverlayValue(self, 1 - part)
-end
-
-function ERAEvokerEssencePoint:drawEmpty()
-    if (not self.wasEmpty) then
-        self.wasAvailable = false
-        self.wasFilling = false
-        self.wasEmpty = true
-        self.point:Hide()
-    end
-    ERAPieControl_SetOverlayValue(self, 0)
 end

@@ -61,7 +61,8 @@ end
 ---@param t number
 ---@param y number
 ---@param timerFrame Frame
-function ERAHUDDamageTakenWindow:updateDisplay_returnHeight(t, y, timerFrame)
+---@param overlayFrame Frame
+function ERAHUDDamageTakenWindow:updateDisplay_returnHeight(t, y, timerFrame, overlayFrame)
     self.dt:updateIfNecessary(t)
 
     self.frame:SetPoint("BOTTOMRIGHT", timerFrame, "RIGHT", 0, y)

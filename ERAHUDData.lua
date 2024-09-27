@@ -313,13 +313,14 @@ function ERACooldownBagItem:create(hud, itemID, talent)
     cd.talent = talent
     cd.bagID = -1
     cd.slot = -1
+    cd.stacks = 0
     hud:addBagItem(cd)
     return cd
 end
 
 ---@return boolean
 function ERACooldownBagItem:checkDataItemTalent()
-    return self.hasItem and ((not self.talent) or self.talent:PlayerHasTalent())
+    return (not self.talent) or self.talent:PlayerHasTalent()
 end
 
 function ERACooldownBagItem:bagUpdateOrReset()
@@ -362,7 +363,7 @@ function ERACooldownBagItem:updateData(t)
             self.remDuration = 0
             self.totDuration = duration
         end
-        self.stacks = C_Item.GetItemCount(self.itemID, false, true) -- CHANGE 11 GetItemCount(self.itemID, false, true)
+        self.stacks = C_Item.GetItemCount(self.itemID, false, true)
     else
         self.remDuration = 0
         self.totDuration = 1
@@ -447,6 +448,9 @@ end
 ---@field stacks integer
 ---@field protected foundDuration number
 ---@field protected foundStacks integer
+---@field protected foundBySelf boolean
+---@field acceptAnyCaster boolean
+---@field appliedBySelf boolean
 ---@field auraFound fun(this:ERAAura, t:number, data:AuraData)
 ---@field updateData fun(this:ERAAura, t:number)
 ERAAura = {}
@@ -465,27 +469,34 @@ function ERAAura:create(hud, spellID, talent, ...)
     a:constructID(hud, spellID, talent, ...)
     a.foundDuration = -1
     a.foundStacks = 0
+    a.foundBySelf = false
     return a
 end
 
 function ERAAura:clearTimer()
     self.stacks = 0
+    self.appliedBySelf = false
 end
 
 ---@param t number
 ---@param data AuraData
 function ERAAura:auraFound(t, data)
-    if data.expirationTime and data.expirationTime > 0 then
-        local remDur = data.expirationTime - t
-        if remDur > self.foundDuration then
-            self.foundDuration = remDur
-            self.totDuration = data.duration
+    if self.acceptAnyCaster or data.isFromPlayerOrPlayerPet then
+        if data.expirationTime and data.expirationTime > 0 then
+            local remDur = data.expirationTime - t
+            if remDur > self.foundDuration then
+                self.foundDuration = remDur
+                self.totDuration = data.duration
+                self.foundStacks = math.max(self.foundStacks, data.applications, 1)
+            end
+        else
+            self.foundDuration = 1004
+            self.totDuration = 1004
             self.foundStacks = math.max(self.foundStacks, data.applications, 1)
         end
-    else
-        self.foundDuration = 1004
-        self.totDuration = 1004
-        self.foundStacks = math.max(self.foundStacks, data.applications, 1)
+        if data.isFromPlayerOrPlayerPet then
+            self.foundBySelf = true
+        end
     end
 end
 
@@ -495,11 +506,14 @@ function ERAAura:updateData(t)
         self.remDuration = self.foundDuration
         self.stacks = self.foundStacks
         self.foundDuration = -1
+        self.appliedBySelf = self.foundBySelf
     else
         self.remDuration = 0
         self.stacks = 0
+        self.appliedBySelf = false
     end
     self.foundStacks = 0
+    self.foundBySelf = false
 end
 
 ---@class ERAAuraOnGroupMembers : ERAAura
@@ -509,7 +523,6 @@ end
 ---@field private numberOfGroupMembersIncludingSelf integer
 ---@field private last_checked number
 ---@field private not_checked boolean
----@field private found_by_self boolean
 ---@field private found_on_current_member boolean
 ---@field alternativeIDAuraIDs integer[]
 ---@field protected computeParty fun(this:ERAAuraOnGroupMembers, groupMembersCountExcludingSelf: integer, totalCount:integer, numberOfGroupMembersIncludingSelf:number, foundBySelf:boolean)
@@ -524,8 +537,8 @@ function ERAAuraOnGroupMembers:constructOnGroupMembers(...)
     self.last_checked = 0
     self.totalCount = 0
     self.numberOfGroupMembersIncludingSelf = 0
-    self.found_by_self = false
     self.alternativeIDAuraIDs = { ... }
+    self.acceptAnyCaster = true
 end
 
 function ERAAuraOnGroupMembers:notChecked()
@@ -552,7 +565,7 @@ function ERAAuraOnGroupMembers:auraFound(t, data)
     self.found_on_current_member = true
     self.totalCount = self.totalCount + 1
     if data.isFromPlayerOrPlayerPet then
-        self.found_by_self = true
+        self.foundBySelf = true
     end
 end
 
@@ -573,13 +586,14 @@ function ERAAuraOnGroupMembers:partyParsed(groupMembersCountExcludingSelf, t)
     if not self.computed then
         self.computed = true
         self.last_checked = t
-        self:computeParty(groupMembersCountExcludingSelf, self.totalCount, self.numberOfGroupMembersIncludingSelf, self.found_by_self)
+        self.appliedBySelf = self.foundBySelf
+        self:computeParty(groupMembersCountExcludingSelf, self.totalCount, self.numberOfGroupMembersIncludingSelf, self.foundBySelf)
         self.foundCount = 0
         self.foundDuration = 0
         self.foundStacks = 0
+        self.foundBySelf = false
         self.totalCount = 0
         self.numberOfGroupMembersIncludingSelf = 0
-        self.found_by_self = false
     end
 end
 

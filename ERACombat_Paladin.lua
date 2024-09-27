@@ -1,6 +1,10 @@
 ---@class (exact) PaladinCommonTalents
 
 function ERACombatFrames_PaladinSetup(cFrame)
+    ERACombatGlobals_SpecID1 = 65
+    ERACombatGlobals_SpecID2 = 66
+    ERACombatGlobals_SpecID3 = 70
+
     local holyActive = ERACombatOptions_IsSpecActive(1)
     local protActive = ERACombatOptions_IsSpecActive(2)
     local retrActive = ERACombatOptions_IsSpecActive(3)

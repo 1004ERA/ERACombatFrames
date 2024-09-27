@@ -1339,8 +1339,7 @@ end
 ---@field timer ERATimer
 ---@field private timerActive boolean
 ---@field protected timerActive_returnIconID fun(this:ERAHUDUtilityGenericTimerInGroup): integer
----@field protected mustStillShowIfTimerTalentInactive fun(this:ERAHUDUtilityGenericTimerInGroup): boolean
----@field protected GenericUpdatedOverride fun(this:ERAHUDUtilityGenericTimerInGroup, t:number, combat:boolean)
+---@field protected SetIconVisibilityOverride fun(this:ERAHUDUtilityGenericTimerInGroup, t:number, combat:boolean)
 ERAHUDUtilityGenericTimerInGroup = {}
 ERAHUDUtilityGenericTimerInGroup.__index = ERAHUDUtilityGenericTimerInGroup
 setmetatable(ERAHUDUtilityGenericTimerInGroup, { __index = ERAHUDUtilityIconInGroup })
@@ -1363,7 +1362,7 @@ end
 
 ---@return boolean
 function ERAHUDUtilityGenericTimerInGroup:checkAdditionalTalent()
-    return self.timer.talentActive or self:mustStillShowIfTimerTalentInactive()
+    return self.timer.talentActive
 end
 
 ---@param combat boolean
@@ -1385,35 +1384,29 @@ function ERAHUDUtilityGenericTimerInGroup:update(t, combat)
         else
             self.icon:SetMainText(tostring(math.floor(self.timer.remDuration)))
         end
-        if self.timer.remDuration <= 0 and not combat then
-            self.icon:Hide()
-        else
-            self.icon:Show()
-        end
+        self:SetIconVisibilityOverride(t, combat)
     else
         if self.timerActive then
             self.icon:SetOverlayValue(0)
             self.icon:SetMainText(nil)
             self.timerActive = false
-            if not self:mustStillShowIfTimerTalentInactive() then
-                self.icon:Hide()
-            end
+            self.icon:Hide()
             self.hud:mustUpdateUtilityLayout()
         end
     end
-    self:GenericUpdatedOverride(t, combat)
 end
 ---@return integer
 function ERAHUDUtilityGenericTimerInGroup:timerActive_returnIconID()
     return self.iconID
 end
----@return boolean
-function ERAHUDUtilityGenericTimerInGroup:mustStillShowIfTimerTalentInactive()
-    return false
-end
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityGenericTimerInGroup:GenericUpdatedOverride(t, combat)
+function ERAHUDUtilityGenericTimerInGroup:SetIconVisibilityOverride(t, combat)
+    if self.timer.remDuration <= 0 and not combat then
+        self.icon:Hide()
+    else
+        self.icon:Show()
+    end
 end
 
 --#endregion
@@ -1602,12 +1595,15 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityEquipmentInGroup:GenericUpdatedOverride(t, combat)
+function ERAHUDUtilityEquipmentInGroup:SetIconVisibilityOverride(t, combat)
+    if self.timer.remDuration <= 0 and not combat then
+        self.icon:Hide()
+    else
+        self.icon:Show()
+    end
     if t - self.lastUpdateEquipmentIcon > 5 then
         self.lastUpdateEquipmentIcon = t
-        ERADEBUG = true
         self:refreshIconID()
-        ERADEBUG = false
     end
 end
 
@@ -1628,9 +1624,10 @@ setmetatable(ERAHUDUtilityBagItemInGroup, { __index = ERAHUDUtilityGenericTimerI
 ---@param iconID integer
 ---@param displayOrder number|nil
 ---@param warningIfMissing boolean
+---@param talent ERALIBTalent|nil
 ---@return ERAHUDUtilityBagItemInGroup
-function ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing)
-    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, nil)
+function ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing, talent)
+    local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, talent)
     setmetatable(c, ERAHUDUtilityBagItemInGroup)
     ---@cast c ERAHUDUtilityBagItemInGroup
     c.bagItem = timer
@@ -1639,20 +1636,26 @@ function ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, 
 end
 
 ---@return boolean
-function ERAHUDUtilityBagItemInGroup:mustStillShowIfTimerTalentInactive()
-    return self.warningIfMissing
+function ERAHUDUtilityBagItemInGroup:checkAdditionalTalent()
+    return self.timer.talentActive and (self.bagItem.hasItem or self.warningIfMissing)
 end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDUtilityBagItemInGroup:GenericUpdatedOverride(t, combat)
+function ERAHUDUtilityBagItemInGroup:SetIconVisibilityOverride(t, combat)
     if self.bagItem.hasItem then
         self.icon:SetVertexColor(1.0, 1.0, 1.0, 1.0)
         self.icon:SetSecondaryText(tostring(self.bagItem.stacks))
+        if self.timer.remDuration <= 0 and not combat then
+            self.icon:Hide()
+        else
+            self.icon:Show()
+        end
     else
         if self.warningIfMissing then
             self.icon:SetVertexColor(1.0, 0.0, 0.0, 1.0)
             self.icon:SetSecondaryText("0")
+            self.icon:Show()
         else
             --- pas important, va être géré par hud:mustUpdateUtilityLayout()
             self.icon:Hide()
@@ -1871,10 +1874,12 @@ end
 ---@field protected checkTalentSAO fun(this:ERASAO): boolean
 ---@field protected getIsActive fun(this:ERASAO, t:number, combat:boolean): boolean
 ---@field ConfirmIsActiveOverride fun(this:ERASAO, t:number, combat:boolean): boolean
+---@field DeactivatedOverride nil|fun(this:ERASAO, t:number, combat:boolean)
 ---@field talentActive boolean
 ---@field hud ERAHUD
 ---@field private display Texture
 ---@field private isActive boolean
+---@field private dataActive boolean
 ---@field private animGroup AnimationGroup
 ERASAO = {}
 ERASAO.__index = ERASAO
@@ -1987,7 +1992,18 @@ end
 ---@param combat boolean
 ---@param t number
 function ERASAO:update(t, combat)
-    if self.hud.showUtility and self:getIsActive(t, combat) and self:ConfirmIsActiveOverride(t, combat) then
+    local da = self:getIsActive(t, combat)
+    if self.DeactivatedOverride then
+        if da then
+            self.dataActive = true
+        else
+            if self.dataActive then
+                self.dataActive = false
+                self:DeactivatedOverride(t, combat)
+            end
+        end
+    end
+    if self.hud.showUtility and da and self:ConfirmIsActiveOverride(t, combat) then
         if not self.isActive then
             self.isActive = true
             self.display:Show()
@@ -2003,6 +2019,7 @@ function ERASAO:update(t, combat)
 end
 ---@param combat boolean
 ---@param t number
+---@return boolean
 function ERASAO:ConfirmIsActiveOverride(t, combat)
     return true
 end
@@ -2053,13 +2070,13 @@ end
 
 ---@class (exact) ERASAOMissingAura : ERASAO
 ---@field private __index unknown
----@field private aura ERAAura
+---@field private timer ERATimer
 ---@field private onlyIfHasTarget boolean
 ERASAOMissingAura = {}
 ERASAOMissingAura.__index = ERASAOMissingAura
 setmetatable(ERASAOMissingAura, { __index = ERASAO })
 
----@param aura ERAAura
+---@param timer ERATimer
 ---@param onlyIfHasTarget boolean
 ---@param texture string|integer
 ---@param isAtlas boolean
@@ -2072,26 +2089,27 @@ setmetatable(ERASAOMissingAura, { __index = ERASAO })
 ---@param offsetX number
 ---@param offsetY number
 ---@return ERASAOMissingAura
-function ERASAOMissingAura:create(aura, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+function ERASAOMissingAura:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     local a = {}
     setmetatable(a, ERASAOMissingAura)
     ---@cast a ERASAOMissingAura
-    a.aura = aura
+    a.timer = timer
     a.onlyIfHasTarget = onlyIfHasTarget
-    a:constructSAO(aura.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    a:constructSAO(timer.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     return a
 end
 
 ---@return boolean
 function ERASAOMissingAura:checkTalentSAO()
-    return self.aura.talentActive
+    return self.timer.talentActive
 end
 
 ---@param combat boolean
 ---@param t number
 function ERASAOMissingAura:getIsActive(t, combat)
-    return self.aura.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
+    return self.timer.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
 end
+
 
 --#endregion
 

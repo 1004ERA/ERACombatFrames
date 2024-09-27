@@ -85,10 +85,10 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
             if (
                     (hud.evoker_essenceBurst.stacks > 1 or (hud.evoker_essenceBurst.stacks == 1 and not talent_more_burst:PlayerHasTalent()))
                     or
-                    (hud.evoker_essence.currentEssence >= hud.evoker_essence.maxEssence or (hud.evoker_essence.currentEssence + 1 >= hud.evoker_essence.maxEssence and hud.evoker_essence.nextAvailable < 2))
+                    (hud.evoker_essence.currentPoints >= hud.evoker_essence.maxPoints or (hud.evoker_essence.currentPoints + 1 >= hud.evoker_essence.maxPoints and hud.evoker_essence.nextAvailable < 2))
                 ) then
                 return 2
-            elseif (hud.evoker_essence.currentEssence >= 3 or (hud.evoker_essence.currentEssence >= 2 and talent_cheap_eruption:PlayerHasTalent())) then
+            elseif (hud.evoker_essence.currentPoints >= 3 or (hud.evoker_essence.currentPoints >= 2 and talent_cheap_eruption:PlayerHasTalent())) then
                 return 7
             else
                 return 0

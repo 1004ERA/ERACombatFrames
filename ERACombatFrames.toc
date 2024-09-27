@@ -39,28 +39,34 @@ ERAHUDData.lua
 ERAHUDDisplay.lua
 ERAHUDStatusBars.lua
 ERAHUD.lua
+ERAHUDModulePoints.xml
 ERAHUDModulePoints.lua
 ERAHUDPseudoResourceBar.lua
 ERAHUDDamageTakenModule.lua
-
-ERACombat_Monk.lua
-ERACombat_Monk_Brewmaster.lua
-ERACombat_Monk_Mistweaver.lua
-ERACombat_Monk_Windwalker.lua
-
-ERACombat_Evoker.xml
-ERACombat_Evoker.lua
-ERACombat_Evoker_Devastation.lua
-ERACombat_Evoker_Preservation.lua
-ERACombat_Evoker_Augmentation.lua
+ERAHUDDOT.lua
 
 ERACombat_DeathKnight.lua
 ERACombat_DeathKnight_Blood.lua
 ERACombat_DeathKnight_Frost.lua
 ERACombat_DeathKnight_Unholy.lua
 
+ERACombat_Evoker.lua
+ERACombat_Evoker_Devastation.lua
+ERACombat_Evoker_Preservation.lua
+ERACombat_Evoker_Augmentation.lua
+
+ERACombat_Monk.lua
+ERACombat_Monk_Brewmaster.lua
+ERACombat_Monk_Mistweaver.lua
+ERACombat_Monk_Windwalker.lua
+
 ERACombat_Paladin.lua
 ERACombat_Paladin_Retribution.lua
+
+ERACombat_Warlock.lua
+ERACombat_Warlock_Affliction.lua
+ERACombat_Warlock_Demonology.lua
+ERACombat_Warlock_Destruction.lua
 
 ERACombatOptions.xml
 ERACombatOptions.lua

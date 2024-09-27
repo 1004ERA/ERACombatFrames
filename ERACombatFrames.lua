@@ -9,6 +9,7 @@ end
 /run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
 /run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
 /run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
+/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
 /run print(C_Spell.GetSpellInfo("").spellID)
 
 /run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
@@ -39,7 +40,7 @@ function ERACombatFrames_event(event, ...)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 9) then
-            --ERACombatFrames_WarlockSetup(cFrame)
+            ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
             ERACombatFrames_MonkSetup(cFrame)
         elseif (classID == 12) then
@@ -48,5 +49,6 @@ function ERACombatFrames_event(event, ...)
             ERACombatFrames_EvokerSetup(cFrame)
         end
         cFrame:Pack()
+        print("Welcome to ERACombatFrames. Enter the /ecf command for options.")
     end
 end

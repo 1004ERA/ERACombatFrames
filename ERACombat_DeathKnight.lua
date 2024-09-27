@@ -35,6 +35,10 @@
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_DeathKnightSetup(cFrame)
+    ERACombatGlobals_SpecID1 = 250
+    ERACombatGlobals_SpecID2 = 251
+    ERACombatGlobals_SpecID3 = 252
+
     ERADK_RuneSize = 24
     ERADK_SuccorR = 0.8
     ERADK_SuccorG = 0.7
@@ -212,7 +216,7 @@ end
 ---@param hud ERADKHUD
 ---@param debuff ERAAura
 function ERACombatFrames_DK_MissingDisease(hud, debuff)
-    hud:AddMissingAuraOverlay(debuff, true, "PowerSwirlAnimation-Whirls-Soulbinds", true, "MIDDLE", false, false, false, false)
+    hud:AddMissingTimerOverlay(debuff, true, "PowerSwirlAnimation-Whirls-Soulbinds", true, "MIDDLE", false, false, false, false)
 end
 
 ---@param hud ERADKHUD

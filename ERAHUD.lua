@@ -96,6 +96,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private activeBuffsOnPet table<number, ERAAura>
 ---@field private hasActiveBuffsOnPet boolean
 ---@field private hasBuffsAnyCaster boolean
+---@field private hasDebuffsAnyCaster boolean
 ---@field private debuffs ERAAura[]
 ---@field private activeDebuffs table<number, ERAAura>
 ---@field private debuffsOnSelf ERAAura[]
@@ -171,6 +172,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private updateUtilityLayoutIfNecessary fun(this:ERAHUD)
 ---@field maxRotationInRow integer
 ---@field maxRotationInHealerColumn integer
+---@field healthstoneTalent ERALIBTalent|nil
 ---@field powerUpGroup ERAHUDUtilityGroup
 ---@field healGroup ERAHUDUtilityGroup
 ---@field defenseGroup ERAHUDUtilityGroup
@@ -178,7 +180,6 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field controlGroup ERAHUDUtilityGroup
 ---@field movementGroup ERAHUDUtilityGroup
 ---@field IsCombatPowerVisibleOverride fun(this:ERAHUD, t:number): boolean
----@field calcTimerPixel fun(this:ERAHUD, t:number): number
 ---@field private modules ERAHUDResourceModule[]
 ---@field private activeModules ERAHUDResourceModule[]
 ---@field PreUpdateDataOverride fun(this:ERAHUD, t:number, combat:boolean)
@@ -279,6 +280,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.activeBuffsOnPet = {}
     hud.hasActiveBuffsOnPet = false
     hud.hasBuffsAnyCaster = false
+    hud.hasDebuffsAnyCaster = false
     hud.debuffs = {}
     hud.activeDebuffs = {}
     hud.debuffsOnSelf = {}
@@ -500,7 +502,7 @@ function ERAHUD:Pack()
     self:AddAuraBar(self:AddTrackedBuff(435493), nil, 0.5, 0.0, 0.2)
 
     -- warlock health stone
-    self:AddBagItemIcon(self:AddBagItemCooldown(5512), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
+    self:AddBagItemIcon(self:AddBagItemCooldown(5512, self.healthstoneTalent), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
     --warlock portal
     self:AddBagExternalTimerIcon(self:AddTrackedDebuffOnSelf(113942), self.movementGroup, 607512)
 
@@ -620,6 +622,9 @@ function ERAHUD:Pack()
 
     for _, ti in ipairs(self.timerItems) do
         ti:constructOverlay(self.timerFrameOverlay)
+    end
+    for _, n in ipairs(self.nested) do
+        n:createOverlay(self.timerFrameOverlay)
     end
 
     self.timerFrame:Hide()
@@ -782,6 +787,7 @@ function ERAHUD:CheckTalents()
         else
             n:show()
             table.insert(self.activeNested, n)
+            n:checkTalents()
         end
     end
 
@@ -1094,7 +1100,7 @@ function ERAHUD:UpdateCombat(t)
         nestedY = barsY
     end
     for _, n in ipairs(self.activeNested) do
-        local nh = n:updateDisplay_returnHeight(t, nestedY, self.timerFrame)
+        local nh = n:updateDisplay_returnHeight(t, nestedY, self.timerFrame, self.timerFrameOverlay)
         nestedY = nestedY + nh
         if n.includeInTimer then
             nestedHeight = nestedHeight + nh
@@ -1435,16 +1441,31 @@ function ERAHUD:updateData(t, combat)
     --#region BUFF / DEBUFF
 
     local i = 1
-    while true do
-        local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
-        if (auraInfo) then
-            local a = self.activeDebuffs[auraInfo.spellId]
-            if (a ~= nil) then
-                a:auraFound(t, auraInfo)
+    if self.hasDebuffsAnyCaster then
+        while true do
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i)
+            if (auraInfo) then
+                local a = self.activeDebuffs[auraInfo.spellId]
+                if (a ~= nil) then
+                    a:auraFound(t, auraInfo)
+                end
+                i = i + 1
+            else
+                break
             end
-            i = i + 1
-        else
-            break
+        end
+    else
+        while true do
+            local auraInfo = C_UnitAuras.GetDebuffDataByIndex("target", i, "PLAYER")
+            if (auraInfo) then
+                local a = self.activeDebuffs[auraInfo.spellId]
+                if (a ~= nil) then
+                    a:auraFound(t, auraInfo)
+                end
+                i = i + 1
+            else
+                break
+            end
         end
     end
     i = 1
@@ -1857,8 +1878,10 @@ end
 ---@field hud ERAHUD
 ---@field hide fun(this:ERAHUDNestedModule)
 ---@field show fun(this:ERAHUDNestedModule)
+---@field checkTalents fun(this:ERAHUDNestedModule)
+---@field createOverlay fun(this:ERAHUDNestedModule, overlayFrame:Frame)
 ---@field updateData fun(this:ERAHUDNestedModule, t:number)
----@field updateDisplay_returnHeight fun(this:ERAHUDNestedModule, t:number, baseY:number, timerFrame:Frame): number
+---@field updateDisplay_returnHeight fun(this:ERAHUDNestedModule, t:number, baseY:number, timerFrame:Frame, overlayFrame:Frame): number
 ---@field talent ERALIBTalent|nil
 ---@field includeInTimer boolean
 ERAHUDNestedModule = {}
@@ -1877,6 +1900,13 @@ end
 
 ---@param t number
 function ERAHUDNestedModule:CLEU(t)
+end
+
+function ERAHUDNestedModule:checkTalents()
+end
+
+---@param overlayFrame Frame
+function ERAHUDNestedModule:createOverlay(overlayFrame)
 end
 
 --#endregion
@@ -2464,6 +2494,18 @@ end
 ---@param talent ERALIBTalent|nil
 ---@param ... ERACooldownAdditionalID
 ---@return ERAAura
+function ERAHUD:AddTrackedDebuffOnTargetAnyCaster(spellID, talent, ...)
+    local a = ERAAura:create(self, spellID, talent, ...)
+    a.acceptAnyCaster = true
+    self.hasDebuffsAnyCaster = true
+    table.insert(self.debuffs, a)
+    return a
+end
+
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@param ... ERACooldownAdditionalID
+---@return ERAAura
 function ERAHUD:AddTrackedDebuffOnSelf(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
     table.insert(self.debuffsOnSelf, a)
@@ -2558,7 +2600,7 @@ function ERAHUD:AddAuraOverlay(aura, minStacks, texture, isAtlas, position, flip
     return ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
----@param aura ERAAura
+---@param timer ERATimer
 ---@param onlyIfHasTarget boolean
 ---@param texture string|integer
 ---@param isAtlas boolean
@@ -2569,8 +2611,8 @@ end
 ---@param rotateRight boolean
 ---@param talent ERALIBTalent|nil
 ---@return ERASAOMissingAura
-function ERAHUD:AddMissingAuraOverlay(aura, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
-    return ERASAOMissingAura:create(aura, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+function ERAHUD:AddMissingTimerOverlay(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOMissingAura:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
 --- rotation ---
@@ -2726,9 +2768,10 @@ end
 ---@param iconID integer
 ---@param displayOrder number|nil
 ---@param warningIfMissing boolean
+---@param talent ERALIBTalent|nil
 ---@return ERAHUDUtilityBagItemInGroup
-function ERAHUD:AddBagItemIcon(timer, group, iconID, displayOrder, warningIfMissing)
-    return ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing)
+function ERAHUD:AddBagItemIcon(timer, group, iconID, displayOrder, warningIfMissing, talent)
+    return ERAHUDUtilityBagItemInGroup:create(group, timer, iconID, displayOrder, warningIfMissing, talent)
 end
 
 ---@param timer ERATimer
