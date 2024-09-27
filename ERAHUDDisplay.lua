@@ -1151,17 +1151,17 @@ function ERAHUDRotationAuraIcon:update(t, combat)
         self.icon:SetOverlayValue((self.data.totDuration - self.data.remDuration) / self.data.totDuration)
         self.icon:Show()
     else
-        if self.currentStacks ~= 0 then
-            self.currentStacks = 0
-            if self:ShowWhenMissing(t, combat) then
+        if self:ShowWhenMissing(t, combat) then
+            if self.currentStacks ~= 0 then
                 self.icon:SetDesaturated(true)
                 self.icon:SetOverlayValue(0)
                 self.icon:SetMainText("X")
                 self.icon:SetMainTextColor(1.0, 0.0, 0.0, 1.0)
-                self.icon:Show()
-            else
-                self.icon:Hide()
+                self.currentStacks = 0
             end
+            self.icon:Show()
+        else
+            self.icon:Hide()
         end
     end
 end

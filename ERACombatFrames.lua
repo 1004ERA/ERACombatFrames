@@ -14,6 +14,9 @@ end
 /run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
 /run PlaySound(SOUNDKIT.)
 
+TODO
+- debuffs raid
+
 ]]
 
 ERA_TALENTS_DO_PRINT_N = 0

@@ -384,3 +384,5 @@ function ERALIBTalentNOR:computeHasTalent(selectedTalentsById)
     local t2v = self.t2:computeHasTalent(selectedTalentsById)
     return not (t1v or t2v)
 end
+
+ERALIBTalent_NerubAr = ERALIBTalent:CreateInstance(2657)

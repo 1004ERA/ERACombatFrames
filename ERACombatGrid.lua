@@ -929,8 +929,6 @@ end
 ---- INSTANCES -----------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
-ERALIBTalent_Nathria = ERALIBTalent:CreateInstance(2296)
-
 function ERACombatGrid:RaidDebuffs()
     -- rgbC, rgbB
 
@@ -958,6 +956,9 @@ function ERACombatGrid:RaidDebuffs()
 
     self:AddTrackedDebuff(334765, 0, 1, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, ERALIBTalent_Nathria) -- generals small dot
     self:AddTrackedDebuff(334771, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_Nathria) -- generals big dot
+
+    self:AddTrackedDebuff(spellID, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_Nathria)
 ]]
-    --self:AddTrackedDebuff(spellID, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_Nathria)
+    self:AddTrackedDebuff(441362, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_NerubAr) -- ovinax
+    self:AddTrackedDebuff(438708, 0, 1, 1.0, 0.0, 0.0, 0.3, 0.5, 0.0, ERALIBTalent_NerubAr) -- anubarash stinging swarm
 end

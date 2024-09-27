@@ -103,6 +103,8 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
 
     hud:AddAuraBar(vblood, nil, 1.0, 0.0, 0.0)
 
+    hud:AddAuraBar(hud:AddTrackedBuff(194679, talent_runetap), nil, 0.6, 0.3, 0.3)
+
     --- SAO ---
 
     local crimson = hud:AddTrackedBuff(81141)

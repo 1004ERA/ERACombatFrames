@@ -139,8 +139,10 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
 
     --- bars ---
 
-    hud:AddChannelInfo(356995, 0.75)                         -- disintegrate
-    hud:AddAuraBar(hud:AddTrackedBuff(358267), nil, 1, 1, 1) -- hover
+    hud:AddChannelInfo(356995, 0.75)                               -- disintegrate
+    hud:AddAuraBar(hud:AddTrackedBuff(358267), nil, 1.0, 1.0, 1.0) -- hover
+
+    hud:AddAuraBar(hud:AddTrackedBuff(374348, talents.renewing), nil, 1.0, 0.7, 0.0)
 
     local burstBar = hud:AddAuraBar(hud.evoker_essenceBurst, nil, 0.7, 1.0, 0.7)
     function burstBar:ComputeDurationOverride(t)
