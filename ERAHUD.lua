@@ -151,6 +151,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private castBackground Texture
 ---@field private castVisible boolean
 ---@field private events unknown
+---@field private timeOrigin number
 ---@field private offsetX number
 ---@field private offsetY number
 ---@field private SAO ERASAO[]
@@ -1408,6 +1409,10 @@ end
 ---@param t number
 ---@param combat boolean
 function ERAHUD:updateData(t, combat)
+    if not self.timeOrigin then
+        self.timeOrigin = t
+    end
+
     self.hasteMultiplier = 1 / (1 + GetHaste() / 100)
     local cdInfo = C_Spell.GetSpellCooldown(61304)
     self.totGCD = math.max(self.minGCD, self.baseGCD * self.hasteMultiplier)
@@ -1548,7 +1553,7 @@ function ERAHUD:updateData(t, combat)
     end
 
     if self.hasActiveBuffsOnParty then
-        if t - self.lastParseParty < 2 then
+        if t - self.lastParseParty < 2 and self.timeOrigin + 2 < t then
             for _, v in pairs(self.activeBuffsOnParty) do
                 v:notChecked()
             end
