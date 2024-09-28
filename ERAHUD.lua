@@ -62,6 +62,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field powerHeight number
 ---@field private statusSpacing number
 ---@field health ERAHUDHealth
+---@field hasPet boolean
 ---@field petHealth ERAHUDHealth
 ---@field private petHealthTalent ERALIBTalent
 ---@field private powerType integer
@@ -799,10 +800,10 @@ function ERAHUD:CheckTalents()
     local ySpecial = -self.offsetY
     local largeSpecial = true
     local countSpecial = 0
-    for _, i in ipairs(self.activeRotation) do
+    for index, i in ipairs(self.activeRotation) do
         if i.specialPosition then
             i.icon:Draw(xSpecial, ySpecial, false)
-            if not i.overlapPrevious then
+            if index < #(self.activeRotation) and self.activeRotation[index + 1].overlapsPrevious ~= i then
                 countSpecial = countSpecial + 1
                 local newColumn
                 if largeSpecial then
@@ -839,10 +840,10 @@ function ERAHUD:CheckTalents()
         local yRotation = ERAHUD_RotationHealerY
         local largeColumn = true
         local countInColumn = 0
-        for _, i in ipairs(self.activeRotation) do
+        for index, i in ipairs(self.activeRotation) do
             if not i.specialPosition then
                 i.icon:Draw(xRotation, yRotation, false)
-                if not i.overlapPrevious then
+                if index < #(self.activeRotation) and self.activeRotation[index + 1].overlapsPrevious ~= i then
                     countInColumn = countInColumn + 1
                     local newColumn
                     if largeColumn then
@@ -881,10 +882,10 @@ function ERAHUD:CheckTalents()
         local yRotation = statusY - ERAHUD_RotationIconSize / 2
         local largeRow = true
         local countInRow = 0
-        for _, i in ipairs(self.activeRotation) do
+        for index, i in ipairs(self.activeRotation) do
             if not i.specialPosition then
                 i.icon:Draw(xRotation, yRotation, false)
-                if not i.overlapPrevious then
+                if index < #(self.activeRotation) and self.activeRotation[index + 1].overlapsPrevious ~= i then
                     countInRow = countInRow + 1
                     local newRow
                     if largeRow then
@@ -1429,12 +1430,16 @@ function ERAHUD:updateData(t, combat)
     if self.petHealthTalent:PlayerHasTalent() then
         if UnitExists("pet") then
             self:updateHealthData(self.petHealth, "pet")
+            self.hasPet = true
         else
             self.petHealth.absorb = 0
             self.petHealth.healAbsorb = 0
             self.petHealth.currentHealth = 0
             self.petHealth.maxHealth = 1
+            self.hasPet = false
         end
+    else
+        self.hasPet = UnitExists("pet")
     end
     if self.power then
         self.power.currentPower = UnitPower("player", self.powerType)
@@ -1452,7 +1457,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, true)
                 end
                 i = i + 1
             else
@@ -1465,7 +1470,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, false)
                 end
                 i = i + 1
             else
@@ -1480,11 +1485,11 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, true)
                 end
                 a = self.activeBuffsOnParty[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, true)
                 end
                 i = i + 1
             else
@@ -1500,7 +1505,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, false)
                 end
                 i = i + 1
             else
@@ -1514,7 +1519,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffsOnPet[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo)
+                    a:auraFound(t, auraInfo, false)
                 end
                 i = i + 1
             else
@@ -1544,7 +1549,7 @@ function ERAHUD:updateData(t, combat)
             end
             local a = self.activeDebuffsOnSelf[auraInfo.spellId]
             if (a ~= nil) then
-                a:auraFound(t, auraInfo)
+                a:auraFound(t, auraInfo, true)
             end
             i = i + 1
         else
@@ -1594,7 +1599,7 @@ function ERAHUD:updateData(t, combat)
                             if (auraInfo) then
                                 local a = self.activeBuffsOnParty[auraInfo.spellId]
                                 if (a ~= nil) then
-                                    a:auraFound(t, auraInfo)
+                                    a:auraFound(t, auraInfo, true)
                                 end
                                 i = i + 1
                             else

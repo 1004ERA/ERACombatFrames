@@ -58,11 +58,13 @@ end
 
 ---@param cFrame ERACombatFrame
 ---@param spec integer
+---@param requireCLEU boolean
 ---@param talents WarlockCommonTalents
----@param talent_pet ERALIBTalent|boolean
+---@param talent_pet ERALIBTalent
+---@param talent_sacrifice ERALIBTalent
 ---@return WarlockHUD
-function ERACombatFrames_WarlockCommonSetup(cFrame, spec, talents, talent_pet)
-    local hud = ERAHUD:Create(cFrame, 1.5, true, false, -1, 1.0, 1.0, 1.0, talent_pet, spec)
+function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, talent_pet, talent_sacrifice)
+    local hud = ERAHUD:Create(cFrame, 1.5, requireCLEU, false, -1, 1.0, 1.0, 1.0, talent_pet, spec)
     ---@cast hud WarlockHUD
     hud.shards = ERAHUDWarlockShards:create(hud)
 
@@ -72,6 +74,8 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, talents, talent_pet)
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(334275, talents.curses), nil, 0.3, 0.3, 0.3)
 
+    --- SAO ---
+    
     ---@class MissingWarlockCurse : ERASAOMissingAura
     ---@field lastTriggered number|nil
     ---@field lastTarGUID string|nil
@@ -85,7 +89,7 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, talents, talent_pet)
             if UnitCanAttack("player", "target") and (UnitIsPlayer("target") or tarHealth > 2 * self.hud.health.maxHealth) then
                 local tarGUID = UnitGUID("target")
                 if self.lastTriggered and tarGUID == self.lastTarGUID and t - self.lastTriggered < 42 then
-                    return t - self.lastTriggered < 4
+                    return t - self.lastTriggered < 3
                 else
                     self.lastTarGUID = tarGUID
                     self.lastTriggered = t
@@ -106,7 +110,26 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, talents, talent_pet)
         self.lastTriggered = nil
     end
 
+    local sacriCooldown = hud:AddTrackedCooldown(108503, talent_sacrifice)
+    local sacriBuff = hud:AddTrackedBuff(196099, talent_sacrifice)
+    local sacriMissing = hud:AddMissingTimerOverlay(sacriBuff, false, "CovenantSanctum-Reservoir-Idle-NightFae-Spiral1", true, "MIDDLE", false, false, false, false)
+    function sacriMissing:ConfirmIsActiveOverride(t)
+        return sacriCooldown.remDuration <= self.hud.occupied
+    end
+
     --- utility ---
+
+    local singeImp, singeSacrifice = ERACombatFrames_WarlockCommandDemon(hud, 89808, 132411, sacriBuff, talent_sacrifice)
+    hud:AddUtilityDispell(singeImp, hud.specialGroup, nil, nil, nil, true, false, false, false, false)
+    hud:AddUtilityDispell(singeSacrifice, hud.specialGroup, nil, nil, nil, true, false, false, false, false)
+
+    local kickStalker, kickSacrifice = ERACombatFrames_WarlockCommandDemon(hud, 19647, 132409, sacriBuff, talent_sacrifice)
+    local ksIcon = hud:AddKick(kickStalker)
+    hud:AddKick(kickSacrifice).overlapsPrevious = ksIcon
+
+    local bulwarkWalker, bulwarkSacrifice = ERACombatFrames_WarlockCommandDemon(hud, 17767, 132413, sacriBuff, talent_sacrifice)
+    hud:AddUtilityCooldown(bulwarkWalker, hud.defenseGroup)
+    hud:AddUtilityCooldown(bulwarkSacrifice, hud.defenseGroup)
 
     hud:AddBagItemIcon(hud:AddBagItemCooldown(224464, talents.gluttony), hud.healGroup, 135230, nil, true)
 
@@ -125,6 +148,26 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, talents, talent_pet)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(48020, talents.selfPortal), hud.movementGroup)
 
     return hud
+end
+
+---@param hud WarlockHUD
+---@param petSpellID integer
+---@param sacrificeSpellID integer
+---@param sacriBuff ERAAura
+---@param talent_sacrifice ERALIBTalent
+---@return ERACooldown, ERACooldown
+function ERACombatFrames_WarlockCommandDemon(hud, petSpellID, sacrificeSpellID, sacriBuff, talent_sacrifice)
+    local cdPet = hud:AddTrackedCooldown(petSpellID)
+    cdPet.isPetSpell = true
+
+    local iconID = C_Spell.GetSpellTexture(sacrificeSpellID)
+
+    local cdSacrifice = hud:AddTrackedCooldown(sacrificeSpellID, talent_sacrifice)
+    function cdSacrifice:CustomCheckIsKnown()
+        return sacriBuff.remDuration > 0 and C_Spell.GetSpellTexture(119898) == iconID
+    end
+
+    return cdPet, cdSacrifice
 end
 
 --------------------

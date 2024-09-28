@@ -106,8 +106,10 @@ end
 ---@field maxCharges integer
 ---@field currentCharges integer
 ---@field isAvailable boolean
+---@field CustomCheckIsKnown nil|fun(this:ERACooldownBase): boolean
 ---@field isKnown boolean
 ---@field isPetSpell boolean
+---@field private wasKnown boolean
 ---@field protected constructCooldownBase fun(this:ERACooldownBase, hud:ERAHUD, spellID:number, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
 ---@field protected updateCooldownData fun(this:ERACooldownBase, t:number)
 ---@field private clearTimer fun(this:ERACooldownBase)
@@ -125,7 +127,8 @@ function ERACooldownBase:constructCooldownBase(hud, spellID, talent, ...)
     self.maxCharges = 1
     self.currentCharges = 0
     self.isAvailable = false
-    self.isKnown = false
+    self.isKnown = true
+    self.wasKnown = true
     self.isPetSpell = false
 end
 
@@ -137,14 +140,24 @@ end
 ---@param t number
 function ERACooldownBase:updateData(t)
     if self.isPetSpell then
-        if IsSpellKnown(self.spellID, true) then
-            self.isKnown = true
-        else
-            self.isKnown = false
-            return
-        end
+        self.isKnown = self.hud.hasPet and IsSpellKnown(self.spellID, true)
+    elseif self.CustomCheckIsKnown then
+        self.isKnown = self:CustomCheckIsKnown()
     else
         self.isKnown = true
+    end
+    if self.isKnown then
+        if not self.wasKnown then
+            self.wasKnown = true
+            self.hud:mustUpdateUtilityLayout()
+        end
+    else
+        if self.wasKnown then
+            self.wasKnown = false
+            self.hud:mustUpdateUtilityLayout()
+        end
+        self:clearTimer()
+        return
     end
     self:updateCooldownData(t)
 end
@@ -451,7 +464,7 @@ end
 ---@field protected foundBySelf boolean
 ---@field acceptAnyCaster boolean
 ---@field appliedBySelf boolean
----@field auraFound fun(this:ERAAura, t:number, data:AuraData)
+---@field auraFound fun(this:ERAAura, t:number, data:AuraData, checkSourceUnit:boolean)
 ---@field updateData fun(this:ERAAura, t:number)
 ERAAura = {}
 ERAAura.__index = ERAAura
@@ -480,8 +493,9 @@ end
 
 ---@param t number
 ---@param data AuraData
-function ERAAura:auraFound(t, data)
-    if self.acceptAnyCaster or data.isFromPlayerOrPlayerPet then
+---@param checkSourceUnit boolean
+function ERAAura:auraFound(t, data, checkSourceUnit)
+    if self.acceptAnyCaster or data.sourceUnit == "player" then
         if data.expirationTime and data.expirationTime > 0 then
             local remDur = data.expirationTime - t
             if remDur > self.foundDuration then
@@ -494,7 +508,7 @@ function ERAAura:auraFound(t, data)
             self.totDuration = 1004
             self.foundStacks = math.max(self.foundStacks, data.applications, 1)
         end
-        if data.isFromPlayerOrPlayerPet then
+        if data.sourceUnit == "player" then
             self.foundBySelf = true
         end
     end
@@ -549,7 +563,8 @@ end
 
 ---@param t number
 ---@param data AuraData
-function ERAAuraOnGroupMembers:auraFound(t, data)
+---@param checkSourceUnit boolean
+function ERAAuraOnGroupMembers:auraFound(t, data, checkSourceUnit)
     if data.expirationTime and data.expirationTime > 0 then
         local remDur = data.expirationTime - t
         if remDur > self.foundDuration then
@@ -564,7 +579,7 @@ function ERAAuraOnGroupMembers:auraFound(t, data)
     end
     self.found_on_current_member = true
     self.totalCount = self.totalCount + 1
-    if data.isFromPlayerOrPlayerPet then
+    if data.sourceUnit == "player" then
         self.foundBySelf = true
     end
 end

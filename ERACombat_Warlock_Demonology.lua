@@ -14,7 +14,7 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     local talent_vilefiend = ERALIBTalent:CreateAnd(ERALIBTalent:Create(125845), ERALIBTalent:CreateNOR(talent_shatug, talent_fharg))
     local talent_guillotine = ERALIBTalent:Create(125840)
 
-    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 2, talents, true)
+    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 2, false, talents, ERALIBTalentTrue, ERALIBTalentFalse)
 
     local dogs = hud:AddTrackedCooldown(104316, talent_dogs)
     local soulstrike = hud:AddTrackedCooldown(264057, talent_soulstrike)
@@ -128,6 +128,11 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     end
 
     --- utility ---
+
+    local felguardStun = hud:AddTrackedCooldown(89766)
+    felguardStun.isPetSpell = true
+    --hud:AddUtilityCooldown(felguardStun, hud.controlGroup, nil, -1)
+    hud:AddKick(felguardStun)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(265187, talent_tyrant), hud.powerUpGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(111898, talent_felguard), hud.powerUpGroup)

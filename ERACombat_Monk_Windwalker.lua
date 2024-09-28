@@ -177,7 +177,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     hud:AddChannelInfo(113656, 1)
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(451582, talent_galeforce), nil, 0.0, 0.6, 0.2)
-    local battelgearBar = hud:AddAuraBar(hud:AddTrackedBuff(393053, talent_xuensbattlegear), nil, 1.0, 1.0, 0.6)
+
+    local battelgearBar = hud:AddAuraBar(hud:AddTrackedBuff(393053, talent_xuensbattlegear), 642415, 1.0, 1.0, 0.6)
     function battelgearBar:ComputeDurationOverride(t)
         if self.aura.remDuration > rsk.remDuration and self.aura.remDuration > self.hud.remGCD then
             return self.aura.remDuration

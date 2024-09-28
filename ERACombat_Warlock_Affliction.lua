@@ -1,6 +1,7 @@
 ---@param cFrame ERACombatFrame
 ---@param talents WarlockCommonTalents
 function ERACombatFrames_WarlockAfflictionSetup(cFrame, talents)
+    local talent_sacrifice = ERALIBTalent:Create(124691)
     local talent_not_sacrifice = ERALIBTalent:CreateNotTalent(124691)
     local talent_corruption = ERALIBTalent:CreateNotTalent(91572)
     local talent_infinite_corruption = ERALIBTalent:Create(91572)
@@ -14,7 +15,7 @@ function ERACombatFrames_WarlockAfflictionSetup(cFrame, talents)
     local talent_darkglare = ERALIBTalent:Create(91554)
     local talent_omen = ERALIBTalent:Create(91579)
 
-    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 1, talents, talent_not_sacrifice)
+    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 1, true, talents, talent_not_sacrifice, talent_sacrifice)
 
     hud:AddChannelInfo(198590, 1)
 

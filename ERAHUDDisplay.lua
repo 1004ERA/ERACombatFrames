@@ -783,7 +783,7 @@ end
 ---@field protected checkAdditionalTalent fun(this:ERAHUDRotationIcon): boolean
 ---@field update fun(this:ERAHUDRotationIcon, t:number, combat:boolean)
 ---@field specialPosition boolean
----@field overlapPrevious boolean
+---@field overlapsPrevious ERAHUDRotationIcon|nil
 ERAHUDRotationIcon = {}
 ERAHUDRotationIcon.__index = ERAHUDRotationIcon
 setmetatable(ERAHUDRotationIcon, { __index = ERAHUDIcon })
@@ -795,7 +795,6 @@ function ERAHUDRotationIcon:constructRotationIcon(hud, iconID, talent)
     local frame = hud:addRotation(self)
     self:constructIcon(hud, iconID, ERAHUD_RotationIconSize, frame, talent)
     self.specialPosition = false
-    self.overlapPrevious = false
 end
 
 ---@return boolean
@@ -876,7 +875,9 @@ function ERAHUDRotationCooldownIcon:update(t, combat)
     ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
-    self:UpdatedOverride(t, combat)
+    if self.data.isKnown then
+        self:UpdatedOverride(t, combat)
+    end
 end
 ---@param t number
 ---@param combat boolean
@@ -1107,6 +1108,7 @@ end
 ---@field data ERAAura
 ---@field private currentStacks integer
 ---@field ShowWhenMissing fun(this:ERAHUDRotationAuraIcon, t:number, combat:boolean): boolean
+---@field ShowOutOfCombat fun(this:ERAHUDRotationAuraIcon, t:number): boolean
 ERAHUDRotationAuraIcon = {}
 ERAHUDRotationAuraIcon.__index = ERAHUDRotationAuraIcon
 setmetatable(ERAHUDRotationAuraIcon, { __index = ERAHUDRotationIcon })
@@ -1145,18 +1147,22 @@ end
 ---@param t number
 function ERAHUDRotationAuraIcon:update(t, combat)
     if self.data.stacks > 0 then
-        if self.currentStacks ~= self.data.stacks then
-            self.currentStacks = self.data.stacks
-            self.icon:SetDesaturated(false)
-            if self.currentStacks == 1 then
-                self.icon:SetMainText(nil)
-            else
-                self.icon:SetMainTextColor(1.0, 1.0, 1.0, 1.0)
-                self.icon:SetMainText(tostring(self.currentStacks))
+        if combat or self:ShowOutOfCombat(t) then
+            if self.currentStacks ~= self.data.stacks then
+                self.currentStacks = self.data.stacks
+                self.icon:SetDesaturated(false)
+                if self.currentStacks == 1 then
+                    self.icon:SetMainText(nil)
+                else
+                    self.icon:SetMainTextColor(1.0, 1.0, 1.0, 1.0)
+                    self.icon:SetMainText(tostring(self.currentStacks))
+                end
             end
+            self.icon:SetOverlayValue((self.data.totDuration - self.data.remDuration) / self.data.totDuration)
+            self.icon:Show()
+        else
+            self.icon:Hide()
         end
-        self.icon:SetOverlayValue((self.data.totDuration - self.data.remDuration) / self.data.totDuration)
-        self.icon:Show()
     else
         if self:ShowWhenMissing(t, combat) then
             if self.currentStacks ~= 0 then
@@ -1177,6 +1183,11 @@ end
 ---@return boolean
 function ERAHUDRotationAuraIcon:ShowWhenMissing(t, combat)
     return combat
+end
+---@param t number
+---@return boolean
+function ERAHUDRotationAuraIcon:ShowOutOfCombat(t)
+    return true
 end
 
 --------------
@@ -1456,7 +1467,7 @@ end
 
 ---@return boolean
 function ERAHUDUtilityCooldownInGroup:checkAdditionalTalent()
-    return self.data.talentActive
+    return self.data.talentActive and self.data.isKnown
 end
 
 ---@param currentIconID integer

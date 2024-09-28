@@ -188,6 +188,40 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         end
     end
 
+    -- shaoTeachings --
+
+    ---@type ERAHUDRotationAuraIcon[]
+    local shaoTeachings = {}
+
+    -- anger
+    local anger = hud:AddRotationBuff(hud:AddTrackedBuff(405807, talent_sheilun_shaohao))
+    hud:AddAuraBar(hud:AddTrackedBuff(400106, talent_sheilun_shaohao), nil, 0.6, 0.0, 0.0)
+    table.insert(shaoTeachings, anger)
+    -- doubt
+    local doubt = hud:AddRotationBuff(hud:AddTrackedBuff(405808, talent_sheilun_shaohao))
+    hud:AddAuraBar(hud:AddTrackedBuff(400097, talent_sheilun_shaohao), nil, 0.0, 0.3, 0.2)
+    doubt.overlapsPrevious = anger
+    table.insert(shaoTeachings, doubt)
+    -- despair
+    local despair = hud:AddRotationBuff(hud:AddTrackedBuff(405810, talent_sheilun_shaohao))
+    hud:AddAuraBar(hud:AddTrackedBuff(400100, talent_sheilun_shaohao), nil, 0.5, 0.6, 0.8)
+    despair.overlapsPrevious = doubt
+    table.insert(shaoTeachings, despair)
+    -- fear
+    local fear = hud:AddRotationBuff(hud:AddTrackedBuff(405809, talent_sheilun_shaohao))
+    hud:AddAuraBar(hud:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
+    fear.overlapsPrevious = despair
+    table.insert(shaoTeachings, fear)
+
+    for _, st in ipairs(shaoTeachings) do
+        function st:ShowWhenMissing(t, combat)
+            return false
+        end
+        function st:ShowOutOfCombat(t)
+            return false
+        end
+    end
+
     hud:AddRotationStacks(hud:AddTrackedBuff(115867, talent_manatea), 20, 18).soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
 
     local tftBuff = hud:AddTrackedBuff(116680, talent_tft)
@@ -270,19 +304,6 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         end
     end
     hud:AddAuraBar(hud:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
-
-    -- anger
-    hud:AddRotationBuff(hud:AddTrackedBuff(405807, talent_sheilun_shaohao))
-    hud:AddAuraBar(hud:AddTrackedBuff(400106, talent_sheilun_shaohao), nil, 0.6, 0.0, 0.0)
-    -- doubt
-    hud:AddRotationBuff(hud:AddTrackedBuff(405808, talent_sheilun_shaohao)).overlapPrevious = true
-    hud:AddAuraBar(hud:AddTrackedBuff(400097, talent_sheilun_shaohao), nil, 0.0, 0.3, 0.2)
-    -- despair
-    hud:AddRotationBuff(hud:AddTrackedBuff(405810, talent_sheilun_shaohao)).overlapPrevious = true
-    hud:AddAuraBar(hud:AddTrackedBuff(400100, talent_sheilun_shaohao), nil, 0.5, 0.6, 0.8)
-    -- fear
-    hud:AddRotationBuff(hud:AddTrackedBuff(405809, talent_sheilun_shaohao)).overlapPrevious = true
-    hud:AddAuraBar(hud:AddTrackedBuff(400103, talent_sheilun_shaohao), nil, 0.7, 0.0, 0.5)
 
     hud:AddAuraBar(hud:AddTrackedBuff(197908, talent_manatea), nil, 0.1, 0.5, 1.0)
 
