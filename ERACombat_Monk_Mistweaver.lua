@@ -57,7 +57,6 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
 
     ------------------
     --#region grid ---
-    ------------------
 
     ---@type ERACombatGrid|nil
     local grid
@@ -148,7 +147,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     end
 
     --#endregion
-
+    ------------------
 
     --- SAO ---
 

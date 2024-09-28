@@ -248,6 +248,7 @@ end
 ---@field protected getMaxPoints fun(this:ERAHUDModulePointsPartial): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePointsPartial, t:number): number
 ---@field protected GetIdlePointsOverride fun(this:ERAHUDModulePointsPartial): number
+---@field PreUpdateDisplayOverride nil|fun(this:ERAHUDModulePointsPartial, t:number, combat:boolean)
 ---@field private points ERAHUDModulePointPartial[]
 ---@field currentPoints number
 ---@field partialPoint number
@@ -314,6 +315,15 @@ function ERAHUDModulePointsPartial:updateMax()
     end
 end
 
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePointsPartial:SetFullColor(r, g, b)
+    self.rFP = r
+    self.gFP = g
+    self.bFP = b
+end
+
 ---@param t number
 ---@param combat boolean
 function ERAHUDModulePointsPartial:updateData(t, combat)
@@ -325,6 +335,9 @@ end
 ---@param t number
 ---@param combat boolean
 function ERAHUDModulePointsPartial:updateDisplay(t, combat)
+    if self.PreUpdateDisplayOverride then
+        self:PreUpdateDisplayOverride(t, combat)
+    end
     if (not combat) and self.currentPoints == self:GetIdlePointsOverride() then
         self:hide()
     else

@@ -2,12 +2,14 @@
 ---@field private __index unknown
 ---@field private bar Texture
 ---@field private text FontString
+---@field private textValue string|nil
 ---@field private margin number
 ---@field value number
 ---@field max number
 ---@field getValue fun(this:ERAHUD_PseudoResourceBar, t:number, combat:boolean)
 ---@field getMax fun(this:ERAHUD_PseudoResourceBar, t:number, combat:boolean)
 ---@field DisplayUpdatedOverride fun(this:ERAHUD_PseudoResourceBar, t:number, combat:boolean)
+---@field showOutOfCombat boolean
 ---@field showEmptyOutOfCombat boolean
 ERAHUD_PseudoResourceBar = {}
 ERAHUD_PseudoResourceBar.__index = ERAHUD_PseudoResourceBar
@@ -24,6 +26,7 @@ setmetatable(ERAHUD_PseudoResourceBar, { __index = ERAHUDResourceModule })
 function ERAHUD_PseudoResourceBar:constructPseudoResource(hud, height, margin, r, g, b, showEmptyOutOfCombat, talent)
     self:constructModule(hud, height, talent)
     self.margin = margin
+    self.showOutOfCombat = true
     self.showEmptyOutOfCombat = showEmptyOutOfCombat
 
     local background = self.frame:CreateTexture(nil, "BACKGROUND")
@@ -55,20 +58,32 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUD_PseudoResourceBar:updateDisplay(t, combat)
-    if self.value > 0 then
-        local ratio = self.value / self.max
-        if ratio > 1 then ratio = 1 end
-        self.bar:SetWidth((self.hud.barsWidth - 2 * self.margin) * ratio)
-        self:show()
-    else
-        if combat or self.showEmptyOutOfCombat then
-            self.bar:SetWidth(0)
+    if self.showOutOfCombat or combat then
+        if self.value > 0 then
+            local ratio = self.value / self.max
+            if ratio > 1 then ratio = 1 end
+            self.bar:SetWidth((self.hud.barsWidth - 2 * self.margin) * ratio)
             self:show()
         else
-            self:hide()
+            if combat or self.showEmptyOutOfCombat then
+                self.bar:SetWidth(0)
+                self:show()
+            else
+                self:hide()
+            end
         end
+        self:DisplayUpdatedOverride(t, combat)
+    else
+        self:hide()
     end
-    self:DisplayUpdatedOverride(t, combat)
 end
 function ERAHUD_PseudoResourceBar:DisplayUpdatedOverride(t, combat)
+end
+
+---@param txt string|nil
+function ERAHUD_PseudoResourceBar:SetText(txt)
+    if txt ~= self.textValue then
+        self.textValue = txt
+        self.text:SetText(txt)
+    end
 end

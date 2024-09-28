@@ -901,6 +901,13 @@ function ERAHUDRotationCooldownTimerItem:checkAdditionalTalent()
     return self.cd.talentActive
 end
 
+---@param currentIconID integer
+---@return integer
+function ERAHUDRotationCooldownTimerItem:updateIconID(currentIconID)
+    local spellInfo = C_Spell.GetSpellInfo(self.cd.data.spellID)
+    return spellInfo.iconID
+end
+
 ---@param t number
 ---@return number
 function ERAHUDRotationCooldownTimerItem:ComputeAvailablePriorityOverride(t)
