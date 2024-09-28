@@ -24,6 +24,7 @@ ERAHUDModulePointsPartial_PointSpacing = 4
 ---@field protected getMaxPoints fun(this:ERAHUDModulePoints): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePoints): integer
 ---@field GetIdlePointsOverride fun(this:ERAHUDModulePoints): integer
+---@field PreUpdateDisplayOverride nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean)
 ---@field private points ERAHUDModulePoint[]
 ---@field currentPoints integer
 ---@field maxPoints integer
@@ -97,17 +98,29 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDModulePoints:updateDisplay(t, combat)
+    if self.PreUpdateDisplayOverride then
+        self:PreUpdateDisplayOverride(t, combat)
+    end
     if combat or self.currentPoints ~= self:GetIdlePointsOverride() then
         for i = 1, self.currentPoints do
-            self.points[i]:update(true)
+            self.points[i]:update(true, self.rP, self.gP, self.bP)
         end
         for i = self.currentPoints + 1, self.maxPoints do
-            self.points[i]:update(false)
+            self.points[i]:update(false, self.rP, self.gP, self.bP)
         end
         self:show()
     else
         self:hide()
     end
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePoints:SetPointColor(r, g, b)
+    self.rP = r
+    self.gP = g
+    self.bP = b
 end
 
 --#endregion
@@ -122,6 +135,9 @@ end
 ---@field private border Texture
 ---@field private point Texture
 ---@field private active boolean
+---@field private r number
+---@field private g number
+---@field private b number
 ERAHUDModulePoint = {}
 ERAHUDModulePoint.__index = ERAHUDModulePoint
 
@@ -147,6 +163,9 @@ function ERAHUDModulePoint:create(parentFrame, rB, gB, bB, rP, gP, bP)
     frame:SetSize(ERAHUDModulePoints_PointSize, ERAHUDModulePoints_PointSize)
     p.border:SetVertexColor(rB, gB, bB)
     p.point:SetVertexColor(rP, gP, bP)
+    p.r = rP
+    p.g = gP
+    p.b = bP
     p.active = true
     return p
 end
@@ -163,7 +182,16 @@ function ERAHUDModulePoint:draw(x, parentFrame)
 end
 
 ---@param active boolean
-function ERAHUDModulePoint:update(active)
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePoint:update(active, r, g, b)
+    if self.r ~= r or self.g ~= g or self.b ~= b then
+        self.r = r
+        self.g = g
+        self.b = b
+        self.point:SetVertexColor(r, g, b)
+    end
     if self.active ~= active then
         if active then
             self.active = true

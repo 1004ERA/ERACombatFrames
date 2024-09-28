@@ -15,16 +15,18 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     local talent_guillotine = ERALIBTalent:Create(125840)
 
     local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 2, false, talents, ERALIBTalentTrue, ERALIBTalentFalse)
+    ---@cast hud WarlockWholeHUD
+    hud.shards = ERAHUDWarlockWholeShards:create(hud)
 
     local dogs = hud:AddTrackedCooldown(104316, talent_dogs)
     local soulstrike = hud:AddTrackedCooldown(264057, talent_soulstrike)
     soulstrike.isPetSpell = true
 
     function hud.shards:PreUpdateDisplayOverride(t, combat)
-        if talent_soulstrike_shard:PlayerHasTalent() and soulstrike.remDuration < hud.occupied + 1.5 * hud.totGCD then
-            self:SetFullColor(0.0, 1.0, 0.0)
+        if talent_soulstrike_shard:PlayerHasTalent() and soulstrike.remDuration < hud.occupied + hud.totGCD then
+            self:SetPointColor(0.0, 1.0, 0.0)
         else
-            self:SetFullColor(1.0, 0.0, 1.0)
+            self:SetPointColor(1.0, 0.0, 1.0)
         end
     end
 

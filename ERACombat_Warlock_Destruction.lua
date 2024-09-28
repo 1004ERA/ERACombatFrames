@@ -1,5 +1,6 @@
 ---@class WDestructionHUD : WarlockHUD
 ---@field lastHavoc number
+---@field shards ERAHUDWarlockShards
 
 ---@param cFrame ERACombatFrame
 ---@param talents WarlockCommonTalents
@@ -24,6 +25,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 3, true, talents, talent_not_sacrifice, talent_sacrifice)
     ---@cast hud WDestructionHUD
+    hud.shards = ERAHUDWarlockShards:create(hud)
     hud.lastHavoc = 0
 
     local dots = ERAHUDDOT:Create(hud)
@@ -253,3 +255,37 @@ function ERAHUD_Warlock_DestructionHavocDuration:updateData(t)
         self.remDuration = 0
     end
 end
+
+--------------------
+--#region SHARDS ---
+
+---@class (exact) ERAHUDWarlockShards : ERAHUDModulePointsPartial
+---@field private __index unknown
+ERAHUDWarlockShards = {}
+ERAHUDWarlockShards.__index = ERAHUDWarlockShards
+setmetatable(ERAHUDWarlockShards, { __index = ERAHUDModulePointsPartial })
+
+---@param hud ERAHUD
+---@return ERAHUDWarlockShards
+function ERAHUDWarlockShards:create(hud)
+    local e = {}
+    setmetatable(e, ERAHUDWarlockShards)
+    ---@cast e ERAHUDWarlockShards
+    e:constructPoints(hud, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.0, 0.5, nil, "FROM_CENTER")
+    return e
+end
+
+function ERAHUDWarlockShards:GetIdlePointsOverride()
+    return 3
+end
+
+function ERAHUDWarlockShards:getMaxPoints()
+    return UnitPowerMax("player", 7)
+end
+
+function ERAHUDWarlockShards:getCurrentPoints()
+    return UnitPower("player", 7, true) / 10
+end
+
+--#endregion
+--------------------
