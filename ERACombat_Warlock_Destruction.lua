@@ -35,6 +35,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     local shadowBurnCooldown = hud:AddTrackedCooldown(17877, talent_shadowburn)
     local conflag_ShadowConflag = hud:AddTrackedBuff(387109, talent_shadowburn_conflag)
     local burn_ShadowConflag = hud:AddTrackedBuff(387110, talent_shadowburn_conflag)
+    local decimation = hud:AddTrackedBuff(457555, talent_soulfireproc)
 
     --- SAO ---
 
@@ -44,8 +45,10 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     hud:AddAuraOverlay(hud:AddTrackedBuff(387385, talent_backlash), 1, 460830, false, "BOTTOM", false, true, false, false)
 
-    hud:AddAuraOverlay(conflag_ShadowConflag, 1, 457658, false, "TOP", false, false, false, false)
-    hud:AddAuraOverlay(burn_ShadowConflag, 1, 627609, false, "TOP", false, false, false, false)
+    hud:AddAuraOverlay(conflag_ShadowConflag, 1, 457658, false, "MIDDLE", false, false, false, false)
+    hud:AddAuraOverlay(burn_ShadowConflag, 1, 627609, false, "MIDDLE", false, false, false, false)
+
+    hud:AddAuraOverlay(decimation, 1, 450926, false, "TOP", false, false, false, false)
 
     --- bars ---
 
@@ -64,6 +67,9 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     function hud:AdditionalCLEU(t)
         local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
         if (sourceGUID == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED" and spellID == 80240) then
+            if talent_mayhem:PlayerHasTalent() then
+                PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST, "SFX", true)
+            end
             self.lastHavoc = t
         end
     end
@@ -85,8 +91,6 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     end
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(196414, talent_eradication), nil, 1.0, 0.0, 1.1)
-
-    local decimation = hud:AddTrackedBuff(457555, talent_soulfireproc)
 
     --- rotation ---
 
