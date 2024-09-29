@@ -555,7 +555,7 @@ function ERAHUD:Pack()
         racialGroup = self.specialGroup
     elseif (r == 11) then
         -- draenei
-        racialSpellID = 59542
+        racialSpellID = 416250
         racialGroup = self.healGroup
     elseif (r == 22) then
         -- worgen

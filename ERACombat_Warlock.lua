@@ -118,6 +118,15 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
         return sacriCooldown.remDuration <= self.hud.occupied
     end
 
+    local rushTimer = hud:AddTrackedBuff(111400, talents.rush)
+    function hud:PreUpdateDisplayOverride(t, combat)
+        if rushTimer.remDuration > 0 then
+            self.health.bar:SetBorderColor(1.0, 0.0, 0.0)
+        else
+            self.health.bar:SetBorderColor(1.0, 1.0, 1.0)
+        end
+    end
+
     --- utility ---
 
     local singeImp, singeSacrifice = ERACombatFrames_WarlockCommandDemon(hud, 89808, 132411, sacriBuff, talent_sacrifice)

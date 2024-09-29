@@ -13,6 +13,7 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     local talent_fharg = ERALIBTalent:Create(125838)
     local talent_vilefiend = ERALIBTalent:CreateAnd(ERALIBTalent:Create(125845), ERALIBTalent:CreateNOR(talent_shatug, talent_fharg))
     local talent_guillotine = ERALIBTalent:Create(125840)
+    local talent_doom = ERALIBTalent:Create(125865)
 
     local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 2, false, talents, ERALIBTalentTrue, ERALIBTalentFalse)
     ---@cast hud WarlockWholeHUD
@@ -43,7 +44,7 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     local instadogs = hud:AddTrackedBuff(205146)
     local instadogsOverlay = hud:AddAuraOverlay(instadogs, 1, 510822, false, "TOP", false, false, false, false)
     function instadogsOverlay:ConfirmIsActiveOverride(t)
-        return dogs.remDuration <= 0 or dogs.remDuration < self.hud.timerDuration - 1
+        return dogs.remDuration <= 0 or dogs.remDuration < 5
     end
 
     --- bars ---
@@ -59,19 +60,13 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(146739), nil, 1.0, 0.3, 0.3)
 
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(460553, talent_doom), nil, 0.0, 0.6, 0.0)
+
     --- rotation ---
 
     local dogsIcon = hud:AddRotationCooldown(dogs)
 
     --local soulstrikeIcon = hud:AddRotationCooldown(soulstrike)
-    local soulstrikeTimer = hud:AddPriority(1452864, talent_soulstrike)
-    function soulstrikeTimer:ComputeDurationOverride(t)
-        if soulstrike.remDuration < 2 * self.hud.totGCD then
-            return soulstrike.remDuration
-        else
-            return 0
-        end
-    end
 
     local vilefiendIcons = {}
     table.insert(vilefiendIcons, hud:AddRotationCooldown(hud:AddTrackedCooldown(264119, talent_vilefiend)))
@@ -102,6 +97,18 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     end
 
     ]]
+
+    local soulstrikeTimer = hud:AddPriority(1452864, talent_soulstrike)
+    function soulstrikeTimer:ComputeDurationOverride(t)
+        if soulstrike.remDuration < 2 * self.hud.totGCD then
+            return soulstrike.remDuration
+        else
+            return -1
+        end
+    end
+    function soulstrikeTimer:ComputeAvailablePriorityOverride(t)
+        return 1
+    end
 
     function dogsIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 2
