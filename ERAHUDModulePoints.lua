@@ -123,6 +123,20 @@ function ERAHUDModulePoints:SetPointColor(r, g, b)
     self.bP = b
 end
 
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePoints:SetBorderColor(r, g, b)
+    if self.rB ~= r or self.gB ~= b or self.bB ~= b then
+        self.rB = r
+        self.gB = g
+        self.bB = b
+        for _, p in ipairs(self.points) do
+            p:setBorderColor(r, g, b)
+        end
+    end
+end
+
 --#endregion
 --------------------
 
@@ -179,6 +193,13 @@ end
 function ERAHUDModulePoint:draw(x, parentFrame)
     self.frame:Show()
     self.frame:SetPoint("CENTER", parentFrame, "LEFT", x, 0)
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePoint:setBorderColor(r, g, b)
+    self.border:SetVertexColor(r, g, b)
 end
 
 ---@param active boolean

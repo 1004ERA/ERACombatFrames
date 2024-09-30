@@ -12,6 +12,8 @@
 ---@field shadowflame ERALIBTalent
 ---@field gluttony ERALIBTalent
 ---@field healthstone ERALIBTalent
+---@field succulent ERALIBTalent
+---@field diabolist ERALIBTalent
 
 ---@class WarlockHUD : ERAHUD
 
@@ -45,6 +47,8 @@ function ERACombatFrames_WarlockSetup(cFrame)
         shadowflame = ERALIBTalent:Create(91450),
         gluttony = ERALIBTalent:Create(91434),
         healthstone = ERALIBTalent:CreateNotTalent(91434),
+        succulent = ERALIBTalent:Create(117448),
+        diabolist = ERALIBTalent:Create(117452),
     }
 
     if (not affliOptions.disabled) then
@@ -158,6 +162,70 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(48020, talents.selfPortal), hud.movementGroup)
 
     return hud
+end
+
+---@param cFrame ERACombatFrame
+---@param spec integer
+---@param talent_pet ERALIBTalent
+---@param talent_sacrifice ERALIBTalent
+---@param talents WarlockCommonTalents
+---@return WarlockWholeHUD
+function ERACombatFrames_WarlockWholeShards(cFrame, spec, talent_pet, talent_sacrifice, talents)
+    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, spec, true, talents, talent_pet, talent_sacrifice)
+    ---@cast hud WarlockWholeHUD
+    hud.shards = ERAHUDWarlockWholeShards:create(hud)
+
+    local succulent = hud:AddTrackedBuff(449793, talents.succulent)
+    function hud:DisplayUpdatedOverride(t, combat)
+        if succulent.remDuration > 0 then
+            hud.shards:SetBorderColor(1.0, 1.0, 1.0)
+        else
+            hud.shards:SetBorderColor(1.0, 0.0, 0.0)
+        end
+    end
+
+    return hud
+end
+
+---@param hud WarlockHUD
+---@param talents WarlockCommonTalents
+---@return ERAAura
+function ERACombatFrames_WarlockDiabolist(hud, talents)
+    local overlordRitual = hud:AddTrackedBuff(431944, talents.diabolist)
+    local overlordProc = hud:AddTrackedBuff(428524, talents.diabolist)
+    local mocRitual = hud:AddTrackedBuff(432815, talents.diabolist)
+    local mocProc = hud:AddTrackedBuff(432794, talents.diabolist)
+    local pitRitual = hud:AddTrackedBuff(432816, talents.diabolist)
+    local pitProc = hud:AddTrackedBuff(432795, talents.diabolist)
+
+    local summonIcons = {}
+
+    hud:AddAuraBar(overlordRitual, 1388064, 0.0, 1.0, 1.0)
+    local overlordIcon = hud:AddRotationBuff(overlordProc, 1388064)
+    table.insert(summonIcons, overlordIcon)
+
+    hud:AddAuraBar(mocRitual, 1711332, 1.0, 0.7, 0.7)
+    local mocIcon = hud:AddRotationBuff(mocProc, 1711332)
+    table.insert(summonIcons, mocIcon)
+    mocIcon.overlapsPrevious = overlordIcon
+
+    hud:AddAuraBar(pitRitual, 1117878, 0.5, 1.0, 0.0)
+    local pitIcon = hud:AddRotationBuff(pitProc, 1117878)
+    table.insert(summonIcons, pitIcon)
+    pitIcon.overlapsPrevious = mocIcon
+
+    for _, icon in ipairs(summonIcons) do
+        icon.specialPosition = true
+        function icon.ShowWhenMissing()
+            return false
+        end
+    end
+
+    local cloven = hud:AddTrackedDebuffOnTarget(434424, talents.diabolist)
+    hud:AddAuraBar(cloven, nil, 0.4, 0.0, 0.7)
+
+    local boltTimer = hud:AddTrackedBuff(433891, talents.diabolist)
+    return boltTimer
 end
 
 ---@param hud WarlockHUD

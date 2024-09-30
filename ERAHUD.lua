@@ -73,6 +73,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field remCast number
 ---@field private totCast number
 ---@field occupied number
+---@field castingSpellID integer|nil
 ---@field hasteMultiplier number
 ---@field selfDispellableMagic boolean
 ---@field selfDispellablePoison boolean
@@ -1674,11 +1675,13 @@ function ERAHUD:updateData(t, combat)
 
     --region CAST
 
-    local _, _, _, startTimeMS, endCastMS = UnitCastingInfo("player")
+    self.castingSpellID = nil
+    local _, _, _, startTimeMS, endCastMS, _, _, _, castingSpellID = UnitCastingInfo("player")
     if endCastMS then
         self.remCast = (endCastMS / 1000) - t
         self.totCast = (endCastMS - startTimeMS) / 1000
         self.channelingSpellID = nil
+        self.castingSpellID = castingSpellID
         self:resetEmpower()
     else
         local _, _, _, startTimeMS, endCastMS, _, _, spellID, _, stageTotal = UnitChannelInfo("player")
@@ -1695,6 +1698,7 @@ function ERAHUD:updateData(t, combat)
             end
         end
         if (endCastMS) then
+            self.castingSpellID = spellID
             self.channelingSpellID = spellID
             if (stageTotal and stageTotal > 0) then
                 local maxLevelHold = GetUnitEmpowerHoldAtMaxTime("player") / 1000

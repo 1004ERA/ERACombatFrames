@@ -15,9 +15,7 @@ function ERACombatFrames_WarlockAfflictionSetup(cFrame, talents)
     local talent_darkglare = ERALIBTalent:Create(91554)
     local talent_omen = ERALIBTalent:Create(91579)
 
-    local hud = ERACombatFrames_WarlockCommonSetup(cFrame, 1, true, talents, talent_not_sacrifice, talent_sacrifice)
-    ---@cast hud WarlockWholeHUD
-    hud.shards = ERAHUDWarlockWholeShards:create(hud)
+    local hud = ERACombatFrames_WarlockWholeShards(cFrame, 1, talent_not_sacrifice, talent_sacrifice, talents)
 
     hud:AddChannelInfo(198590, 1)
 

@@ -237,6 +237,7 @@ end
 ---@field private __index unknown
 ---@field timer ERATimer
 ---@field talent ERALIBTalent|nil
+---@field ConfirmDurationOverride nil|fun(this:ERAHUDGenericBar, t:number, duration:number): number
 ERAHUDGenericBar = {}
 ERAHUDGenericBar.__index = ERAHUDGenericBar
 setmetatable(ERAHUDGenericBar, { __index = ERAHUDBar })
@@ -263,7 +264,11 @@ function ERAHUDGenericBar:checkTalentsOverride()
 end
 
 function ERAHUDGenericBar:computeDuration(t)
-    return self.timer.remDuration
+    local dur = self.timer.remDuration
+    if self.ConfirmDurationOverride then
+        dur = self:ConfirmDurationOverride(t, dur)
+    end
+    return dur
 end
 
 --#endregion

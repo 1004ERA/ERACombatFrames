@@ -28,6 +28,8 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     hud.shards = ERAHUDWarlockShards:create(hud)
     hud.lastHavoc = 0
 
+    local superbolt = ERACombatFrames_WarlockDiabolist(hud, talents)
+
     local dots = ERAHUDDOT:Create(hud)
     local immo = dots:AddDOT(157736, nil, 1.0, 1.0, 0.0, nil, 1.5, 21)
 
@@ -50,6 +52,14 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     hud:AddAuraOverlay(decimation, 1, 450926, false, "TOP", false, false, false, false)
 
+    function hud.shards:PreUpdateDisplayOverride(t, combat)
+        if superbolt.remDuration > 0 then
+            self:SetFullColor(1.0, 1.0, 1.0)
+        else
+            self:SetFullColor(1.0, 0.0, 1.0)
+        end
+    end
+
     --- bars ---
 
     local backdraftBar = hud:AddAuraBar(backdraft, nil, 0.0, 1.0, 0.0)
@@ -65,10 +75,20 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     hud:AddAuraBar(blaze, nil, 1.0, 0.8, 0.0)
 
     function hud:AdditionalCLEU(t)
+        --[[
+        if sound_debug_blabla then
+            if t - sound_debug_blabla > 2 then
+                sound_debug_blabla = nil
+                PlaySound(SOUNDKIT.ALARM_CLOCK_WARNING_3, "SFX", true)
+            end
+        else
+            sound_debug_blabla = t
+        end
+        ]]
         local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
         if (sourceGUID == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED" and spellID == 80240) then
             if talent_mayhem:PlayerHasTalent() then
-                PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST, "SFX", true)
+                PlaySound(SOUNDKIT.ALARM_CLOCK_WARNING_3, "SFX", true)
             end
             self.lastHavoc = t
         end
@@ -217,6 +237,9 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(1122, talent_infernal), hud.powerUpGroup)
 end
 
+-------------------
+--#region HAVOC ---
+
 ---@class ERAHUD_Warlock_DestructionHavocDuration : ERATimer
 ---@field private __index unknown
 ---@field private wdhud WDestructionHUD
@@ -259,6 +282,9 @@ function ERAHUD_Warlock_DestructionHavocDuration:updateData(t)
         self.remDuration = 0
     end
 end
+
+--#endregion
+-------------------
 
 --------------------
 --#region SHARDS ---
