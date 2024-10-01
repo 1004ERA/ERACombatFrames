@@ -462,6 +462,7 @@ end
 ---@field protected foundDuration number
 ---@field protected foundStacks integer
 ---@field protected foundBySelf boolean
+---@field updateUtilityLayoutIfChanged boolean
 ---@field acceptAnyCaster boolean
 ---@field appliedBySelf boolean
 ---@field auraFound fun(this:ERAAura, t:number, data:AuraData, checkSourceUnit:boolean)
@@ -517,11 +518,17 @@ end
 ---@param t number
 function ERAAura:updateData(t)
     if self.foundDuration > 0 then
+        if self.remDuration <= 0 and self.updateUtilityLayoutIfChanged then
+            self.hud:mustUpdateUtilityLayout()
+        end
         self.remDuration = self.foundDuration
         self.stacks = self.foundStacks
         self.foundDuration = -1
         self.appliedBySelf = self.foundBySelf
     else
+        if self.remDuration > 0 and self.updateUtilityLayoutIfChanged then
+            self.hud:mustUpdateUtilityLayout()
+        end
         self.remDuration = 0
         self.stacks = 0
         self.appliedBySelf = false

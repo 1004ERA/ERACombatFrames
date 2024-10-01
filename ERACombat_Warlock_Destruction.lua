@@ -17,8 +17,9 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     local talent_demonfire = ERALIBTalent:Create(91586)
     local talent_infernal = ERALIBTalent:Create(91502)
     local talent_eradication = ERALIBTalent:Create(91501)
-    local talent_ritualist = ERALIBTalent:Create(91475)
-    local talent_ritualruin = ERALIBTalent:CreateAnd(ERALIBTalent:Create(91483), ERALIBTalent:CreateNot(talent_ritualist))
+    local talent_ritual = ERALIBTalent:Create(91483)
+    local talent_master_ritual = ERALIBTalent:Create(91475)
+    local talent_simple_ritual = ERALIBTalent:CreateAnd(talent_ritual, ERALIBTalent:CreateNot(talent_master_ritual))
     local talent_soulfire = ERALIBTalent:Create(91492)
     local talent_soulfireproc = ERALIBTalent:Create(126007)
     local talent_rift = ERALIBTalent:Create(91423)
@@ -28,10 +29,18 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     hud.shards = ERAHUDWarlockShards:create(hud)
     hud.lastHavoc = 0
 
-    local superbolt = ERACombatFrames_WarlockDiabolist(hud, talents)
+    local superbolt, ruination, anyArt = ERACombatFrames_WarlockDiabolist(hud, talents)
 
     local dots = ERAHUDDOT:Create(hud)
-    local immo = dots:AddDOT(157736, nil, 1.0, 1.0, 0.0, nil, 1.5, 21)
+    local immo = dots:AddDOT(157736, nil, 1.0, 1.0, 0.0, talents.not_wither, 1.5, 21)
+    local wither = dots:AddDOT(445474, nil, 1.0, 0.3, 1.0, talents.wither, 0, 18)
+    function wither:ComputeRefreshDurationOverride(t)
+        if talents.short_wither:PlayerHasTalent() then
+            return 0.3 * 15.3
+        else
+            return 0.3 * 18
+        end
+    end
 
     local conflagCooldown = hud:AddTrackedCooldown(17962)
     local shadowBurnCooldown = hud:AddTrackedCooldown(17877, talent_shadowburn)
@@ -41,9 +50,11 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     --- SAO ---
 
+    hud:AddTimerOverlay(anyArt, 801267, false, "LEFT", false, false, false, false)
+    hud:AddTimerOverlay(hud:AddTrackedBuff(387157, talent_ritual), 801267, false, "LEFT", false, false, false, false)
+
     local backdraft = hud:AddTrackedBuff(117828)
-    hud:AddAuraOverlay(backdraft, 1, 449491, false, "LEFT", false, false, false, false)
-    hud:AddAuraOverlay(backdraft, 2, 449491, false, "RIGHT", true, false, false, false)
+    hud:AddAuraOverlay(backdraft, 1, 449491, false, "RIGHT", true, false, false, false)
 
     hud:AddAuraOverlay(hud:AddTrackedBuff(387385, talent_backlash), 1, 460830, false, "BOTTOM", false, true, false, false)
 
@@ -57,6 +68,11 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
             self:SetFullColor(1.0, 1.0, 1.0)
         else
             self:SetFullColor(1.0, 0.0, 1.0)
+        end
+        if ruination.remDuration > 0 then
+            self:SetBorderColor(1.0, 1.0, 1.0)
+        else
+            self:SetBorderColor(1.0, 0.0, 0.0)
         end
     end
 
@@ -110,7 +126,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
         end
     end
 
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(196414, talent_eradication), nil, 1.0, 0.0, 1.1)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(196414, talent_eradication), nil, 1.0, 0.0, 1.0)
 
     --- rotation ---
 
@@ -128,6 +144,12 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     local soulfire = hud:AddRotationCooldown(hud:AddTrackedCooldown(6353, talent_soulfire))
 
+    ERACombatFrames_WarlockMalevolence(hud, talents, 10)
+
+    local ritualStacks = hud:AddTrackedBuff(387158, talent_ritual)
+    hud:AddRotationStacks(ritualStacks, 20, 18, nil, talent_simple_ritual)
+    hud:AddRotationStacks(ritualStacks, 15, 13, nil, talent_master_ritual)
+
     --[[
 
     prio
@@ -141,8 +163,9 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     7 - cata
     8 - soulfire with backdraft or blaze
     9 - rift
-    10 - shadowburn full charges
-    11 - soulfire raw
+    10 - malevolence
+    11 - shadowburn full charges
+    12 - soulfire raw
 
     ]]
 
@@ -167,7 +190,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
                     if UnitHealth("target") / UnitHealthMax("target") <= 0.3 then
                         return 3
                     else
-                        return 10
+                        return 11
                     end
                 else
                     return 0
@@ -220,7 +243,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
         elseif backdraft.remDuration > castTime or blaze.remDuration - 0.5 > castTime then
             return 8
         else
-            return 11
+            return 12
         end
     end
 

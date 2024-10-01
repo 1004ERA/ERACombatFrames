@@ -295,7 +295,7 @@ function ERAHUDTargetCastBar:create(hud)
     setmetatable(x, ERAHUDTargetCastBar)
     ---@cast x ERAHUDTargetCastBar
     x:constructBar(hud, nil, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion", 3)
-    ERALIB_SetFont(x.text, ERACombat_TimerBarDefaultSize * 0.5)
+    ERALIB_SetFont(x.text, ERAHUD_TimerBarDefaultSize * 0.5)
     return x
 end
 
@@ -1710,7 +1710,6 @@ function ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayO
     ---@cast g ERAHUDUtilityExternalTimerInGroup
     g:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
     g.timer = timer
-    g.timerActive = false
     return g
 end
 
@@ -1722,25 +1721,13 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDUtilityExternalTimerInGroup:update(t, combat)
-    if self.timer.talentActive and self.timer.remDuration > 0 then
-        if not self.timerActive then
-            self.timerActive = true
-            self.hud:mustUpdateUtilityLayout()
-        end
-        self.icon:SetOverlayValue(self.timer.remDuration / self.timer.totDuration)
-        if self.timer.remDuration <= 0 then
-            self.icon:SetMainText(nil)
-        else
-            self.icon:SetMainText(tostring(math.floor(self.timer.remDuration)))
-        end
+    self.icon:SetOverlayValue(self.timer.remDuration / self.timer.totDuration)
+    if self.timer.remDuration <= 0 then
+        self.icon:SetMainText(nil)
     else
-        if self.timerActive then
-            self.icon:SetOverlayValue(0)
-            self.icon:SetMainText(nil)
-            self.timerActive = false
-            self.hud:mustUpdateUtilityLayout()
-        end
+        self.icon:SetMainText(tostring(math.floor(self.timer.remDuration)))
     end
+    self.icon:Show()
 end
 
 --#endregion
@@ -2091,13 +2078,54 @@ function ERASAOAura:getIsActive(t, combat)
     return self.aura.stacks >= self.minStacks
 end
 
----@class (exact) ERASAOMissingAura : ERASAO
+---@class (exact) ERASAOMissingTimer : ERASAO
 ---@field private __index unknown
 ---@field private timer ERATimer
 ---@field private onlyIfHasTarget boolean
-ERASAOMissingAura = {}
-ERASAOMissingAura.__index = ERASAOMissingAura
-setmetatable(ERASAOMissingAura, { __index = ERASAO })
+ERASAOMissingTimer = {}
+ERASAOMissingTimer.__index = ERASAOMissingTimer
+setmetatable(ERASAOMissingTimer, { __index = ERASAO })
+
+--- BASED ON ANY TIMER ---
+
+---@class (exact) ERASAOTimer : ERASAO
+---@field private __index unknown
+---@field private timer ERATimer
+ERASAOTimer = {}
+ERASAOTimer.__index = ERASAOTimer
+setmetatable(ERASAOTimer, { __index = ERASAO })
+
+---@param timer ERATimer
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@param offsetX number
+---@param offsetY number
+---@return ERASAOTimer
+function ERASAOTimer:create(timer, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    local a = {}
+    setmetatable(a, ERASAOTimer)
+    ---@cast a ERASAOTimer
+    a.timer = timer
+    a:constructSAO(timer.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    return a
+end
+
+---@return boolean
+function ERASAOTimer:checkTalentSAO()
+    return self.timer.talentActive
+end
+
+---@param combat boolean
+---@param t number
+function ERASAOTimer:getIsActive(t, combat)
+    return self.timer.remDuration > 0
+end
 
 ---@param timer ERATimer
 ---@param onlyIfHasTarget boolean
@@ -2111,11 +2139,11 @@ setmetatable(ERASAOMissingAura, { __index = ERASAO })
 ---@param talent ERALIBTalent|nil
 ---@param offsetX number
 ---@param offsetY number
----@return ERASAOMissingAura
-function ERASAOMissingAura:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+---@return ERASAOMissingTimer
+function ERASAOMissingTimer:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     local a = {}
-    setmetatable(a, ERASAOMissingAura)
-    ---@cast a ERASAOMissingAura
+    setmetatable(a, ERASAOMissingTimer)
+    ---@cast a ERASAOMissingTimer
     a.timer = timer
     a.onlyIfHasTarget = onlyIfHasTarget
     a:constructSAO(timer.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
@@ -2123,13 +2151,13 @@ function ERASAOMissingAura:create(timer, onlyIfHasTarget, texture, isAtlas, posi
 end
 
 ---@return boolean
-function ERASAOMissingAura:checkTalentSAO()
+function ERASAOMissingTimer:checkTalentSAO()
     return self.timer.talentActive
 end
 
 ---@param combat boolean
 ---@param t number
-function ERASAOMissingAura:getIsActive(t, combat)
+function ERASAOMissingTimer:getIsActive(t, combat)
     return self.timer.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
 end
 
@@ -2223,9 +2251,9 @@ function ERAHUDTimerMarker:update(timerMaxY, t, frameOverlay)
             self.pixel = px
             self.timerMaxY = timerMaxY
             if (self.hud.topdown) then
-                self.line:SetStartPoint("RIGHT", frameOverlay, px, ERACombat_TimerIconCooldownSize / 2)
+                self.line:SetStartPoint("RIGHT", frameOverlay, px, ERAHUD_TimerIconSize / 2)
             else
-                self.line:SetStartPoint("RIGHT", frameOverlay, px, -ERACombat_TimerIconCooldownSize / 2)
+                self.line:SetStartPoint("RIGHT", frameOverlay, px, -ERAHUD_TimerIconSize / 2)
             end
             self.line:SetEndPoint("RIGHT", frameOverlay, px, timerMaxY)
         end

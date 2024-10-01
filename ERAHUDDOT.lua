@@ -1,6 +1,13 @@
 ERAHUDDOT_MainBarSize = ERAHUD_TimerBarDefaultSize + 4
 ERAHUDDOT_SecondaryBarSize = ERAHUD_TimerBarDefaultSize - 4
 
+ERAHUDDOT_alpha_LONG_TARGET = 0.6
+ERAHUDDOT_alpha_REFRESH_TARGET = 1.0
+ERAHUDDOT_alpha_LONG_SINGLE_INSTANCE = 0.6
+ERAHUDDOT_alpha_REFRESH_SINGLE_INSTANCE = 0.8
+ERAHUDDOT_alpha_LONG_OTHER = 0.1
+ERAHUDDOT_alpha_REFRESH_OTHER = 0.6
+
 ---@class ERAHUDDOT : ERAHUDNestedModule
 ---@field private __index unknown
 ---@field private timerFrame Frame
@@ -81,7 +88,9 @@ function ERAHUDDOT:checkTalents()
     table.wipe(self.activeDefs)
     table.wipe(self.activeDefsArray)
     for _, d in ipairs(self.defs) do
-        if (not d.talent) or d.talent:PlayerHasTalent() then
+        if d.talent and not d.talent:PlayerHasTalent() then
+            d:talentInactive()
+        else
             self.activeDefs[d.onTarget.spellID] = d
             table.insert(self.activeDefsArray, d)
         end
@@ -120,7 +129,7 @@ function ERAHUDDOT:updateData(t)
                 if auraInfo then
                     local def = self.activeDefs[auraInfo.spellId]
                     if def then
-                        def:found(auraInfo, e)
+                        def:found(t, auraInfo, e)
                     end
                     i = i + 1
                 else
@@ -140,23 +149,21 @@ end
 ---@param overlayFrame Frame
 ---@return number
 function ERAHUDDOT:updateDisplay_returnHeight(t, y, timerFrame, overlayFrame)
-    local hasActive = false
+    local height = 0
     for _, d in ipairs(self.activeDefsArray) do
         y = y + ERAHUD_TimerBarSpacing
         d:drawTarget(y, timerFrame, overlayFrame)
         y = y + ERAHUDDOT_MainBarSize
-        hasActive = true
+        height = height + ERAHUD_TimerBarSpacing + ERAHUDDOT_MainBarSize
     end
-    if hasActive then
+    if height > 0 then
         y = y + ERAHUD_TimerBarSpacing
+        height = height + ERAHUD_TimerBarSpacing
     end
-    local yTimers = y
     for _, d in ipairs(self.activeDefsArray) do
-        if d.onTarget.remDuration <= 0 then
-            y = d:drawOthers_returnY(y, timerFrame)
-        end
+        y = d:drawOthers_returnY(y, timerFrame)
     end
-    return yTimers
+    return height
 end
 
 -----------------
@@ -183,6 +190,7 @@ end
 ---@field owner ERAHUDDOT
 ---@field onTarget ERAAura
 ---@field private onOthers ERAHUDDOTInstance[]
+---@field private activeOnOthers ERAHUDDOTInstance[]
 ---@field private maxDurationIndex integer
 ---@field private foundCount integer
 ---@field mainBar ERAHUDDOTBar
@@ -190,11 +198,14 @@ end
 ---@field baseCastTime number
 ---@field baseTotDuration number
 ---@field refreshDuration number
----@field couldRefreshOnTarget boolean
+---@field minActiveDuration number
+---@field minActiveIsOnTarget boolean
+---@field couldRefresh boolean
+---@field singleInstance boolean
 ---@field private refreshLine Line
 ---@field private refreshLineVisible boolean
----@field protected ComputeRefreshDurationOverride fun(this:ERAHUDDOTDefinition, t:number): number
----@field protected ComputeCastTimeOverride fun(this:ERAHUDDOTDefinition, t:number): number
+---@field ComputeRefreshDurationOverride fun(this:ERAHUDDOTDefinition, t:number): number
+---@field ComputeCastTimeOverride fun(this:ERAHUDDOTDefinition, t:number): number
 ERAHUDDOTDefinition = {}
 ERAHUDDOTDefinition.__index = ERAHUDDOTDefinition
 
@@ -223,7 +234,8 @@ function ERAHUDDOTDefinition:create(owner, frame, spellID, iconID, r, g, b, tale
     d.mainBar = ERAHUDDOTBar:create(d, frame, r, g, b, iconID, ERAHUDDOT_MainBarSize, 1.0)
 
     d.onOthers = {}
-    for i = 1, 2 do
+    d.activeOnOthers = {}
+    for i = 1, 3 do
         table.insert(d.onOthers, ERAHUDDOTInstance:create(d, frame, r, g, b, iconID))
     end
     d.maxDurationIndex = -1
@@ -233,6 +245,8 @@ function ERAHUDDOTDefinition:create(owner, frame, spellID, iconID, r, g, b, tale
     d.baseCastTime = castTime
     d.baseTotDuration = baseTotDuration
     d.refreshDuration = 0.3 * baseTotDuration
+    d.minActiveDuration = 0
+    d.minActiveIsOnTarget = false
 
     return d
 end
@@ -245,6 +259,15 @@ function ERAHUDDOTDefinition:createOverlay(overlayFrame)
     self.refreshLine:Hide()
 end
 
+function ERAHUDDOTDefinition:talentInactive()
+    self.refreshLine:Hide()
+    self.refreshLineVisible = false
+    self.mainBar:hide()
+    for _, oo in ipairs(self.onOthers) do
+        oo:hide()
+    end
+end
+
 ---@param t number
 function ERAHUDDOTDefinition:prepareUpdateData(t)
     for _, i in ipairs(self.onOthers) do
@@ -253,10 +276,12 @@ function ERAHUDDOTDefinition:prepareUpdateData(t)
     self.foundCount = 0
     self.refreshDuration = self:ComputeRefreshDurationOverride(t)
     self.castTime = self:ComputeCastTimeOverride(t) * self.owner.hud.hasteMultiplier
-    if UnitExists("target") then
-        self.couldRefreshOnTarget = self.onTarget.remDuration - self.castTime < self.refreshDuration
-    else
-        self.couldRefreshOnTarget = false
+    if not self.singleInstance then
+        if UnitExists("target") then
+            self.couldRefresh = self.onTarget.remDuration - self.castTime < self.refreshDuration
+        else
+            self.couldRefresh = false
+        end
     end
 end
 function ERAHUDDOTDefinition:ComputeRefreshDurationOverride(t)
@@ -266,25 +291,40 @@ function ERAHUDDOTDefinition:ComputeCastTimeOverride(t)
     return self.baseCastTime
 end
 
+---@param t number
 ---@param auraInfo AuraData
 ---@param e ERAHUDDOTEnemy
-function ERAHUDDOTDefinition:found(auraInfo, e)
+function ERAHUDDOTDefinition:found(t, auraInfo, e)
+    local dur
+    if auraInfo.expirationTime and auraInfo.expirationTime > 0 then
+        dur = auraInfo.expirationTime - t
+    else
+        dur = self.baseTotDuration
+    end
+
     if self.foundCount == 0 then
         self.maxDurationIndex = 1
         self.foundCount = 1
-        self.onOthers[1]:assign(auraInfo.duration, e)
+        self.onOthers[1]:assign(dur, e)
     else
         if self.foundCount < #(self.onOthers) then
-            self.onOthers[self.foundCount + 1]:assign(auraInfo.duration, e)
             self.foundCount = self.foundCount + 1
+            self.onOthers[self.foundCount]:assign(dur, e)
             local currentMax = self.onOthers[self.maxDurationIndex].duration
-            if currentMax < auraInfo.duration then
+            if currentMax < dur then
                 self.maxDurationIndex = self.foundCount
             end
         else
             local currentMax = self.onOthers[self.maxDurationIndex].duration
-            if currentMax > auraInfo.duration then
-                self.onOthers[self.maxDurationIndex]:assign(auraInfo.duration, e)
+            if currentMax > dur then
+                self.onOthers[self.maxDurationIndex]:assign(dur, e)
+                currentMax = dur
+                for i, instance in ipairs(self.onOthers) do
+                    if instance.duration > currentMax then
+                        currentMax = instance.duration
+                        self.maxDurationIndex = i
+                    end
+                end
             end
         end
     end
@@ -294,27 +334,67 @@ function ERAHUDDOTDefinition:computeUpdateData()
     for _, i in ipairs(self.onOthers) do
         i:computeUpdateData()
     end
+    local min
+    if self.onTarget.remDuration > 0 then
+        min = self.onTarget.remDuration
+    else
+        min = 0
+    end
+    self.minActiveIsOnTarget = true
+    for _, i in ipairs(self.onOthers) do
+        if i.duration > 0 and (min == 0 or i.duration < min) then
+            min = i.duration
+            self.minActiveIsOnTarget = false
+        end
+    end
+    self.minActiveDuration = min
+    if self.singleInstance then
+        self.couldRefresh = min - self.castTime < self.refreshDuration
+    end
 end
 
 ---@param y number
 ---@param frame Frame
 ---@param overlayFrame Frame
 function ERAHUDDOTDefinition:drawTarget(y, frame, overlayFrame)
-    local alpha, desat
-    if self.couldRefreshOnTarget then
-        alpha = 1.0
-        desat = false
+    local stacks, dur, alpha, desat
+    if self.singleInstance then
+        dur = self.minActiveDuration
+        stacks = 0
+        if self.minActiveIsOnTarget then
+            if self.couldRefresh then
+                alpha = ERAHUDDOT_alpha_REFRESH_TARGET
+                desat = false
+            else
+                alpha = ERAHUDDOT_alpha_LONG_TARGET
+                desat = true
+            end
+        else
+            desat = true
+            if self.couldRefresh then
+                alpha = ERAHUDDOT_alpha_REFRESH_SINGLE_INSTANCE
+            else
+                alpha = ERAHUDDOT_alpha_LONG_SINGLE_INSTANCE
+            end
+        end
     else
-        alpha = 0.6
-        desat = true
+        dur = self.onTarget.remDuration
+        stacks = self.onTarget.stacks
+        if self.couldRefresh then
+            alpha = ERAHUDDOT_alpha_REFRESH_TARGET
+            desat = false
+        else
+            alpha = ERAHUDDOT_alpha_LONG_TARGET
+            desat = true
+        end
     end
-    if self.onTarget.stacks <= 1 then
+    if stacks <= 1 then
         self.mainBar:SetText(nil)
     else
         self.mainBar:SetText(tostring(self.onTarget.stacks))
     end
-    self.mainBar:draw(y, frame, self.onTarget.remDuration, alpha, desat)
-    if self.owner.hud.timerDuration > self.refreshDuration and self.refreshDuration < self.onTarget.remDuration then
+    self.mainBar:draw(y, frame, dur, alpha, desat)
+    if self.owner.hud.timerDuration > self.refreshDuration and self.refreshDuration < dur then
         local x = self.owner.hud:calcTimerPixel(self.refreshDuration)
         self.refreshLine:SetStartPoint("RIGHT", overlayFrame, x, y)
         self.refreshLine:SetEndPoint("RIGHT", overlayFrame, x, y + ERAHUDDOT_MainBarSize)
@@ -334,9 +414,19 @@ end
 ---@param frame Frame
 ---@return number
 function ERAHUDDOTDefinition:drawOthers_returnY(y, frame)
-    table.sort(self.onOthers, ERAHUDDOTInstance_sortDurations)
-    for _, i in ipairs(self.onOthers) do
-        y = i:drawOrHide(y, frame)
+    if not self.singleInstance then
+        table.wipe(self.activeOnOthers)
+        for _, i in ipairs(self.onOthers) do
+            if i.duration > 0 then
+                table.insert(self.activeOnOthers, i)
+            else
+                i:hide()
+            end
+        end
+        table.sort(self.activeOnOthers, ERAHUDDOTInstance_sortDurations)
+        for _, i in ipairs(self.activeOnOthers) do
+            y = i:draw(y, frame)
+        end
     end
     return y
 end
@@ -449,8 +539,7 @@ function ERAHUDDOTBar:draw(y, frame, duration, alpha, iconDesat)
         else
             self:endAnimate(frame)
         end
-    end
-    if not self.visible then
+    else
         self.visible = true
         self.display:Show()
         self.text:Show()
@@ -466,10 +555,6 @@ function ERAHUDDOTBar:draw(y, frame, duration, alpha, iconDesat)
         else
             self.display:SetValue(duration)
         end
-        if self.alpha ~= alpha then
-            self.alpha = alpha
-            self.display:SetAlpha(alpha)
-        end
         if not self.active then
             self.active = true
             self.icon:SetVertexColor(1.0, 1.0, 1.0)
@@ -480,6 +565,10 @@ function ERAHUDDOTBar:draw(y, frame, duration, alpha, iconDesat)
             self.icon:SetVertexColor(1.0, 0.0, 0.0)
         end
         self.display:SetValue(0)
+    end
+    if self.alpha ~= alpha then
+        self.alpha = alpha
+        self.display:SetAlpha(alpha)
     end
     if iconDesat then
         if not self.iconDesat then
@@ -566,24 +655,22 @@ end
 ---@param y number
 ---@param frame Frame
 ---@return number
-function ERAHUDDOTInstance:drawOrHide(y, frame)
-    if self.duration > 0 then
-        y = y + ERAHUD_TimerBarSpacing
-        local alpha, desat
-        if self.couldRefresh then
-            alpha = 0.5
-            desat = false
-        else
-            alpha = 0.3
-            desat = true
-        end
-        self.bar:SetText(self.enemy.name)
-        self.bar:draw(y, frame, self.duration, alpha, desat)
-        return y + ERAHUDDOT_SecondaryBarSize
+function ERAHUDDOTInstance:draw(y, frame)
+    y = y + ERAHUD_TimerBarSpacing
+    local alpha, desat
+    if self.couldRefresh then
+        alpha = ERAHUDDOT_alpha_REFRESH_OTHER
+        desat = false
     else
-        self.bar:hide()
-        return y
+        alpha = ERAHUDDOT_alpha_LONG_OTHER
+        desat = true
     end
+    self.bar:SetText(self.enemy.name)
+    self.bar:draw(y, frame, self.duration, alpha, desat)
+    return y + ERAHUDDOT_SecondaryBarSize
+end
+function ERAHUDDOTInstance:hide()
+    self.bar:hide()
 end
 
 ---@param i1 ERAHUDDOTInstance

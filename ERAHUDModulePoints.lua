@@ -167,7 +167,7 @@ function ERAHUDModulePoint:create(parentFrame, rB, gB, bB, rP, gP, bP)
     local p = {}
     setmetatable(p, ERAHUDModulePoint)
     ---@cast p ERAHUDModulePoint
-    local frame = CreateFrame("Frame", nil, parentFrame, "ERACombatPointFrame")
+    local frame = CreateFrame("Frame", nil, parentFrame, "ERAHUDModulePointsFrame")
     local border = frame.Border
     local point = frame.Point
     ---@cast frame Frame
@@ -373,6 +373,20 @@ function ERAHUDModulePointsPartial:SetFullColor(r, g, b)
     self.bFP = b
 end
 
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePointsPartial:SetBorderColor(r, g, b)
+    if self.rB ~= r or self.gB ~= b or self.bB ~= b then
+        self.rB = r
+        self.gB = g
+        self.bB = b
+        for _, p in ipairs(self.points) do
+            p:setBorderColor(r, g, b)
+        end
+    end
+end
+
 ---@param t number
 ---@param combat boolean
 function ERAHUDModulePointsPartial:updateData(t, combat)
@@ -482,6 +496,13 @@ function ERAHUDModulePointPartial:updateTalent(frame, index, maxPoints, x)
         self.frame:SetPoint("CENTER", frame, "LEFT", x, 0)
         self.frame:Show()
     end
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDModulePointPartial:setBorderColor(r, g, b)
+    self.circle:SetVertexColor(r, g, b)
 end
 
 ---@param r number

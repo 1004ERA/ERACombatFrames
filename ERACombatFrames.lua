@@ -2,15 +2,21 @@ ERACombatFrames_initialized = false
 
 --[[
 
+TODO
+- unstable affliction red not alpha
+- warlock portal marche pas
+
 ERA_Debug = function()
 
 end
 
-/run local i=10;print(C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").name,C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER").spellId)
-/run local i=10;print(C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").name,C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER").spellId)
-/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
-/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
 /run print(C_Spell.GetSpellInfo("").spellID)
+-- buff player
+/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
+-- debuff target
+/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
+-- debuff player
+/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
 
 /run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
 /run PlaySound(SOUNDKIT.)

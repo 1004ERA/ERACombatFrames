@@ -20,12 +20,12 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     local talent_guillotine = ERALIBTalent:Create(125840)
     local talent_doom = ERALIBTalent:Create(125865)
 
-    local hud = ERACombatFrames_WarlockWholeShards(cFrame, 2, ERALIBTalentTrue, ERALIBTalentFalse, talents)
+    local hud, succulent = ERACombatFrames_WarlockWholeShards(cFrame, 2, ERALIBTalentTrue, ERALIBTalentFalse, talents)
     ---@cast hud WDemonoHUD
     hud.dogsEnd = 0
     hud.fiendEnd = 0
 
-    local superbolt = ERACombatFrames_WarlockDiabolist(hud, talents)
+    local superbolt, ruination = ERACombatFrames_WarlockDiabolist(hud, talents)
 
     local dogs = hud:AddTrackedCooldown(104316, talent_dogs)
     local soulstrike = hud:AddTrackedCooldown(264057, talent_soulstrike)
@@ -38,6 +38,11 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
             self:SetPointColor(0.0, 1.0, 0.0)
         else
             self:SetPointColor(1.0, 0.0, 1.0)
+        end
+        if ruination.remDuration > 0 or succulent.remDuration > 0 then
+            self:SetBorderColor(1.0, 1.0, 1.0)
+        else
+            self:SetBorderColor(1.0, 0.0, 0.0)
         end
     end
 

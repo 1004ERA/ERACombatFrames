@@ -123,7 +123,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field AdditionalCLEU fun(this:ERAHUD, t:number)
 ---@field private placePetAndPower fun(this:ERAHUD, statusY:number): number
 ---@field private updateHealthStatus fun(this:ERAHUD, h:ERAHUDHealth, t:number)
----@field private updateHealthStatusIdle fun(this:ERAHUD, h:ERAHUDHealth, t:number)
+---@field private updateHealthStatusIdle fun(this:ERAHUD, h:ERAHUDHealth, t:number, checkPetMounted:boolean)
 ---@field private updatePowerStatus fun(this:ERAHUD, t:number)
 ---@field private updateIcons fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private empowerLevel integer
@@ -467,13 +467,13 @@ function ERAHUD:Pack()
     self.gcdTicks = {}
     local tickStart
     if self.isHealer then
-        tickStart = ERACombat_TimerBarSpacing
+        tickStart = ERAHUD_TimerBarSpacing
     else
-        tickStart = -ERACombat_TimerBarSpacing
+        tickStart = -ERAHUD_TimerBarSpacing
     end
-    for i = 0, ERACombat_TimerGCDCount do
+    for i = 0, ERAHUD_TimerGCDCount do
         local line = self.timerFrameOverlay:CreateLine(nil, "OVERLAY", "ERAHUDVerticalTick")
-        local x = 0 - i * (ERACombat_TimerWidth / ERACombat_TimerGCDCount)
+        local x = 0 - i * (ERAHUD_TimerWidth / ERAHUD_TimerGCDCount)
         line:SetStartPoint("RIGHT", self.timerFrameOverlay, x, tickStart)
         line:SetEndPoint("RIGHT", self.timerFrameOverlay, x, 0)
         table.insert(self.gcdTicks, line)
@@ -507,7 +507,9 @@ function ERAHUD:Pack()
     -- warlock health stone
     self:AddBagItemIcon(self:AddBagItemCooldown(5512, self.healthstoneTalent), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
     --warlock portal
-    self:AddBagExternalTimerIcon(self:AddTrackedDebuffOnSelf(113942), self.movementGroup, 607512)
+    local portalDebuff = self:AddTrackedDebuffOnSelf(113942)
+    portalDebuff.updateUtilityLayoutIfChanged = true
+    self:AddExternalTimerIcon(portalDebuff, self.movementGroup, 607512)
 
     -- racial
 
@@ -667,16 +669,19 @@ function ERAHUD:ResetToIdle()
     for _, i in ipairs(self.bagItems) do
         i:bagUpdateOrReset()
     end
+    for _, n in ipairs(self.nested) do
+        n:ResetToIdle()
+    end
     self.mainFrame:Show()
-    self:OnResetToIdleOverride()
-end
-function ERAHUD:OnResetToIdleOverride()
 end
 
 function ERAHUD:SpecInactive(wasActive)
     if (wasActive) then
         self.mainFrame:Hide()
         self.mainFrame:UnregisterAllEvents()
+        for _, n in ipairs(self.nested) do
+            n:SpecInactive()
+        end
     end
 end
 
@@ -965,9 +970,9 @@ function ERAHUD:UpdateIdle(t)
 
     self:PreUpdateDisplayOverride(t, false)
 
-    self:updateHealthStatusIdle(self.health, t)
+    self:updateHealthStatusIdle(self.health, t, false)
     if self.petHealthTalent:PlayerHasTalent() then
-        self:updateHealthStatusIdle(self.petHealth, t)
+        self:updateHealthStatusIdle(self.petHealth, t, true)
     end
     if self.power then
         if
@@ -1077,13 +1082,20 @@ function ERAHUD:UpdateCombat(t)
         table.sort(self.visibleBars, ERAHUDBar_compare)
     end
 
-    local barsY = 0
+    local timersY = 0
     for _, b in ipairs(self.visibleBars) do
-        local height = b:draw(barsY)
+        local height = b:draw(timersY)
         if self.topdown then
-            barsY = barsY - height - ERAHUD_TimerBarSpacing
+            timersY = timersY - height - ERAHUD_TimerBarSpacing
         else
-            barsY = barsY + height + ERAHUD_TimerBarSpacing
+            timersY = timersY + height + ERAHUD_TimerBarSpacing
+        end
+    end
+    if timersY == 0 then
+        if self.topdown then
+            timersY = -ERAHUD_TimerBarDefaultSize - ERAHUD_TimerBarSpacing
+        else
+            timersY = ERAHUD_TimerBarDefaultSize + ERAHUD_TimerBarSpacing
         end
     end
 
@@ -1091,22 +1103,12 @@ function ERAHUD:UpdateCombat(t)
 
     --#region NESTED
 
-    local nestedHeight = 0
-    local nestedY
-    if barsY == 0 then
-        if self.topdown then
-            nestedY = -ERAHUD_TimerBarDefaultSize - ERAHUD_TimerBarSpacing
-        else
-            nestedY = ERAHUD_TimerBarDefaultSize + ERAHUD_TimerBarSpacing
-        end
-    else
-        nestedY = barsY
-    end
+    local nestedY = timersY
     for _, n in ipairs(self.activeNested) do
         local nh = n:updateDisplay_returnHeight(t, nestedY, self.timerFrame, self.timerFrameOverlay)
         nestedY = nestedY + nh
         if n.includeInTimer then
-            nestedHeight = nestedHeight + nh
+            timersY = timersY + nh
         end
     end
 
@@ -1114,24 +1116,11 @@ function ERAHUD:UpdateCombat(t)
 
     --#region TIMER OVERLAY
 
-    local timerMaxY = barsY + nestedHeight
-    if self.topdown then
-        timerMaxY = barsY - nestedHeight
-        if timerMaxY > -ERAHUD_TimerBarDefaultSize then
-            timerMaxY = -ERAHUD_TimerBarDefaultSize - ERAHUD_TimerBarSpacing
-        end
-    else
-        timerMaxY = barsY + nestedHeight
-        if timerMaxY < ERAHUD_TimerBarDefaultSize then
-            timerMaxY = ERAHUD_TimerBarDefaultSize + ERAHUD_TimerBarSpacing
-        end
-    end
-
-    if self.timerMaxY ~= timerMaxY then
-        self.timerMaxY = timerMaxY
+    if self.timerMaxY ~= timersY then
+        self.timerMaxY = timersY
         for i, g in ipairs(self.gcdTicks) do
-            local x = 0 - (i - 1) * (ERACombat_TimerWidth / ERACombat_TimerGCDCount)
-            g:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timerMaxY)
+            local x = 0 - (i - 1) * (ERAHUD_TimerWidth / ERAHUD_TimerGCDCount)
+            g:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timersY)
         end
     end
 
@@ -1141,9 +1130,9 @@ function ERAHUD:UpdateCombat(t)
             self.gcdBar:Show()
         end
         if (self.topdown) then
-            self.gcdBar:SetPoint("BOTTOMLEFT", self.timerFrameOverlay, "RIGHT", self:calcTimerPixel(self.remGCD), timerMaxY)
+            self.gcdBar:SetPoint("BOTTOMLEFT", self.timerFrameOverlay, "RIGHT", self:calcTimerPixel(self.remGCD), timersY)
         else
-            self.gcdBar:SetPoint("TOPLEFT", self.timerFrameOverlay, "RIGHT", self:calcTimerPixel(self.remGCD), timerMaxY)
+            self.gcdBar:SetPoint("TOPLEFT", self.timerFrameOverlay, "RIGHT", self:calcTimerPixel(self.remGCD), timersY)
         end
     else
         if self.gcdVisible then
@@ -1159,11 +1148,11 @@ function ERAHUD:UpdateCombat(t)
             self.castBackground:Show()
         end
         if self.topdown then
-            local y = timerMaxY - ERAHUD_TimerBarSpacing
+            local y = timersY - ERAHUD_TimerBarSpacing
             self.castBar:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.remCast), y)
             self.castBackground:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), y)
         else
-            local y = timerMaxY + ERAHUD_TimerBarSpacing
+            local y = timersY + ERAHUD_TimerBarSpacing
             self.castBar:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.remCast), y)
             self.castBackground:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), y)
         end
@@ -1197,7 +1186,7 @@ function ERAHUD:UpdateCombat(t)
                 else
                     tickLine:SetStartPoint("RIGHT", self.timerFrameOverlay, x, -ERAHUD_TimerIconSize)
                 end
-                tickLine:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timerMaxY)
+                tickLine:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timersY)
                 t_channelTick = t_channelTick - tickInfo
             end
             for j = self.channelTicksCount + 1, i do
@@ -1219,7 +1208,7 @@ function ERAHUD:UpdateCombat(t)
 
     if (self.empowerLevel >= 0) then
         for _, lvl in ipairs(self.empowerLevels) do
-            lvl:drawOrHideIfUnused(self.timerFrameOverlay, timerMaxY)
+            lvl:drawOrHideIfUnused(self.timerFrameOverlay, timersY)
         end
     else
         for _, lvl in ipairs(self.empowerLevels) do
@@ -1228,7 +1217,7 @@ function ERAHUD:UpdateCombat(t)
     end
 
     for _, m in ipairs(self.activeMarkers) do
-        m:update(timerMaxY, t, self.timerFrameOverlay)
+        m:update(timersY, t, self.timerFrameOverlay)
     end
 
     --#endregion
@@ -1311,7 +1300,7 @@ function ERAHUD:UpdateCombat(t)
             end
             prvTI_offset = false
         end
-        ti:drawOnTimer(y, timerMaxY, self.timerFrameOverlay)
+        ti:drawOnTimer(y, timersY, self.timerFrameOverlay)
         prvTI = ti
     end
 
@@ -1361,12 +1350,17 @@ end
 
 ---@param h ERAHUDHealth
 ---@param t number
-function ERAHUD:updateHealthStatusIdle(h, t)
+---@param checkPetMounted boolean
+function ERAHUD:updateHealthStatusIdle(h, t, checkPetMounted)
     if h.currentHealth >= h.maxHealth then
         h.bar:hide()
     else
-        self:updateHealthStatus(h, t)
-        h.bar:show()
+        if checkPetMounted and (not self.hasPet) and IsMounted() then
+            h.bar:hide()
+        else
+            self:updateHealthStatus(h, t)
+            h.bar:show()
+        end
     end
 end
 ---@param h ERAHUDHealth
@@ -1711,7 +1705,7 @@ function ERAHUD:updateData(t, combat)
                 for s = 0, stageTotal do
                     local lvl
                     if (s + 1 > #(self.empowerLevels)) then
-                        lvl = ERACombatTimersEmpowerLevel:Create(self, self.timerFrameOverlay, s)
+                        lvl = ERAHUDEmpowerLevel:create(self, self.timerFrameOverlay, s)
                         table.insert(self.empowerLevels, lvl)
                     else
                         lvl = self.empowerLevels[s + 1]
@@ -1890,6 +1884,8 @@ end
 ---@field private __index unknown
 ---@field protected constructNested fun(this:ERAHUDNestedModule, hud:ERAHUD, includeInTimer:boolean, talent:ERALIBTalent|nil): Frame
 ---@field hud ERAHUD
+---@field ResetToIdle fun(this:ERAHUDNestedModule)
+---@field SpecInactive fun(this:ERAHUDNestedModule)
 ---@field hide fun(this:ERAHUDNestedModule)
 ---@field show fun(this:ERAHUDNestedModule)
 ---@field checkTalents fun(this:ERAHUDNestedModule)
@@ -1910,6 +1906,11 @@ function ERAHUDNestedModule:constructNested(hud, includeInTimer, talent)
     self.talent = talent
     self.includeInTimer = includeInTimer
     return hud:addNested(self)
+end
+
+function ERAHUDNestedModule:SpecInactive()
+end
+function ERAHUDNestedModule:ResetToIdle()
 end
 
 ---@param t number
@@ -2615,6 +2616,20 @@ function ERAHUD:AddAuraOverlay(aura, minStacks, texture, isAtlas, position, flip
 end
 
 ---@param timer ERATimer
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@return ERASAOTimer
+function ERAHUD:AddTimerOverlay(timer, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOTimer:create(timer, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+end
+
+---@param timer ERATimer
 ---@param onlyIfHasTarget boolean
 ---@param texture string|integer
 ---@param isAtlas boolean
@@ -2624,9 +2639,9 @@ end
 ---@param rotateLeft boolean
 ---@param rotateRight boolean
 ---@param talent ERALIBTalent|nil
----@return ERASAOMissingAura
+---@return ERASAOMissingTimer
 function ERAHUD:AddMissingTimerOverlay(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
-    return ERASAOMissingAura:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+    return ERASAOMissingTimer:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
 --- rotation ---
@@ -2794,7 +2809,7 @@ end
 ---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
 ---@return ERAHUDUtilityExternalTimerInGroup
-function ERAHUD:AddBagExternalTimerIcon(timer, group, iconID, displayOrder, talent)
+function ERAHUD:AddExternalTimerIcon(timer, group, iconID, displayOrder, talent)
     return ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayOrder, talent)
 end
 

@@ -14,6 +14,11 @@
 ---@field healthstone ERALIBTalent
 ---@field succulent ERALIBTalent
 ---@field diabolist ERALIBTalent
+---@field satyr ERALIBTalent
+---@field wither ERALIBTalent
+---@field not_wither ERALIBTalent
+---@field short_wither ERALIBTalent
+---@field malevolence ERALIBTalent
 
 ---@class WarlockHUD : ERAHUD
 
@@ -49,6 +54,11 @@ function ERACombatFrames_WarlockSetup(cFrame)
         healthstone = ERALIBTalent:CreateNotTalent(91434),
         succulent = ERALIBTalent:Create(117448),
         diabolist = ERALIBTalent:Create(117452),
+        satyr = ERALIBTalent:Create(117419),
+        wither = ERALIBTalent:Create(117437),
+        not_wither = ERALIBTalent:CreateNotTalent(117437),
+        short_wither = ERALIBTalent:Create(117451),
+        malevolence = ERALIBTalent:Create(117439),
     }
 
     if (not affliOptions.disabled) then
@@ -81,12 +91,13 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
 
     --- SAO ---
 
-    ---@class MissingWarlockCurse : ERASAOMissingAura
+    ---@class MissingWarlockCurse : ERASAOMissingTimer
     ---@field lastTriggered number|nil
     ---@field lastTarGUID string|nil
 
-    local anyCurseBySelf = hud:AddOrTimer(true, hud:AddTrackedDebuffOnTargetAnyCaster(334275, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(1714, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(702))
-    local missingCurse = hud:AddMissingTimerOverlay(anyCurseBySelf, true, 461878, false, "BOTTOM", false, true, false, false)
+    local anyCurseByAnyone = hud:AddOrTimer(true, hud:AddTrackedDebuffOnTargetAnyCaster(334275, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(1714, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(702),
+        hud:AddTrackedDebuffOnTargetAnyCaster(442804, talents.satyr))
+    local missingCurse = hud:AddMissingTimerOverlay(anyCurseByAnyone, true, 461878, false, "BOTTOM", false, true, false, false)
     ---@cast missingCurse MissingWarlockCurse
     function missingCurse:ConfirmIsActiveOverride(t, combat)
         local tarHealth = UnitHealth("target")
@@ -169,27 +180,41 @@ end
 ---@param talent_pet ERALIBTalent
 ---@param talent_sacrifice ERALIBTalent
 ---@param talents WarlockCommonTalents
----@return WarlockWholeHUD
+---@return WarlockWholeHUD, ERAAura
 function ERACombatFrames_WarlockWholeShards(cFrame, spec, talent_pet, talent_sacrifice, talents)
     local hud = ERACombatFrames_WarlockCommonSetup(cFrame, spec, true, talents, talent_pet, talent_sacrifice)
     ---@cast hud WarlockWholeHUD
     hud.shards = ERAHUDWarlockWholeShards:create(hud)
 
     local succulent = hud:AddTrackedBuff(449793, talents.succulent)
-    function hud:DisplayUpdatedOverride(t, combat)
-        if succulent.remDuration > 0 then
-            hud.shards:SetBorderColor(1.0, 1.0, 1.0)
-        else
-            hud.shards:SetBorderColor(1.0, 0.0, 0.0)
-        end
-    end
 
-    return hud
+    return hud, succulent
 end
 
 ---@param hud WarlockHUD
 ---@param talents WarlockCommonTalents
----@return ERAAura
+---@param prio number
+function ERACombatFrames_WarlockMalevolence(hud, talents, prio)
+    local bar = hud:AddAuraBar(hud:AddTrackedBuff(442726, talents.malevolence), nil, 0.0, 0.7, 0.2)
+    --[[
+    function bar:ComputeDurationOverride(t)
+        if self.aura.remDuration >= self.hud.timerDuration then
+            return -1
+        else
+            return self.aura.remDuration
+        end
+    end
+    ]]
+
+    local cd = hud:AddRotationCooldown(hud:AddTrackedCooldown(442726, talents.malevolence))
+    function cd.onTimer:ComputeAvailablePriorityOverride(t)
+        return prio
+    end
+end
+
+---@param hud WarlockHUD
+---@param talents WarlockCommonTalents
+---@return ERAAura, ERAAura, ERATimer
 function ERACombatFrames_WarlockDiabolist(hud, talents)
     local overlordRitual = hud:AddTrackedBuff(431944, talents.diabolist)
     local overlordProc = hud:AddTrackedBuff(428524, talents.diabolist)
@@ -225,7 +250,10 @@ function ERACombatFrames_WarlockDiabolist(hud, talents)
     hud:AddAuraBar(cloven, nil, 0.4, 0.0, 0.7)
 
     local boltTimer = hud:AddTrackedBuff(433891, talents.diabolist)
-    return boltTimer
+
+    local ruinationTimer = hud:AddTrackedBuff(433885, talents.diabolist)
+
+    return boltTimer, ruinationTimer, hud:AddOrTimer(false, overlordProc, mocProc, pitProc)
 end
 
 ---@param hud WarlockHUD

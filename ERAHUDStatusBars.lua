@@ -449,7 +449,7 @@ function ERAHUDStatusBar:update()
             end
         else
             xFore = total * ratio + self.borderThickness
-            local xV = xFore - ERACombatStatusBar_PrevisionHalfThickness
+            local xV = xFore - ERAHUDStatusBar_PrevisionHalfThickness
             self.forecastV:SetStartPoint("TOPLEFT", self.frame, xV, 0)
             self.forecastV:SetEndPoint("BOTTOMLEFT", self.frame, xV, 0)
             if (not self.forecastVVisible) then

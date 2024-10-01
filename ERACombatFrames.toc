@@ -14,26 +14,13 @@ ERACombat.lua
 ERACombatControls.xml
 ERACombatControls.lua
 
-ERACombatStatusBars.xml
-ERACombatStatusBars.lua
-
-ERACombatTimers.xml
-ERACombatTimers.lua
-
 ERACombatGrid.xml
 ERACombatGrid.lua
 
 ERACombatDamageWindow.xml
 ERACombatDamage.lua
 
-ERACombatEnemiesTracker.lua
-ERACombatDOTracker.lua
-
-ERACombatUtilityFrame.lua
-
-ERACombatPoints.xml
-ERACombatPoints.lua
-
+ERACombatStatusBars.xml
 ERAHUD.xml
 ERAHUDData.lua
 ERAHUDDisplay.lua
