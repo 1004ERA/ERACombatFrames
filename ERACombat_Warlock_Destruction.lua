@@ -1,5 +1,6 @@
 ---@class WDestructionHUD : WarlockHUD
 ---@field lastHavoc number
+---@field lastRain number
 ---@field shards ERAHUDWarlockShards
 
 ---@param cFrame ERACombatFrame
@@ -11,6 +12,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     local talent_blaze = ERALIBTalent:Create(91588)
     local talent_havoc = ERALIBTalent:Create(91493)
     local talent_mayhem = ERALIBTalent:Create(91494)
+    local talent_havoc_or_mayhem = ERALIBTalent:CreateOr(talent_havoc, talent_mayhem)
     local talent_cata = ERALIBTalent:Create(91487)
     local talent_shadowburn = ERALIBTalent:Create(91582)
     local talent_shadowburn_conflag = ERALIBTalent:Create(91538)
@@ -28,6 +30,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     ---@cast hud WDestructionHUD
     hud.shards = ERAHUDWarlockShards:create(hud)
     hud.lastHavoc = 0
+    hud.lastRain = 0
 
     local superbolt, ruination, anyArt = ERACombatFrames_WarlockDiabolist(hud, talents)
 
@@ -78,6 +81,9 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     --- bars ---
 
+    local rainDuration = ERAHUD_Warlock_DestructionRain:create(hud)
+    hud:AddGenericBar(rainDuration, 136186, 1.0, 0.1, 0.0)
+
     local backdraftBar = hud:AddAuraBar(backdraft, nil, 0.0, 1.0, 0.0)
     function backdraftBar:ComputeDurationOverride(t)
         if self.aura.remDuration < self.aura.stacks * 2.5 then
@@ -102,16 +108,33 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
         end
         ]]
         local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if (sourceGUID == self.cFrame.playerGUID and evt == "SPELL_AURA_APPLIED" and spellID == 80240) then
-            if talent_mayhem:PlayerHasTalent() then
-                PlaySound(SOUNDKIT.ALARM_CLOCK_WARNING_3, "SFX", true)
+        if (sourceGUID == self.cFrame.playerGUID) then
+            if evt == "SPELL_AURA_APPLIED" then
+                if spellID == 80240 then
+                    if talent_mayhem:PlayerHasTalent() then
+                        PlaySound(SOUNDKIT.ALARM_CLOCK_WARNING_3, "SFX", true)
+                    end
+                    self.lastHavoc = t
+                end
+            elseif evt == "SPELL_CAST_SUCCESS" then
+                if spellID == 5740 then
+                    self.lastRain = t
+                end
             end
-            self.lastHavoc = t
         end
     end
 
+    local havocOnCurrentTarget = hud:AddTrackedDebuffOnTarget(80240, talent_havoc_or_mayhem)
     local havocDuration = ERAHUD_Warlock_DestructionHavocDuration:create(hud, talent_havoc, talent_mayhem)
-    hud:AddGenericBar(havocDuration, 460695, 0.7, 0.2, 0.1)
+    local havocBar = hud:AddGenericBar(havocDuration, 460695, 0.7, 0.2, 0.1)
+    function havocBar:ConfirmDurationOverride(t)
+        if havocOnCurrentTarget.remDuration > 0 then
+            self:SetColor(0.3, 0.3, 0.3)
+        else
+            self:SetColor(0.7, 0.2, 0.1)
+        end
+        return self.timer.remDuration
+    end
 
     local shadowconflagBars = {}
     table.insert(shadowconflagBars, hud:AddAuraBar(conflag_ShadowConflag, nil, 0.2, 0.5, 1.0))
@@ -130,7 +153,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     --- rotation ---
 
-    local shadowburn = hud:AddRotationCooldown(shadowBurnCooldown)
+    local shadowburn = hud:AddRotationCooldown(shadowBurnCooldown, 132102) -- the actual icon is too grey
 
     local conflag = hud:AddRotationCooldown(conflagCooldown)
 
@@ -308,6 +331,44 @@ end
 
 --#endregion
 -------------------
+
+------------------
+--#region RAIN ---
+
+---@class ERAHUD_Warlock_DestructionRain : ERATimer
+---@field private __index unknown
+---@field private wdhud WDestructionHUD
+ERAHUD_Warlock_DestructionRain = {}
+ERAHUD_Warlock_DestructionRain.__index = ERAHUD_Warlock_DestructionRain
+setmetatable(ERAHUD_Warlock_DestructionRain, { __index = ERATimer })
+
+---@param hud WDestructionHUD
+---@return ERAHUD_Warlock_DestructionRain
+function ERAHUD_Warlock_DestructionRain:create(hud)
+    local x = {}
+    setmetatable(x, ERAHUD_Warlock_DestructionRain)
+    ---@cast x ERAHUD_Warlock_DestructionRain
+    x.wdhud = hud
+    x:constructTimer(hud)
+    x.totDuration = 8
+    x.remDuration = 0
+    return x
+end
+
+function ERAHUD_Warlock_DestructionRain:checkDataItemTalent()
+    return true
+end
+
+---@param t number
+function ERAHUD_Warlock_DestructionRain:updateData(t)
+    self.remDuration = 8 * self.hud.hasteMultiplier - (t - self.wdhud.lastRain)
+    if self.remDuration < 0 then
+        self.remDuration = 0
+    end
+end
+
+--#endregion
+------------------
 
 --------------------
 --#region SHARDS ---

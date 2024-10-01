@@ -487,7 +487,7 @@ end
 
 ---@class (exact) ERAHUDTimerItem
 ---@field private __index unknown
----@field protected constructItem fun(this:ERAHUDTimerItem, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected constructItem fun(this:ERAHUDTimerItem, hud:ERAHUD, iconID:integer, forcedIcon:boolean, talent:ERALIBTalent|nil)
 ---@field ComputeAvailablePriorityOverride fun(this:ERAHUDTimerItem, t:number): number
 ---@field protected checkAdditionalTalent fun(this:ERAHUDTimerItem): boolean
 ---@field protected updateIconID fun(this:ERAHUDTimerItem, currentIconID:integer): integer
@@ -502,17 +502,20 @@ end
 ---@field private lineVisible boolean
 ---@field private talent ERALIBTalent|nil
 ---@field private iconID integer
+---@field private forcedIcon boolean
 ---@field preventVisible boolean
 ERAHUDTimerItem = {}
 ERAHUDTimerItem.__index = ERAHUDTimerItem
 
 ---@param hud ERAHUD
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param talent ERALIBTalent|nil
-function ERAHUDTimerItem:constructItem(hud, iconID, talent)
+function ERAHUDTimerItem:constructItem(hud, iconID, forcedIcon, talent)
     self.hud = hud
     self.talent = talent
     self.iconID = iconID
+    self.forcedIcon = forcedIcon
     self.preventVisible = false
     hud:addTimerItem(self)
 end
@@ -541,10 +544,12 @@ function ERAHUDTimerItem:checkTalentOrHide()
         self:hide()
         return false
     else
-        local i = self:updateIconID(self.iconID)
-        if self.iconID ~= i then
-            self.iconID = i
-            self.icon:SetIconTexture(i, true)
+        if not self.forcedIcon then
+            local i = self:updateIconID(self.iconID)
+            if self.iconID ~= i then
+                self.iconID = i
+                self.icon:SetIconTexture(i, true)
+            end
         end
         self.icon:Show()
         return true
@@ -640,7 +645,7 @@ function ERAHUDRawPriority:create(hud, iconID, talent)
     local p = {}
     setmetatable(p, ERAHUDRawPriority)
     ---@cast p ERAHUDRawPriority
-    p:constructItem(hud, iconID, talent)
+    p:constructItem(hud, iconID, true, talent)
     return p
 end
 
@@ -665,7 +670,7 @@ end
 
 ---@class (exact) ERAHUDIcon
 ---@field private __index unknown
----@field protected constructIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, iconSize:number, frame:Frame, talent:ERALIBTalent|nil)
+---@field protected constructIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, forcedIcon:boolean, iconSize:number, frame:Frame, talent:ERALIBTalent|nil)
 ---@field protected checkIconTalent fun(this:ERAHUDIcon): boolean
 ---@field protected updateIconID fun(this:ERAHUDIcon, currentIconID:integer): integer
 ---@field protected refreshIconID fun(this:ERAHUDIcon)
@@ -674,19 +679,22 @@ end
 ---@field hud ERAHUD
 ---@field iconID integer
 ---@field icon ERAPieIcon
+---@field forcedIcon boolean
 ERAHUDIcon = {}
 ERAHUDIcon.__index = ERAHUDIcon
 
 ---@param hud ERAHUD
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param iconSize number
 ---@param frame Frame
 ---@param talent ERALIBTalent|nil
-function ERAHUDIcon:constructIcon(hud, iconID, iconSize, frame, talent)
+function ERAHUDIcon:constructIcon(hud, iconID, forcedIcon, iconSize, frame, talent)
     self.hud = hud
     self.talent = talent
     self.icon = ERAPieIcon:Create(frame, "CENTER", iconSize, iconID)
     self.iconID = iconID
+    self.forcedIcon = forcedIcon
 end
 
 function ERAHUDIcon:checkTalentOrHide()
@@ -702,10 +710,12 @@ function ERAHUDIcon:checkTalentOrHide()
     end
 end
 function ERAHUDIcon:refreshIconID()
-    local i = self:updateIconID(self.iconID)
-    if self.iconID ~= i then
-        self.iconID = i
-        self.icon:SetIconTexture(i, true)
+    if not self.forcedIcon then
+        local i = self:updateIconID(self.iconID)
+        if self.iconID ~= i then
+            self.iconID = i
+            self.icon:SetIconTexture(i, true)
+        end
     end
 end
 
@@ -784,7 +794,7 @@ end
 
 ---@class (exact) ERAHUDRotationIcon : ERAHUDIcon
 ---@field private __index unknown
----@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected constructRotationIcon fun(this:ERAHUDIcon, hud:ERAHUD, iconID:integer, forcedIcon:boolean, talent:ERALIBTalent|nil)
 ---@field protected checkAdditionalTalent fun(this:ERAHUDRotationIcon): boolean
 ---@field update fun(this:ERAHUDRotationIcon, t:number, combat:boolean)
 ---@field specialPosition boolean
@@ -795,10 +805,11 @@ setmetatable(ERAHUDRotationIcon, { __index = ERAHUDIcon })
 
 ---@param hud ERAHUD
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param talent ERALIBTalent|nil
-function ERAHUDRotationIcon:constructRotationIcon(hud, iconID, talent)
+function ERAHUDRotationIcon:constructRotationIcon(hud, iconID, forcedIcon, talent)
     local frame = hud:addRotation(self)
-    self:constructIcon(hud, iconID, ERAHUD_RotationIconSize, frame, talent)
+    self:constructIcon(hud, iconID, forcedIcon, ERAHUD_RotationIconSize, frame, talent)
     self.specialPosition = false
 end
 
@@ -840,11 +851,15 @@ function ERAHUDRotationCooldownIcon:create(data, iconID, talent)
     local cd = {}
     setmetatable(cd, ERAHUDRotationCooldownIcon)
     ---@cast cd ERAHUDRotationCooldownIcon
-    if not iconID then
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
     end
-    cd:constructRotationIcon(data.hud, iconID, talent)
+    cd:constructRotationIcon(data.hud, iconID, forcedIcon, talent)
     cd.data = data
     cd.currentCharges = -1
     cd.maxCharges = -1
@@ -897,8 +912,9 @@ ERAHUDRotationCooldownTimerItem = {}
 ERAHUDRotationCooldownTimerItem.__index = ERAHUDRotationCooldownTimerItem
 setmetatable(ERAHUDRotationCooldownTimerItem, { __index = ERAHUDTimerItem })
 
+---@param cd ERAHUDRotationCooldownIcon
 function ERAHUDRotationCooldownTimerItem:constructCooldown(cd)
-    self:constructItem(cd.hud, cd.iconID, cd.talent)
+    self:constructItem(cd.hud, cd.iconID, cd.forcedIcon, cd.talent)
     self.cd = cd
 end
 
@@ -1127,11 +1143,15 @@ function ERAHUDRotationAuraIcon:create(data, iconID, talent)
     setmetatable(buff, ERAHUDRotationAuraIcon)
     ---@cast buff ERAHUDRotationAuraIcon
     buff.data = data
-    if not iconID then
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
     end
-    buff:constructRotationIcon(data.hud, iconID, talent)
+    buff:constructRotationIcon(data.hud, iconID, forcedIcon, talent)
     buff.currentStacks = -1
     return buff
 end
@@ -1225,11 +1245,15 @@ function ERAHUDRotationStacksIcon:create(data, maxStacks, highlightAt, iconID, t
     buff.data = data
     buff.maxStacks = maxStacks
     buff.highlightAt = highlightAt
-    if not iconID then
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
     end
-    buff:constructRotationIcon(data.hud, iconID, talent)
+    buff:constructRotationIcon(data.hud, iconID, forcedIcon, talent)
     buff.currentStacks = -1
     buff.minStacksToShowOutOfCombat = 1
     return buff
@@ -1302,7 +1326,7 @@ end
 
 ---@class (exact) ERAHUDUtilityIcon : ERAHUDIcon
 ---@field private __index unknown
----@field protected constructUtilityIcon fun(this:ERAHUDUtilityIcon, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected constructUtilityIcon fun(this:ERAHUDUtilityIcon, hud:ERAHUD, iconID:integer, forcedIcon:boolean, talent:ERALIBTalent|nil)
 ---@field protected checkAdditionalTalent fun(this:ERAHUDUtilityIcon): boolean
 ---@field update fun(this:ERAHUDUtilityIcon, t:number, combat:boolean)
 ERAHUDUtilityIcon = {}
@@ -1311,10 +1335,11 @@ setmetatable(ERAHUDUtilityIcon, { __index = ERAHUDIcon })
 
 ---@param hud ERAHUD
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityIcon:constructUtilityIcon(hud, iconID, talent)
+function ERAHUDUtilityIcon:constructUtilityIcon(hud, iconID, forcedIcon, talent)
     local parentFrame = hud:addUtilityIcon(self)
-    self:constructIcon(hud, iconID, ERAHUD_UtilityIconSize, parentFrame, talent)
+    self:constructIcon(hud, iconID, forcedIcon, ERAHUD_UtilityIconSize, parentFrame, talent)
 end
 
 ---@return boolean
@@ -1330,7 +1355,7 @@ end
 
 ---@class (exact) ERAHUDUtilityIconInGroup : ERAHUDUtilityIcon
 ---@field private __index unknown
----@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, displayOrder:number|nil, talent:ERALIBTalent|nil)
+---@field protected constructUtilityIconInGroup fun(this:ERAHUDIcon, group:ERAHUDUtilityGroup, iconID:integer, forcedIcon:boolean, displayOrder:number|nil, talent:ERALIBTalent|nil)
 ---@field update fun(this:ERAHUDUtilityIconInGroup, t:number, combat:boolean)
 ---@field private group ERAHUDUtilityGroup
 ---@field displayOrder number
@@ -1340,10 +1365,11 @@ setmetatable(ERAHUDUtilityIconInGroup, { __index = ERAHUDUtilityIcon })
 
 ---@param group ERAHUDUtilityGroup
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
-    self:constructUtilityIcon(group.hud, iconID, talent)
+function ERAHUDUtilityIconInGroup:constructUtilityIconInGroup(group, iconID, forcedIcon, displayOrder, talent)
+    self:constructUtilityIcon(group.hud, iconID, forcedIcon, talent)
     self.displayOrder = group:addIcon(self, displayOrder)
     self.group = group
 end
@@ -1377,7 +1403,7 @@ function ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOr
     local g = {}
     setmetatable(g, ERAHUDUtilityGenericTimerInGroup)
     ---@cast g ERAHUDUtilityGenericTimerInGroup
-    g:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
+    g:constructUtilityIconInGroup(group, iconID, true, displayOrder, talent)
     g.timer = timer
     g.timerActive = false
     return g
@@ -1459,11 +1485,15 @@ function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, 
     local cd = {}
     setmetatable(cd, ERAHUDUtilityCooldownInGroup)
     ---@cast cd ERAHUDUtilityCooldownInGroup
-    if not iconID then
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
         local spellInfo = C_Spell.GetSpellInfo(data.spellID)
         iconID = spellInfo.iconID
     end
-    cd:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
+    cd:constructUtilityIconInGroup(group, iconID, forcedIcon, displayOrder, talent)
     cd.data = data
     cd.currentCharges = -1
     cd.maxCharges = -1
@@ -1708,7 +1738,7 @@ function ERAHUDUtilityExternalTimerInGroup:create(group, timer, iconID, displayO
     local g = {}
     setmetatable(g, ERAHUDUtilityExternalTimerInGroup)
     ---@cast g ERAHUDUtilityExternalTimerInGroup
-    g:constructUtilityIconInGroup(group, iconID, displayOrder, talent)
+    g:constructUtilityIconInGroup(group, iconID, true, displayOrder, talent)
     g.timer = timer
     return g
 end
@@ -1738,7 +1768,7 @@ end
 
 ---@class (exact) ERAHUDUtilityIconOutOfCombat : ERAHUDUtilityIcon
 ---@field private __index unknown
----@field protected constructUtilityIconOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, hud:ERAHUD, iconID:integer, talent:ERALIBTalent|nil)
+---@field protected constructUtilityIconOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, hud:ERAHUD, iconID:integer, forcedIcon:boolean, talent:ERALIBTalent|nil)
 ---@field private update fun(this:ERAHUDUtilityIconOutOfCombat, t:number, combat:boolean)
 ---@field protected updateOutOfCombat fun(this:ERAHUDUtilityIconOutOfCombat, t:number)
 ERAHUDUtilityIconOutOfCombat = {}
@@ -1746,9 +1776,10 @@ ERAHUDUtilityIconOutOfCombat.__index = ERAHUDUtilityIconOutOfCombat
 setmetatable(ERAHUDUtilityIconOutOfCombat, { __index = ERAHUDUtilityIcon })
 
 ---@param iconID integer
+---@param forcedIcon boolean
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityIconOutOfCombat:constructUtilityIconOutOfCombat(hud, iconID, talent)
-    self:constructUtilityIcon(hud, iconID, talent)
+function ERAHUDUtilityIconOutOfCombat:constructUtilityIconOutOfCombat(hud, iconID, forcedIcon, talent)
+    self:constructUtilityIcon(hud, iconID, forcedIcon, talent)
 end
 
 ---@param combat boolean
@@ -1777,11 +1808,15 @@ function ERAHUDUtilityAuraOutOfCombat:create(aura, iconID, talent)
     setmetatable(a, ERAHUDUtilityAuraOutOfCombat)
     ---@cast a ERAHUDUtilityAuraOutOfCombat
     a.aura = aura
-    if not iconID then
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
         local spellInfo = C_Spell.GetSpellInfo(aura.spellID)
         iconID = spellInfo.iconID
     end
-    a:constructUtilityIconOutOfCombat(aura.hud, iconID, talent)
+    a:constructUtilityIconOutOfCombat(aura.hud, iconID, forcedIcon, talent)
     aura.hud:addOutOfCombat(a)
     return a
 end
@@ -1838,7 +1873,7 @@ function ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
     setmetatable(et, ERAHUDEmptyTimer)
     ---@cast et ERAHUDEmptyTimer
     et.timer = timer
-    et:constructUtilityIcon(timer.hud, iconID, talent)
+    et:constructUtilityIcon(timer.hud, iconID, true, talent)
     et.lastAppeared = 0
     et.fadeAfterSeconds = fadeAfterSeconds
     timer.hud:addEmpty(et)

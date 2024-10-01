@@ -3,8 +3,7 @@ ERACombatFrames_initialized = false
 --[[
 
 TODO
-- unstable affliction red not alpha
-- warlock portal marche pas
+- debuffs raid
 
 ERA_Debug = function()
 
@@ -20,9 +19,6 @@ end
 
 /run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
 /run PlaySound(SOUNDKIT.)
-
-TODO
-- debuffs raid
 
 ]]
 

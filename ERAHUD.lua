@@ -72,6 +72,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field totGCD number
 ---@field remCast number
 ---@field private totCast number
+---@field private wasCasting boolean
 ---@field occupied number
 ---@field castingSpellID integer|nil
 ---@field hasteMultiplier number
@@ -326,6 +327,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
     hud.castBackground:Hide()
     hud.castBar:Hide()
     hud.castVisible = false
+    hud.wasCasting = false
 
     hud.channelInfo = {}
     hud.channelTicks = {}
@@ -1125,6 +1127,17 @@ function ERAHUD:UpdateCombat(t)
     end
 
     if self.remGCD > 0 then
+        if self.castingSpellID and self.castingSpellID > 0 then
+            if not self.wasCasting then
+                self.wasCasting = true
+                self.gcdBar:SetVertexColor(1.0, 0.5, 0.0)
+            end
+        else
+            if self.wasCasting then
+                self.wasCasting = false
+                self.gcdBar:SetVertexColor(1.0, 1.0, 1.0)
+            end
+        end
         if not self.gcdVisible then
             self.gcdVisible = true
             self.gcdBar:Show()
