@@ -98,8 +98,9 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
     hud.evoker_essence = ERAEvokerEssenceModule:create(hud, essenceDirection)
 
     if talent_big_empower then
+        ---@type ERACooldownAdditionalID
         local additionalFirebreath = {
-            id = 382266,
+            spellID = 382266,
             talent = talent_big_empower
         }
         hud.evoker_firebreathCooldown = hud:AddTrackedCooldown(357208, nil, additionalFirebreath)
@@ -244,7 +245,7 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(372048, talents.roar), hud.controlGroup)
 
     if spec == 2 then
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, true, true, false, false, false)
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(360823, talents.expunge), hud.specialGroup, nil, nil, nil, true, true, false, false, false)
     else
         hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, false, true, false, false, false)
     end

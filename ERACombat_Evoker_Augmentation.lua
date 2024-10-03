@@ -37,8 +37,9 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
     local mighCooldown = hud:AddTrackedCooldown(395152)
     local mightIcon = hud:AddRotationCooldown(mighCooldown)
 
+    ---@type ERACooldownAdditionalID
     local uph_alternative = {
-        id = 408092,
+        spellID = 408092,
         talent = talent_big_empower
     }
     local uphCooldown = hud:AddTrackedCooldown(396286, talent_uph, uph_alternative)

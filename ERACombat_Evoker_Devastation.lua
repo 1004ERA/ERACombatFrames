@@ -30,8 +30,9 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
 
     local shatterIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(370452, talent_shatter))
 
+    ---@type ERACooldownAdditionalID
     local surge_alternative = {
-        id = 382411,
+        spellID = 382411,
         talent = talent_big_empower,
     }
     local surgeCooldown = hud:AddTrackedCooldown(359073, talent_surge, surge_alternative)
@@ -143,7 +144,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(370452, talent_shatter), nil, 1.0, 0.3, 1.0)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(375087, talent_dragonrage), nil, 1.0, 0.3, 1.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(375087, talent_dragonrage), nil, 1.0, 0.5, 0.0)
 
     hud:AddAuraBar(hud:AddTrackedBuff(411055, talent_imminent_destruction), nil, 0.2, 1.0, 0.5)
 

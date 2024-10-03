@@ -90,9 +90,11 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
 
     local explodingIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(325153, talent_exploding))
 
-    local bokAlternative = {}
-    bokAlternative.id = 100784
-    bokAlternative.talent = talent_no_shuffle
+    ---@type ERACooldownAdditionalID
+    local bokAlternative = {
+        spellID = 100784,
+        talent = talent_no_shuffle
+    }
     local bokCooldown = hud:AddTrackedCooldown(205523, nil, bokAlternative) -- 100784 (basic) or 205523 (with shuffle)
     local bokIcon = hud:AddRotationCooldown(bokCooldown)
 

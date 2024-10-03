@@ -738,12 +738,16 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
     if data.isKnown then
         local available
         if data.hasCharges then
-            if data.currentCharges ~= currentCharges or data.maxCharges ~= maxCharges then
+            local currentDisplayed = math.min(4, data.currentCharges)
+            local maxDisplayed = math.min(5, data.maxCharges)
+            currentCharges = math.min(4, currentCharges)
+            maxCharges = math.min(5, maxCharges)
+            if currentDisplayed ~= currentCharges or maxDisplayed ~= maxCharges then
                 local txt = ""
-                for i = 1, data.currentCharges do
+                for i = 1, currentDisplayed do
                     txt = txt .. "¤"
                 end
-                for i = data.currentCharges + 1, data.maxCharges do
+                for i = currentDisplayed + 1, maxDisplayed do
                     txt = txt .. "."
                 end
                 icon:SetSecondaryText(txt)

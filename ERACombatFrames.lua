@@ -4,6 +4,7 @@ ERACombatFrames_initialized = false
 
 TODO
 - debuffs raid
+- masquer les charges de brez
 
 ERA_Debug = function()
 
