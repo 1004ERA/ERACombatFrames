@@ -63,9 +63,9 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     --- bars ---
 
     hud:AddAuraBar(hud:AddTrackedBuff(5217), nil, 1.0, 1.0, 0.0) -- fury
-    hud:AddAuraBar(hud:AddTrackedBuff(106951, talent_berserk), nil, 0.0, 0.0, 1.0)
-    hud:AddAuraBar(hud:AddTrackedBuff(102543, talent_incarnation), nil, 0.0, 0.0, 1.0)
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(391888, talent_swarm), nil, 0.0, 0.8, 0.3)
+    hud:AddAuraBar(hud:AddTrackedBuff(106951, talent_berserk), nil, 1.0, 0.0, 1.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(102543, talent_incarnation), nil, 1.0, 0.0, 1.0)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(391888, talent_swarm), nil, 0.0, 0.8, 0.4)
 
     --- rotation ---
 
@@ -80,6 +80,7 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     --[[
 
     prio
+
     1 - bite proc
     2 - slash
     3 - fury
@@ -87,6 +88,15 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     5 - frenzy
 
     ]]
+
+    local biteProcPrio = hud:AddPriority(132127, talent_predator)
+    function biteProcPrio:ComputeAvailablePriorityOverride(t)
+        if biteProc.remDuration > 0 then
+            return 1
+        else
+            return 0
+        end
+    end
 
     function slash.onTimer:ComputeAvailablePriorityOverride(t)
         return 2

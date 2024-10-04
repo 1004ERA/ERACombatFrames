@@ -562,6 +562,14 @@ end
 ---@class ERAHUDStatusMarkingFrom0 : ERAHUDStatusMarking
 ---@field private __index unknown
 ---@field private isGreen boolean
+---@field private rGreen number
+---@field private gGreen number
+---@field private bGreen number
+---@field private rWhite number
+---@field private gWhite number
+---@field private bWhite number
+---@field private colorChanged boolean
+---@field PreUpdateDisplayOverride nil|fun(this:ERAHUDStatusMarkingFrom0, t:number)
 ---@field ComputeValueOverride fun(this:ERAHUDStatusMarkingFrom0, t:number): number
 ERAHUDStatusMarkingFrom0 = {}
 ERAHUDStatusMarkingFrom0.__index = ERAHUDStatusMarkingFrom0
@@ -576,6 +584,13 @@ function ERAHUDStatusMarkingFrom0:create(bar, baseValue, talent)
     setmetatable(m, ERAHUDStatusMarkingFrom0)
     ---@cast m ERAHUDStatusMarkingFrom0
     m:constructMarking(bar, baseValue, talent)
+    m.rGreen = 0.0
+    m.gGreen = 1.0
+    m.bGreen = 0.0
+    m.rWhite = 1.0
+    m.gWhite = 1.0
+    m.bWhite = 1.0
+    m.colorChanged = true
     return m
 end
 
@@ -586,16 +601,45 @@ end
 ---@param t number
 ---@param line Line
 function ERAHUDStatusMarkingFrom0:UpdatedOverride(t, line)
+    if self.PreUpdateDisplayOverride then
+        self:PreUpdateDisplayOverride(t)
+    end
     if self.value <= self.bar.value then
-        if not self.isGreen then
+        if self.colorChanged or not self.isGreen then
+            self.colorChanged = false
             self.isGreen = true
-            line:SetVertexColor(0.0, 1.0, 0.0)
+            line:SetVertexColor(self.rGreen, self.gGreen, self.bGreen)
         end
     else
-        if self.isGreen then
+        if self.colorChanged or self.isGreen then
+            self.colorChanged = false
             self.isGreen = false
-            line:SetVertexColor(1.0, 1.0, 1.0)
+            line:SetVertexColor(self.rWhite, self.gWhite, self.bWhite)
         end
+    end
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDStatusMarkingFrom0:SetAvailableColor(r, g, b)
+    if self.rGreen ~= r or self.gGreen ~= g or self.bGreen ~= b then
+        self.colorChanged = true
+        self.rGreen = r
+        self.gGreen = g
+        self.bGreen = b
+    end
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUDStatusMarkingFrom0:SetInsufficientColor(r, g, b)
+    if self.rWhite ~= r or self.gWhite ~= g or self.bWhite ~= b then
+        self.colorChanged = true
+        self.rWhite = r
+        self.gWhite = g
+        self.bWhite = b
     end
 end
 

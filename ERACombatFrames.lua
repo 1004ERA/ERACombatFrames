@@ -4,7 +4,10 @@ ERACombatFrames_initialized = false
 
 TODO
 - debuffs raid
-- masquer les charges de brez
+- améliorer les charges de brez
+- spellID apex predator proc (feral)
+- moons (balance)
+- starweaver (balance)
 
 ERA_Debug = function()
 
@@ -23,7 +26,7 @@ end
 
 ]]
 
-ERA_TALENTS_DO_PRINT_N = 500
+ERA_TALENTS_DO_PRINT_N = 0
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")

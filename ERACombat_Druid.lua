@@ -206,7 +206,7 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddAuraBar(hud:AddTrackedBuff(124974, talents.vigil), nil, 0.0, 0.5, 0.0)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(319454, talents.wild), nil, 1.0, 1.0, 1.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(319454, talents.wild), nil, 1.0, 0.9, 0.5)
 
     hud:AddAuraBar(hud:AddTrackedBuff(774), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 

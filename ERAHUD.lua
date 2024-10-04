@@ -614,6 +614,11 @@ function ERAHUD:Pack()
     self.timerFrame:Hide()
 end
 
+---@return number, number
+function ERAHUD:GetAvailableRectangleInCenter()
+    return 2 * math.min(-self.offsetX - ERAHUD_TimerIconSize, self.UtilityMinRightX), 2 * (-self.UtilityMinBottomY - self.offsetY)
+end
+
 --#endregion
 
 --#region MECHANICS
