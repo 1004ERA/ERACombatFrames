@@ -1,6 +1,12 @@
 ---@class (exact) DruidCommonTalents
 ---@field regen ERALIBTalent
 ---@field ironfur ERALIBTalent
+---@field growth ERALIBTalent
+---@field surge ERALIBTalent
+---@field sunfire ERALIBTalent
+---@field rake ERALIBTalent
+---@field rip ERALIBTalent
+---@field thrash ERALIBTalent
 ---@field soothe ERALIBTalent
 ---@field skullbash ERALIBTalent
 ---@field maim ERALIBTalent
@@ -25,6 +31,21 @@
 ---@field mana ERAHUDPowerBarModule
 ---@field catForm ERAAura
 ---@field bearForm ERAAura
+---@field rageMark ERAHUDStatusMarkingFrom0
+---@field wildBuff ERAAura
+---@field wildCooldown ERACooldown
+---@field lastSurge number
+---@field surgeCooldown ERACooldown
+---@field lastMangle number
+---@field mangleCooldown ERACooldown
+---@field lastThrash number
+---@field thrashCooldown ERACooldown
+---@field lastGrowth number
+---@field growthCooldown ERACooldown
+---@field getLastSurge fun(this:DruidHUD): number
+---@field getLastThrash fun(this:DruidHUD): number
+---@field getLastMangle fun(this:DruidHUD): number
+---@field getLastGrowth fun(this:DruidHUD): number
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_DruidSetup(cFrame)
@@ -41,6 +62,27 @@ function ERACombatFrames_DruidSetup(cFrame)
     ERA_Druid_Regro_G = 1.0
     ERA_Druid_Regro_B = 0.6
 
+    ERA_Druid_IrFur_R = 0.6
+    ERA_Druid_IrFur_G = 0.6
+    ERA_Druid_IrFur_B = 0.5
+
+    ERA_Druid_Thras_R = 0.7
+    ERA_Druid_Thras_G = 0.5
+    ERA_Druid_Thras_B = 0.3
+    ERA_Druid_Rake_R = 1.0
+    ERA_Druid_Rake_G = 0.0
+    ERA_Druid_Rake_B = 0.0
+    ERA_Druid_Rip_R = 1.0
+    ERA_Druid_Rip_G = 0.0
+    ERA_Druid_Rip_B = 1.0
+
+    ERA_Druid_MoonF_R = 0.0
+    ERA_Druid_MoonF_G = 0.0
+    ERA_Druid_MoonF_B = 1.0
+    ERA_Druid_SunF_R = 1.0
+    ERA_Druid_SunF_G = 0.0
+    ERA_Druid_SunF_B = 0.0
+
     local mkOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
     local ctOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
     local brOptions = ERACombatOptions_getOptionsForSpec(nil, 3)
@@ -52,6 +94,12 @@ function ERACombatFrames_DruidSetup(cFrame)
     local druidTalents = {
         regen = ERALIBTalent:Create(103298),
         ironfur = ERALIBTalent:Create(103305),
+        growth = ERALIBTalent:Create(103320),
+        surge = ERALIBTalent:Create(103278),
+        sunfire = ERALIBTalent:Create(103286),
+        rake = ERALIBTalent:Create(103277),
+        rip = ERALIBTalent:Create(103300),
+        thrash = ERALIBTalent:Create(103301),
         soothe = ERALIBTalent:Create(103307),
         skullbash = ERALIBTalent:Create(103302),
         maim = ERALIBTalent:Create(103299),
@@ -88,8 +136,9 @@ end
 ---@param spec integer
 ---@param talents DruidCommonTalents
 ---@param talent_dispell ERALIBTalent|nil
+---@param talent_bonus_wild ERALIBTalent|nil
 ---@return DruidHUD
-function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell)
+function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell, talent_bonus_wild)
     local baseGCD
     if spec == 2 then
         baseGCD = 1.0
@@ -105,6 +154,41 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddOffensiveDispell(hud:AddTrackedCooldown(2908, talents.soothe), nil, nil, false, true)
     hud:AddKick(hud:AddTrackedCooldown(106839, talents.skullbash))
+
+    ----------------------
+    --#region OFF-SPEC ---
+
+    hud.lastSurge = 0
+    hud.surgeCooldown = hud:AddTrackedCooldown(197626, talents.surge)
+    hud.lastMangle = 0
+    hud.mangleCooldown = hud:AddTrackedCooldown(33917)
+    hud.lastThrash = 0
+    hud.thrashCooldown = hud:AddTrackedCooldown(77758, talents.thrash)
+    hud.lastGrowth = 0
+    hud.growthCooldown = hud:AddTrackedCooldown(48438, talents.growth)
+
+    function hud:getLastSurge() return self.lastSurge end
+    function hud:getLastMangle() return self.lastMangle end
+    function hud:getLastThrash() return self.lastThrash end
+    function hud:getLastGrowth() return self.lastGrowth end
+
+    function hud:AdditionalCLEU(t)
+        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if (sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS") then
+            if (spellID == self.surgeCooldown.spellID) then
+                self.lastSurge = t
+            elseif (spellID == self.mangleCooldown.spellID) then
+                self.lastMangle = t
+            elseif (spellID == self.thrashCooldown.spellID) then
+                self.lastThrash = t
+            elseif (spellID == self.growthCooldown.spellID) then
+                self.lastGrowth = t
+            end
+        end
+    end
+
+    --#endregion
+    ----------------------
 
     local collapsingBars = {}
 
@@ -122,7 +206,7 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
         end
     end
 
-    hud.rage.bar:AddMarkingFrom0(40)
+    hud.rageMark = hud.rage.bar:AddMarkingFrom0(40)
 
     --#endregion
     ------------------
@@ -202,11 +286,17 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddAuraBar(hud:AddTrackedBuff(22812), nil, 0.7, 0.6, 0.0) -- bark
 
-    hud:AddAuraBar(hud:AddTrackedBuff(192081, talents.ironfur), nil, 0.6, 0.6, 0.5)
+    hud:AddAuraBar(hud:AddTrackedBuff(192081, talents.ironfur), nil, ERA_Druid_IrFur_R, ERA_Druid_IrFur_G, ERA_Druid_IrFur_B)
+    hud:AddAuraBar(hud:AddTrackedBuff(22842, talents.regen), nil, 0.5, 1.0, 0.0)
 
     hud:AddAuraBar(hud:AddTrackedBuff(124974, talents.vigil), nil, 0.0, 0.5, 0.0)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(319454, talents.wild), nil, 1.0, 0.9, 0.5)
+    if talent_bonus_wild then
+        hud.wildBuff = hud:AddTrackedBuff(319454, ERALIBTalent:CreateOr(talents.wild, talent_bonus_wild))
+    else
+        hud.wildBuff = hud:AddTrackedBuff(319454, talents.wild)
+    end
+    hud:AddAuraBar(hud.wildBuff, nil, 1.0, 0.9, 0.5)
 
     hud:AddAuraBar(hud:AddTrackedBuff(774), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 
@@ -220,9 +310,12 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(124974, talents.vigil), hud.healGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(108238, talents.renewal), hud.healGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(22842, talents.regen), hud.healGroup)
+    if spec ~= 3 then
+        hud:AddUtilityCooldown(hud:AddTrackedCooldown(22842, talents.regen), hud.healGroup)
+    end
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(319454, talents.wild), hud.powerUpGroup)
+    hud.wildCooldown = hud:AddTrackedCooldown(319454, talents.wild)
+    hud:AddUtilityCooldown(hud.wildCooldown, hud.powerUpGroup)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(22812), hud.defenseGroup) -- bark
 
@@ -258,3 +351,120 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     return hud
 end
+
+----------------------
+--#region OFF-SPEC ---
+
+---@param hud DruidHUD
+---@param prio number
+---@param cd ERACooldownBase
+---@param iconID integer
+---@param getter fun(h:DruidHUD): number
+---@param form nil|ERAAura
+---@param talent nil|ERALIBTalent
+function ERACombatFrames_Druid_OffSpecTimer(hud, prio, cd, iconID, getter, form, talent)
+    local item = hud:AddPriority(iconID, talent)
+    function item:ComputeDurationOverride(t)
+        return cd.remDuration
+    end
+    function item:ComputeAvailablePriorityOverride(t)
+        if ((not form) or form.remDuration > 0) and t - getter(hud) - cd.totDuration < 6 then
+            return prio
+        else
+            return 0
+        end
+    end
+
+    local unavailable = hud:AddPriority(iconID, talent)
+    function unavailable:ComputeAvailablePriorityOverride(t)
+        if ((not form) or form.remDuration > 0) and t - getter(hud) - cd.totDuration < 6 and cd.remDuration > self.hud.timerDuration then
+            self.icon:SetVertexColor(1.0, 0.0, 0.0, 1.0)
+            return prio
+        else
+            return 0
+        end
+    end
+end
+
+---@class OffSpecDOT : ERAAura
+---@field druid_lastActive number
+
+---@param hud DruidHUD
+---@param spellID integer
+---@param r number
+---@param g number
+---@param b number
+---@param missingTexture integer|string
+---@param isAtlas boolean
+---@param displayMissingBasedOnRecent boolean
+---@param form nil|ERAAura
+---@param talent nil|ERALIBTalent
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@return ERASAO
+function ERACombatFrames_Druid_OffSpecDOT(hud, spellID, duration, r, g, b, missingTexture, isAtlas, displayMissingBasedOnRecent, form, talent, rotateLeft, rotateRight)
+    local debuff = hud:AddTrackedDebuffOnTarget(spellID, talent)
+    ---@cast debuff OffSpecDOT
+    debuff.druid_lastActive = 0
+
+    local bar = hud:AddAuraBar(debuff, nil, r, g, b)
+    function bar:ComputeDurationOverride(t)
+        if self.aura.remDuration > 0 then
+            debuff.druid_lastActive = t
+            if self.aura.remDuration < duration * 0.3 - 1 and ((not form) or form.remDuration > 0) then
+                return self.aura.remDuration
+            else
+                return 0
+            end
+        else
+            return 0
+        end
+    end
+
+    local missing = hud:AddMissingTimerOverlay(debuff, true, missingTexture, isAtlas, "MIDDLE", false, false, rotateLeft, rotateRight)
+    if displayMissingBasedOnRecent then
+        function missing:ConfirmIsActiveOverride(t, combat)
+            if form and form.remDuration <= 0 then return false end
+            return t - debuff.druid_lastActive < 5
+        end
+    else
+        function missing:ConfirmIsActiveOverride(t, combat)
+            return (not form) or form.remDuration > 0
+        end
+    end
+
+    return missing
+end
+
+---@param hud DruidHUD
+---@param talents DruidCommonTalents
+---@param showMoonfire ERALIBTalent
+function ERACombatFrames_Druid_NonBalance(hud, talents, showMoonfire)
+    ERACombatFrames_Druid_OffSpecTimer(hud, 102, hud.surgeCooldown, 135730, hud.getLastSurge, nil, talents.surge)
+    ERACombatFrames_Druid_OffSpecDOT(hud, 164812, 18, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, "CovenantSanctum-Reservoir-Idle-NightFae-Spiral3", true, true, nil, showMoonfire, false, false)
+    ERACombatFrames_Druid_OffSpecDOT(hud, 164815, 18, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, "Relic-Fire-TraitGlow", true, true, nil, nil, false, false)
+end
+---@param hud DruidHUD
+---@param talents DruidCommonTalents
+function ERACombatFrames_Druid_NonFeral(hud, talents)
+    local rip = ERACombatFrames_Druid_OffSpecDOT(hud, 1079, 24, ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B, 450919, false, false, hud.catForm, talents.rip, true, false)
+    rip:SetVertexColor(ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B)
+    local rake = ERACombatFrames_Druid_OffSpecDOT(hud, 155722, 15, ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B, 450923, false, false, hud.catForm, talents.rake, false, false)
+    rake:SetVertexColor(ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B)
+    local thrash = ERACombatFrames_Druid_OffSpecDOT(hud, 405233, 15, ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B, 450917, false, false, hud.catForm, talents.thrash, true, false)
+    thrash:SetVertexColor(ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B)
+end
+---@param hud DruidHUD
+---@param talents DruidCommonTalents
+function ERACombatFrames_Druid_NonGuardian(hud, talents)
+    ERACombatFrames_Druid_OffSpecTimer(hud, 100, hud.mangleCooldown, 132135, hud.getLastMangle, hud.bearForm, talents.thrash)
+    ERACombatFrames_Druid_OffSpecTimer(hud, 101, hud.thrashCooldown, 451161, hud.getLastThrash, hud.bearForm, talents.thrash)
+end
+---@param hud DruidHUD
+---@param talents DruidCommonTalents
+function ERACombatFrames_Druid_NonRestoration(hud, talents)
+    ERACombatFrames_Druid_OffSpecTimer(hud, 103, hud.growthCooldown, 236153, hud.getLastGrowth, nil, talents.growth)
+end
+
+--#endregion
+----------------------

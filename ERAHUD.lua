@@ -103,6 +103,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field otherHealersInGroup integer
 ---@field otherDPSsInGroup integer
 ---@field isInGroup boolean
+---@field groupMembersExcludingSelf integer
 ---@field private bagItems ERACooldownBagItem[]
 ---@field private updateData fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private resetEmpower fun(this:ERAHUD)
@@ -283,6 +284,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, showPet, spec)
     hud.otherDPSsInGroup = 0
     hud.lastParseParty = 0
     hud.isInGroup = false
+    hud.groupMembersExcludingSelf = 0
     hud.bagItems = {}
     hud.loc = {}
 
@@ -1526,15 +1528,14 @@ function ERAHUD:updateData(t, combat)
         end
     end
 
+    local friendsCount = GetNumGroupMembers()
     if self.hasActiveBuffsOnParty then
         if t - self.lastParseParty < 2 and self.timeOrigin + 2 < t then
             for _, v in pairs(self.activeBuffsOnParty) do
                 v:notChecked()
             end
         else
-            self.isInGroup = false
             self.lastParseParty = t
-            local friendsCount = GetNumGroupMembers()
             self.otherTanksInGroup = 0
             self.otherHealersInGroup = 0
             self.otherDPSsInGroup = 0
@@ -1553,7 +1554,6 @@ function ERAHUD:updateData(t, combat)
                     local unit = prefix .. f
                     if (not UnitIsUnit("player", unit)) and (not UnitIsDead(unit)) and UnitInRange(unit) then
                         cpt = cpt + 1
-                        self.isInGroup = true
                         local role = UnitGroupRolesAssigned(unit)
                         if (role == "TANK") then
                             self.otherTanksInGroup = self.otherTanksInGroup + 1
@@ -1581,9 +1581,24 @@ function ERAHUD:updateData(t, combat)
                     end
                 end
             end
+            if cpt > 0 then
+                self.groupMembersExcludingSelf = cpt
+                self.isInGroup = true
+            else
+                self.groupMembersExcludingSelf = 0
+                self.isInGroup = false
+            end
             for _, v in pairs(self.activeBuffsOnParty) do
                 v:partyParsed(cpt, t)
             end
+        end
+    else
+        if friendsCount and friendsCount > 1 then
+            self.groupMembersExcludingSelf = friendsCount - 1
+            self.isInGroup = true
+        else
+            self.groupMembersExcludingSelf = 0
+            self.isInGroup = false
         end
     end
 

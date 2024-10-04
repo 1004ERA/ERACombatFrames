@@ -8,6 +8,9 @@ TODO
 - spellID apex predator proc (feral)
 - moons (balance)
 - starweaver (balance)
+- check spellID moonfire proc (guardian)
+- check spellID rejuv2Def (resto)
+- check call of the elder druid (resto)
 
 ERA_Debug = function()
 

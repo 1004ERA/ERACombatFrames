@@ -25,10 +25,14 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 1, talents, ERALIBTalent:Create(103283))
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 1, talents, ERALIBTalent:Create(103283), nil)
     ---@cast hud DruidBalanceHUD
     hud.wrathStacks = hud:AddSpellStacks(190984)
     hud.starStacks = hud:AddSpellStacks(194153)
+
+    ERACombatFrames_Druid_NonFeral(hud, talents)
+    ERACombatFrames_Druid_NonGuardian(hud, talents)
+    ERACombatFrames_Druid_NonRestoration(hud, talents)
 
     ERADruidEclipse:Create(cFrame, hud)
 
@@ -81,9 +85,9 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     local dots = ERAHUDDOT:Create(hud)
 
-    local flare = dots:AddDOT(202347, nil, 0.0, 1.0, 0.0, talent_flare, 1.5, 24)
-    local moonFire = dots:AddDOT(164812, nil, 0.0, 0.0, 1.0, nil, 0, 22)
-    local sunFire = dots:AddDOT(164815, nil, 1.0, 0.0, 0.0, nil, 0, 18)
+    local flare = dots:AddDOT(202347, nil, 1.0, 1.0, 1.0, talent_flare, 1.5, 24)
+    local moonFire = dots:AddDOT(164812, nil, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, nil, 0, 22)
+    local sunFire = dots:AddDOT(164815, nil, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, nil, 0, 18)
 
     --[[
     ---@type ERAHUDDOTDefinition[]

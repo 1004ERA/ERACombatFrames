@@ -2033,6 +2033,13 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
     end
 end
 
+---@param r number
+---@param g number
+---@param b number
+function ERASAO:SetVertexColor(r, g, b)
+    self.display:SetVertexColor(r, g, b)
+end
+
 ---@return boolean
 function ERASAO:checkTalentOrHide()
     if self.hud.showSAO and ((not self.talent) or self.talent:PlayerHasTalent()) and self:checkTalentSAO() then

@@ -3,7 +3,7 @@
 function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local talent_long_dots = ERALIBTalent:Create(103154)
     local talent_short_dots = ERALIBTalent:Create(103156)
-    local talent_thrash = ERALIBTalent:CreateAnd(ERALIBTalent:Create(103301), ERALIBTalent:CreateNotTalent(114823))
+    local talent_thrash = ERALIBTalent:CreateAnd(talents.thrash, ERALIBTalent:CreateNotTalent(114823))
     local talent_instincts = ERALIBTalent:Create(103180)
     local talent_incarnation = ERALIBTalent:Create(103178)
     local talent_berserk = ERALIBTalent:CreateAnd(ERALIBTalent:Create(103162), ERALIBTalent:CreateNot(talent_incarnation))
@@ -13,13 +13,17 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local talent_frenzy = ERALIBTalent:Create(103170)
     local talent_predator = ERALIBTalent:Create(103152)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 2, talents, ERALIBTalent:Create(103282))
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 2, talents, ERALIBTalent:Create(103282), nil)
+
+    ERACombatFrames_Druid_NonBalance(hud, talents, ERALIBTalentTrue)
+    ERACombatFrames_Druid_NonGuardian(hud, talents)
+    ERACombatFrames_Druid_NonRestoration(hud, talents)
 
     local dots = ERAHUDDOT:Create(hud)
 
-    local rake = dots:AddDOT(155722, nil, 1.0, 0.0, 0.0, nil, 0, 12)
-    local thrash = dots:AddDOT(405233, nil, 0.7, 0.5, 0.3, talent_thrash, 0, 15)
-    local rip = dots:AddDOT(1079, nil, 1.0, 0.0, 1.0, nil, 0, 24)
+    local rake = dots:AddDOT(155722, nil, ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B, nil, 0, 12)
+    local thrash = dots:AddDOT(405233, nil, ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B, talent_thrash, 0, 15)
+    local rip = dots:AddDOT(1079, nil, ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B, nil, 0, 24)
     rip.writeTimeToRefresh = true
     ---@type ERAHUDDOTDefinition[]
     local dotsArray = {}
