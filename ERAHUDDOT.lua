@@ -202,6 +202,7 @@ end
 ---@field minActiveIsOnTarget boolean
 ---@field couldRefresh boolean
 ---@field singleInstance boolean
+---@field writeTimeToRefresh boolean
 ---@field private refreshLine Line
 ---@field private refreshLineVisible boolean
 ---@field ComputeRefreshDurationOverride fun(this:ERAHUDDOTDefinition, t:number): number
@@ -388,10 +389,20 @@ function ERAHUDDOTDefinition:drawTarget(y, frame, overlayFrame)
             desat = true
         end
     end
-    if stacks <= 1 then
-        self.mainBar:SetText(nil)
+    if self.writeTimeToRefresh then
+        if self.couldRefresh then
+            self.mainBar:SetText(nil)
+        elseif self.onTarget.remDuration > self.refreshDuration then
+            self.mainBar:SetText(tostring(math.ceil(self.onTarget.remDuration - self.refreshDuration)))
+        else
+            self.mainBar:SetText(nil)
+        end
     else
-        self.mainBar:SetText(tostring(self.onTarget.stacks))
+        if stacks <= 1 then
+            self.mainBar:SetText(nil)
+        else
+            self.mainBar:SetText(tostring(self.onTarget.stacks))
+        end
     end
     self.mainBar:draw(y, frame, dur, alpha, desat)
     if self.owner.hud.timerDuration > self.refreshDuration and self.refreshDuration < dur then

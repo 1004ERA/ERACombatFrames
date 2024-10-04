@@ -17,15 +17,7 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
     local talent_cheap_eruption = ERALIBTalent:Create(115505)
     local talent_attunement = ERALIBTalent:Create(115518)
 
-    local hud = ERAHUD:Create(cFrame, 1.5, false, false, 0, 0.0, 0.0, 1.0, false, 3)
-    ---@cast hud ERAEvokerHUD
-    hud.power.hideFullOutOfCombat = true
-    hud.powerHeight = 10
-    function hud:IsCombatPowerVisibleOverride(t)
-        return self.power.currentPower / self.power.maxPower <= 0.75
-    end
-
-    ERAEvokerCommonSetup(hud, "TO_LEFT", 392268, 8, talents, talent_big_empower, 3)
+    local hud = ERAEvokerCommonSetup(cFrame, 10, "TO_LEFT", 392268, 8, talents, talent_big_empower, 3)
 
     local mightBuff = hud:AddTrackedBuff(395296)
 

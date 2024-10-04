@@ -23,7 +23,7 @@
 ---@class WarlockHUD : ERAHUD
 
 ---@class WarlockWholeHUD : WarlockHUD
----@field shards ERAHUDWarlockWholeShards
+---@field shards ERAHUDModulePointsUnitPower
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_WarlockSetup(cFrame)
@@ -80,7 +80,7 @@ end
 ---@param talent_sacrifice ERALIBTalent
 ---@return WarlockHUD
 function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, talent_pet, talent_sacrifice)
-    local hud = ERAHUD:Create(cFrame, 1.5, requireCLEU, false, -1, 1.0, 1.0, 1.0, talent_pet, spec)
+    local hud = ERAHUD:Create(cFrame, 1.5, requireCLEU, false, talent_pet, spec)
     ---@cast hud WarlockHUD
 
     hud.healthstoneTalent = talents.healthstone
@@ -184,7 +184,10 @@ end
 function ERACombatFrames_WarlockWholeShards(cFrame, spec, talent_pet, talent_sacrifice, talents)
     local hud = ERACombatFrames_WarlockCommonSetup(cFrame, spec, true, talents, talent_pet, talent_sacrifice)
     ---@cast hud WarlockWholeHUD
-    hud.shards = ERAHUDWarlockWholeShards:create(hud)
+    hud.shards = ERAHUDModulePointsUnitPower:Create(hud, Enum.PowerType.SoulShards, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, nil)
+    function hud.shards:GetIdlePointsOverride()
+        return 3
+    end
 
     local succulent = hud:AddTrackedBuff(449793, talents.succulent)
 
@@ -275,37 +278,3 @@ function ERACombatFrames_WarlockCommandDemon(hud, petSpellID, sacrificeSpellID, 
 
     return cdPet, cdSacrifice
 end
-
---------------------
---#region SHARDS ---
-
----@class (exact) ERAHUDWarlockWholeShards : ERAHUDModulePoints
----@field private __index unknown
-ERAHUDWarlockWholeShards = {}
-ERAHUDWarlockWholeShards.__index = ERAHUDWarlockWholeShards
-setmetatable(ERAHUDWarlockWholeShards, { __index = ERAHUDModulePoints })
-
----@param hud ERAHUD
----@return ERAHUDWarlockWholeShards
-function ERAHUDWarlockWholeShards:create(hud)
-    local e = {}
-    setmetatable(e, ERAHUDWarlockWholeShards)
-    ---@cast e ERAHUDWarlockWholeShards
-    e:constructPoints(hud, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, nil)
-    return e
-end
-
-function ERAHUDWarlockWholeShards:GetIdlePointsOverride()
-    return 3
-end
-
-function ERAHUDWarlockWholeShards:getMaxPoints()
-    return UnitPowerMax("player", 7)
-end
-
-function ERAHUDWarlockWholeShards:getCurrentPoints()
-    return UnitPower("player", 7)
-end
-
---#endregion
---------------------

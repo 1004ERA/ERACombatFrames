@@ -24,8 +24,8 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     local plague = hud:AddTrackedDebuffOnTarget(191587)
     local doom = hud:AddTrackedBuff(81340)
 
-    hud.power.bar:AddMarkingFromMax(20)
-    local coilConsumer = hud.power.bar:AddMarkingFrom0(30)
+    hud.runicPower.bar:AddMarkingFromMax(20)
+    local coilConsumer = hud.runicPower.bar:AddMarkingFrom0(30)
     function coilConsumer:ComputeValueOverride(t)
         if doom.remDuration > hud.occupied + 0.1 then
             return 20

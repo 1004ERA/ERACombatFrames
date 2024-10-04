@@ -16,15 +16,8 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
     local talent_charged_blast = ERALIBTalent:Create(115628)
     local talent_imminent_destruction = ERALIBTalent:Create(115638)
 
-    local hud = ERAHUD:Create(cFrame, 1.5, false, false, 0, 0.0, 0.0, 1.0, false, 1)
+    local hud = ERAEvokerCommonSetup(cFrame, 10, "TO_LEFT", 359618, 2, talents, talent_big_empower, 1)
     ---@cast hud ERAEvokerDevastationHUD
-    hud.power.hideFullOutOfCombat = true
-    hud.powerHeight = 10
-    function hud:IsCombatPowerVisibleOverride(t)
-        return self.power.currentPower / self.power.maxPower <= 0.75
-    end
-
-    ERAEvokerCommonSetup(hud, "TO_LEFT", 359618, 2, talents, talent_big_empower, 1)
 
     --- rotation ---
 

@@ -23,19 +23,20 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     local talent_niuzao = ERALIBTalent:Create(124849)
     local talent_black_brew = ERALIBTalent:Create(124991)
 
-    local hud = ERAHUD:Create(cFrame, 1, true, false, 3, 1.0, 1.0, 0.0, false, 1)
+    local hud = ERAHUD:Create(cFrame, 1, true, false, false, 1)
+    local nrj = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.Energy, 16, 1.0, 1.0, 0.0, nil)
     ---@cast hud MonkBrewmasterHUD
-    hud.power.hideFullOutOfCombat = true
+    nrj.hideFullOutOfCombat = true
 
-    ERACombatFrames_MonkCommonSetup(hud, talents, 0, ERALIBTalent:Create(124867))
+    ERACombatFrames_MonkCommonSetup(hud, talents, 1.2, ERALIBTalent:Create(124867))
 
     local kegCooldown = hud:AddTrackedCooldown(121253)
     hud.purifCooldown = hud:AddTrackedCooldown(119582)
 
     local stagger = ERABMStagger:create(hud)
 
-    hud.power.bar:AddMarkingFrom0(65)
-    local kegConsumer = hud.power.bar:AddMarkingFrom0(40)
+    nrj.bar:AddMarkingFrom0(65)
+    local kegConsumer = nrj.bar:AddMarkingFrom0(40)
     function kegConsumer:ComputeValueOverride(t)
         if (kegCooldown.hasCharges and kegCooldown.currentCharges > 0) or kegCooldown.remDuration <= 4 then
             return self.baseValue
@@ -316,17 +317,14 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERABMStagger:updateDisplay(t, combat)
+function ERABMStagger:UpdateDisplayReturnVisibility(t, combat)
     if self.staggerValue > 0 then
         self.bar:SetValueAndMax(self.staggerValue, self.hud.health.maxHealth)
-        self:show()
     else
         if combat then
             self.bar:SetValueAndMax(0, self.hud.health.maxHealth)
-            self:show()
         else
-            self:hide()
-            return
+            return nil
         end
     end
     if self.mhud.purifCooldown.currentCharges == 0 then
@@ -336,4 +334,5 @@ function ERABMStagger:updateDisplay(t, combat)
     else
         self.bar:SetMainColor(0.0, 1.0, 0.0)
     end
+    return true
 end

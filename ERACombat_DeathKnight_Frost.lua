@@ -16,8 +16,8 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
 
     local hud = ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, 2)
 
-    hud.power.bar:AddMarkingFrom0(30)
-    hud.power.bar:AddMarkingFromMax(20)
+    hud.runicPower.bar:AddMarkingFrom0(30)
+    hud.runicPower.bar:AddMarkingFromMax(20)
 
     ERACombatFrames_DK_DPS(hud, talents)
 
@@ -109,7 +109,7 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     function hornIcon.onTimer:ComputeAvailablePriorityOverride(t)
         local hud = self.hud
         ---@cast hud ERADKHUD
-        if (hud.runes.availableRunes <= 1 and hud.power.maxPower - hud.power.currentPower > 30) then
+        if (hud.runes.availableRunes <= 1 and hud.runicPower.maxPower - hud.runicPower.currentPower > 30) then
             return 10
         else
             return 0

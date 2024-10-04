@@ -41,13 +41,14 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local htalent_conduit = ERALIBTalent:Create(125062)
     local htalent_blackox = ERALIBTalent:Create(125060)
 
-    local hud = ERAHUD:Create(cFrame, 1.5, true, true, 0, 0.0, 0.0, 1.0, false, 2)
+    local hud = ERAHUD:Create(cFrame, 1.5, true, true, false, 2)
     ---@cast hud MonkMistweaverHUD
-    hud.power.hideFullOutOfCombat = true
-    hud.powerHeight = 12
     hud.lastInvoke = 0
+    local mana = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.Mana, 12, 0.0, 0.0, 1.0, nil)
+    mana.hideFullOutOfCombat = true
+    mana.placeAtBottomIfHealer = true
 
-    ERACombatFrames_MonkCommonSetup(hud, talents, 0, nil)
+    ERACombatFrames_MonkCommonSetup(hud, talents, 1.2, nil)
 
     local instaVivifyTimer = hud:AddPriority(1360980, talents.vivification)
     function instaVivifyTimer:ComputeDurationOverride(t)

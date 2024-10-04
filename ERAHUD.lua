@@ -39,12 +39,6 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field healAbsorb number
 ---@field bar ERAHUDStatusBar
 
----@class (exact) ERAHUDPower
----@field currentPower number
----@field maxPower number
----@field hideFullOutOfCombat boolean
----@field bar ERAHUDStatusBar
-
 ---@class (exact) ERAHUD
 ---@field private __index unknown
 ---@field showUtility boolean
@@ -59,14 +53,11 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private statusMaxY number
 ---@field healthHeight number
 ---@field petHeight number
----@field powerHeight number
 ---@field private statusSpacing number
 ---@field health ERAHUDHealth
 ---@field hasPet boolean
 ---@field petHealth ERAHUDHealth
 ---@field private petHealthTalent ERALIBTalent
----@field private powerType integer
----@field power ERAHUDPower
 ---@field timerDuration number
 ---@field remGCD number
 ---@field totGCD number
@@ -122,10 +113,11 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private CheckTalents fun(this:ERAHUD)
 ---@field private CLEU fun(this:ERAHUD, t:number)
 ---@field AdditionalCLEU fun(this:ERAHUD, t:number)
----@field private placePetAndPower fun(this:ERAHUD, statusY:number): number
+---@field private drawStatusAndRotation fun(this:ERAHUD)
+---@field private updateResourceDisplay fun(this:ERAHUD, t:number, combat:boolean)
+---@field private placePet fun(this:ERAHUD, statusY:number): number
 ---@field private updateHealthStatus fun(this:ERAHUD, h:ERAHUDHealth, t:number)
 ---@field private updateHealthStatusIdle fun(this:ERAHUD, h:ERAHUDHealth, t:number, checkPetMounted:boolean)
----@field private updatePowerStatus fun(this:ERAHUD, t:number)
 ---@field private updateIcons fun(this:ERAHUD, t:number, combat:boolean)
 ---@field private empowerLevel integer
 ---@field private lastEmpowerStageTotal number
@@ -183,11 +175,9 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field specialGroup ERAHUDUtilityGroup
 ---@field controlGroup ERAHUDUtilityGroup
 ---@field movementGroup ERAHUDUtilityGroup
----@field IsCombatPowerVisibleOverride fun(this:ERAHUD, t:number): boolean
 ---@field private modules ERAHUDResourceModule[]
 ---@field private activeModules ERAHUDResourceModule[]
 ---@field PreUpdateDataOverride fun(this:ERAHUD, t:number, combat:boolean)
----@field PreUpdateModuleDataOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field DataUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field PreUpdateDisplayOverride fun(this:ERAHUD, t:number, combat:boolean)
 ---@field DisplayUpdatedOverride fun(this:ERAHUD, t:number, combat:boolean)
@@ -203,14 +193,10 @@ setmetatable(ERAHUD, { __index = ERACombatModule })
 ---@param baseGCD number
 ---@param requireCLEU boolean
 ---@param isHealer boolean
----@param powerType integer
----@param rPower number
----@param gPower number
----@param bPower number
 ---@param showPet ERALIBTalent|boolean
 ---@param spec integer
 ---@return ERAHUD
-function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower, gPower, bPower, showPet, spec)
+function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, showPet, spec)
     local specOptions = ERACombatOptions_getOptionsForSpec(nil, spec)
     local hud = {}
     setmetatable(hud, ERAHUD)
@@ -363,10 +349,8 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
 
     -- status
 
-    hud.powerType = powerType
     hud.healthHeight = 22
     hud.petHeight = 11
-    hud.powerHeight = 16
     hud.statusSpacing = 2
     local statusY = hud.statusBaseY
     hud.health = {
@@ -392,15 +376,6 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, powerType, rPower
         healAbsorb = 0,
         bar = ERAHUDStatusBar:create(mainFrame, 1004, 1004, hud.barsWidth, hud.petHeight, 0.0, 1.0, 0.0)
     }
-    if powerType >= 0 then
-        hud.power = {
-            currentPower = 0,
-            maxPower = 1,
-            hideFullOutOfCombat = false,
-            bar = ERAHUDStatusBar:create(mainFrame, 1004, 1004, hud.barsWidth, hud.powerHeight, rPower, gPower, bPower)
-        }
-        statusY = statusY - hud.powerHeight - hud.statusSpacing
-    end
     hud.statusMaxY = statusY
 
     -- layout
@@ -503,8 +478,10 @@ function ERAHUD:Pack()
     if self.isHealer then
         local paradoxTimer = self:AddTrackedBuffAnyCaster(406732)
         self:AddAuraBar(paradoxTimer, nil, 1.0, 0.9, 0.7)
+        local innervTimer = self:AddTrackedBuffAnyCaster(29166)
+        self:AddAuraBar(innervTimer, nil, 0.0, 0.0, 0.7)
     end
-    self:AddAuraBar(self:AddTrackedBuff(435493), nil, 0.5, 0.0, 0.2)
+    self:AddAuraBar(self:AddTrackedBuff(435493), nil, 0.5, 0.0, 0.2) -- antidote trinket
 
     -- warlock health stone
     self:AddBagItemIcon(self:AddBagItemCooldown(5512, self.healthstoneTalent), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
@@ -647,9 +624,6 @@ function ERAHUD:EnterCombat()
     if self.petHealthTalent:PlayerHasTalent() then
         self.petHealth.bar:show()
     end
-    if self.power then
-        self.power.bar:show()
-    end
     if self.showUtility then
         for _, g in ipairs(self.utilityGroups) do
             g:showIfHasContent()
@@ -763,31 +737,14 @@ function ERAHUD:CheckTalents()
     end
 
     self.health.bar:checkTalents()
-    local statusY
-    if self.isHealer then
-        statusY = self.statusBaseY
-        table.wipe(self.activeModules)
-        for _, m in ipairs(self.modules) do
-            if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
-                statusY = statusY - m.height - self.statusSpacing
-                table.insert(self.activeModules, m)
-            end
+    if self.petHealth then
+        self.petHealth.bar:checkTalents()
+    end
+    table.wipe(self.activeModules)
+    for _, m in ipairs(self.modules) do
+        if m:checkTalent() then
+            table.insert(self.activeModules, m)
         end
-        self.health.bar:place(self.statusBaseX, statusY, self.healthHeight, self.mainFrame)
-        statusY = statusY - self.healthHeight - self.statusSpacing
-        self.statusMaxY = self:placePetAndPower(statusY)
-    else
-        self.health.bar:place(self.statusBaseX, self.statusBaseY, self.healthHeight, self.mainFrame)
-        statusY = self.statusBaseY - self.healthHeight - self.statusSpacing
-        statusY = self:placePetAndPower(statusY)
-        table.wipe(self.activeModules)
-        for _, m in ipairs(self.modules) do
-            if m:checkTalentOrHide(self.statusBaseX, statusY, self.mainFrame) then
-                statusY = statusY - m.height - self.statusSpacing
-                table.insert(self.activeModules, m)
-            end
-        end
-        self.statusMaxY = statusY
     end
 
     table.wipe(self.activeNested)
@@ -800,6 +757,42 @@ function ERAHUD:CheckTalents()
             n:checkTalents()
         end
     end
+
+    self:drawStatusAndRotation()
+
+    self:updateUtilityLayout()
+end
+
+function ERAHUD:drawStatusAndRotation()
+    self.health.bar:checkTalents()
+    local statusY
+    if self.isHealer then
+        statusY = self.statusBaseY
+        for _, m in ipairs(self.activeModules) do
+            if m.occupySpace and not m.placeAtBottomIfHealer then
+                m:place(self.statusBaseX, statusY, self.mainFrame)
+                statusY = statusY - m.height - self.statusSpacing
+            end
+        end
+        self.health.bar:place(self.statusBaseX, statusY, self.healthHeight, self.mainFrame)
+        statusY = self:placePet(statusY - self.healthHeight - self.statusSpacing)
+        for _, m in ipairs(self.activeModules) do
+            if m.occupySpace and m.placeAtBottomIfHealer then
+                m:place(self.statusBaseX, statusY, self.mainFrame)
+                statusY = statusY - m.height - self.statusSpacing
+            end
+        end
+    else
+        self.health.bar:place(self.statusBaseX, self.statusBaseY, self.healthHeight, self.mainFrame)
+        statusY = self:placePet(self.statusBaseY - self.healthHeight - self.statusSpacing)
+        for _, m in ipairs(self.activeModules) do
+            if m.occupySpace then
+                m:place(self.statusBaseX, statusY, self.mainFrame)
+                statusY = statusY - m.height - self.statusSpacing
+            end
+        end
+    end
+    self.statusMaxY = statusY
 
     local iconSpace = ERAHUD_RotationIconSize + ERAHUD_RotationIconSpacing
 
@@ -925,29 +918,17 @@ function ERAHUD:CheckTalents()
 
         --#endregion
     end
-
-    self:updateUtilityLayout()
 end
 
 ---@param statusY number
 ---@return number
-function ERAHUD:placePetAndPower(statusY)
+function ERAHUD:placePet(statusY)
     if self.petHealthTalent:PlayerHasTalent() then
         self.petHealth.bar:place(self.statusBaseX, statusY, self.petHeight, self.mainFrame)
         self.petHealth.bar:checkTalents()
         statusY = statusY - self.petHeight - self.statusSpacing
-        if self.power then
-            self.power.bar:checkTalents()
-            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
-            statusY = statusY - self.powerHeight - self.statusSpacing
-        end
     else
         self.petHealth.bar:hide()
-        if self.power then
-            self.power.bar:checkTalents()
-            self.power.bar:place(self.statusBaseX, statusY, self.powerHeight, self.mainFrame)
-            statusY = statusY - self.powerHeight - self.statusSpacing
-        end
     end
     return statusY
 end
@@ -976,18 +957,6 @@ function ERAHUD:UpdateIdle(t)
     if self.petHealthTalent:PlayerHasTalent() then
         self:updateHealthStatusIdle(self.petHealth, t, true)
     end
-    if self.power then
-        if
-            (self.power.currentPower >= self.power.maxPower and self.power.hideFullOutOfCombat)
-            or
-            (self.power.currentPower == 0 and not self.power.hideFullOutOfCombat)
-        then
-            self.power.bar:hide()
-        else
-            self:updatePowerStatus(t)
-            self.power.bar:show()
-        end
-    end
 
     for _, sao in ipairs(self.activeSAO) do
         sao:update(t, false)
@@ -995,9 +964,7 @@ function ERAHUD:UpdateIdle(t)
 
     self:updateIcons(t, false)
 
-    for _, m in ipairs(self.activeModules) do
-        m:updateDisplay(t, false)
-    end
+    self:updateResourceDisplay(t, false)
 
     self:DisplayUpdatedOverride(t, false)
 
@@ -1241,14 +1208,6 @@ function ERAHUD:UpdateCombat(t)
     if self.petHealthTalent:PlayerHasTalent() then
         self:updateHealthStatus(self.petHealth, t)
     end
-    if self.power then
-        if self:IsCombatPowerVisibleOverride(t) then
-            self.power.bar:show()
-            self:updatePowerStatus(t)
-        else
-            self.power.bar:hide()
-        end
-    end
 
     --#endregion
 
@@ -1335,9 +1294,7 @@ function ERAHUD:UpdateCombat(t)
 
     --#endregion
 
-    for _, m in ipairs(self.activeModules) do
-        m:updateDisplay(t, true)
-    end
+    self:updateResourceDisplay(t, true)
 
     self:DisplayUpdatedOverride(t, true)
 
@@ -1356,9 +1313,17 @@ function ERAHUD:updateIcons(t, combat)
 end
 
 ---@param t number
----@return boolean
-function ERAHUD:IsCombatPowerVisibleOverride(t)
-    return true
+---@param combat boolean
+function ERAHUD:updateResourceDisplay(t, combat)
+    local changed = false
+    for _, m in ipairs(self.activeModules) do
+        if m:updateDisplay_return_visibleChanged(t, combat) then
+            changed = true
+        end
+    end
+    if changed then
+        self:drawStatusAndRotation()
+    end
 end
 
 ---@param h ERAHUDHealth
@@ -1381,11 +1346,6 @@ end
 function ERAHUD:updateHealthStatus(h, t)
     h.bar:SetAllExceptForecast(h.maxHealth, h.currentHealth, h.healAbsorb, h.absorb)
     h.bar:updateMarkings(t)
-end
----@param t number
-function ERAHUD:updatePowerStatus(t)
-    self.power.bar:SetValueAndMax(self.power.currentPower, self.power.maxPower)
-    self.power.bar:updateMarkings(t)
 end
 
 ---@param t number
@@ -1448,10 +1408,6 @@ function ERAHUD:updateData(t, combat)
         end
     else
         self.hasPet = UnitExists("pet")
-    end
-    if self.power then
-        self.power.currentPower = UnitPower("player", self.powerType)
-        self.power.maxPower = UnitPowerMax("player", self.powerType)
     end
 
     --#endregion
@@ -1772,14 +1728,14 @@ function ERAHUD:updateData(t, combat)
 
     self:PreUpdateDataOverride(t, combat)
     for _, m in ipairs(self.activeModules) do
-        m:preUpdateData(t, combat)
+        if m.PreUpdateDataOverride then
+            m:PreUpdateDataOverride(t, combat)
+        end
     end
 
     for _, tim in ipairs(self.activeDataItems) do
         tim:updateData(t)
     end
-
-    self:PreUpdateModuleDataOverride(t, combat)
 
     for _, m in ipairs(self.activeModules) do
         m:updateData(t, combat)
@@ -1804,10 +1760,6 @@ end
 ---@param t number
 ---@param inCombat boolean
 function ERAHUD:PreUpdateDataOverride(t, inCombat)
-end
----@param t number
----@param inCombat boolean
-function ERAHUD:PreUpdateModuleDataOverride(t, inCombat)
 end
 ---@param t number
 ---@param inCombat boolean
@@ -2409,14 +2361,17 @@ end
 ---@field private talent ERALIBTalent|nil
 ---@field protected frame Frame
 ---@field protected checkTalentOverride fun(this:ERAHUDResourceModule): boolean
----@field protected hide fun(this:ERAHUDResourceModule)
----@field protected show fun(this:ERAHUDResourceModule)
+---@field private hide fun(this:ERAHUDResourceModule)
+---@field private show fun(this:ERAHUDResourceModule)
 ---@field private visible boolean
+---@field occupySpace boolean
 ---@field height number
----@field preUpdateData fun(this:ERAHUDResourceModule, t:number, combat:boolean)
+---@field PreUpdateDataOverride nil|fun(this:ERAHUDResourceModule, t:number, combat:boolean)
 ---@field updateData fun(this:ERAHUDResourceModule, t:number, combat:boolean)
----@field updateDisplay fun(this:ERAHUDResourceModule, t:number, combat:boolean)
+---@field UpdateDisplayReturnVisibility fun(this:ERAHUDResourceModule, t:number, combat:boolean): nil|boolean
 ---@field hud ERAHUD
+---@field placeAtBottomIfHealer boolean
+---@field IsVisibleOverride nil|fun(this:ERAHUDResourceModule): boolean
 ERAHUDResourceModule = {}
 ERAHUDResourceModule.__index = ERAHUDResourceModule
 
@@ -2431,6 +2386,7 @@ function ERAHUDResourceModule:constructModule(hud, height, talent)
     self.frame:SetSize(hud.barsWidth, height)
     self.height = height
     self.visible = true
+    self.occupySpace = true
 end
 
 function ERAHUDResourceModule:hide()
@@ -2447,23 +2403,122 @@ function ERAHUDResourceModule:show()
     end
 end
 
+---@return boolean
+function ERAHUDResourceModule:checkTalent()
+    if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkTalentOverride() then
+        self:hide()
+        return false
+    else
+        return true
+    end
+end
+
 ---@param t number
 ---@param combat boolean
-function ERAHUDResourceModule:preUpdateData(t, combat)
+---@return boolean
+function ERAHUDResourceModule:updateDisplay_return_visibleChanged(t, combat)
+    local visibility = self:UpdateDisplayReturnVisibility(t, combat)
+    if visibility == false then
+        self:hide()
+        if self.occupySpace then
+            self.occupySpace = false
+            return true
+        else
+            return false
+        end
+    else
+        if visibility then
+            self:show()
+        else
+            self:hide()
+        end
+        if self.occupySpace then
+            return false
+        else
+            self.occupySpace = true
+            return true
+        end
+    end
 end
 
 ---@param topX number
 ---@param topY number
 ---@param parentFrame Frame
+function ERAHUDResourceModule:place(topX, topY, parentFrame)
+    self.frame:SetPoint("TOP", parentFrame, "CENTER", topX, topY)
+    self:show()
+end
+
+---@class (exact) ERAHUDPowerBarModule : ERAHUDResourceModule
+---@field private __index unknown
+---@field powerType Enum.PowerType
+---@field currentPower number
+---@field maxPower number
+---@field bar ERAHUDStatusBar
+---@field hideFullOutOfCombat boolean
+---@field PreUpdatePowerOverride nil|fun(this:ERAHUDResourceModule, t:number, combat:boolean)
+---@field ConfirmIsVisibleOverride nil|fun(this:ERAHUDResourceModule, t:number, combat:boolean): boolean
+---@field CollapseIfTransparent nil|fun(this:ERAHUDResourceModule, t:number, combat:boolean): boolean
+ERAHUDPowerBarModule = {}
+ERAHUDPowerBarModule.__index = ERAHUDPowerBarModule
+setmetatable(ERAHUDPowerBarModule, { __index = ERAHUDResourceModule })
+
+---@param hud ERAHUD
+---@param powerType Enum.PowerType
+---@param height number
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return ERAHUDPowerBarModule
+function ERAHUDPowerBarModule:Create(hud, powerType, height, r, g, b, talent)
+    local x = {}
+    setmetatable(x, ERAHUDPowerBarModule)
+    ---@cast x ERAHUDPowerBarModule
+    x.powerType = powerType
+    x.currentPower = 0
+    x.maxPower = 100
+    x:constructModule(hud, height, talent)
+    x.bar = ERAHUDStatusBar:create(x.frame, 0, 0, hud.barsWidth, height, r, g, b)
+    x.bar:place(0, height / 2, height, x.frame)
+    return x
+end
+
 ---@return boolean
-function ERAHUDResourceModule:checkTalentOrHide(topX, topY, parentFrame)
-    if (self.talent and not self.talent:PlayerHasTalent()) or not self:checkTalentOverride() then
-        self:hide()
-        return false
-    else
-        self.frame:SetPoint("TOP", parentFrame, "CENTER", topX, topY)
-        self:show()
+function ERAHUDPowerBarModule:checkTalentOverride()
+    self.bar:checkTalents()
+    return true
+end
+
+---@param t number
+---@param combat boolean
+function ERAHUDPowerBarModule:PreUpdateDataOverride(t, combat)
+    self.currentPower = UnitPower("player", self.powerType)
+    self.maxPower = UnitPowerMax("player", self.powerType)
+    if self.PreUpdatePowerOverride then
+        self:PreUpdatePowerOverride(t, combat)
+    end
+end
+
+---@param t number
+---@param combat boolean
+function ERAHUDPowerBarModule:updateData(t, combat)
+    -- fait dans PreUpdateDataOverride
+end
+
+---@param t number
+---@param combat boolean
+function ERAHUDPowerBarModule:UpdateDisplayReturnVisibility(t, combat)
+    if (combat or (self.hideFullOutOfCombat and self.currentPower < self.maxPower) or ((not self.hideFullOutOfCombat) and self.currentPower > 0)) and ((not self.ConfirmIsVisibleOverride) or self:ConfirmIsVisibleOverride(t, combat)) then
+        self.bar:SetValueAndMax(self.currentPower, self.maxPower)
+        self.bar:updateMarkings(t)
         return true
+    else
+        if self.CollapseIfTransparent and self:CollapseIfTransparent(t, combat) then
+            return false
+        else
+            return nil
+        end
     end
 end
 

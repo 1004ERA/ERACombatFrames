@@ -1474,6 +1474,7 @@ end
 ---@field HighlightOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean): boolean
 ---@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field data ERACooldownBase
+---@field ConfirmShowOverride nil|fun(this:ERAHUDUtilityCooldownInGroup): boolean
 ---@field private currentCharges integer
 ---@field private maxCharges integer
 ERAHUDUtilityCooldownInGroup = {}
@@ -1506,7 +1507,7 @@ end
 
 ---@return boolean
 function ERAHUDUtilityCooldownInGroup:checkAdditionalTalent()
-    return self.data.talentActive and self.data.isKnown
+    return self.data.talentActive and self.data.isKnown and ((not self.ConfirmShowOverride) or self:ConfirmShowOverride())
 end
 
 ---@param currentIconID integer
@@ -1519,6 +1520,10 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDUtilityCooldownInGroup:update(t, combat)
+    if self.ConfirmShowOverride and not self:ConfirmShowOverride() then
+        self.hud:mustUpdateUtilityLayout()
+        return
+    end
     local forceHighlight
     local forceHighlightValue = false
     if self.HighlightOverride then

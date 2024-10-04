@@ -1,4 +1,5 @@
 ---@class (exact) ERAEvokerHUD : ERAHUD
+---@field evoker_mana ERAHUDPowerBarModule
 ---@field evoker_essence ERAEvokerEssenceModule
 ---@field evoker_essenceBurst ERAAura
 ---@field evoker_leapingBuff ERAAura
@@ -87,14 +88,36 @@ end
 --- COMMON ---
 --------------
 
----@param hud ERAEvokerHUD
+---@param cFrame ERACombatFrame
+---@param manaHeight number
 ---@param essenceDirection ERAHUDModulePointsPartialDirection
 ---@param burstID integer
 ---@param unravelPrio number
 ---@param talents ERACombat_EvokerCommonTalents
 ---@param talent_big_empower ERALIBTalent|nil
 ---@param spec integer
-function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talents, talent_big_empower, spec)
+---@return ERAEvokerHUD
+function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unravelPrio, talents, talent_big_empower, spec)
+    local hud = ERAHUD:Create(cFrame, 1.5, false, spec == 2, false, spec)
+    ---@cast hud ERAEvokerHUD
+
+    hud.evoker_mana = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.Mana, manaHeight, 0.0, 0.0, 1.0, nil)
+    hud.evoker_mana.hideFullOutOfCombat = true
+    if spec == 2 then
+        hud.evoker_mana.placeAtBottomIfHealer = true
+    else
+        function hud.evoker_mana:ConfirmIsVisibleOverride(t, combat)
+            if combat then
+                return self.currentPower / self.maxPower <= 0.6
+            else
+                return self.currentPower / self.maxPower <= 0.5
+            end
+        end
+        function hud.evoker_mana:CollapseIfTransparent(t, combat)
+            return true
+        end
+    end
+
     hud.evoker_essence = ERAEvokerEssenceModule:create(hud, essenceDirection)
 
     if talent_big_empower then
@@ -250,6 +273,8 @@ function ERAEvokerCommonSetup(hud, essenceDirection, burstID, unravelPrio, talen
         hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, false, true, false, false, false)
     end
     hud:AddUtilityDispell(hud:AddTrackedCooldown(374251, talents.cauterize), hud.specialGroup, nil, nil, nil, false, true, true, true, true)
+
+    return hud
 end
 
 ---------------

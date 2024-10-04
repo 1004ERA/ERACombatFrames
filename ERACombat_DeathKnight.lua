@@ -3,6 +3,7 @@
 
 ---@class ERADKHUD : ERAHUD
 ---@field runes ERADKRunesModule
+---@field runicPower ERAHUDPowerBarModule
 ---@field enemies ERACombatEnemiesCount
 ---@field damageTaken ERACombatDamageTaken
 ---@field soulReaperCooldown ERADKSoulReaperCooldown
@@ -107,11 +108,12 @@ end
 ---@param spec integer
 ---@return ERADKHUD
 function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
-    local hud = ERAHUD:Create(cFrame, 1.5, true, false, 6, 0.2, 0.7, 1.0, spec == 3, spec)
+    local hud = ERAHUD:Create(cFrame, 1.5, true, false, spec == 3, spec)
     ---@cast hud ERADKHUD
 
     hud.enemies = enemies
     hud.runes = ERADKRunesModule:create(hud)
+    hud.runicPower = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.RunicPower, 16, 0.2, 0.7, 1.0, nil)
     hud.damageTaken = ERACombatDamageTaken:Create(hud.cFrame, 5, spec)
 
     --- rotation ---
@@ -241,7 +243,7 @@ function ERACombatFrames_DK_DPS(hud, talents)
             hud.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
             additionalH = 0
         end
-        if hud.power.currentPower >= strikeCost then
+        if hud.runicPower.currentPower >= strikeCost then
             local baseH = hud.health.maxHealth * 0.07
             local dmgH = 0.25 * hud.damageTaken.currentDamage
             if (dmgH > baseH or additionalH > 0) then
@@ -313,7 +315,7 @@ end
 
 ---@param t number
 ---@param combat boolean
-function ERADKRunesModule:preUpdateData(t, combat)
+function ERADKRunesModule:PreUpdateDataOverride(t, combat)
     for i, info in ipairs(self.infos) do
         local start, duration, runeReady = GetRuneCooldown(i)
         if (start and start > 0 and not runeReady) then
@@ -347,14 +349,14 @@ end
 ---@param t number
 ---@param combat boolean
 function ERADKRunesModule:updateData(t, combat)
-    -- fait dans preUpdateData
+    -- fait dans PreUpdateDataOverride
 end
 
 ---@param t number
 ---@param combat boolean
-function ERADKRunesModule:updateDisplay(t, combat)
+function ERADKRunesModule:UpdateDisplayReturnVisibility(t, combat)
     if self.availableRunes >= 6 and not combat then
-        self:hide()
+        return nil
     else
         for i, info in ipairs(self.infos) do
             local icon = self.icons[i]
@@ -366,7 +368,7 @@ function ERADKRunesModule:updateDisplay(t, combat)
                 icon:SetOverlayValue(info.remDur / info.totDur)
             end
         end
-        self:show()
+        return true
     end
 end
 

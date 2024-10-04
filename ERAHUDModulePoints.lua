@@ -25,6 +25,8 @@ ERAHUDModulePointsPartial_PointSpacing = 4
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePoints): integer
 ---@field GetIdlePointsOverride fun(this:ERAHUDModulePoints): integer
 ---@field PreUpdateDisplayOverride nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean)
+---@field ConfirmIsVisibleOverride nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean): boolean
+---@field CollapseIfTransparent nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean): boolean
 ---@field private points ERAHUDModulePoint[]
 ---@field currentPoints integer
 ---@field maxPoints integer
@@ -97,20 +99,24 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDModulePoints:updateDisplay(t, combat)
+function ERAHUDModulePoints:UpdateDisplayReturnVisibility(t, combat)
     if self.PreUpdateDisplayOverride then
         self:PreUpdateDisplayOverride(t, combat)
     end
-    if combat or self.currentPoints ~= self:GetIdlePointsOverride() then
+    if (combat or self.currentPoints ~= self:GetIdlePointsOverride()) and ((not self.ConfirmIsVisibleOverride) or self:ConfirmIsVisibleOverride(t, combat)) then
         for i = 1, self.currentPoints do
             self.points[i]:update(true, self.rP, self.gP, self.bP)
         end
         for i = self.currentPoints + 1, self.maxPoints do
             self.points[i]:update(false, self.rP, self.gP, self.bP)
         end
-        self:show()
+        return true
     else
-        self:hide()
+        if self.CollapseIfTransparent and self:CollapseIfTransparent(t, combat) then
+            return false
+        else
+            return nil
+        end
     end
 end
 
@@ -232,7 +238,7 @@ end
 
 ---@class ERAHUDModulePointsUnitPower : ERAHUDModulePoints
 ---@field private __index unknown
----@field private powerType integer
+---@field private powerType Enum.PowerType
 ---@field protected getMaxPoints fun(this:ERAHUDModulePointsUnitPower): integer
 ---@field protected getCurrentPoints fun(this:ERAHUDModulePointsUnitPower): integer
 ERAHUDModulePointsUnitPower = {}
@@ -240,7 +246,7 @@ ERAHUDModulePointsUnitPower.__index = ERAHUDModulePointsUnitPower
 setmetatable(ERAHUDModulePointsUnitPower, { __index = ERAHUDModulePoints })
 
 ---@param hud ERAHUD
----@param powerType integer
+---@param powerType Enum.PowerType
 ---@param rB number
 ---@param gB number
 ---@param bB number
@@ -397,14 +403,12 @@ end
 
 ---@param t number
 ---@param combat boolean
-function ERAHUDModulePointsPartial:updateDisplay(t, combat)
+function ERAHUDModulePointsPartial:UpdateDisplayReturnVisibility(t, combat)
     if self.PreUpdateDisplayOverride then
         self:PreUpdateDisplayOverride(t, combat)
     end
     if (not combat) and self.currentPoints == self:GetIdlePointsOverride() then
-        self:hide()
-    else
-        self:show()
+        return nil
     end
     if self.currentPoints >= self.maxPoints then
         for i = 1, self.maxPoints do
@@ -426,6 +430,7 @@ function ERAHUDModulePointsPartial:updateDisplay(t, combat)
             end
         end
     end
+    return true
 end
 
 --#endregion

@@ -23,7 +23,7 @@ end
 
 ]]
 
-ERA_TALENTS_DO_PRINT_N = 0
+ERA_TALENTS_DO_PRINT_N = 500
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")
@@ -46,6 +46,8 @@ function ERACombatFrames_event(event, ...)
             ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
             ERACombatFrames_MonkSetup(cFrame)
+        elseif (classID == 11) then
+            ERACombatFrames_DruidSetup(cFrame)
         elseif (classID == 12) then
             --ERACombatFrames_DemonHunterSetup(cFrame)
         elseif (classID == 13) then

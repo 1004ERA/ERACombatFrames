@@ -23,13 +23,14 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local talent_xuensbattlegear = ERALIBTalent:Create(125017)
     local htalent_conduit = ERALIBTalent:Create(125062)
 
-    local hud = ERAHUD:Create(cFrame, 1.0, true, false, 3, 1.0, 1.0, 0.0, false, 3)
+    local hud = ERAHUD:Create(cFrame, 1.0, true, false, false, 3)
     ---@cast hud MonkHUD
-    hud.power.hideFullOutOfCombat = true
+    local nrj = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.Energy, 16, 1.0, 1.0, 0.0, nil)
+    nrj.hideFullOutOfCombat = true
 
     ERACombatFrames_MonkCommonSetup(hud, talents, 1.4, ERALIBTalent:Create(124941))
 
-    local chi = ERAHUDModulePointsUnitPower:Create(hud, 12, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
+    local chi = ERAHUDModulePointsUnitPower:Create(hud, Enum.PowerType.Chi, 1.0, 1.0, 0.5, 0.0, 1.0, 0.5, nil)
     function chi:GetIdlePointsOverride()
         if talent_combat_wisdom:PlayerHasTalent() then
             return 2
@@ -38,8 +39,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
         end
     end
 
-    hud.power.bar:AddMarkingFrom0(55, talent_inner_peace)
-    hud.power.bar:AddMarkingFrom0(60, ERALIBTalent:CreateNot(talent_inner_peace))
+    nrj.bar:AddMarkingFrom0(55, talent_inner_peace)
+    nrj.bar:AddMarkingFrom0(60, ERALIBTalent:CreateNot(talent_inner_peace))
 
     -------------
     --- PROCS ---

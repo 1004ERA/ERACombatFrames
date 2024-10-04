@@ -10,12 +10,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     local talent_comunion = ERALIBTalent:Create(115549)
     local talent_rewind = ERALIBTalent:Create(115651)
 
-    local hud = ERAHUD:Create(cFrame, 1.5, false, true, 0, 0.0, 0.0, 1.0, false, 2)
-    ---@cast hud ERAEvokerHUD
-    hud.power.hideFullOutOfCombat = true
-    hud.powerHeight = 12
-
-    ERAEvokerCommonSetup(hud, "TO_RIGHT", 369299, 1, talents, nil, 2)
+    local hud = ERAEvokerCommonSetup(cFrame, 12, "TO_RIGHT", 369299, 1, talents, nil, 2)
 
     if ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_Grid) then
         local grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 360823, "Magic", "Poison")

@@ -160,7 +160,7 @@ function ERAHUDStatusBar:create(parentFrame, x, y, barWidth, barHeight, r, g, b)
     bar.forecastHVisible = false
 
     bar.overlay = CreateFrame("Frame", nil, frame)
-    bar.overlay:SetFrameLevel(2)
+    bar.overlay:SetFrameLevel(5)
     bar.overlay:SetAllPoints()
     bar.markings = {}
     bar.activeMarkings = {}

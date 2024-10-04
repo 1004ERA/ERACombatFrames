@@ -50,8 +50,8 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
         self.strikeCost = cost
     end
 
-    hud.power.bar:AddMarkingFromMax(20)
-    local strikeConsumer = hud.power.bar:AddMarkingFrom0(40)
+    hud.runicPower.bar:AddMarkingFromMax(20)
+    local strikeConsumer = hud.runicPower.bar:AddMarkingFrom0(40)
     function strikeConsumer:ComputeValueOverride(t)
         return hud.strikeCost
     end
@@ -68,7 +68,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
             hud.health.bar:SetPrevisionColor(0.5, 0.5, 1.0)
             additionalH = 0
         end
-        if hud.power.currentPower >= strikeCost or additionalH > 0 then
+        if hud.runicPower.currentPower >= strikeCost or additionalH > 0 then
             local baseH = hud.health.maxHealth * 0.07
             local dmgH = 0.25 * hud.damageTaken.currentDamage
             if (dmgH > baseH) then

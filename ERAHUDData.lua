@@ -109,6 +109,7 @@ end
 ---@field CustomCheckIsKnown nil|fun(this:ERACooldownBase): boolean
 ---@field isKnown boolean
 ---@field isPetSpell boolean
+---@field mustRedrawUtilityLayoutIfChangedStatus boolean
 ---@field private wasKnown boolean
 ---@field protected constructCooldownBase fun(this:ERACooldownBase, hud:ERAHUD, spellID:number, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
 ---@field protected updateCooldownData fun(this:ERACooldownBase, t:number)
@@ -159,7 +160,11 @@ function ERACooldownBase:updateData(t)
         self:clearTimer()
         return
     end
+    local wasAvailable = self.isAvailable
     self:updateCooldownData(t)
+    if self.mustRedrawUtilityLayoutIfChangedStatus and self.isAvailable ~= wasAvailable then
+        self.hud:mustUpdateUtilityLayout()
+    end
 end
 
 ---@class ERACooldown : ERACooldownBase

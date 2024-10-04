@@ -37,6 +37,12 @@ ERACombat_DeathKnight_Blood.lua
 ERACombat_DeathKnight_Frost.lua
 ERACombat_DeathKnight_Unholy.lua
 
+ERACombat_Druid.lua
+ERACombat_Druid_Moonkin.lua
+ERACombat_Druid_Feral.lua
+ERACombat_Druid_Guardian.lua
+ERACombat_Druid_Restoration.lua
+
 ERACombat_Evoker.lua
 ERACombat_Evoker_Devastation.lua
 ERACombat_Evoker_Preservation.lua

@@ -57,24 +57,24 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUD_PseudoResourceBar:updateDisplay(t, combat)
+---@return nil|boolean
+function ERAHUD_PseudoResourceBar:UpdateDisplayReturnVisibility(t, combat)
     if self.showOutOfCombat or combat then
         if self.value > 0 then
             local ratio = self.value / self.max
             if ratio > 1 then ratio = 1 end
             self.bar:SetWidth((self.hud.barsWidth - 2 * self.margin) * ratio)
-            self:show()
         else
             if combat or self.showEmptyOutOfCombat then
                 self.bar:SetWidth(0)
-                self:show()
             else
-                self:hide()
+                return nil
             end
         end
         self:DisplayUpdatedOverride(t, combat)
+        return true
     else
-        self:hide()
+        return nil
     end
 end
 function ERAHUD_PseudoResourceBar:DisplayUpdatedOverride(t, combat)
