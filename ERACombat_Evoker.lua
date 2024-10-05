@@ -248,7 +248,7 @@ function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unr
     hud:AddUtilityAuraOutOfCombat(hud.evoker_leapingBuff)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(374348, talents.renewing), hud.healGroup)
-    if spec ~= 2 then hud:AddUtilityCooldown(hud:AddTrackedCooldown(360995, talents.embrace), hud.healGroup) end
+    if spec ~= 2 then hud:AddUtilityCooldown(hud:AddTrackedCooldown(360995, talents.embrace), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.8 end) end
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(370553, talents.tip), hud.powerUpGroup)
     hud:AddGenericTimer(hud:AddOrTimer(false, hud:AddTrackedCooldown(390386), hud:AddSatedDebuff()), hud.powerUpGroup, 4723908)

@@ -280,7 +280,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(1122, talent_infernal), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(1122, talent_infernal), hud.powerUpGroup, nil, nil, nil, true)
 end
 
 -------------------

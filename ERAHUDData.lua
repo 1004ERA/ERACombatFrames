@@ -255,7 +255,9 @@ end
 ---@class ERACooldownEquipment : ERATimer
 ---@field private __index unknown
 ---@field slotID integer
----@field private hasCooldown boolean
+---@field hasCooldown boolean
+---@field private lastGoodUpdate number
+---@field private lastGoodDuration number
 ERACooldownEquipment = {}
 ERACooldownEquipment.__index = ERACooldownEquipment
 setmetatable(ERACooldownEquipment, { __index = ERATimer })
@@ -291,12 +293,25 @@ function ERACooldownEquipment:updateData(t)
             self.totDuration = duration
             self.remDuration = duration - (t - start)
             if self.remDuration <= self.hud.remGCD + 0.1 then
-                self.remDuration = 0
+                if self.lastGoodUpdate > 0 then
+                    self.remDuration = self.lastGoodDuration - (t - self.lastGoodUpdate)
+                    if self.remDuration < 0 then
+                        self.remDuration = 0
+                    end
+                else
+                    self.remDuration = 0
+                end
+            else
+                self.lastGoodDuration = self.remDuration
+                self.lastGoodUpdate = t
             end
         else
             self.remDuration = 0
+            self.lastGoodDuration = 0
+            self.lastGoodUpdate = 0
         end
     else
+        self.lastGoodUpdate = 0
         if self.hasCooldown then
             self.hasCooldown = false
             self.hud:mustUpdateUtilityLayout()

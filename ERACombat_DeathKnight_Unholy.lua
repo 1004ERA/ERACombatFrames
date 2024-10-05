@@ -174,9 +174,9 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(207289, talent_frenzy), hud.powerUpGroup, nil, -4)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49206, talent_gargoyle), hud.powerUpGroup, nil, -3)
-    hud:AddUtilityCooldown(ERACooldownIgnoringRunes:Create(hud, 42650, 1, talent_army), hud.powerUpGroup, nil, -2)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(207289, talent_frenzy), hud.powerUpGroup, nil, -4, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49206, talent_gargoyle), hud.powerUpGroup, nil, -3, nil, true)
+    hud:AddUtilityCooldown(ERACooldownIgnoringRunes:Create(hud, 42650, 1, talent_army), hud.powerUpGroup, nil, -2, nil, true)
 
     local gnaw = hud:AddTrackedCooldown(49206, talents.raisedead)
     gnaw.isPetSpell = true

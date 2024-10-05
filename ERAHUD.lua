@@ -599,10 +599,10 @@ function ERAHUD:Pack()
     end
 
     -- equipment
-    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET1), self.powerUpGroup, 465875)
-    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET2), self.powerUpGroup, 3610503)
-    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_BACK), self.specialGroup, 530999)
-    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_WAIST), self.specialGroup, 443322)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET1), self.powerUpGroup, 465875, nil, true)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET2), self.powerUpGroup, 3610503, nil, true)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_BACK), self.specialGroup, 530999, nil, false)
+    self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_WAIST), self.specialGroup, 443322, nil, false)
 
     --#endregion
 
@@ -2837,9 +2837,10 @@ end
 ---@param iconID integer|nil
 ---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
+---@param showOnTimer boolean|nil|fun(cd:ERACooldownBase, t:number): boolean
 ---@return ERAHUDUtilityCooldownInGroup
-function ERAHUD:AddUtilityCooldown(data, group, iconID, displayOrder, talent)
-    return ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
+function ERAHUD:AddUtilityCooldown(data, group, iconID, displayOrder, talent, showOnTimer)
+    return ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent, showOnTimer)
 end
 
 ---@param data ERACooldownBase
@@ -2875,9 +2876,10 @@ end
 ---@param group ERAHUDUtilityGroup
 ---@param iconID integer
 ---@param displayOrder number|nil
+---@param showOnTimer boolean
 ---@return ERAHUDUtilityEquipmentInGroup
-function ERAHUD:AddEquipmentIcon(timer, group, iconID, displayOrder)
-    return ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder)
+function ERAHUD:AddEquipmentIcon(timer, group, iconID, displayOrder, showOnTimer)
+    return ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder, showOnTimer)
 end
 
 ---@param timer ERACooldownBagItem

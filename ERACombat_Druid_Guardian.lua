@@ -97,7 +97,7 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     hud:AddAuraOverlay(procMangle, 1, 510822, false, "TOP", false, false, false, false)
 
     local freeMaulRaze = hud:AddTrackedBuff(135286, talent_proc_maulraze)
-    hud:AddAuraOverlay(freeMaulRaze, 1, 510823, false, "LEFT", false, false, false, false)
+    hud:AddAuraOverlay(freeMaulRaze, 1, 774420, false, "LEFT", false, false, false, false)
 
     local freeRegrowth = hud:AddTrackedBuff(372152, talent_cenarius)
     hud:AddAuraOverlay(freeRegrowth, 1, 450929, false, "RIGHT", true, false, false, false)
@@ -195,10 +195,10 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(50334, talent_berszerk), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(102558, talent_incarnation), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(50334, talent_berszerk), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(102558, talent_incarnation), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup, nil, nil, nil, true)
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(200851, talent_sleeper), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(200851, talent_sleeper), hud.defenseGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(61336, talent_survival), hud.defenseGroup)
 end

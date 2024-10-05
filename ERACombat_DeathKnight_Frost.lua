@@ -129,7 +129,7 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(279302, talent_frostwyrm), hud.powerUpGroup, -3)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(47568, talent_empower), hud.powerUpGroup, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(152279, talent_sindragosa), hud.powerUpGroup, -1)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(279302, talent_frostwyrm), hud.powerUpGroup, nil, -3, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(47568, talent_empower), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(152279, talent_sindragosa), hud.powerUpGroup, nil, -1, nil, true)
 end

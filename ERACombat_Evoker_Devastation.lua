@@ -155,9 +155,9 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(355913), hud.healGroup) -- emerald blossom
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(355913), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.8 end) -- emerald blossom
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(375087, talent_dragonrage), hud.powerUpGroup, nil, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(357210, talents.not_maneuverability), hud.powerUpGroup, nil, -1)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(433874, talents.maneuverability), hud.powerUpGroup, nil, -1)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(375087, talent_dragonrage), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(357210, talents.not_maneuverability), hud.powerUpGroup, nil, -1, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(433874, talents.maneuverability), hud.powerUpGroup, nil, -1, nil, true)
 end

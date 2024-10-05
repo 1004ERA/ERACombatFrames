@@ -226,7 +226,7 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     hud:AddKick(felguardStun)
 
     hud:AddUtilityCooldown(tyrantCooldown, hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(111898, talent_felguard), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(111898, talent_felguard), hud.powerUpGroup, nil, nil, nil, true)
 end
 
 -------------------

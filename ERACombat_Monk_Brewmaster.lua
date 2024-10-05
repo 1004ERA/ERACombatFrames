@@ -261,10 +261,10 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(387184, talent_weapons), hud.powerUpGroup, nil, -3)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(132578, talent_niuzao), hud.powerUpGroup, nil, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115399, talent_black_brew), hud.powerUpGroup, nil, -1)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(122278, talent_dampen), hud.defenseGroup, nil, 1.5)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(387184, talent_weapons), hud.powerUpGroup, nil, -3, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(132578, talent_niuzao), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(115399, talent_black_brew), hud.powerUpGroup, nil, -1, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(122278, talent_dampen), hud.defenseGroup, nil, 1.5, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(115176, talent_zenmed), hud.defenseGroup)
 end
 

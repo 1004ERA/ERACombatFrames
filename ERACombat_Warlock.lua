@@ -158,7 +158,7 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
 
     hud:AddBagItemIcon(hud:AddBagItemCooldown(224464, talents.gluttony), hud.healGroup, 135230, nil, true)
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(108416, talents.pact), hud.defenseGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(108416, talents.pact), hud.defenseGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.8 end)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(104773), hud.defenseGroup) -- resolve
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(328774, talents.amplicurse), hud.specialGroup)

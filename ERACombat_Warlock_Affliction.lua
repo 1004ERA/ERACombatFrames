@@ -109,5 +109,5 @@ function ERACombatFrames_WarlockAfflictionSetup(cFrame, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(205180, talent_darkglare), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(205180, talent_darkglare), hud.powerUpGroup, nil, nil, nil, true)
 end

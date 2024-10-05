@@ -660,6 +660,75 @@ function ERAHUDRawPriority:ComputeAvailablePriorityOverride(t)
     return 0
 end
 
+---@class (exact) ERAHUDCooldownTimerItem : ERAHUDTimerItem
+---@field private __index unknown
+---@field cd ERACooldownBase
+---@field ConfirmVisibleOverride nil|fun(cd:ERACooldownBase, t:number): boolean
+ERAHUDCooldownTimerItem = {}
+ERAHUDCooldownTimerItem.__index = ERAHUDCooldownTimerItem
+setmetatable(ERAHUDCooldownTimerItem, { __index = ERAHUDTimerItem })
+
+---@param cd ERACooldownBase
+---@param iconID integer|nil
+---@return ERAHUDCooldownTimerItem
+function ERAHUDCooldownTimerItem:Create(cd, iconID)
+    local forcedIcon
+    if iconID then
+        forcedIcon = true
+    else
+        forcedIcon = false
+        local spellInfo = C_Spell.GetSpellInfo(cd.spellID)
+        iconID = spellInfo.iconID
+    end
+    local x = {}
+    setmetatable(x, ERAHUDCooldownTimerItem)
+    ---@cast x ERAHUDCooldownTimerItem
+    x:constructItem(cd.hud, iconID, forcedIcon, nil)
+    x.cd = cd
+    return x
+end
+
+---@return boolean
+function ERAHUDCooldownTimerItem:checkAdditionalTalent()
+    return self.cd.talentActive
+end
+
+---@param currentIconID integer
+---@return integer
+function ERAHUDCooldownTimerItem:updateIconID(currentIconID)
+    local spellInfo = C_Spell.GetSpellInfo(self.cd.spellID)
+    return spellInfo.iconID
+end
+
+---@param t number
+---@return number
+function ERAHUDCooldownTimerItem:ComputeAvailablePriorityOverride(t)
+    return 0
+end
+
+---@param t number
+function ERAHUDCooldownTimerItem:ComputeDurationOverride(t)
+    if self.ConfirmVisibleOverride and not self.ConfirmVisibleOverride(self.cd, t) then
+        return -1
+    end
+    if self.cd.hasCharges then
+        if self.cd.currentCharges > 0 then
+            if self.cd.currentCharges + 1 >= self.cd.maxCharges then
+                self.icon:SetDesaturated(false)
+                return self.cd.remDuration
+            else
+                return -1
+            end
+        else
+            self.icon:SetDesaturated(true)
+            return self.cd.remDuration
+        end
+    else
+        self.icon:SetDesaturated(false)
+        return self.cd.remDuration
+    end
+end
+
 --#endregion TIMER ITEM
 
 -------------
@@ -1486,7 +1555,8 @@ setmetatable(ERAHUDUtilityCooldownInGroup, { __index = ERAHUDUtilityIconInGroup 
 ---@param iconID integer|nil
 ---@param displayOrder number|nil
 ---@param talent ERALIBTalent|nil
-function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
+---@param showOnTimer boolean|nil|fun(cd:ERACooldownBase, t:number): boolean
+function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent, showOnTimer)
     local cd = {}
     setmetatable(cd, ERAHUDUtilityCooldownInGroup)
     ---@cast cd ERAHUDUtilityCooldownInGroup
@@ -1502,6 +1572,12 @@ function ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, 
     cd.data = data
     cd.currentCharges = -1
     cd.maxCharges = -1
+    if showOnTimer then
+        local onTimer = ERAHUDCooldownTimerItem:Create(data, iconID)
+        if showOnTimer ~= true then
+            onTimer.ConfirmVisibleOverride = showOnTimer
+        end
+    end
     return cd
 end
 
@@ -1629,13 +1705,17 @@ setmetatable(ERAHUDUtilityEquipmentInGroup, { __index = ERAHUDUtilityGenericTime
 ---@param timer ERACooldownEquipment
 ---@param iconID integer
 ---@param displayOrder number|nil
+---@param showOnTimer boolean
 ---@return ERAHUDUtilityEquipmentInGroup
-function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder)
+function ERAHUDUtilityEquipmentInGroup:create(group, timer, iconID, displayOrder, showOnTimer)
     local c = ERAHUDUtilityGenericTimerInGroup:create(group, timer, iconID, displayOrder, nil)
     setmetatable(c, ERAHUDUtilityEquipmentInGroup)
     ---@cast c ERAHUDUtilityEquipmentInGroup
     c.equipment = timer
     c.lastUpdateEquipmentIcon = 0
+    if showOnTimer then
+        ERAHUDEquipmentCooldownTimerItem:Create(timer, iconID)
+    end
     return c
 end
 
@@ -1667,6 +1747,67 @@ function ERAHUDUtilityEquipmentInGroup:SetIconVisibilityOverride(t, combat)
         self.lastUpdateEquipmentIcon = t
         self:refreshIconID()
     end
+end
+
+---@class (exact) ERAHUDEquipmentCooldownTimerItem : ERAHUDTimerItem
+---@field private __index unknown
+---@field cd ERACooldownEquipment
+---@field private getEqTimIconID fun(this:ERAHUDEquipmentCooldownTimerItem): integer|nil
+---@field private lastUpdateIcon number
+ERAHUDEquipmentCooldownTimerItem = {}
+ERAHUDEquipmentCooldownTimerItem.__index = ERAHUDEquipmentCooldownTimerItem
+setmetatable(ERAHUDEquipmentCooldownTimerItem, { __index = ERAHUDTimerItem })
+
+---@param cd ERACooldownEquipment
+---@param iconID integer
+---@return ERAHUDEquipmentCooldownTimerItem
+function ERAHUDEquipmentCooldownTimerItem:Create(cd, iconID)
+    local x = {}
+    setmetatable(x, ERAHUDEquipmentCooldownTimerItem)
+    ---@cast x ERAHUDEquipmentCooldownTimerItem
+    x:constructItem(cd.hud, iconID, false, nil)
+    x.cd = cd
+    x.lastUpdateIcon = 0
+    return x
+end
+
+---@return boolean
+function ERAHUDEquipmentCooldownTimerItem:checkAdditionalTalent()
+    return true
+end
+
+function ERAHUDEquipmentCooldownTimerItem:getEqTimIconID()
+    return GetInventoryItemTexture("player", self.cd.slotID)
+end
+
+---@param currentIconID integer
+---@return integer
+function ERAHUDEquipmentCooldownTimerItem:updateIconID(currentIconID)
+    local fileID = self:getEqTimIconID()
+    if fileID then
+        return fileID
+    else
+        return currentIconID
+    end
+end
+
+---@param t number
+---@return number
+function ERAHUDEquipmentCooldownTimerItem:ComputeAvailablePriorityOverride(t)
+    return 0
+end
+
+---@param t number
+function ERAHUDEquipmentCooldownTimerItem:ComputeDurationOverride(t)
+    if not self.cd.hasCooldown then return -1 end
+    if t - self.lastUpdateIcon > 4 then
+        self.lastUpdateIcon = t
+        local fileID = self:getEqTimIconID()
+        if fileID then
+            self.icon:SetIconTexture(fileID)
+        end
+    end
+    return self.cd.remDuration
 end
 
 --#endregion

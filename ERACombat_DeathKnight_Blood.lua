@@ -203,9 +203,9 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(55233, talent_vblood), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(55233, talent_vblood), hud.healGroup, nil, nil, nil, true)
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49028, talent_drw), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(49028, talent_drw), hud.powerUpGroup, nil, nil, nil, true)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(108199, talent_gorefiend), hud.controlGroup)
 end

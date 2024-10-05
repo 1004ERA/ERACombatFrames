@@ -308,16 +308,16 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddEmptyTimer(hud:AddBuffOnAllPartyMembers(1126), 8, 136078, ERALIBTalent:CreateLevel(9))
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(124974, talents.vigil), hud.healGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(108238, talents.renewal), hud.healGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(124974, talents.vigil), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.8 end)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(108238, talents.renewal), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.7 end)
     if spec ~= 3 then
-        hud:AddUtilityCooldown(hud:AddTrackedCooldown(22842, talents.regen), hud.healGroup)
+        hud:AddUtilityCooldown(hud:AddTrackedCooldown(22842, talents.regen), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.7 end)
     end
 
     hud.wildCooldown = hud:AddTrackedCooldown(319454, talents.wild)
-    hud:AddUtilityCooldown(hud.wildCooldown, hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud.wildCooldown, hud.powerUpGroup, nil, nil, nil, true)
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(22812), hud.defenseGroup) -- bark
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(22812), hud.defenseGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.7 end) -- bark
 
     if talent_dispell then
         hud:AddUtilityDispell(hud:AddTrackedCooldown(2782, talent_dispell), hud.specialGroup, nil, nil, nil, false, true, false, true, false)

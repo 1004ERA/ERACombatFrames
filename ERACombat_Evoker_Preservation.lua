@@ -66,7 +66,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     function statisIcon:HighlightOverride(t, combat)
         return stasisAccTimer.remDuration > 0
     end
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(357210), hud.powerUpGroup, 4622450, 1.5) -- deep breath
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(357210), hud.powerUpGroup, 4622450, 1.5, nil, true) -- deep breath
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(359816, talent_dream_flight), hud.healGroup, nil, -3)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(363534, talent_rewind), hud.healGroup, nil, -2)

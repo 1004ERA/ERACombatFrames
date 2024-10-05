@@ -235,8 +235,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     ---------------
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(101545), hud.movementGroup, nil, 2.5) -- fsk
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(137639, talent_sef), hud.powerUpGroup, nil, -3)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(123904, talent_xuen), hud.powerUpGroup, nil, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit), hud.powerUpGroup, nil, -1)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(137639, talent_sef), hud.powerUpGroup, nil, -3, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(123904, talent_xuen), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit), hud.powerUpGroup, nil, -1, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(122470), hud.defenseGroup, nil, 0) -- karma
 end

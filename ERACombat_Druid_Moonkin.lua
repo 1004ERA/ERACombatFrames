@@ -258,9 +258,9 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     --- utility ---
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(194223, talent_alignment), hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(102560, talent_incarnation), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(194223, talent_alignment), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(102560, talent_incarnation), hud.powerUpGroup, nil, nil, nil, true)
 end
 
 ---@class ERADruidEclipse : ERACombatModule

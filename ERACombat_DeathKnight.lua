@@ -155,7 +155,7 @@ function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(48743, talents.pact), hud.healGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(327574, talents.sacrifice), hud.healGroup)
 
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(383269, talents.necrolimb), hud.powerUpGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(383269, talents.necrolimb), hud.powerUpGroup, nil, nil, nil, true)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(48707), hud.defenseGroup) -- ams
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(51052, talents.amz), hud.defenseGroup)

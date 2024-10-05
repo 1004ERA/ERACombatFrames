@@ -158,10 +158,10 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
 
     hud:AddEmptyTimer(hud:AddOrTimer(true, hud:AddTrackedBuff(403264, talent_attunement), hud:AddTrackedBuff(403265, talent_attunement)), 12, 5199623, talent_attunement)
 
-    hud:AddUtilityCooldown(blossomCooldown, hud.healGroup, nil, nil, talent_blossom_utility)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(403631, ERALIBTalent:CreateAnd(talent_eons, talents.not_maneuverability)), hud.powerUpGroup, nil, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(442204, ERALIBTalent:CreateAnd(talent_eons, talents.maneuverability)), hud.powerUpGroup, nil, -2)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(404977, talent_skip), hud.powerUpGroup, 5201905, -1)
+    hud:AddUtilityCooldown(blossomCooldown, hud.healGroup, nil, nil, talent_blossom_utility, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(403631, ERALIBTalent:CreateAnd(talent_eons, talents.not_maneuverability)), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(442204, ERALIBTalent:CreateAnd(talent_eons, talents.maneuverability)), hud.powerUpGroup, nil, -2, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(404977, talent_skip), hud.powerUpGroup, 5201905, -1, nil, true)
 
     hud:AddUtilityAuraOutOfCombat(mightBuff)
 end
