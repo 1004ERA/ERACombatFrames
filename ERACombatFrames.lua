@@ -5,12 +5,7 @@ ERACombatFrames_initialized = false
 TODO
 - debuffs raid
 - améliorer les charges de brez
-- spellID apex predator proc (feral)
-- moons (balance)
-- starweaver (balance)
-- check spellID moonfire proc (guardian)
-- check spellID rejuv2Def (resto)
-- check call of the elder druid (resto)
+- instincts guardian
 
 ERA_Debug = function()
 

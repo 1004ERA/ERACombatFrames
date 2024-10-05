@@ -441,8 +441,10 @@ end
 ---@param showMoonfire ERALIBTalent
 function ERACombatFrames_Druid_NonBalance(hud, talents, showMoonfire)
     ERACombatFrames_Druid_OffSpecTimer(hud, 102, hud.surgeCooldown, 135730, hud.getLastSurge, nil, talents.surge)
-    ERACombatFrames_Druid_OffSpecDOT(hud, 164812, 18, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, "CovenantSanctum-Reservoir-Idle-NightFae-Spiral3", true, true, nil, showMoonfire, false, false)
-    ERACombatFrames_Druid_OffSpecDOT(hud, 164815, 18, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, "Relic-Fire-TraitGlow", true, true, nil, nil, false, false)
+    local moonfire = ERACombatFrames_Druid_OffSpecDOT(hud, 164812, 18, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, 450920, false, true, nil, showMoonfire, false, true)
+    moonfire:SetVertexColor(ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B)
+    local sunfire = ERACombatFrames_Druid_OffSpecDOT(hud, 164815, 18, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, 450921, false, true, nil, nil, true, false)
+    sunfire:SetVertexColor(ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B)
 end
 ---@param hud DruidHUD
 ---@param talents DruidCommonTalents

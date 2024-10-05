@@ -290,6 +290,9 @@ function ERACooldownEquipment:updateData(t)
         if duration and duration > 0 then
             self.totDuration = duration
             self.remDuration = duration - (t - start)
+            if self.remDuration <= self.hud.remGCD + 0.1 then
+                self.remDuration = 0
+            end
         else
             self.remDuration = 0
         end

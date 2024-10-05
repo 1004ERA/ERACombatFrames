@@ -5,7 +5,7 @@
 ---@param cFrame ERACombatFrame
 ---@param talents DruidCommonTalents
 function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
-    local talent_survival = ERALIBTalent:Create(103185)
+    local talent_survival = ERALIBTalent:Create(103193)
     local talent_cenarius = ERALIBTalent:Create(103218)
     local talent_bristling = ERALIBTalent:Create(103230)
     local talent_sleeper = ERALIBTalent:Create(103207)
@@ -103,7 +103,7 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     hud:AddAuraOverlay(freeRegrowth, 1, 450929, false, "RIGHT", true, false, false, false)
 
     local moonfireProc = hud:AddTrackedBuff(213708, talent_proc_moonfire)
-    hud:AddAuraOverlay(moonfireProc, 1, 450914, false, "BOTTOM", false, true, false, false)
+    hud:AddAuraOverlay(moonfireProc, 1, 450914, false, "BOTTOM", false, false, true, false)
 
     --- bars ---
 
@@ -113,6 +113,8 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     hud:AddAuraBar(hud:AddTrackedBuff(200851, talent_sleeper), nil, 0.0, 0.0, 1.0)
 
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(80313, talent_pulver), nil, 1.0, 0.8, 0.8)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(61336, talent_survival), nil, 0.5, 0.4, 0.0)
 
     --- rotation ---
 

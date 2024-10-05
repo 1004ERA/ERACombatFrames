@@ -66,9 +66,9 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     hud:AddAuraOverlay(clearcast, 2, 450929, false, "RIGHT", true, false, false, false)
 
     local effloDuration = hud:AddTrackedBuff(145205, talent_efflo)
-    local missingEfflo = hud:AddMissingTimerOverlay(effloDuration, false, "Relic-Life-TraitGlow", true, "MIDDLE", false, false, false, false)
+    local missingEfflo = hud:AddMissingTimerOverlay(effloDuration, false, "perks-tick-glow", true, "MIDDLE", false, false, false, false)
     function missingEfflo:ConfirmIsActiveOverride(t, combat)
-        return combat and self.hud.isInGroup and self.hud.groupMembersExcludingSelf > 2
+        return combat and self.hud.isInGroup and self.hud.groupMembersExcludingSelf > 4
     end
 
     --- bars ---
@@ -76,7 +76,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local incarnationDuration = hud:AddTrackedBuff(33891, talent_incarnation_or_reforestation)
     hud:AddAuraBar(incarnationDuration, nil, 1.0, 0.0, 1.0)
 
-    local effloBar = hud:AddAuraBar(effloDuration, nil, 1.0, 0.5, 0.8)
+    local effloBar = hud:AddAuraBar(effloDuration, nil, 1.0, 0.3, 0.5)
     function effloBar:ComputeDurationOverride(t)
         if self.aura.remDuration < self.hud.timerDuration - 1 then
             return self.aura.remDuration
@@ -87,6 +87,8 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
 
     hud:AddAuraBar(hud:AddTrackedBuff(33763), nil, bloomR, bloomG, bloomB)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(155777, talent_germination), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 
     --- rotation ---
 

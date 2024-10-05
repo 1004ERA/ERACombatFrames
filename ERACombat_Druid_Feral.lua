@@ -61,7 +61,7 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local swiftness = hud:AddTrackedBuff(69369)
     hud:AddAuraOverlay(swiftness, 1, 450929, false, "RIGHT", true, false, false, false)
 
-    local biteProc = hud:AddTrackedBuff(1, talent_predator)
+    local biteProc = hud:AddTrackedBuff(391882, talent_predator)
     hud:AddAuraOverlay(biteProc, 1, 510822, false, "TOP", false, false, false, false)
 
     --- bars ---
@@ -69,7 +69,7 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     hud:AddAuraBar(hud:AddTrackedBuff(5217), nil, 1.0, 1.0, 0.0) -- fury
     hud:AddAuraBar(hud:AddTrackedBuff(106951, talent_berserk), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedBuff(102543, talent_incarnation), nil, 1.0, 0.0, 1.0)
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(391888, talent_swarm), nil, 0.0, 0.8, 0.4)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(391889, talent_swarm), nil, 0.0, 0.8, 0.5)
 
     --- rotation ---
 

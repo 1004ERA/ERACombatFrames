@@ -1,6 +1,11 @@
+---@alias BalanceMoonType "NEW" | "HALF" | "FULL"
+---@class MoonsIcon : ERAHUDRotationCooldownIcon
+---@field moonType BalanceMoonType
+
 ---@class DruidBalanceHUD : DruidHUD
 ---@field wrathStacks ERASpellStacks
 ---@field starStacks ERASpellStacks
+---@field moons MoonsIcon
 
 ---@param cFrame ERACombatFrame
 ---@param talents DruidCommonTalents
@@ -22,6 +27,7 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     local talent_moons = ERALIBTalent:Create(109860)
     --local talent_amplification = ERALIBTalent:Create(109865)
     local talent_cosmos = ERALIBTalent:Create(123859)
+    local talent_starweaver = ERALIBTalent:Create(109873)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1)
 
@@ -118,10 +124,12 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --- SAO ---
 
     local cosmos_starsurge = hud:AddTrackedBuff(450360, talent_cosmos)
-    hud:AddAuraOverlay(cosmos_starsurge, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
+    local starweaver_starsurge = hud:AddTrackedBuff(393944, talent_starweaver)
+    hud:AddTimerOverlay(hud:AddOrTimer(false, cosmos_starsurge, starweaver_starsurge), "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
 
     local cosmos_starfall = hud:AddTrackedBuff(450361, talent_cosmos)
-    hud:AddAuraOverlay(cosmos_starfall, 1, 463452, false, "TOP", false, false, false, false)
+    local starweaver_starfall = hud:AddTrackedBuff(393942, talent_starweaver)
+    hud:AddTimerOverlay(hud:AddOrTimer(false, cosmos_starfall, starweaver_starfall), 463452, false, "TOP", false, false, false, false)
 
     --- bars ---
 
@@ -158,6 +166,35 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     hud:AddKick(hud:AddTrackedCooldown(78675, talent_beam))
 
     local shroom = hud:AddRotationCooldown(hud:AddTrackedCooldown(88747, talent_shroom))
+
+    -------------------
+    --#region moons ---
+
+    local moons = hud:AddRotationCooldown(hud:AddTrackedCooldown(274281, talent_moons))
+    ---@cast moons  MoonsIcon
+    hud.moons = moons
+    function hud:DataUpdatedOverride(t)
+        local requiredIconID = C_Spell.GetSpellInfo(274281).iconID
+        ---@type BalanceMoonType
+        local moonType
+        if requiredIconID == 1392542 then
+            moonType = "FULL"
+        elseif requiredIconID == 1392543 then
+            moonType = "HALF"
+        else
+            -- 1392545
+            moonType = "NEW"
+        end
+        if moonType ~= self.moons.moonType then
+            self.moons.moonType = moonType
+            self.moons.icon:SetIconTexture(requiredIconID)
+            self.moons.onTimer.icon:SetIconTexture(requiredIconID)
+            self.moons.availableChargePriority.icon:SetIconTexture(requiredIconID)
+        end
+    end
+
+    --#endregion
+    -------------------
 
     local treants = hud:AddRotationCooldown(hud:AddTrackedCooldown(205636, talent_treants))
     local warrior = hud:AddRotationCooldown(hud:AddTrackedCooldown(202425, talent_warrior))
@@ -198,6 +235,10 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
             end
         end
         return 0
+    end
+
+    function moons.onTimer:ComputeAvailablePriorityOverride(t)
+        return 4
     end
 
     function shroom.onTimer:ComputeAvailablePriorityOverride(t)
