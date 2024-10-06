@@ -64,7 +64,7 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
     hud:AddAuraOverlay(conflag_ShadowConflag, 1, 457658, false, "MIDDLE", false, false, false, false)
     hud:AddAuraOverlay(burn_ShadowConflag, 1, 627609, false, "MIDDLE", false, false, false, false)
 
-    hud:AddAuraOverlay(decimation, 1, 450926, false, "TOP", false, false, false, false)
+    hud:AddAuraOverlay(decimation, 1, 458741, false, "TOP", false, true, false, true)
 
     function hud.shards:PreUpdateDisplayOverride(t, combat)
         if superbolt.remDuration > 0 then
@@ -242,8 +242,6 @@ function ERACombatFrames_WarlockDestructionSetup(cFrame, talents)
             return 0
         end
     end
-
-
 
     function conflag.availableChargePriority:ComputeAvailablePriorityOverride(t)
         return 5

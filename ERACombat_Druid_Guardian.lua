@@ -19,8 +19,11 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     local talent_berszerk = ERALIBTalent:CreateAnd(ERALIBTalent:CreateOr(talent_berszerk_cooldowns, talent_berszerk_maul, talent_berszerk_ironfur), ERALIBTalent:CreateNot(talent_incarnation))
     local talent_convoke = ERALIBTalent:Create(103200)
     local talent_proc_maulraze = ERALIBTalent:Create(103197)
+    local talent_not_proc_maulraze = ERALIBTalent:CreateNotTalent(103197)
     local talent_proc_moonfire = ERALIBTalent:Create(103212)
     local talent_raze = ERALIBTalent:Create(114701)
+    local htalent_ravage = ERALIBTalent:Create(117206)
+    local htalent_wildpower = ERALIBTalent:Create(117209)
 
     local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 3, talents, ERALIBTalent:Create(103293), nil)
     ---@cast hud DruidGuardianHUD
@@ -98,6 +101,9 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
 
     local freeMaulRaze = hud:AddTrackedBuff(135286, talent_proc_maulraze)
     hud:AddAuraOverlay(freeMaulRaze, 1, 774420, false, "LEFT", false, false, false, false)
+    local ravage = hud:AddTrackedBuff(441602, htalent_ravage)
+    --hud:AddAuraOverlay(ravage, 1, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "MIDDLE", false, false, false, false)
+    hud:AddAuraOverlay(ravage, 1, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "LEFT", false, false, true, false, talent_not_proc_maulraze)
 
     local freeRegrowth = hud:AddTrackedBuff(372152, talent_cenarius)
     hud:AddAuraOverlay(freeRegrowth, 1, 450929, false, "RIGHT", true, false, false, false)
@@ -119,29 +125,41 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     --- rotation ---
 
     local mangle = hud:AddRotationCooldown(hud.mangleCooldown)
+
     local regen = hud:AddRotationCooldown(hud:AddTrackedCooldown(22842))
+
     local beam = hud:AddRotationCooldown(hud:AddTrackedCooldown(204066, talent_beam))
+
+    local wildpowerDuration = hud:AddTrackedBuff(441701, htalent_wildpower)
+    hud:AddRotationStacks(wildpowerDuration, 6, 6).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+
     local pulver = hud:AddRotationCooldown(hud:AddTrackedCooldown(80313, talent_pulver))
+
     local bristling = hud:AddRotationCooldown(hud:AddTrackedCooldown(155835, talent_bristling))
 
     --[[
 
     prio
 
-    1 - mangle
-    2 - thrash
-    3 - maul proc
-    4 - raze proc
-    5 - regen
-    6 - beam
-    7 - pulver
-    8 - bristling
+    1 - mangle or thrash depending on number of targets
+    2 - thrash or mangle depending on number of targets
+    3 - ravage if maul or raze proc
+    4 - maul proc
+    5 - raze proc
+    6 - regen
+    7 - beam
+    8 - pulver
+    9 - bristling
 
     ]]
 
     function mangle.onTimer:ComputeAvailablePriorityOverride(t)
         if hud.bearForm.remDuration > 0 then
-            return 1
+            if enemies:GetCount() > 2 then
+                return 2
+            else
+                return 1
+            end
         else
             return 0
         end
@@ -153,7 +171,20 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     end
     function thrashPrio:ComputeAvailablePriorityOverride(t)
         if hud.bearForm.remDuration > 0 then
-            return 2
+            if enemies:GetCount() > 2 then
+                return 1
+            else
+                return 2
+            end
+        else
+            return 0
+        end
+    end
+
+    local ravagePrio = hud:AddPriority(5927623, htalent_ravage)
+    function ravagePrio:ComputeAvailablePriorityOverride(t)
+        if hud.bearForm.remDuration > 0 and freeMaulRaze.remDuration > self.hud.occupied and ravage.remDuration > self.hud.occupied then
+            return 3
         else
             return 0
         end
@@ -161,8 +192,8 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
 
     local maulPrio = hud:AddPriority(132136)
     function maulPrio:ComputeAvailablePriorityOverride(t)
-        if hud.bearForm.remDuration > 0 and freeMaulRaze.remDuration > self.hud.occupied and (enemies:GetCount() < 3 or not talent_raze:PlayerHasTalent()) then
-            return 3
+        if hud.bearForm.remDuration > 0 and freeMaulRaze.remDuration > self.hud.occupied and ravage.remDuration <= self.hud.occupied and (enemies:GetCount() < 3 or not talent_raze:PlayerHasTalent()) then
+            return 4
         else
             return 0
         end
@@ -170,27 +201,27 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
 
     local razePrio = hud:AddPriority(132131, talent_raze)
     function razePrio:ComputeAvailablePriorityOverride(t)
-        if hud.bearForm.remDuration > 0 and freeMaulRaze.remDuration > self.hud.occupied and enemies:GetCount() >= 3 then
-            return 4
+        if hud.bearForm.remDuration > 0 and freeMaulRaze.remDuration > self.hud.occupied and ravage.remDuration <= self.hud.occupied and enemies:GetCount() >= 3 then
+            return 5
         else
             return 0
         end
     end
 
     function regen.onTimer:ComputeAvailablePriorityOverride(t)
-        return 5
-    end
-
-    function beam.onTimer:ComputeAvailablePriorityOverride(t)
         return 6
     end
 
-    function pulver.onTimer:ComputeAvailablePriorityOverride(t)
+    function beam.onTimer:ComputeAvailablePriorityOverride(t)
         return 7
     end
 
-    function bristling.onTimer:ComputeAvailablePriorityOverride(t)
+    function pulver.onTimer:ComputeAvailablePriorityOverride(t)
         return 8
+    end
+
+    function bristling.onTimer:ComputeAvailablePriorityOverride(t)
+        return 9
     end
 
     --- utility ---

@@ -19,6 +19,7 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     local talent_beam = ERALIBTalent:Create(109867)
     local talent_treants = ERALIBTalent:Create(109844)
     local talent_warrior = ERALIBTalent:Create(114648)
+    local talent_dreamstate = ERALIBTalent:Create(109857)
     local talent_shroom = ERALIBTalent:Create(117100)
     local talent_incarnation = ERALIBTalent:Create(109839)
     local talent_alignment = ERALIBTalent:CreateAnd(ERALIBTalent:Create(109849), ERALIBTalent:CreateNot(talent_incarnation))
@@ -28,6 +29,7 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --local talent_amplification = ERALIBTalent:Create(109865)
     local talent_cosmos = ERALIBTalent:Create(123859)
     local talent_starweaver = ERALIBTalent:Create(109873)
+    local htalent_blooming = ERALIBTalent:Create(117196)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1)
 
@@ -111,9 +113,14 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     local solarEclipse = hud:AddTrackedBuff(48517)
     local lunarEclipse = hud:AddTrackedBuff(48518)
 
+    local fasterFiller = hud:AddTrackedBuff(450346, talent_dreamstate)
+
     local starfireCastMarker = hud:AddMarker(0.0, 0.0, 1.0)
     function starfireCastMarker:ComputeTimeOr0IfInvisibleOverride(t)
         local castTime = 2.25 * self.hud.hasteMultiplier
+        if fasterFiller.remDuration + 0.1 > self.hud.occupied then
+            castTime = castTime * 0.6
+        end
         if castTime + self.hud.occupied < lunarEclipse.remDuration then
             return castTime
         else
@@ -130,6 +137,18 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     local cosmos_starfall = hud:AddTrackedBuff(450361, talent_cosmos)
     local starweaver_starfall = hud:AddTrackedBuff(393942, talent_starweaver)
     hud:AddTimerOverlay(hud:AddOrTimer(false, cosmos_starfall, starweaver_starfall), 463452, false, "TOP", false, false, false, false)
+
+    local instaRegrowth = hud:AddTrackedBuff(429438, htalent_blooming)
+    hud:AddAuraOverlay(instaRegrowth, 1, 450929, false, "RIGHT", true, false, false, false)
+
+    local instaFiller = hud:AddTrackedBuff(429474, htalent_blooming)
+    hud:AddAuraOverlay(instaFiller, 1, 460831, false, "BOTTOM", false, true, false, false)
+    local instaStarfire = hud:AddTrackedBuff(157228)
+    local frenzySAO = hud:AddAuraOverlay(instaStarfire, 1, 460831, false, "BOTTOM", false, true, false, false)
+    frenzySAO:SetVertexColor(0.0, 0.0, 1.0)
+    function frenzySAO:ConfirmIsActiveOverride(t)
+        return instaFiller.remDuration <= 0
+    end
 
     --- bars ---
 

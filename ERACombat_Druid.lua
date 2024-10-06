@@ -83,6 +83,10 @@ function ERACombatFrames_DruidSetup(cFrame)
     ERA_Druid_SunF_G = 0.0
     ERA_Druid_SunF_B = 0.0
 
+    ERA_Druid_Vine_R = 0.0
+    ERA_Druid_Vine_G = 0.5
+    ERA_Druid_Vine_B = 1.0
+
     local mkOptions = ERACombatOptions_getOptionsForSpec(nil, 1)
     local ctOptions = ERACombatOptions_getOptionsForSpec(nil, 2)
     local brOptions = ERACombatOptions_getOptionsForSpec(nil, 3)
@@ -402,22 +406,42 @@ end
 ---@param rotateLeft boolean
 ---@param rotateRight boolean
 ---@return ERASAO
-function ERACombatFrames_Druid_OffSpecDOT(hud, spellID, duration, r, g, b, missingTexture, isAtlas, displayMissingBasedOnRecent, form, talent, rotateLeft, rotateRight)
+function ERACombatFrames_Druid_OffSpecDOT(hud, spellID, duration, showFullDuration, r, g, b, missingTexture, isAtlas, displayMissingBasedOnRecent, form, talent, rotateLeft, rotateRight)
     local debuff = hud:AddTrackedDebuffOnTarget(spellID, talent)
     ---@cast debuff OffSpecDOT
     debuff.druid_lastActive = 0
 
     local bar = hud:AddAuraBar(debuff, nil, r, g, b)
-    function bar:ComputeDurationOverride(t)
-        if self.aura.remDuration > 0 then
-            debuff.druid_lastActive = t
-            if self.aura.remDuration < duration * 0.3 - 1 and ((not form) or form.remDuration > 0) then
+    if showFullDuration then
+        bar.overrideShowStacks = true
+        function bar:ComputeDurationOverride(t)
+            if self.aura.remDuration > 0 then
+                debuff.druid_lastActive = t
+                local untilRefresh = self.aura.remDuration - (duration * 0.3 - 1)
+                if untilRefresh < 0 then
+                    self:SetIconDesaturated(false)
+                    self:SetText(nil)
+                else
+                    self:SetIconDesaturated(true)
+                    self:SetText(tostring(math.ceil(untilRefresh)))
+                end
                 return self.aura.remDuration
             else
                 return 0
             end
-        else
-            return 0
+        end
+    else
+        function bar:ComputeDurationOverride(t)
+            if self.aura.remDuration > 0 then
+                debuff.druid_lastActive = t
+                if self.aura.remDuration < duration * 0.3 - 1 and ((not form) or form.remDuration > 0) then
+                    return self.aura.remDuration
+                else
+                    return 0
+                end
+            else
+                return 0
+            end
         end
     end
 
@@ -441,20 +465,20 @@ end
 ---@param showMoonfire ERALIBTalent
 function ERACombatFrames_Druid_NonBalance(hud, talents, showMoonfire)
     ERACombatFrames_Druid_OffSpecTimer(hud, 102, hud.surgeCooldown, 135730, hud.getLastSurge, nil, talents.surge)
-    local moonfire = ERACombatFrames_Druid_OffSpecDOT(hud, 164812, 18, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, 450920, false, true, nil, showMoonfire, false, true)
-    moonfire:SetVertexColor(ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B)
-    local sunfire = ERACombatFrames_Druid_OffSpecDOT(hud, 164815, 18, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, 450921, false, true, nil, nil, true, false)
-    sunfire:SetVertexColor(ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B)
+    local moonfireSAO = ERACombatFrames_Druid_OffSpecDOT(hud, 164812, 18, false, ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B, 450920, false, true, nil, showMoonfire, false, true)
+    moonfireSAO:SetVertexColor(ERA_Druid_MoonF_R, ERA_Druid_MoonF_G, ERA_Druid_MoonF_B)
+    local sunfireSAO = ERACombatFrames_Druid_OffSpecDOT(hud, 164815, 18, false, ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B, 450921, false, true, nil, nil, true, false)
+    sunfireSAO:SetVertexColor(ERA_Druid_SunF_R, ERA_Druid_SunF_G, ERA_Druid_SunF_B)
 end
 ---@param hud DruidHUD
 ---@param talents DruidCommonTalents
 function ERACombatFrames_Druid_NonFeral(hud, talents)
-    local rip = ERACombatFrames_Druid_OffSpecDOT(hud, 1079, 24, ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B, 450919, false, false, hud.catForm, talents.rip, true, false)
-    rip:SetVertexColor(ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B)
-    local rake = ERACombatFrames_Druid_OffSpecDOT(hud, 155722, 15, ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B, 450923, false, false, hud.catForm, talents.rake, false, false)
-    rake:SetVertexColor(ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B)
-    local thrash = ERACombatFrames_Druid_OffSpecDOT(hud, 405233, 15, ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B, 450917, false, false, hud.catForm, talents.thrash, true, false)
-    thrash:SetVertexColor(ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B)
+    local ripSAO = ERACombatFrames_Druid_OffSpecDOT(hud, 1079, 24, true, ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B, 450919, false, false, hud.catForm, talents.rip, true, false)
+    ripSAO:SetVertexColor(ERA_Druid_Rip_R, ERA_Druid_Rip_G, ERA_Druid_Rip_B)
+    local rakeSAO = ERACombatFrames_Druid_OffSpecDOT(hud, 155722, 15, false, ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B, 450923, false, false, hud.catForm, talents.rake, false, false)
+    rakeSAO:SetVertexColor(ERA_Druid_Rake_R, ERA_Druid_Rake_G, ERA_Druid_Rake_B)
+    local thrashSAO = ERACombatFrames_Druid_OffSpecDOT(hud, 405233, 15, false, ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B, 450917, false, false, hud.catForm, talents.thrash, true, false)
+    thrashSAO:SetVertexColor(ERA_Druid_Thras_R, ERA_Druid_Thras_G, ERA_Druid_Thras_B)
 end
 ---@param hud DruidHUD
 ---@param talents DruidCommonTalents

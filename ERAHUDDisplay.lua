@@ -28,11 +28,6 @@
 ---@field private iconVisible boolean
 ---@field private endAnimate fun(this:ERAHUDBar)
 ---@field updateIconTexture fun(this:ERAHUDBar, iconID:integer|nil)
----@field SetColor fun(this:ERAHUDBar, r:number, g:number, b:number)
----@field SetIconDesaturated fun(this:ERAHUDBar, desat:boolean)
----@field SetIconAlpha fun(this:ERAHUDBar, alpha:number)
----@field SetSize fun(this:ERAHUDBar, s:number)
----@field SetText fun(this:ERAHUDBar, txt:string|nil)
 ---@field protected checkTalentsOverride fun(this:ERAHUDBar): boolean
 ---@field protected computeDuration fun(this:ERAHUDBar, t:number)
 ---@field private hide fun(this:ERAHUDBar)
@@ -443,6 +438,7 @@ end
 ---@class ERAHUDAuraBar : ERAHUDSpellIDBar
 ---@field private __index unknown
 ---@field aura ERAAura
+---@field overrideShowStacks boolean
 ---@field private computeDuration fun(this:ERAHUDAuraBar, t:number): number
 ---@field ComputeDurationOverride fun(this:ERAHUDAuraBar, t:number): number
 ERAHUDAuraBar = {}
@@ -467,10 +463,12 @@ end
 ---@param t number
 ---@return number
 function ERAHUDAuraBar:computeDuration(t)
-    if self.aura.stacks > 1 then
-        self:SetText(tostring(self.aura.stacks))
-    else
-        self:SetText(nil)
+    if not self.overrideShowStacks then
+        if self.aura.stacks > 1 then
+            self:SetText(tostring(self.aura.stacks))
+        else
+            self:SetText(nil)
+        end
     end
     return self:ComputeDurationOverride(t)
 end

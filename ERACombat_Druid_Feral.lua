@@ -12,6 +12,9 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local talent_swarm = ERALIBTalent:Create(103175)
     local talent_frenzy = ERALIBTalent:Create(103170)
     local talent_predator = ERALIBTalent:Create(103152)
+    local htalent_ravage = ERALIBTalent:Create(117206)
+    local htalent_vines = ERALIBTalent:Create(117226)
+    local htalent_bursting = ERALIBTalent:Create(117232)
 
     local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 2, talents, ERALIBTalent:Create(103282), nil)
 
@@ -64,12 +67,25 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local biteProc = hud:AddTrackedBuff(391882, talent_predator)
     hud:AddAuraOverlay(biteProc, 1, 510822, false, "TOP", false, false, false, false)
 
+    local ravage = hud:AddTrackedBuff(441585, htalent_ravage)
+    hud:AddAuraOverlay(ravage, 1, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "BOTTOM", false, false, false, false)
+
     --- bars ---
 
     hud:AddAuraBar(hud:AddTrackedBuff(5217), nil, 1.0, 1.0, 0.0) -- fury
     hud:AddAuraBar(hud:AddTrackedBuff(106951, talent_berserk), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedBuff(102543, talent_incarnation), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(391889, talent_swarm), nil, 0.0, 0.8, 0.5)
+
+    local vinesDuration = hud:AddTrackedDebuffOnTarget(439531, htalent_bursting)
+    local vinesBar = hud:AddAuraBar(vinesDuration, nil, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B)
+    function vinesBar:ComputeDurationOverride(t)
+        if dots.enemiesCount > 1 then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     --- rotation ---
 

@@ -5,13 +5,13 @@
 function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local talent_swiftness = ERALIBTalent:Create(103101)
     local talent_ward = ERALIBTalent:Create(103104)
-    local talent_treants = ERALIBTalent:Create(117104)
     local talent_overgrowth = ERALIBTalent:Create(103115)
     local talent_efflo = ERALIBTalent:Create(103111)
     local talent_tranqui = ERALIBTalent:Create(103108)
     local talent_ironbark = ERALIBTalent:Create(103141)
-    --local talent_nourish = ERALIBTalent:Create(103094)
-    local talent_nourish_synthesis = ERALIBTalent:Create(117105)
+    local talent_treants = ERALIBTalent:Create(117104)
+    local talent_nourish = ERALIBTalent:Create(103094)
+    local talent_nourish_synthesis = ERALIBTalent:CreateAnd(ERALIBTalent:Create(117105), talent_nourish)
     local talent_incarnation = ERALIBTalent:Create(103120)
     local talent_convoke = ERALIBTalent:Create(103119)
     local talent_bonus_wild = ERALIBTalent:Create(103123)
@@ -19,6 +19,8 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local talent_reforestation = ERALIBTalent:Create(103125)
     local talent_incarnation_or_reforestation = ERALIBTalent:CreateOr(talent_incarnation, talent_reforestation)
     local talent_germination = ERALIBTalent:Create(103127)
+    local htalent_bursting = ERALIBTalent:Create(117232)
+    local htalent_blooming = ERALIBTalent:Create(117196)
 
     local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 4, talents, nil, talent_bonus_wild)
 
@@ -43,7 +45,8 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
         local ironbDef = grid:AddTrackedBuff(102342, 0, 1, 0.6, 0.4, 0.4, 0.6, 0.4, 0.4, talent_ironbark)
         local bloomDef = grid:AddTrackedBuff(33763, 0, 2, bloomR, bloomG, bloomB, bloomR, bloomG, bloomB)
         local regroDef = grid:AddTrackedBuff(8936, 1, 2, 0.0, 0.8, 0.0, 0.0, 0.8, 0.0)
-        local rejuvDef = grid:AddTrackedBuff(774, 2, 1, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
+        local vinesDef = grid:AddTrackedBuff(439530, 2, 1, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B, htalent_bursting)
+        local rejuvDef = grid:AddTrackedBuff(774, 2, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
         local wildgDef = grid:AddTrackedBuff(48438, 3, 1, 0.7, 1.0, 0.3, 0.7, 1.0, 0.3)
         local rejuv2Def = grid:AddTrackedBuff(155777, 3, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, talent_germination)
 
@@ -71,6 +74,12 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
         return combat and self.hud.isInGroup and self.hud.groupMembersExcludingSelf > 4
     end
 
+    local bloomingDamage = hud:AddTrackedBuff(429474, htalent_blooming)
+    hud:AddAuraOverlay(bloomingDamage, 1, 460831, false, "BOTTOM", false, true, false, false)
+
+    local bloomingHeal = hud:AddTrackedBuff(429438, htalent_blooming)
+    hud:AddAuraOverlay(bloomingHeal, 1, 450929, false, "LEFT", false, false, false, false)
+
     --- bars ---
 
     local incarnationDuration = hud:AddTrackedBuff(33891, talent_incarnation_or_reforestation)
@@ -90,6 +99,8 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(155777, talent_germination), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 
+    local vinesBar = hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(439531, htalent_bursting), nil, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B)
+
     --- rotation ---
 
     local wgrowth = hud:AddRotationCooldown(hud:AddTrackedCooldown(48438))
@@ -100,13 +111,13 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
     local treants = hud:AddRotationCooldown(hud:AddTrackedCooldown(102693, talent_treants))
 
+    hud:AddRotationStacks(hud:AddTrackedBuff(400534, talent_nourish_synthesis), 3, 3)
+
     local swiftness = hud:AddRotationCooldown(hud:AddTrackedCooldown(132158, talent_swiftness))
 
     local overgrowth = hud:AddRotationCooldown(hud:AddTrackedCooldown(203651, talent_overgrowth))
 
     local ironbark = hud:AddRotationCooldown(hud:AddTrackedCooldown(102342, talent_ironbark))
-
-    hud:AddRotationStacks(hud:AddTrackedBuff(400534, talent_nourish_synthesis), 3, 3)
 
     --[[
 
