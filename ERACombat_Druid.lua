@@ -123,13 +123,13 @@ function ERACombatFrames_DruidSetup(cFrame)
     }
 
     if (not mkOptions.disabled) then
-        --ERACombatFrames_DruidMoonkinSetup(cFrame, druidTalents)
+        ERACombatFrames_DruidMoonkinSetup(cFrame, druidTalents)
     end
     if (not ctOptions.disabled) then
-        --ERACombatFrames_DruidFeralSetup(cFrame, druidTalents)
+        ERACombatFrames_DruidFeralSetup(cFrame, druidTalents)
     end
     if (not brOptions.disabled) then
-        --ERACombatFrames_DruidGuardianSetup(cFrame, druidTalents)
+        ERACombatFrames_DruidGuardianSetup(cFrame, druidTalents)
     end
     if (not trOptions.disabled) then
         ERACombatFrames_DruidRestorationSetup(cFrame, druidTalents)

@@ -2114,9 +2114,9 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
 
     ---@type number, number
     local width, height
-    local widthSides = math.min(91, math.max(1, math.min(100, math.min(-offsetX, hud.UtilityMinRightX) / 2)))
+    local widthSides = math.min(128, math.max(1, math.min(-offsetX, hud.UtilityMinRightX) / 2))
     local heightSides = 2 * widthSides
-    local heightTopDown = math.min(101, math.max(1, math.min(100, (-offsetY - hud.UtilityMinBottomY) / 2)))
+    local heightTopDown = math.min(128, math.max(1, (-offsetY - hud.UtilityMinBottomY) / 2))
     local widthTopDown = 2 * heightTopDown
     if position == "LEFT" then
         width = widthSides
