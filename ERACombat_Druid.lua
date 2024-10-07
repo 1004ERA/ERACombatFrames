@@ -302,13 +302,16 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
     end
     hud:AddAuraBar(hud.wildBuff, nil, 1.0, 0.9, 0.5)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(774), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
+    local rejuvOnSelf = hud:AddTrackedBuff(774)
+    hud:AddAuraBar(rejuvOnSelf, nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 
     --#endregion
     ------------------
 
     ---------------------
     --#region UTILITY ---
+
+    hud:AddUtilityAuraOutOfCombat(rejuvOnSelf)
 
     hud:AddEmptyTimer(hud:AddBuffOnAllPartyMembers(1126), 8, 136078, ERALIBTalent:CreateLevel(9))
 

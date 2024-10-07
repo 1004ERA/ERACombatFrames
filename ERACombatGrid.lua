@@ -961,4 +961,5 @@ function ERACombatGrid:RaidDebuffs()
 ]]
     self:AddTrackedDebuff(441362, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_NerubAr) -- ovinax
     self:AddTrackedDebuff(438708, 0, 1, 1.0, 0.0, 0.0, 0.3, 0.5, 0.0, ERALIBTalent_NerubAr) -- anubarash stinging swarm
+    self:AddTrackedDebuff(434705, 0, 1, 1.0, 0.0, 0.0, 0.1, 0.5, 0.5, ERALIBTalent_NerubAr) -- tenderized
 end

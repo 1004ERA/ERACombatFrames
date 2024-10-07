@@ -5,7 +5,7 @@ ERACombatFrames_initialized = false
 TODO
 - debuffs raid
 - améliorer les charges de brez
-- instincts guardian
+- ? icone trinket ?
 
 ERA_Debug = function()
 

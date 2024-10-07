@@ -246,18 +246,17 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     local starfallPrio = hud:AddPriority(236168, talent_starfall)
     function starfallPrio:ComputeAvailablePriorityOverride(t)
-        if starfallDuration.remDuration <= self.hud.occupied then
-            if cosmos_starfall.remDuration > self.hud.occupied then
-                return 2
-            elseif enemies:GetCount() then
-                return 4
-            end
+        if cosmos_starfall.remDuration > self.hud.occupied then
+            return 2
+        elseif starfallDuration.remDuration <= self.hud.occupied and enemies:GetCount() > 1 then
+            return 4
+        else
+            return 0
         end
-        return 0
     end
 
     function moons.onTimer:ComputeAvailablePriorityOverride(t)
-        return 4
+        return 3
     end
 
     function shroom.onTimer:ComputeAvailablePriorityOverride(t)

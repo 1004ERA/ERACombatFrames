@@ -1,4 +1,5 @@
 ---@class ERACombatGrid_DruidRestoration : ERACombatGrid
+---@field hasLifebloom boolean
 
 ---@param cFrame ERACombatFrame
 ---@param talents DruidCommonTalents
@@ -31,6 +32,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local bloomR = 0.0
     local bloomG = 0.9
     local bloomB = 0.5
+    local bloomOnSelf = hud:AddTrackedBuff(33763)
 
     ------------------
     --#region GRID ---
@@ -51,7 +53,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
         local rejuv2Def = grid:AddTrackedBuff(155777, 3, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, talent_germination)
 
         function grid:UpdatedInCombatOverride(t)
-
+            self.hasLifebloom = #(bloomDef.instances) > 0
         end
     else
         grid = nil
@@ -80,6 +82,17 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local bloomingHeal = hud:AddTrackedBuff(429438, htalent_blooming)
     hud:AddAuraOverlay(bloomingHeal, 1, 450929, false, "LEFT", false, false, false, false)
 
+    local missingLifebloom = hud:AddMissingTimerOverlay(bloomOnSelf, false, "Mobile-Herbalism", true, "MIDDLE", false, false, false, false)
+    missingLifebloom:SetScale(0.3)
+    function missingLifebloom:ConfirmIsActiveOverride(t, combat)
+        if not combat then return false end
+        if self.hud.isInGroup or self.hud.groupMembersExcludingSelf > 0 then
+            return grid ~= nil and not grid.hasLifebloom
+        else
+            return true
+        end
+    end
+
     --- bars ---
 
     local incarnationDuration = hud:AddTrackedBuff(33891, talent_incarnation_or_reforestation)
@@ -95,7 +108,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     end
 
 
-    hud:AddAuraBar(hud:AddTrackedBuff(33763), nil, bloomR, bloomG, bloomB)
+    hud:AddAuraBar(bloomOnSelf, nil, bloomR, bloomG, bloomB)
 
     hud:AddAuraBar(hud:AddTrackedBuff(155777, talent_germination), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 

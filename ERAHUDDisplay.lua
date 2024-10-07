@@ -1984,7 +1984,7 @@ end
 ---@param t number
 function ERAHUDUtilityAuraOutOfCombat:updateOutOfCombat(t)
     if self.aura.remDuration > 0 then
-        if self.aura.stacks > 0 then
+        if self.aura.stacks > 1 then
             self.icon:SetMainText(tostring(self.aura.stacks))
         else
             self.icon:SetMainText(nil)
@@ -2074,6 +2074,8 @@ end
 ---@field private isActive boolean
 ---@field private dataActive boolean
 ---@field private animGroup AnimationGroup
+---@field private baseWidth number
+---@field private baseHeight number
 ERASAO = {}
 ERASAO.__index = ERASAO
 
@@ -2141,11 +2143,17 @@ function ERASAO:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rota
     if rotateLeft then
         self.display:SetSize(height, width)
         self.display:SetRotation(math.rad(90))
+        self.baseWidth = height
+        self.baseHeight = width
     elseif rotateRight then
         self.display:SetSize(height, width)
         self.display:SetRotation(math.rad(-90))
+        self.baseWidth = height
+        self.baseHeight = width
     else
         self.display:SetSize(width, height)
+        self.baseWidth = width
+        self.baseHeight = height
     end
 
     self.animGroup = self.display:CreateAnimationGroup()
@@ -2177,6 +2185,11 @@ end
 ---@param b number
 function ERASAO:SetVertexColor(r, g, b)
     self.display:SetVertexColor(r, g, b)
+end
+
+---@param s number
+function ERASAO:SetScale(s)
+    self.display:SetSize(self.baseWidth * s, self.baseHeight * s)
 end
 
 ---@return boolean
