@@ -10,6 +10,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local talent_fae_any = ERALIBTalent:CreateOr(talent_fae_active, talent_fae_passive)
     local talent_chib = ERALIBTalent:Create(124952)
     local talent_sef = ERALIBTalent:Create(124826)
+    local talent_ordered_elements = ERALIBTalent:Create(124823)
     local talent_inner_peace = ERALIBTalent:Create(125021)
     local talent_capacitor = ERALIBTalent:Create(124832)
     local talent_spinning_ignition = ERALIBTalent:Create(124822)
@@ -87,7 +88,6 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
 
     local spinningIgnition = hud:AddTrackedBuff(393057, talent_spinning_ignition)
     hud:AddRotationStacks(spinningIgnition, 30, 30, 988193)
-
 
     local fofMarker = hud:AddMarker(0.8, 0.0, 1.0)
     function fofMarker:ComputeTimeOr0IfInvisibleOverride(t)
@@ -202,6 +202,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
 
     local sefBuff = hud:AddTrackedBuff(137639, talent_sef)
     hud:AddAuraBar(sefBuff, nil, 1.0, 0.0, 1.0)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(451462, talent_ordered_elements), 3565721, 0.8, 0.0, 0.0)
 
     local freespinningBar = hud:AddAuraBar(freespinning, 606543, 0.0, 0.8, 0.2)
     function freespinningBar:ComputeDurationOverride(t)

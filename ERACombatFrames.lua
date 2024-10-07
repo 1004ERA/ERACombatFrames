@@ -6,6 +6,7 @@ TODO
 - debuffs raid
 - améliorer les charges de brez
 - ? icone trinket ?
+- ww ordered elements
 
 ERA_Debug = function()
 

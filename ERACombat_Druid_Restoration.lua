@@ -83,7 +83,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     hud:AddAuraOverlay(bloomingHeal, 1, 450929, false, "LEFT", false, false, false, false)
 
     local missingLifebloom = hud:AddMissingTimerOverlay(bloomOnSelf, false, "Mobile-Herbalism", true, "MIDDLE", false, false, false, false)
-    missingLifebloom:SetScale(0.3)
+    missingLifebloom:SetMaxSize(64, 64)
     function missingLifebloom:ConfirmIsActiveOverride(t, combat)
         if not combat then return false end
         if self.hud.isInGroup or self.hud.groupMembersExcludingSelf > 0 then
