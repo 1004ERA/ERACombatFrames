@@ -62,7 +62,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     ---@type ERACombatGrid|nil
     local grid
     if ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_Grid) then
-        grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 115450, "Magic", "Poison", "Disease")
+        grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_GridByRole), hud, 2, 115450, "Magic", "Poison", "Disease")
         ---@cast grid ERACombatGrid_MonkMistweaver
         grid.invigoratingStandardHealing = 0
         grid.invigoratingPredictedHealing = 0

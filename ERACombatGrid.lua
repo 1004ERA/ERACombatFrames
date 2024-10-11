@@ -73,19 +73,20 @@ ERACombatGrid_counter = 0
 
 ---comment
 ---@param cFrame ERACombatFrame
----@param anchor string
+---@param groupByRole boolean
+---@param hud ERAHUD
 ---@param spec number
 ---@param dispellID number
 ---@param ... string dispell types
 ---@return ERACombatGrid
-function ERACombatGrid:Create(cFrame, anchor, spec, dispellID, ...)
+function ERACombatGrid:Create(cFrame, groupByRole, hud, spec, dispellID, ...)
     local g = {}
     setmetatable(g, ERACombatGrid)
 
     g.isGridVisible = true -- ERACombatOptions_IsSpecModuleActive(spec, ERACombatOptions_Grid)
-    g.anchor = anchor
-    g.x = ERAHUD_HealerOffsetX - ERAHUD_TimerIconSize
-    g.y = ERAHUD_HealerTimerOffsetY + 2 * ERAHUD_TimerIconSize
+    g.groupByRole = groupByRole
+    g.x = hud.offsetX - ERAHUD_TimerIconSize
+    g.y = hud.offsetY + 2 * ERAHUD_TimerIconSize
 
     -- unités
     g.units = {}
@@ -159,7 +160,7 @@ function ERACombatGrid:Pack()
     ERACombatGrid_counter = ERACombatGrid_counter + 1
     self.frame.grid = self
     self.frame:SetSize(1024, 1024)
-    self.frame:SetPoint(self.anchor, UIParent, "CENTER", self.x, self.y)
+    self.frame:SetPoint("BOTTOMRIGHT", UIParent, "CENTER", self.x, self.y)
     if (self.isGridVisible) then
         self.frame:SetAttribute("template", "ERACombatGridPlayerFrame")
     else
@@ -169,6 +170,8 @@ function ERACombatGrid:Pack()
     self.frame:SetAttribute("showRaid", true)
     self.frame:SetAttribute("showPlayer", true)
     self.frame:SetAttribute("showSolo", false)
+
+    --[[
     if (self.anchor == "TOP" or self.anchor == "TOPRIGHT" or self.anchor == "TOPLEFT") then
         self.frame:SetAttribute("point", "TOP")
     else
@@ -179,11 +182,20 @@ function ERACombatGrid:Pack()
     else
         self.frame:SetAttribute("columnAnchorPoint", "RIGHT")
     end
-    self.frame:SetAttribute("maxColumns", 6)
+    ]] --
+    self.frame:SetAttribute("columnAnchorPoint", "RIGHT")
+
+    self.frame:SetAttribute("maxColumns", 8)
     self.frame:SetAttribute("unitsPerColumn", 8)
     self.frame:SetAttribute("sortMethod", "INDEX")
-    self.frame:SetAttribute("groupBy", "ASSIGNEDROLE")
-    self.frame:SetAttribute("groupingOrder", "MAINTANK,MAINASSIST,TANK,HEALER,DAMAGER,NONE")
+    if self.groupByRole then
+        self.frame:SetAttribute("groupBy", "ASSIGNEDROLE")
+    else
+        self.frame:SetAttribute("groupBy", "GROUP")
+    end
+    self.frame:SetAttribute("point", "BOTTOM")
+    --self.frame:SetAttribute("point", "BOTTOMRIGHT")
+    self.frame:SetAttribute("groupingOrder", "MAINTANK,TANK,HEALER,MAINASSIST,DAMAGER,NONE")
     self.frame.initialConfigFunction = function(grid, unitframeName)
         ERACombatGrid_initialConfigFunction(grid, _G[unitframeName])
     end
@@ -396,6 +408,10 @@ function ERACombatGrid_initialConfigFunction(gridframe, unitframe)
         unitframe.dispellMark:Hide()
         unitframe.dispellable = false
 
+        unitframe.roleIcon = unitframe.mainFrame:CreateTexture(nil, "ARTWORK")
+        unitframe.roleIcon:SetSize(16, 16)
+        unitframe.roleIcon:SetPoint("TOPRIGHT", unitframe.mainFrame, "TOPRIGHT", 0, 0)
+
         unitframe.deadLine1 = unitframe.mainFrame:CreateLine(nil, "OVERLAY", "ERACombatGridPlayerDeadLine")
         ---@cast mf Frame
         unitframe.deadLine1:SetStartPoint("BOTTOMLEFT", mf, ERACombatGrid_HealthOffsetFromMainFrame, ERACombatGrid_HealthOffsetFromMainFrame)
@@ -469,23 +485,17 @@ end
 
 function ERACombatGridUnitPrototype:updateMemberStatus()
     self.role = UnitGroupRolesAssigned(self.unit)
+    ---@type Texture
+    local roleIcon = self.roleIcon
     if (self.isThisPlayer) then
-        self.defBR = 0.0
-        self.defBG = 0.8
-        self.defBB = 1.0
+        roleIcon:SetAtlas("Icon-WoW")
     else
         if (self.role == "TANK") then
-            self.defBR = 0.8
-            self.defBG = 0.0
-            self.defBB = 0.8
+            roleIcon:SetAtlas("GM-icon-role-tank")
         elseif (self.role == "HEALER") then
-            self.defBR = 0.0
-            self.defBG = 0.8
-            self.defBB = 0.1
+            roleIcon:SetAtlas("GM-icon-role-healer")
         else
-            self.defBR = 0.3
-            self.defBG = 0.3
-            self.defBB = 0.3
+            roleIcon:SetTexture(nil)
         end
     end
 end
@@ -629,11 +639,10 @@ function ERACombatGridUnitPrototype_updateAura(t, expirationTime, durAura, stack
     else
         auraRemDuration = 4096
     end
-    if (not durAura or durAura < auraRemDuration) then
+    if ((not durAura) or durAura < auraRemDuration) then
         durAura = auraRemDuration
     end
     if (not (stacks and stacks > 0)) then
-        --auraStacks = 1 corrigé 20230721, possible bug
         stacks = 1
     end
     array[def.indexInActiveAuras]:auraFound(auraRemDuration, durAura, stacks)
@@ -644,31 +653,28 @@ function ERACombatGridUnitPrototype:update(t)
     if (self.grid.isGridVisible) then
         local threat = UnitThreatSituation(self.unit)
         local isTanking = threat and threat >= 2
+        if threat and threat >= 2 then
+            self:setBorder(1.0, 0.0, 0.0)
+        else
+
+        end
         if (UnitIsUnit("target", self.unit)) then
-            if (self.isThisPlayer) then
-                self:setBorder(1.0, 0.5, 1.0)
+            if (isTanking) then
+                self:setBorder(1.0, 0.5, 0.0)
             else
-                if (isTanking) then
-                    self:setBorder(1.0, 1.0, 1.0)
-                else
-                    self:setBorder(1.0, 0.5, 0.5)
-                end
+                self:setBorder(1.0, 1.0, 1.0)
             end
         else
             if (isTanking) then
                 self:setBorder(1.0, 0.0, 0.0)
             else
-                self:setBorder(self.defBR, self.defBG, self.defBB)
+                self:setBorder(0.3, 0.3, 0.3)
             end
         end
     end
 
     local dispellable = false
     for i = 1, 40 do
-        --[[
-        CHANGE 11
-        local _, _, stacks, type, durAura, expirationTime, _, isStealable, _, spellID = UnitDebuff(self.unit, i)
-        ]] --
         local auraInfo = C_UnitAuras.GetDebuffDataByIndex(self.unit, i)
         if (auraInfo) then
             local td = self.grid.activeTrackedDebuffsFetcher[auraInfo.spellId]
@@ -719,10 +725,6 @@ function ERACombatGridUnitPrototype:update(t)
     end
 
     for i = 1, 40 do
-        --[[
-        CHANGE 11
-        local _, _, stacks, _, durAura, expirationTime, _, _, _, spellID = UnitBuff(self.unit, i, "PLAYER")
-        ]] --
         local auraInfo = C_UnitAuras.GetBuffDataByIndex(self.unit, i, "PLAYER")
         if (auraInfo) then
             local tb = self.grid.activeTrackedBuffsFetcher[auraInfo.spellId]
@@ -767,6 +769,7 @@ ERACombatGridAuraDefinition.__index = ERACombatGridAuraDefinition
 
 ---@class ERACombatGridAuraDefinition
 ---@field instances ERACombatGridAuraInstance[]
+---@field displayAsMaxStacks integer
 
 function ERACombatGridAuraDefinition:create(g, indexInAllAuras, spellID, isDebuff, position, priority, rC, gC, bC, rB, gB, bB, talent)
     local a = {}
@@ -809,11 +812,16 @@ function ERACombatGridAuraDefinition:updateDisplay(instance)
 end
 function ERACombatGridAuraDefinition:updateDisplayDefault(instance)
     if (instance.remDuration > 0) then
-        ERAPieControl_SetOverlayValue(instance, 1 - instance.remDuration / instance.totDuration)
-        if (instance.stacks > 1) then
-            instance.text:SetText(instance.stacks)
-        else
+        if self.displayAsMaxStacks and self.displayAsMaxStacks > 0 then
+            ERAPieControl_SetOverlayValue(instance, 1 - (instance.stacks / self.displayAsMaxStacks))
             instance.text:SetText(nil)
+        else
+            ERAPieControl_SetOverlayValue(instance, 1 - instance.remDuration / instance.totDuration)
+            if (instance.stacks > 1) then
+                instance.text:SetText(instance.stacks)
+            else
+                instance.text:SetText(nil)
+            end
         end
         instance:show()
     else
@@ -959,7 +967,7 @@ function ERACombatGrid:RaidDebuffs()
 
     self:AddTrackedDebuff(spellID, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_Nathria)
 ]]
-    self:AddTrackedDebuff(441362, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_NerubAr) -- ovinax
-    self:AddTrackedDebuff(438708, 0, 1, 1.0, 0.0, 0.0, 0.3, 0.5, 0.0, ERALIBTalent_NerubAr) -- anubarash stinging swarm
-    self:AddTrackedDebuff(434705, 0, 1, 1.0, 0.0, 0.0, 0.1, 0.5, 0.5, ERALIBTalent_NerubAr) -- tenderized
+    self:AddTrackedDebuff(441362, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, ERALIBTalent_NerubAr)                         -- ovinax
+    self:AddTrackedDebuff(438708, 0, 1, 1.0, 0.0, 0.0, 0.3, 0.5, 0.0, ERALIBTalent_NerubAr)                         -- anubarash stinging swarm
+    self:AddTrackedDebuff(434705, 0, 1, 1.0, 0.0, 0.0, 1.0, 0.5, 0.5, ERALIBTalent_NerubAr).displayAsMaxStacks = 20 -- tenderized
 end

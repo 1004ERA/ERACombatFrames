@@ -113,12 +113,12 @@
         </Layers>
     </Frame>
 
-    <Frame name="ERACombatOptionsWindow" parent="UIParent" hidden="true" inherits="BackdropTemplate">
+    <Frame name="ERACombatOptionsWindow" parent="UIParent" hidden="true" frameLevel="10" inherits="BackdropTemplate">
         <KeyValues>
             <KeyValue key="backdropInfo" value="BACKDROP_DIALOG_32_32" type="global"/>
             <KeyValue key="backdropColor" value="TOOLTIP_DEFAULT_BACKGROUND_COLOR" type="global"/>
         </KeyValues>
-        <Size x="999" y="444"/>
+        <Size x="1004" y="555"/>
         <Anchors>
             <Anchor point="TOP" relativePoint="TOP" x="0" y ="-32"/>
         </Anchors>
@@ -171,10 +171,15 @@
                     <Anchor point="TOPLEFT" x="16" y="-264"/>
                 </Anchors>
             </CheckButton>
+            <CheckButton parentKey="GridByRole" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="16" y="-286"/>
+                </Anchors>
+            </CheckButton>
 
             <CheckButton parentKey="TankWindow" inherits="UICheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" x="16" y="-286"/>
+                    <Anchor point="TOPLEFT" x="16" y="-308"/>
                 </Anchors>
             </CheckButton>
 

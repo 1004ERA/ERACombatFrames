@@ -31,6 +31,7 @@ end
 ---@field Utility CheckButton
 ---@field SAO CheckButton
 ---@field Grid CheckButton
+---@field GridByRole CheckButton
 ---@field TankWindow CheckButton
 ---@field currentSpec ERACombatSpecOptions|nil
 
@@ -55,6 +56,7 @@ ERACombatOptions_FrameContentWidth = 1004
 
 ERACombatOptions_TankWindow = "damage chart"
 ERACombatOptions_Grid = "group/raid frames"
+ERACombatOptions_GridByRole = "grfbr"
 
 ---@param classID integer
 ---@param specID integer
@@ -75,6 +77,12 @@ function ERACombatOptions_addSpecOption(classID, specID, optionName)
         spec[optionName] = true
     end
 end
+---@param classID integer
+---@param specID integer
+function ERACombatOptions_addGridOption(classID, specID)
+    ERACombatOptions_addSpecOption(classID, specID, ERACombatOptions_Grid)
+    ERACombatOptions_addSpecOption(classID, specID, ERACombatOptions_GridByRole)
+end
 
 ---@param spec ERACombatSpecOptions
 ---@return boolean
@@ -88,14 +96,14 @@ function ERACombatOptions_setup(classID)
         ERACombatOptionsVariables = {}
     end
 
-    ERACombatOptions_addSpecOption(2, 1, ERACombatOptions_Grid)        -- paladin holy
-    ERACombatOptions_addSpecOption(5, 1, ERACombatOptions_Grid)        -- priest disc
-    ERACombatOptions_addSpecOption(5, 2, ERACombatOptions_Grid)        -- priest holy
+    ERACombatOptions_addGridOption(2, 1)                               -- paladin holy
+    ERACombatOptions_addGridOption(5, 1)                               -- priest disc
+    ERACombatOptions_addGridOption(5, 2)                               -- priest holy
     ERACombatOptions_addSpecOption(6, 1, ERACombatOptions_TankWindow)  -- dk blood
-    ERACombatOptions_addSpecOption(10, 2, ERACombatOptions_Grid)       -- monk heal
-    ERACombatOptions_addSpecOption(11, 4, ERACombatOptions_Grid)       -- druid heal
+    ERACombatOptions_addGridOption(10, 2)                              -- monk heal
+    ERACombatOptions_addGridOption(11, 4)                              -- druid heal
     ERACombatOptions_addSpecOption(12, 2, ERACombatOptions_TankWindow) -- dh vengeance
-    ERACombatOptions_addSpecOption(13, 2, ERACombatOptions_Grid)       -- evo heal
+    ERACombatOptions_addGridOption(13, 2)                              -- evo heal
 
     local classOptions = ERACombatOptionsVariables[classID]
     if (not classOptions) then
@@ -118,14 +126,17 @@ function ERACombatOptions_setup(classID)
     local cbxUtility = w.Utility
     local cbxSAO = w.SAO
     local cbxGrid = w.Grid
+    local cbxGridByRole = w.GridByRole
     local cbxTankWindow = w.TankWindow
     ---@cast cbxUtility unknown
     ---@cast cbxSAO unknown
     ---@cast cbxGrid unknown
+    ---@cast cbxGridByRole unknown
     ---@cast cbxTankWindow unknown
     cbxUtility.Text:SetText("utility cooldowns and icons")
     cbxSAO.Text:SetText("spell activation overlay")
     cbxGrid.Text:SetText("group/raid frame")
+    cbxGridByRole.Text:SetText("group/raid frame : display by role rather than by groups")
     cbxTankWindow.Text:SetText("damage taken chart")
 end
 
@@ -190,9 +201,17 @@ function ERACombatOptions_open()
     local grid = specOptions[ERACombatOptions_Grid]
     if grid == nil then
         w.Grid:Hide()
+        w.GridByRole:Hide()
     else
         w.Grid:SetChecked(grid)
         w.Grid:Show()
+        local GridByRoles = specOptions[ERACombatOptions_GridByRole]
+        if GridByRoles == nil then
+            w.GridByRole:Hide()
+        else
+            w.GridByRole:SetChecked(GridByRoles)
+            w.GridByRole:Show()
+        end
     end
 
     local tw = specOptions[ERACombatOptions_TankWindow]
@@ -221,6 +240,7 @@ function ERACombatOptions_confirmAndReload()
         w.currentSpec.hideSAO = not w.SAO:GetChecked()
         if w.currentSpec[ERACombatOptions_Grid] ~= nil then
             w.currentSpec[ERACombatOptions_Grid] = w.Grid:GetChecked()
+            w.currentSpec[ERACombatOptions_GridByRole] = w.GridByRole:GetChecked()
         end
         if w.currentSpec[ERACombatOptions_TankWindow] ~= nil then
             w.currentSpec[ERACombatOptions_TankWindow] = w.TankWindow:GetChecked()

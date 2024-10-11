@@ -6,7 +6,7 @@ TODO
 - debuffs raid
 - améliorer les charges de brez
 - ? icone trinket ?
-- ww ordered elements
+- special orbital strike
 
 ERA_Debug = function()
 

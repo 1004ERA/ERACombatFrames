@@ -25,6 +25,9 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
     local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 4, talents, nil, talent_bonus_wild)
 
+    local rejuv2OnSelf = hud:AddTrackedBuff(155777, talent_germination)
+    hud:AddUtilityAuraOutOfCombat(rejuv2OnSelf)
+
     ERACombatFrames_Druid_NonBalance(hud, talents, ERALIBTalentTrue)
     ERACombatFrames_Druid_NonFeral(hud, talents)
     ERACombatFrames_Druid_NonGuardian(hud, talents)
@@ -40,7 +43,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     ---@type ERACombatGrid|nil
     local grid
     if ERACombatOptions_IsSpecModuleActive(4, ERACombatOptions_Grid) then
-        grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 4, 88423, "Magic", "Poison", "Curse")
+        grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(4, ERACombatOptions_GridByRole), hud, 4, 88423, "Magic", "Poison", "Curse")
         ---@cast grid ERACombatGrid_DruidRestoration
 
         -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
@@ -110,7 +113,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
     hud:AddAuraBar(bloomOnSelf, nil, bloomR, bloomG, bloomB)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(155777, talent_germination), nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
+    hud:AddAuraBar(rejuv2OnSelf, nil, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
 
     local vinesBar = hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(439531, htalent_bursting), nil, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B)
 

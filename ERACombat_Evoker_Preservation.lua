@@ -13,7 +13,7 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
     local hud = ERAEvokerCommonSetup(cFrame, 12, "TO_RIGHT", 369299, 1, talents, nil, 2)
 
     if ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_Grid) then
-        local grid = ERACombatGrid:Create(cFrame, "BOTTOMRIGHT", 2, 360823, "Magic", "Poison")
+        local grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_GridByRole), hud, 2, 360823, "Magic", "Poison")
         grid:AddTrackedBuff(364343, 0, 1, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, nil) -- echo
         grid:AddTrackedBuff(366155, 1, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, nil) -- reversion
         grid:AddTrackedBuff(355941, 2, 1, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, nil) -- breath

@@ -29,6 +29,10 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --local talent_amplification = ERALIBTalent:Create(109865)
     local talent_cosmos = ERALIBTalent:Create(123859)
     local talent_starweaver = ERALIBTalent:Create(109873)
+    local talent_orbital_strike = ERALIBTalent:Create(109855)
+    local talent_not_orbital_strike = ERALIBTalent:CreateNotTalent(109855)
+    local talent_alignment_with_orbital_strike = ERALIBTalent:CreateAnd(talent_alignment, talent_orbital_strike)
+    local talent_alignment_without_orbital_strike = ERALIBTalent:CreateAnd(talent_alignment, talent_not_orbital_strike)
     local htalent_blooming = ERALIBTalent:Create(117196)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1)
@@ -177,7 +181,8 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     --hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(450214, talent_amplification), nil, 1.0, 0.0, 1.0)
 
-    --hud:AddAuraBar(hud:AddTrackedBuff(194223, talent_alignment), nil, 1.0, 0.0, 1.0)
+    --hud:AddAuraBar(hud:AddTrackedBuff(194223, talent_alignment_without_orbital_strike), nil, 1.0, 0.0, 1.0)
+    --hud:AddAuraBar(hud:AddTrackedBuff(383410, talent_alignment_with_orbital_strike), nil, 1.0, 0.0, 1.0)
     --hud:AddAuraBar(hud:AddTrackedBuff(102560, talent_incarnation), nil, 1.0, 0.0, 1.0)
 
     --- rotation ---
@@ -277,7 +282,8 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --- utility ---
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup, nil, nil, nil, true)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(194223, talent_alignment), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(194223, talent_alignment_without_orbital_strike), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(383410, talent_alignment_with_orbital_strike), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(102560, talent_incarnation), hud.powerUpGroup, nil, nil, nil, true)
 end
 

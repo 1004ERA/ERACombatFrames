@@ -148,8 +148,8 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private castVisible boolean
 ---@field private events unknown
 ---@field private timeOrigin number
----@field private offsetX number
----@field private offsetY number
+---@field offsetX number
+---@field offsetY number
 ---@field private SAO ERASAO[]
 ---@field private activeSAO ERASAO[]
 ---@field private rotation ERAHUDRotationIcon[]
@@ -507,8 +507,7 @@ function ERAHUD:Pack()
         racialGroup = self.powerUpGroup
     elseif (r == 3) then
         -- dwarf
-        racialSpellID = 20594
-        racialGroup = self.defenseGroup
+        self:AddUtilityDispell(self:AddTrackedCooldown(58984), self.defenseGroup, nil, nil, nil, true, true, true, true, true)
     elseif (r == 4) then
         -- night elf
         racialSpellID = 58984
@@ -574,9 +573,8 @@ function ERAHUD:Pack()
         racialSpellID = 287712
         racialGroup = self.controlGroup
     elseif (r == 34) then
-        -- dark iron
-        racialSpellID = 265221
-        racialGroup = self.powerUpGroup
+        -- dark iron dwarf
+        self:AddUtilityDispell(self:AddTrackedCooldown(265221), self.powerUpGroup, nil, nil, nil, true, true, true, true, true)
     elseif (r == 35) then
         -- vulpera
         racialSpellID = 312411
