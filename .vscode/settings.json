@@ -18,6 +18,7 @@
         "SlashCmdList",
         "class",
         "ERACombatOptionsWindow",
-        "ERACombatFrameMain"
+        "ERACombatFrameMain",
+        "SOUND"
     ]
 }

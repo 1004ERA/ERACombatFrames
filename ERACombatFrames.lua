@@ -6,7 +6,7 @@ TODO
 - debuffs raid
 - améliorer les charges de brez
 - ? icone trinket ?
-- special orbital strike
+- grid : dispell types based on talents
 
 ERA_Debug = function()
 
@@ -41,7 +41,7 @@ function ERACombatFrames_event(event, ...)
         --ERACombatOptions_initialize()
         local cFrame = ERACombatFrame:Create()
         if (classID == 2) then
-            --ERACombatFrames_PaladinSetup(cFrame)
+            ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 9) then

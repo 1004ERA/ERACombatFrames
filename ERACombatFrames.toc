@@ -54,6 +54,8 @@ ERACombat_Monk_Mistweaver.lua
 ERACombat_Monk_Windwalker.lua
 
 ERACombat_Paladin.lua
+ERACombat_Paladin_Holy.lua
+ERACombat_Paladin_Protection.lua
 ERACombat_Paladin_Retribution.lua
 
 ERACombat_Warlock.lua

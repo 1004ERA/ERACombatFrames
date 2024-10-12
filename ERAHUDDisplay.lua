@@ -797,11 +797,12 @@ end
 ---@param currentCharges integer
 ---@param maxCharges integer
 ---@param remdurDesat number
+---@param checkUsable boolean
 ---@param hideIfAvailable boolean
 ---@param forceHighlight boolean
 ---@param forceHighlightValue boolean
 ---@param t number
-function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, hideIfAvailable, forceHighlight, forceHighlightValue, t)
+function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceHighlight, forceHighlightValue, t)
     if data.isKnown then
         local available
         if data.hasCharges then
@@ -820,10 +821,10 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
                 icon:SetSecondaryText(txt)
             end
             available = data.currentCharges >= data.maxCharges
-            icon:SetDesaturated(data.currentCharges == 0)
+            icon:SetDesaturated(data.currentCharges == 0 or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
         else
             icon:SetSecondaryText(nil)
-            icon:SetDesaturated(data.remDuration >= remdurDesat)
+            icon:SetDesaturated(data.remDuration >= remdurDesat or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
             available = data.remDuration <= 0
         end
         if available and hideIfAvailable then
@@ -906,6 +907,7 @@ end
 ---@field private currentCharges integer
 ---@field private maxCharges integer
 ---@field data ERACooldownBase
+---@field checkUsable boolean
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
 ---@field HighlightOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
@@ -963,7 +965,7 @@ function ERAHUDRotationCooldownIcon:update(t, combat)
         forceHighlight = false
         forceHighlightValue = false
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, not combat, forceHighlight, forceHighlightValue, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     if self.data.isKnown then
@@ -1539,7 +1541,7 @@ end
 ---@field private __index unknown
 ---@field update fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field HighlightOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean): boolean
----@field protected UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
+---@field UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field data ERACooldownBase
 ---@field ConfirmShowOverride nil|fun(this:ERAHUDUtilityCooldownInGroup): boolean
 ---@field private currentCharges integer
@@ -1607,7 +1609,7 @@ function ERAHUDUtilityCooldownInGroup:update(t, combat)
         forceHighlight = false
         forceHighlightValue = false
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, not combat, forceHighlight, forceHighlightValue, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     self:UpdatedOverride(t, combat)
@@ -2365,6 +2367,47 @@ function ERASAOMissingTimer:getIsActive(t, combat)
     return self.timer.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
 end
 
+--- BASED ON ACTIVATION ---
+
+---@class (exact) ERASAOActivation : ERASAO
+---@field private __index unknown
+---@field private spellID integer
+ERASAOActivation = {}
+ERASAOActivation.__index = ERASAOActivation
+setmetatable(ERASAOActivation, { __index = ERASAO })
+
+---@param spellID integer
+---@param hud ERAHUD
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@param offsetX number
+---@param offsetY number
+---@return ERASAOActivation
+function ERASAOActivation:create(spellID, hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    local a = {}
+    setmetatable(a, ERASAOActivation)
+    ---@cast a ERASAOActivation
+    a.spellID = spellID
+    a:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    return a
+end
+
+---@return boolean
+function ERASAOActivation:checkTalentSAO()
+    return true
+end
+
+---@param combat boolean
+---@param t number
+function ERASAOActivation:getIsActive(t, combat)
+    return IsSpellOverlayed(self.spellID)
+end
 
 --#endregion
 

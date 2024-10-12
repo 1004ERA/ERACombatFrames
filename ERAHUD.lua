@@ -2701,6 +2701,20 @@ function ERAHUD:AddAuraOverlay(aura, minStacks, texture, isAtlas, position, flip
     return ERASAOAura:create(aura, minStacks, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
+---@param spellID integer
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@return ERASAOActivation
+function ERAHUD:AddOverlayBasedOnSpellActivation(spellID, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOActivation:create(spellID, self, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+end
+
 ---@param timer ERATimer
 ---@param texture string|integer
 ---@param isAtlas boolean
