@@ -33,9 +33,8 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
 
     ERACombatFrames_PaladinNonHealerCleanse(hud, talents)
 
-    function hud:AdditionalCLEU(t)
-        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" and spellID == 407480 then
+    function hud:pala_castSuccess(t, spellID)
+        if spellID == 407480 then
             self.pala_lastTemplarStrike = t
         end
     end
@@ -119,10 +118,10 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     6 - judgment
     7 - templar slash if long duration
     8 - ashes
-    9 - crusader charged
-    10 - judgment charged
-    11 - execution
-    12 - orbital strike
+    9 - boj charged
+    10 - crusader charged
+    11 - judgment charged
+    12 - execution / orbital strike
     13 - toll
 
     ]]
@@ -149,12 +148,15 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     function boj.onTimer:ComputeAvailablePriorityOverride(t)
         return 2
     end
+    function boj.availableChargePriority:ComputeAvailablePriorityOverride(t)
+        return 9
+    end
 
     function crusaderStrike.onTimer:ComputeAvailablePriorityOverride(t)
         return 3
     end
     function crusaderStrike.availableChargePriority:ComputeAvailablePriorityOverride(t)
-        return 9
+        return 10
     end
 
     function templarStrike.onTimer:ComputeAvailablePriorityOverride(t)
@@ -179,7 +181,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
         return 6
     end
     function judgment.availableChargePriority:ComputeAvailablePriorityOverride(t)
-        return 10
+        return 11
     end
 
     function ashes.onTimer:ComputeAvailablePriorityOverride(t)
@@ -187,7 +189,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     end
 
     function execution.onTimer:ComputeAvailablePriorityOverride(t)
-        return 11
+        return 12
     end
 
     function orbital.onTimer:ComputeAvailablePriorityOverride(t)
@@ -220,7 +222,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(231895, talent_crusade_spell), hud.powerUpGroup, nil, nil, nil, true)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(184662, talent_shield_of_vengeance), hud.defenseGroup, nil, -2, nil, true)
-    ERACombatFrames_PaladinDivProt(hud, -1)
+    ERACombatFrames_PaladinDivProt(hud, 403876, -1, 1)
 end
 
 ---@class PaladinTemplarSlashTimer : ERATimer

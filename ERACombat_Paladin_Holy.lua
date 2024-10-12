@@ -1,7 +1,6 @@
 ---@alias HolySeasonType "SUMMER" | "AUTUMN" | "WINTER" | "SPRING"
 
 ---@class PalaHolyHUD : PaladinHUD
----@field pala_lastConsecration number
 ---@field pala_currentSeason HolySeasonType
 
 ---@param cFrame ERACombatFrame
@@ -34,14 +33,8 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
 
     local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 1, 223819, ERALIBTalent:Create(115489), true, 386730, ERALIBTalent:Create(115466), talents)
     ---@cast hud PalaHolyHUD
-    hud.pala_lastConsecration = 0
 
-    function hud:AdditionalCLEU(t)
-        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" and spellID == 26573 then
-            self.pala_lastConsecration = t
-        end
-    end
+    ERACombatFrames_PaladinConsecration(hud, 5, 9, nil)
 
     local barrierR = 0.2
     local barrierG = 0.5
@@ -57,7 +50,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     if ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_Grid) then
         local grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_GridByRole), hud, 1, 4987, "Magic", "Poison", "Disease")
         grid:AddTrackedBuff(53563, 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon)
-        grid:AddTrackedBuff(156910, 0, 2, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon2)
+        grid:AddTrackedBuff(156910, 0, 2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, talent_beacon2)
         grid:AddTrackedBuff(200025, 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon_virtue)
         grid:AddTrackedBuff(148039, 1, 1, barrierR, barrierG, barrierB, barrierR, barrierG, barrierB, talent_barrier)
         grid:AddTrackedBuff(200652, 2, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, talent_tyr)
@@ -240,8 +233,6 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         return 11
     end
 
-    ERACombatFrames_PaladinConsecration(hud, PaladinHolyConsecrationTimer:create(hud), 5, 9)
-
     function prism.onTimer:ComputeAvailablePriorityOverride(t)
         return 7
     end
@@ -286,41 +277,9 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(31884, talent_any_avenging), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(216331, talent_crusader), hud.powerUpGroup, nil, nil, nil, true)
 
-    ERACombatFrames_PaladinDivProt(hud, -2)
+    ERACombatFrames_PaladinDivProt(hud, 498, -2, 26)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(31821, talent_auramastery), hud.defenseGroup, nil, -1)
 
     hud:AddUtilityDispell(hud:AddTrackedCooldown(4987), hud.specialGroup, nil, nil, talent_normal_cleanse, true, false, false, false, false)
     hud:AddUtilityDispell(hud:AddTrackedCooldown(4987), hud.specialGroup, nil, nil, talent_better_cleanse, true, true, true, false, false)
-end
-
----@class PaladinHolyConsecrationTimer : ERATimer
----@field private __index unknown
----@field private phud PalaHolyHUD
-PaladinHolyConsecrationTimer = {}
-PaladinHolyConsecrationTimer.__index = PaladinHolyConsecrationTimer
-setmetatable(PaladinHolyConsecrationTimer, { __index = ERATimer })
-
----@param hud PalaHolyHUD
----@return PaladinHolyConsecrationTimer
-function PaladinHolyConsecrationTimer:create(hud)
-    local x = {}
-    setmetatable(x, PaladinHolyConsecrationTimer)
-    ---@cast x PaladinHolyConsecrationTimer
-    x:constructTimer(hud)
-    x.phud = hud
-    return x
-end
-
-function PaladinHolyConsecrationTimer:checkDataItemTalent()
-    return true
-end
-
----@param t number
-function PaladinHolyConsecrationTimer:updateData(t)
-    local remDur = 12 - (t - self.phud.pala_lastConsecration)
-    if remDur > 0 then
-        self.remDuration = remDur
-    else
-        self.remDuration = 0
-    end
 end

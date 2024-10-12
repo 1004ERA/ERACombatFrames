@@ -1633,6 +1633,7 @@ end
 ---@field private poison boolean
 ---@field private curse boolean
 ---@field private bleed boolean
+---@field alwaysShow boolean
 ERAHUDUtilityDispellInGroup = {}
 ERAHUDUtilityDispellInGroup.__index = ERAHUDUtilityDispellInGroup
 setmetatable(ERAHUDUtilityDispellInGroup, { __index = ERAHUDUtilityCooldownInGroup })
@@ -1684,7 +1685,11 @@ function ERAHUDUtilityDispellInGroup:UpdatedOverride(t, combat)
         if self.data.remDuration > 0 then
             self.icon:StopBeam()
         else
-            self.icon:Hide()
+            if self.alwaysShow then
+                self.icon:StopBeam()
+            else
+                self.icon:Hide()
+            end
         end
     end
 end

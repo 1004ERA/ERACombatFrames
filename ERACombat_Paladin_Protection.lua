@@ -34,13 +34,6 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
 
     ERACombatFrames_PaladinNonHealerCleanse(hud, talents)
 
-    function hud:AdditionalCLEU(t)
-        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" and spellID == 26573 then
-            self.pala_lastConsecration = t
-        end
-    end
-
     --- SAO ---
 
     local shining = hud:AddTrackedBuff(327510, talent_shining)
@@ -49,6 +42,17 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     hud:AddOverlayBasedOnSpellActivation(31935, 450925, false, "LEFT", false, false, false, false, talent_grand_crusader)
 
     --- bars ---
+
+    local consecrBar = ERACombatFrames_PaladinConsecration(hud, 5, 8, talent_long_consecration)
+    local consecrBuff = hud:AddTrackedBuff(188370)
+    function consecrBar:ConfirmDurationOverride(t, dur)
+        if consecrBuff.remDuration > self.hud.occupied then
+            self:SetColor(ERA_Paladin_Consecr_R, ERA_Paladin_Consecr_G, ERA_Paladin_Consecr_B)
+        else
+            self:SetColor(1.0, 0.0, 0.0)
+        end
+        return dur
+    end
 
     hud:AddAuraBar(hud:AddTrackedBuff(132403), nil, 0.55, 0.0, 0.25) -- sotr
     hud:AddAuraBar(hud:AddTrackedBuff(280375, talent_redoubt), nil, 0.0, 1.0, 1.0)
@@ -63,7 +67,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     hud:AddAuraBar(avengingDuration, nil, 1.0, 0.0, 1.0)
     local avengingOrCrusade = hud:AddOrTimer(false, sentinelDuration, avengingDuration)
 
-    local shiningShortBar = hud:AddAuraBar(shining, nil, 0.5, 1.0, 0.2)
+    local shiningShortBar = hud:AddAuraBar(shining, 133192, 0.5, 1.0, 0.2)
     function shiningShortBar:ComputeDurationOverride(t)
         if self.aura.remDuration < self.hud.timerDuration then
             return self.aura.remDuration
@@ -160,8 +164,6 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
         return 4
     end
 
-    ERACombatFrames_PaladinConsecration(hud, PaladinProtConsecrationTimer:create(hud, talent_long_consecration), 5, 8)
-
     function tyr.onTimer:ComputeAvailablePriorityOverride(t)
         return 9
     end
@@ -182,45 +184,4 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(86659, talent_gak), hud.defenseGroup)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(62124), hud.specialGroup) -- taunt
-end
-
----@class PaladinProtConsecrationTimer : ERATimer
----@field private __index unknown
----@field private talent_long_consecration ERALIBTalent
----@field private phud PalaProtHUD
-PaladinProtConsecrationTimer = {}
-PaladinProtConsecrationTimer.__index = PaladinProtConsecrationTimer
-setmetatable(PaladinProtConsecrationTimer, { __index = ERATimer })
-
----@param hud PalaProtHUD
----@param talent_long_consecration ERALIBTalent
----@return PaladinProtConsecrationTimer
-function PaladinProtConsecrationTimer:create(hud, talent_long_consecration)
-    local x = {}
-    setmetatable(x, PaladinProtConsecrationTimer)
-    ---@cast x PaladinProtConsecrationTimer
-    x:constructTimer(hud)
-    x.talent_long_consecration = talent_long_consecration
-    x.phud = hud
-    return x
-end
-
-function PaladinProtConsecrationTimer:checkDataItemTalent()
-    return true
-end
-
----@param t number
-function PaladinProtConsecrationTimer:updateData(t)
-    local totDur
-    if self.talent_long_consecration:PlayerHasTalent() then
-        totDur = 14
-    else
-        totDur = 12
-    end
-    local remDur = totDur - (t - self.phud.pala_lastConsecration)
-    if remDur > 0 then
-        self.remDuration = remDur
-    else
-        self.remDuration = 0
-    end
 end

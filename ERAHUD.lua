@@ -507,7 +507,7 @@ function ERAHUD:Pack()
         racialGroup = self.powerUpGroup
     elseif (r == 3) then
         -- dwarf
-        self:AddUtilityDispell(self:AddTrackedCooldown(58984), self.defenseGroup, nil, nil, nil, true, true, true, true, true)
+        self:AddUtilityDispell(self:AddTrackedCooldown(58984), self.defenseGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
     elseif (r == 4) then
         -- night elf
         racialSpellID = 58984
@@ -574,7 +574,7 @@ function ERAHUD:Pack()
         racialGroup = self.controlGroup
     elseif (r == 34) then
         -- dark iron dwarf
-        self:AddUtilityDispell(self:AddTrackedCooldown(265221), self.powerUpGroup, nil, nil, nil, true, true, true, true, true)
+        self:AddUtilityDispell(self:AddTrackedCooldown(265221), self.powerUpGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
     elseif (r == 35) then
         -- vulpera
         racialSpellID = 312411

@@ -4,6 +4,8 @@
 ---@field pala_purpose ERAAura
 ---@field pala_forebearance ERAAura
 ---@field pala_tollCooldown ERACooldown
+---@field pala_lastConsecration number
+---@field pala_castSuccess nil|fun(this:PaladinHUD, t:number, spellID:integer)
 
 ---@class (exact) PaladinCommonTalents
 ---@field loh ERALIBTalent
@@ -83,6 +85,7 @@ end
 function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTalent, showResonance, resonanceID, resonanceTalent, talents)
     local hud = ERAHUD:Create(cFrame, 1.5, true, spec == 1, false, spec)
     ---@cast hud PaladinHUD
+    hud.pala_lastConsecration = 0
 
     hud.pala_holypower = ERAHUDModulePointsUnitPower:Create(hud, Enum.PowerType.HolyPower, 0.7, 0.7, 0.7, 1.0, 1.0, 0.5, nil)
 
@@ -144,10 +147,47 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
     hud:AddAuraBar(hud:AddTrackedBuff(642), nil, 1.0, 1.0, 1.0) -- bubble
     hud:AddAuraBar(hud:AddTrackedBuff(1022, talents.bop), nil, 0.5, 0.5, 0.5)
 
-    local steedDuration = hud:AddTrackedBuff(294133, talents.steed)
-    hud:AddAuraBar(steedDuration, nil, 0.0, 0.3, 1.0)
     local bofDuration = hud:AddTrackedBuff(1044, talents.bof)
     hud:AddAuraBar(bofDuration, nil, 0.7, 1.0, 0.0)
+
+    -------------------
+    --#region STEED ---
+
+    local _, _, race = UnitRace("player")
+    local steedID = 276111
+    if race == 1 then
+        -- human
+        steedID = 221883
+    elseif race == 3 then
+        -- dwarf
+        steedID = 276111
+    elseif race == 6 then
+        -- tauren
+        steedID = 221885
+    elseif race == 10 then
+        -- blood elf
+        steedID = 221886
+    elseif race == 11 then
+        -- draenei
+        steedID = 221887
+    elseif race == 30 then
+        -- lightforged
+        steedID = 221887
+    elseif race == 31 then
+        -- zandalari
+        steedID = 294133
+    elseif race == 34 then
+        -- dark iron dwarf
+        steedID = 276112
+    elseif race == 84 or race == 85 then
+        -- earthen
+        steedID = 453804
+    end
+    local steedDuration = hud:AddTrackedBuff(steedID, talents.steed)
+    hud:AddAuraBar(steedDuration, nil, 0.0, 0.3, 1.0)
+
+    --#endregion
+    -------------------
 
     --- utility ---
 
@@ -198,44 +238,18 @@ function ERACombatFrames_PaladinForebearanceCooldown(cd)
 end
 
 ---@param hud PaladinHUD
+---@param spellID integer
 ---@param displayOrder number|nil
-function ERACombatFrames_PaladinDivProt(hud, displayOrder)
-    local talent_divprot = ERALIBTalent:CreateLevel(26)
-    hud:AddAuraBar(hud:AddTrackedBuff(498, talent_divprot), nil, 0.7, 0.6, 0.6)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(498, talent_divprot), hud.defenseGroup, nil, displayOrder)
-end
-
----@param hud PaladinHUD
----@param timer ERATimer
----@param refreshPrio number
----@param soonPrio number
-function ERACombatFrames_PaladinConsecration(hud, timer, refreshPrio, soonPrio)
-
-    local consecrBar = hud:AddGenericBar(timer, 135926, ERA_Paladin_Consecr_R, ERA_Paladin_Consecr_G, ERA_Paladin_Consecr_B)
-
-    local consecrCooldown = hud:AddTrackedCooldown(26573)
-    local consecrIcon = hud:AddPriority(135926)
-    function consecrIcon:ComputeDurationOverride(t)
-        if consecrCooldown.remDuration > consecrBar.timer.remDuration then
-            return consecrCooldown.remDuration
-        else
-            return 0
-        end
+---@param level integer
+function ERACombatFrames_PaladinDivProt(hud, spellID, displayOrder, level)
+    local talent
+    if level > 1 then
+        talent = ERALIBTalent:CreateLevel(level)
+    else
+        talent = nil
     end
-    function consecrIcon:ComputeAvailablePriorityOverride(t)
-        if consecrCooldown.remDuration > 0 then
-            return 0
-        else
-            local cdur = consecrBar.timer.remDuration
-            if cdur <= self.hud.occupied + 0.2 then
-                return 5
-            elseif cdur <= 2.1 * self.hud.totGCD then
-                return 8
-            else
-                return 0
-            end
-        end
-    end
+    hud:AddAuraBar(hud:AddTrackedBuff(spellID, talent), nil, 0.7, 0.6, 0.6)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(spellID, talent), hud.defenseGroup, nil, displayOrder)
 end
 
 ---@class PaladinResonanceTimer : ERATimer
@@ -276,3 +290,96 @@ function PaladinResonanceTimer:updateData(t)
         self.remDuration = 0
     end
 end
+
+--------------------------
+--#region CONSECRATION ---
+
+---@class PaladinConsecrationTimer : ERATimer
+---@field private __index unknown
+---@field private talent_long_consecration nil|ERALIBTalent
+---@field private phud PaladinHUD
+PaladinConsecrationTimer = {}
+PaladinConsecrationTimer.__index = PaladinConsecrationTimer
+setmetatable(PaladinConsecrationTimer, { __index = ERATimer })
+
+---@param hud PaladinHUD
+---@param talent_long_consecration nil|ERALIBTalent
+---@return PaladinConsecrationTimer
+function PaladinConsecrationTimer:create(hud, talent_long_consecration)
+    local x = {}
+    setmetatable(x, PaladinConsecrationTimer)
+    ---@cast x PaladinConsecrationTimer
+    x:constructTimer(hud)
+    x.talent_long_consecration = talent_long_consecration
+    x.phud = hud
+    return x
+end
+
+function PaladinConsecrationTimer:checkDataItemTalent()
+    return true
+end
+
+---@param t number
+function PaladinConsecrationTimer:updateData(t)
+    local totDur
+    if self.talent_long_consecration and self.talent_long_consecration:PlayerHasTalent() then
+        totDur = 14
+    else
+        totDur = 12
+    end
+    local remDur = totDur - (t - self.phud.pala_lastConsecration)
+    if remDur > 0 then
+        self.remDuration = remDur
+    else
+        self.remDuration = 0
+    end
+end
+
+---@param hud PaladinHUD
+---@param consecrRefreshPrio number
+---@param consecrSoonPrio number
+---@param talent_long_consecration ERALIBTalent|nil
+---@return ERAHUDGenericBar
+function ERACombatFrames_PaladinConsecration(hud, consecrRefreshPrio, consecrSoonPrio, talent_long_consecration)
+    function hud:AdditionalCLEU(t)
+        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" then
+            if spellID == 26573 then
+                self.pala_lastConsecration = t
+            elseif self.pala_castSuccess then
+                self:pala_castSuccess(t, spellID)
+            end
+        end
+    end
+
+    local consecrBar = hud:AddGenericBar(PaladinConsecrationTimer:create(hud, talent_long_consecration), 135926, ERA_Paladin_Consecr_R, ERA_Paladin_Consecr_G, ERA_Paladin_Consecr_B)
+
+    local consecrCooldown = hud:AddTrackedCooldown(26573)
+    local consecrIcon = hud:AddPriority(135926)
+    function consecrIcon:ComputeDurationOverride(t)
+        if consecrCooldown.remDuration > consecrBar.timer.remDuration then
+            return consecrCooldown.remDuration
+        else
+            return 0
+        end
+    end
+    function consecrIcon:ComputeAvailablePriorityOverride(t)
+        if consecrCooldown.remDuration > 0 then
+            return 0
+        else
+            local cdur = consecrBar.timer.remDuration
+            if cdur <= self.hud.occupied + 0.2 then
+                return consecrRefreshPrio
+            elseif cdur <= 2.1 * self.hud.totGCD then
+                return consecrSoonPrio
+            else
+                return 0
+            end
+        end
+    end
+
+    return consecrBar
+end
+
+--#endregion
+--------------------------

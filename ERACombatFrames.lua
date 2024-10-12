@@ -7,6 +7,7 @@ TODO
 - améliorer les charges de brez
 - ? icone trinket ?
 - grid : dispell types based on talents
+- palaprot 3*sotr = 1*wog : display stack progress
 
 ERA_Debug = function()
 
