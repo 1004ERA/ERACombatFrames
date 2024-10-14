@@ -6,6 +6,7 @@
 ---@field pala_tollCooldown ERACooldown
 ---@field pala_lastConsecration number
 ---@field pala_castSuccess nil|fun(this:PaladinHUD, t:number, spellID:integer)
+---@field pala_CLEU nil|fun(this:PaladinHUD, t:number, evt:string, spellID:integer)
 
 ---@class (exact) PaladinCommonTalents
 ---@field loh ERALIBTalent
@@ -110,14 +111,29 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
 
     hud.pala_forebearance = hud:AddTrackedDebuffOnSelf(25771)
 
+    function hud:AdditionalCLEU(t)
+        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if sourceGUID == self.cFrame.playerGUID then
+            if evt == "SPELL_CAST_SUCCESS" then
+                if spellID == 26573 then
+                    self.pala_lastConsecration = t
+                elseif self.pala_castSuccess then
+                    self:pala_castSuccess(t, spellID)
+                end
+            elseif self.pala_CLEU then
+                self:pala_CLEU(t, evt, spellID)
+            end
+        end
+    end
+
     -- SAO ---
 
     hud.pala_purpose = hud:AddTrackedBuff(purposeID, purposeTalent)
     hud:AddAuraOverlay(hud.pala_purpose, 1, 459314, false, "TOP", false, false, false, false)
 
-    local concentration = hud:AddTrackedBuff(317920, talents.auras)
-    local devotion = hud:AddTrackedBuff(465, talents.auras)
-    local crusaderAura = hud:AddTrackedBuff(32223, talents.crusaderAura)
+    local concentration = hud:AddTrackedBuffAnyCaster(317920, talents.auras)
+    local devotion = hud:AddTrackedBuffAnyCaster(465, talents.auras)
+    local crusaderAura = hud:AddTrackedBuffAnyCaster(32223, talents.crusaderAura)
     local anyAura = hud:AddOrTimer(false, concentration, devotion, crusaderAura)
     hud:AddMissingTimerOverlay(anyAura, false, 450920, false, "BOTTOM", false, false, true, false)
 
@@ -341,17 +357,6 @@ end
 ---@param talent_long_consecration ERALIBTalent|nil
 ---@return ERAHUDGenericBar
 function ERACombatFrames_PaladinConsecration(hud, consecrRefreshPrio, consecrSoonPrio, talent_long_consecration)
-    function hud:AdditionalCLEU(t)
-        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
-        if sourceGUID == self.cFrame.playerGUID and evt == "SPELL_CAST_SUCCESS" then
-            if spellID == 26573 then
-                self.pala_lastConsecration = t
-            elseif self.pala_castSuccess then
-                self:pala_castSuccess(t, spellID)
-            end
-        end
-    end
-
     local consecrBar = hud:AddGenericBar(PaladinConsecrationTimer:create(hud, talent_long_consecration), 135926, ERA_Paladin_Consecr_R, ERA_Paladin_Consecr_G, ERA_Paladin_Consecr_B)
 
     local consecrCooldown = hud:AddTrackedCooldown(26573)

@@ -497,6 +497,7 @@ function ERAHUD:Pack()
     local _, _, r = UnitRace("player")
     local racialSpellID = nil
     local racialGroup = nil
+    local racialTimer = false
     if (r == 1 or r == 33) then
         -- human
         racialSpellID = 59752
@@ -505,6 +506,7 @@ function ERAHUD:Pack()
         -- orc
         racialSpellID = 33697
         racialGroup = self.powerUpGroup
+        racialTimer = true
     elseif (r == 3) then
         -- dwarf
         self:AddUtilityDispell(self:AddTrackedCooldown(58984), self.defenseGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
@@ -528,6 +530,7 @@ function ERAHUD:Pack()
         -- troll
         racialSpellID = 26297
         racialGroup = self.powerUpGroup
+        racialTimer = true
     elseif (r == 9) then
         -- goblin
         racialSpellID = 69070
@@ -564,6 +567,7 @@ function ERAHUD:Pack()
         -- lightforged
         racialSpellID = 255647
         racialGroup = self.powerUpGroup
+        racialTimer = true
     elseif (r == 31) then
         -- zandalari
         racialSpellID = 291944
@@ -574,15 +578,17 @@ function ERAHUD:Pack()
         racialGroup = self.controlGroup
     elseif (r == 34) then
         -- dark iron dwarf
-        self:AddUtilityDispell(self:AddTrackedCooldown(265221), self.powerUpGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
+        self:AddUtilityDispell(self:AddTrackedCooldown(265221), self.powerUpGroup, nil, nil, nil, true, true, true, true, true, true).alwaysShow = true
     elseif (r == 35) then
         -- vulpera
         racialSpellID = 312411
         racialGroup = self.powerUpGroup
+        racialTimer = true
     elseif (r == 36) then
         -- mag'har
         racialSpellID = 274738
         racialGroup = self.powerUpGroup
+        racialTimer = true
     elseif (r == 37) then
         -- mechagnome
         racialSpellID = 312924
@@ -591,9 +597,10 @@ function ERAHUD:Pack()
         -- earthen
         racialSpellID = 436344
         racialGroup = self.powerUpGroup
+        racialTimer = true
     end
     if (racialSpellID and racialGroup) then
-        self:AddUtilityCooldown(self:AddTrackedCooldown(racialSpellID), racialGroup)
+        self:AddUtilityCooldown(self:AddTrackedCooldown(racialSpellID), racialGroup, nil, nil, nil, racialTimer)
     end
 
     -- equipment
@@ -2865,9 +2872,10 @@ end
 ---@param disease boolean
 ---@param curse boolean
 ---@param bleed boolean
+---@param showOnTimer nil|boolean|fun(cd:ERACooldownBase, t:number): boolean
 ---@return ERAHUDUtilityDispellInGroup
-function ERAHUD:AddUtilityDispell(data, group, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
-    return ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
+function ERAHUD:AddUtilityDispell(data, group, iconID, displayOrder, talent, magic, poison, disease, curse, bleed, showOnTimer)
+    return ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed, showOnTimer)
 end
 
 ---@param aura ERAAura

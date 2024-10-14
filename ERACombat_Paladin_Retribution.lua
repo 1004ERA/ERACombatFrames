@@ -1,5 +1,6 @@
 ---@class PalaRetHUD : PaladinHUD
 ---@field pala_lastTemplarStrike number
+---@field pala_lastCrusadingStrike number
 
 ---@param cFrame ERACombatFrame
 ---@param talents PaladinCommonTalents
@@ -9,6 +10,8 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     local talent_avenging_might = ERALIBTalent:Create(102519)
     local talent_any_avenging = ERALIBTalent:CreateAnd(ERALIBTalent:CreateOr(talents.avenging, talent_avenging_might), ERALIBTalent:CreateNot(talent_crusade))
     local talent_instaflash = ERALIBTalent:Create(102503)
+    local talent_fast_auto = ERALIBTalent:Create(115165)
+    local talent_autostrike = ERALIBTalent:Create(115474)
     local talent_not_autostrike = ERALIBTalent:CreateNotTalent(115474)
     local talent_templar_strike = ERALIBTalent:Create(115473)
     local talent_crusader_strike = ERALIBTalent:CreateAnd(ERALIBTalent:CreateNot(talent_templar_strike), talent_not_autostrike)
@@ -29,6 +32,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
 
     local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 3, 408458, ERALIBTalent:Create(102608), true, 384029, ERALIBTalent:Create(115468), talents)
     ---@cast hud PalaRetHUD
+    hud.pala_lastCrusadingStrike = 0
     hud.pala_lastTemplarStrike = 0
 
     ERACombatFrames_PaladinNonHealerCleanse(hud, talents)
@@ -36,6 +40,20 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     function hud:pala_castSuccess(t, spellID)
         if spellID == 407480 then
             self.pala_lastTemplarStrike = t
+        end
+    end
+    function hud:pala_CLEU(t, evt, spellID)
+        if evt == "SPELL_ENERGIZE" and spellID == 406834 then
+            self.pala_lastCrusadingStrike = t
+        end
+    end
+
+    local instaflashCooldown = hud:AddTrackedCooldown(19750, talent_instaflash)
+    function hud:PreUpdateDisplayOverride(t, combat)
+        if talent_instaflash:PlayerHasTalent() and instaflashCooldown.remDuration <= self.remGCD then
+            self.health.bar:SetForecast(5.9 * GetSpellBonusHealing() * (1 + (GetCombatRatingBonus(29) + GetVersatilityBonus(29)) / 100))
+        else
+            self.health.bar:SetForecast(0)
         end
     end
 
@@ -70,8 +88,6 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
         hud:AddAuraBar(aura, nil, 1.0, 0.0, 1.0)
     end
 
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(343527, talent_execution), nil, 1.0, 0.0, 0.0)
-
     local freeStormBar = hud:AddAuraBar(freeStorm, 236250, 0.5, 1.0, 0.0)
     local bonusStormBar = hud:AddAuraBar(bonusStorm, 461860, 0.0, 1.0, 0.5)
     local stormBarsArray = {}
@@ -89,7 +105,8 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(184662, talent_shield_of_vengeance), nil, 0.7, 0.0, 0.4)
 
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(343721, talent_orbital_strike), nil, 0.9, 0.0, 0.4)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(343527, talent_execution), nil, 1.0, 0.0, 0.0)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(343721, talent_orbital_strike), nil, 1.0, 0.0, 0.0)
 
     --- rotation ---
 
@@ -111,16 +128,16 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     prio
 
     1 - how
-    2 - boj
-    3 - crusader
-    4 - templar strike
-    5 - templar slash if short duration
-    6 - judgment
-    7 - templar slash if long duration
-    8 - ashes
+    2 - crusading
+    3 - templar strike
+    4 - templar slash if short duration
+    5 - judgment
+    6 - boj
+    7 - crusader, or templar slash if long duration
+    8 - judgment charged
     9 - boj charged
     10 - crusader charged
-    11 - judgment charged
+    11 - ashes
     12 - execution / orbital strike
     13 - toll
 
@@ -146,21 +163,21 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     end
 
     function boj.onTimer:ComputeAvailablePriorityOverride(t)
-        return 2
+        return 6
     end
     function boj.availableChargePriority:ComputeAvailablePriorityOverride(t)
         return 9
     end
 
     function crusaderStrike.onTimer:ComputeAvailablePriorityOverride(t)
-        return 3
+        return 7
     end
     function crusaderStrike.availableChargePriority:ComputeAvailablePriorityOverride(t)
         return 10
     end
 
     function templarStrike.onTimer:ComputeAvailablePriorityOverride(t)
-        return 4
+        return 3
     end
 
     local slashPrio = hud:AddPriority(1112940, talent_templar_strike)
@@ -168,7 +185,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
         local dur = slashBar.timer.remDuration
         if dur > self.hud.occupied then
             if dur <= self.hud.occupied + 1.5 * self.hud.hasteMultiplier then
-                return 5
+                return 4
             else
                 return 7
             end
@@ -178,14 +195,14 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     end
 
     function judgment.onTimer:ComputeAvailablePriorityOverride(t)
-        return 6
+        return 5
     end
     function judgment.availableChargePriority:ComputeAvailablePriorityOverride(t)
-        return 11
+        return 8
     end
 
     function ashes.onTimer:ComputeAvailablePriorityOverride(t)
-        return 8
+        return 11
     end
 
     function execution.onTimer:ComputeAvailablePriorityOverride(t)
@@ -200,7 +217,6 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
         return 13
     end
 
-    local instaflashCooldown = hud:AddTrackedCooldown(19750, talent_instaflash)
     local instaflashPrio = hud:AddPriority(135907, talent_instaflash)
     function instaflashPrio:ComputeDurationOverride(t)
         if instaflashCooldown.remDuration > 0 then
@@ -211,8 +227,19 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
             return -1
         end
     end
+    --[[
     function instaflashPrio:ComputeAvailablePriorityOverride(t)
-        return 16 * (1 - self.hud.health.currentHealth / self.hud.health.maxHealth)
+        return 16 * (self.hud.health.currentHealth / self.hud.health.maxHealth)
+    end
+    ]]
+
+    local crusadingTimer = PaladinCrusadingTimer:create(hud, talent_autostrike, talent_fast_auto)
+    local crusadingPrio = hud:AddPriority(135278, talent_autostrike)
+    function crusadingPrio:ComputeAvailablePriorityOverride()
+        return 2
+    end
+    function crusadingPrio:ComputeDurationOverride(t)
+        return crusadingTimer.remDuration
     end
 
     --- utility ---
@@ -259,6 +286,45 @@ function PaladinTemplarSlashTimer:updateData(t)
         else
             self.remDuration = 0
         end
+    else
+        self.remDuration = 0
+    end
+end
+
+---@class PaladinCrusadingTimer : ERATimer
+---@field private __index unknown
+---@field private talent ERALIBTalent
+---@field private talentFastAuto ERALIBTalent
+---@field private phud PalaRetHUD
+PaladinCrusadingTimer = {}
+PaladinCrusadingTimer.__index = PaladinCrusadingTimer
+setmetatable(PaladinCrusadingTimer, { __index = ERATimer })
+
+---@param hud PalaRetHUD
+---@param talent ERALIBTalent
+---@param talentFastAuto ERALIBTalent
+---@return PaladinCrusadingTimer
+function PaladinCrusadingTimer:create(hud, talent, talentFastAuto)
+    local x = {}
+    setmetatable(x, PaladinCrusadingTimer)
+    ---@cast x PaladinCrusadingTimer
+    x:constructTimer(hud)
+    x.talent = talent
+    x.phud = hud
+    x.talentFastAuto = talentFastAuto
+    return x
+end
+
+function PaladinCrusadingTimer:checkDataItemTalent()
+    return self.talent:PlayerHasTalent()
+end
+
+---@param t number
+function PaladinCrusadingTimer:updateData(t)
+    --local remDur = 2 * 3.6 * self.hud.hasteMultiplier * (1 - self.talentFastAuto.rank * 0.2) - (t - self.phud.pala_lastCrusadingStrike)
+    local remDur = 2 * UnitAttackSpeed("player") - (t - self.phud.pala_lastCrusadingStrike)
+    if remDur > 0 then
+        self.remDuration = remDur
     else
         self.remDuration = 0
     end

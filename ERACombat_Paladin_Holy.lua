@@ -53,7 +53,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         grid:AddTrackedBuff(156910, 0, 2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, talent_beacon2)
         grid:AddTrackedBuff(200025, 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon_virtue)
         grid:AddTrackedBuff(148039, 1, 1, barrierR, barrierG, barrierB, barrierR, barrierG, barrierB, talent_barrier)
-        grid:AddTrackedBuff(200652, 2, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, talent_tyr)
+        grid:AddTrackedBuff(200654, 2, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, talent_tyr)
         grid:AddTrackedBuff(388007, 3, 1, summerR, summerG, summerB, summerR, summerG, summerB, talent_seasons)
         grid:AddTrackedBuff(388013, 3, 2, springR, springG, springB, springR, springG, springB, talent_seasons)
     end
@@ -81,6 +81,8 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     hud:AddAuraBar(hud:AddTrackedBuff(388013, talent_seasons), nil, springR, springG, springB)
 
     hud:AddAuraBar(hud:AddTrackedBuff(414273, talent_divinity), nil, 0.0, 1.0, 1.0)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(200656, talent_silver), nil, 0.7, 0.7, 0.6)
 
     local avengingDuration = hud:AddTrackedBuff(31884, talent_any_avenging)
     hud:AddAuraBar(avengingDuration, nil, 1.0, 0.0, 1.0)

@@ -1648,9 +1648,10 @@ setmetatable(ERAHUDUtilityDispellInGroup, { __index = ERAHUDUtilityCooldownInGro
 ---@param disease boolean
 ---@param curse boolean
 ---@param bleed boolean
+---@param showOnTimer nil|boolean|fun(cd:ERACooldownBase, t:number): boolean
 ---@return ERAHUDUtilityDispellInGroup
-function ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed)
-    local cd = ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent)
+function ERAHUDUtilityDispellInGroup:create(group, data, iconID, displayOrder, talent, magic, poison, disease, curse, bleed, showOnTimer)
+    local cd = ERAHUDUtilityCooldownInGroup:create(group, data, iconID, displayOrder, talent, showOnTimer)
     setmetatable(cd, ERAHUDUtilityDispellInGroup)
     ---@cast cd ERAHUDUtilityDispellInGroup
     cd.magic = magic

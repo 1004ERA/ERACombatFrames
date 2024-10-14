@@ -93,6 +93,8 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
 
     local toll = hud:AddRotationCooldown(hud.pala_tollCooldown)
 
+    hud:AddRotationStacks(hud:AddTrackedBuff(182104, talent_shining), 3, 2, 133192)
+
     local bastionBuff = hud:AddTrackedBuff(378974, talent_bastion)
     hud:AddRotationStacks(bastionBuff, 5, 6)
     function hud.pala_holypower:PreUpdateDisplayOverride(t, combat)

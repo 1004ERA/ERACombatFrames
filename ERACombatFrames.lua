@@ -7,7 +7,6 @@ TODO
 - améliorer les charges de brez
 - ? icone trinket ?
 - grid : dispell types based on talents
-- palaprot 3*sotr = 1*wog : display stack progress
 
 ERA_Debug = function()
 
@@ -58,5 +57,6 @@ function ERACombatFrames_event(event, ...)
         end
         cFrame:Pack()
         print("Welcome to ERACombatFrames. Enter the /ecf command for options.")
+        print("ECF : Paladin is available as a work in progress. It should be finished in a few days.")
     end
 end
