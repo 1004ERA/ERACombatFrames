@@ -123,9 +123,11 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     local drinkerIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 206931, 1, talent_drinker))
     local consumptionIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(274156, talent_consumption))
 
-    local runetapIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 194679, 1, talent_runetap))
+    ERACombatFrames_DKSoulReaper(hud, 1)
 
     ERACombatFrames_DK_ReaperMark(hud, talents, 6)
+
+    local runetapIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 194679, 1, talent_runetap))
 
     hud:AddRotationCooldown(hud:AddTrackedCooldown(219809, talent_tombstone))
 
