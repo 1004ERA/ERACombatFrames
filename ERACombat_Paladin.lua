@@ -24,6 +24,14 @@
 ---@field sacrifice ERALIBTalent
 ---@field bop ERALIBTalent
 ---@field toll ERALIBTalent
+---@field h_armaments ERALIBTalent
+---@field h_rite_sanctification ERALIBTalent
+---@field h_rite_adjuration ERALIBTalent
+---@field h_aurora ERALIBTalent
+---@field h_templar ERALIBTalent
+---@field h_templar_wrath ERALIBTalent
+---@field h_templar_shake ERALIBTalent
+---@field h_templar_deliverance ERALIBTalent
 
 function ERACombatFrames_PaladinSetup(cFrame)
     ERACombatGlobals_SpecID1 = 65
@@ -61,6 +69,14 @@ function ERACombatFrames_PaladinSetup(cFrame)
         sacrifice = ERALIBTalent:Create(102602),
         bop = ERALIBTalent:Create(102604),
         toll = ERALIBTalent:Create(102465),
+        h_armaments = ERALIBTalent:Create(117882),
+        h_rite_sanctification = ERALIBTalent:Create(117881),
+        h_rite_adjuration = ERALIBTalent:Create(117880),
+        h_aurora = ERALIBTalent:Create(117666),
+        h_templar = ERALIBTalent:Create(117813),
+        h_templar_wrath = ERALIBTalent:Create(117820),
+        h_templar_shake = ERALIBTalent:Create(117823),
+        h_templar_deliverance = ERALIBTalent:Create(117815),
     }
 
     if (not holyOptions.disabled) then
@@ -128,7 +144,7 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
 
     -- SAO ---
 
-    hud.pala_purpose = hud:AddTrackedBuff(purposeID, purposeTalent)
+    hud.pala_purpose = hud:AddTrackedBuff(purposeID, ERALIBTalent:CreateOr(talents.h_aurora, purposeTalent))
     hud:AddAuraOverlay(hud.pala_purpose, 1, 459314, false, "TOP", false, false, false, false)
 
     local concentration = hud:AddTrackedBuffAnyCaster(317920, talents.auras)
@@ -266,6 +282,53 @@ function ERACombatFrames_PaladinDivProt(hud, spellID, displayOrder, level)
     end
     hud:AddAuraBar(hud:AddTrackedBuff(spellID, talent), nil, 0.7, 0.6, 0.6)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(spellID, talent), hud.defenseGroup, nil, displayOrder)
+end
+
+---@alias PalaSmithType "BULWARK" | "WEAPON"
+
+---@class PalaSmithIcon : ERAHUDRotationCooldownIcon
+---@field smith_type PalaSmithType
+
+---@param hud PaladinHUD
+---@param talents PaladinCommonTalents
+---@param prio number
+---@param chargedPrio number
+function ERACombatFrames_PaladinLightSmith(hud, talents, prio, chargedPrio)
+    local cd = hud:AddTrackedCooldown(432459, talents.h_armaments)
+
+    local icon = hud:AddRotationCooldown(cd, nil, nil)
+    ---@cast icon PalaSmithIcon
+    icon.smith_type = "BULWARK"
+    function icon:UpdatedOverride(t, combat)
+        local requiredIconID = C_Spell.GetSpellInfo(432459).iconID
+        if requiredIconID == 432459 then
+            self.smith_type = "BULWARK"
+        else
+            self.smith_type = "WEAPON"
+        end
+        self:setIconID(requiredIconID)
+    end
+    function icon.onTimer:ComputeAvailablePriorityOverride(t)
+        return prio
+    end
+    function icon.availableChargePriority:ComputeAvailablePriorityOverride(t)
+        return chargedPrio
+    end
+    icon.icon:SetOverlayAlpha(0.7)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(432496, talents.h_armaments), nil, 0.7, 0.4, 0.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(432502, talents.h_armaments), nil, 0.7, 0.4, 0.0)
+
+    hud:AddMissingTimerOverlay(hud:AddTrackedBuff(433550, talents.h_rite_sanctification), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
+    hud:AddMissingTimerOverlay(hud:AddTrackedBuff(433584, talents.h_rite_adjuration), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
+end
+
+---@param hud PaladinHUD
+---@param talents PaladinCommonTalents
+---@return ERAAura
+function ERACombatFrames_PaladinTemplar_returnWrath(hud, talents)
+    hud:AddAuraBar(hud:AddTrackedBuff(431536, talents.h_templar_shake), nil, 1.0, 1.0, 0.7)
+    return hud:AddTrackedBuff(452244, talents.h_templar_wrath)
 end
 
 ---@class PaladinResonanceTimer : ERATimer

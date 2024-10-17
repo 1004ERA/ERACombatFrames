@@ -741,6 +741,7 @@ end
 ---@field protected checkIconTalent fun(this:ERAHUDIcon): boolean
 ---@field protected updateIconID fun(this:ERAHUDIcon, currentIconID:integer): integer
 ---@field protected refreshIconID fun(this:ERAHUDIcon)
+---@field protected iconChanged nil|fun(this:ERAHUDIcon, newIconID:integer)
 ---@field talent ERALIBTalent|nil
 ---@field talentActive boolean
 ---@field hud ERAHUD
@@ -782,6 +783,17 @@ function ERAHUDIcon:refreshIconID()
         if self.iconID ~= i then
             self.iconID = i
             self.icon:SetIconTexture(i, true)
+        end
+    end
+end
+
+---@param iconID integer
+function ERAHUDIcon:setIconID(iconID)
+    if self.iconID ~= iconID then
+        self.iconID = iconID
+        self.icon:SetIconTexture(iconID, true)
+        if self.iconChanged then
+            self:iconChanged(iconID)
         end
     end
 end
@@ -951,6 +963,12 @@ end
 function ERAHUDRotationCooldownIcon:updateIconID(currentIconID)
     local spellInfo = C_Spell.GetSpellInfo(self.data.spellID)
     return spellInfo.iconID
+end
+
+---@param newIconID integer
+function ERAHUDRotationCooldownIcon:iconChanged(newIconID)
+    self.onTimer.icon:SetIconTexture(newIconID)
+    self.availableChargePriority.icon:SetIconTexture(newIconID)
 end
 
 ---@param combat boolean

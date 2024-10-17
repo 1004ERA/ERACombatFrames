@@ -1,6 +1,8 @@
 ---@class PalaRetHUD : PaladinHUD
 ---@field pala_lastTemplarStrike number
 ---@field pala_lastCrusadingStrike number
+---@field pala_lastAshes number
+---@field pala_lastHammerTemplar number
 
 ---@param cFrame ERACombatFrame
 ---@param talents PaladinCommonTalents
@@ -29,17 +31,24 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     local talent_avenging_proc = ERALIBTalent:CreateAnd(talent_any_avenging, talent_avenging_proc)
     local talent_crusade_spell = ERALIBTalent:CreateAnd(talent_crusade, talent_not_avenging_proc)
     local talent_crusade_proc = ERALIBTalent:CreateAnd(talent_crusade, talent_avenging_proc)
+    local htalent_anshe = ERALIBTalent:Create(117668)
 
     local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 3, 408458, ERALIBTalent:Create(102608), true, 384029, ERALIBTalent:Create(115468), talents)
     ---@cast hud PalaRetHUD
     hud.pala_lastCrusadingStrike = 0
     hud.pala_lastTemplarStrike = 0
+    hud.pala_lastAshes = 0
+    hud.pala_lastHammerTemplar = 0
 
     ERACombatFrames_PaladinNonHealerCleanse(hud, talents)
 
     function hud:pala_castSuccess(t, spellID)
         if spellID == 407480 then
             self.pala_lastTemplarStrike = t
+        elseif spellID == 255937 then
+            self.pala_lastAshes = t
+        elseif spellID == 427453 then
+            self.pala_lastHammerTemplar = t
         end
     end
     function hud:pala_CLEU(t, evt, spellID)
@@ -60,7 +69,10 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     --- SAO ---
 
     local howProc = hud:AddTrackedBuff(383329, talent_final_verdict)
-    hud:AddAuraOverlay(howProc, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)
+    local hTemplarWrath = ERACombatFrames_PaladinTemplar_returnWrath(hud, talents)
+    local anshe = hud:AddTrackedBuff(445206, htalent_anshe)
+    local howAllowed = hud:AddOrTimer(false, hTemplarWrath, howProc, anshe)
+    hud:AddTimerOverlay(howAllowed, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)
 
     hud:AddOverlayBasedOnSpellActivation(184575, 450913, false, "LEFT", false, false, false, false, nil)
 
@@ -72,7 +84,8 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
 
     --- bars ---
 
-    local slashBar = hud:AddGenericBar(PaladinTemplarSlashTimer:create(hud, talent_templar_strike), 1112940, 1.0, 1.0, 0.0)
+    local slashBar = hud:AddGenericBar(PaladinTemplarSlashTimer:create(hud, talent_templar_strike), 1112940, 0.0, 1.0, 1.0)
+    hud:AddGenericBar(PaladinTemplarRetributionTimer:create(hud, talents.h_templar), 5342121, 1.0, 1.0, 0.0)
 
     local avengingAndCrusadeDurations = {}
     local avengingDuration = hud:AddTrackedBuff(31884, talent_avenging_spell)
@@ -146,7 +159,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     function how.onTimer:ComputeDurationOverride(t)
         local dur = self.cd.data.remDuration
         if dur <= 0 then return 0 end
-        if dur < avengingOrCrusade.remDuration or dur < howProc.remDuration then
+        if dur < avengingOrCrusade.remDuration or dur < howAllowed.remDuration then
             return dur
         end
         if UnitExists("target") and 5 * UnitHealth("target") < UnitHealthMax("target") then
@@ -325,6 +338,50 @@ function PaladinCrusadingTimer:updateData(t)
     local remDur = 2 * UnitAttackSpeed("player") - (t - self.phud.pala_lastCrusadingStrike)
     if remDur > 0 then
         self.remDuration = remDur
+    else
+        self.remDuration = 0
+    end
+end
+
+---@class PaladinTemplarRetributionTimer : ERATimer
+---@field private __index unknown
+---@field private talent ERALIBTalent
+---@field private phud PalaRetHUD
+PaladinTemplarRetributionTimer = {}
+PaladinTemplarRetributionTimer.__index = PaladinTemplarRetributionTimer
+setmetatable(PaladinTemplarRetributionTimer, { __index = ERATimer })
+
+---@param hud PalaRetHUD
+---@param talent ERALIBTalent
+---@return PaladinTemplarRetributionTimer
+function PaladinTemplarRetributionTimer:create(hud, talent)
+    local x = {}
+    setmetatable(x, PaladinTemplarRetributionTimer)
+    ---@cast x PaladinTemplarRetributionTimer
+    x:constructTimer(hud)
+    x.talent = talent
+    x.phud = hud
+    return x
+end
+
+function PaladinTemplarRetributionTimer:checkDataItemTalent()
+    return self.talent:PlayerHasTalent()
+end
+
+---@param t number
+function PaladinTemplarRetributionTimer:updateData(t)
+    if IsSpellOverlayed(427453) then
+        local remDur = 12 - (t - self.phud.pala_lastAshes)
+        if remDur > 0 then
+            local sinceLastHammer = t - self.phud.pala_lastHammerTemplar
+            if sinceLastHammer <= 13 then
+                self.remDuration = 0
+            else
+                self.remDuration = remDur
+            end
+        else
+            self.remDuration = 0
+        end
     else
         self.remDuration = 0
     end

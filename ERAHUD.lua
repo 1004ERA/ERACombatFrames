@@ -504,12 +504,23 @@ function ERAHUD:Pack()
         racialGroup = self.movementGroup
     elseif (r == 2) then
         -- orc
-        racialSpellID = 33697
         racialGroup = self.powerUpGroup
         racialTimer = true
+        --#region by class
+        if ERACombatFrames_classID == 1 or ERACombatFrames_classID == 3 or ERACombatFrames_classID == 4 or ERACombatFrames_classID == 6 then
+            -- warrior, hunter, rogue, dk
+            racialSpellID = 20572
+        elseif ERACombatFrames_classID == 7 or ERACombatFrames_classID == 10 then
+            -- shaman, monk
+            racialSpellID = 33697
+        elseif ERACombatFrames_classID == 5 or ERACombatFrames_classID == 8 or ERACombatFrames_classID == 9 then
+            -- priest, mage, warlock
+            racialSpellID = 33702
+        end
+        --#endregion
     elseif (r == 3) then
         -- dwarf
-        self:AddUtilityDispell(self:AddTrackedCooldown(58984), self.defenseGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
+        self:AddUtilityDispell(self:AddTrackedCooldown(20594), self.defenseGroup, nil, nil, nil, true, true, true, true, true).alwaysShow = true
     elseif (r == 4) then
         -- night elf
         racialSpellID = 58984
@@ -541,8 +552,40 @@ function ERAHUD:Pack()
         racialGroup = self.specialGroup
     elseif (r == 11) then
         -- draenei
-        racialSpellID = 416250
         racialGroup = self.healGroup
+        --#region by class
+        if ERACombatFrames_classID == 1 then
+            -- warrior
+            racialSpellID = 28880
+        elseif ERACombatFrames_classID == 2 then
+            -- paladin
+            racialSpellID = 59542
+        elseif ERACombatFrames_classID == 3 then
+            -- hunter
+            racialSpellID = 59543
+        elseif ERACombatFrames_classID == 4 then
+            -- rogue
+            racialSpellID = 370626
+        elseif ERACombatFrames_classID == 5 then
+            -- priest
+            racialSpellID = 59544
+        elseif ERACombatFrames_classID == 6 then
+            -- dk
+            racialSpellID = 59545
+        elseif ERACombatFrames_classID == 7 then
+            -- shaman
+            racialSpellID = 59547
+        elseif ERACombatFrames_classID == 8 then
+            -- mage
+            racialSpellID = 59548
+        elseif ERACombatFrames_classID == 9 then
+            -- warlock
+            racialSpellID = 416250
+        elseif ERACombatFrames_classID == 10 then
+            -- monk
+            racialSpellID = 121093
+        end
+        --#endregion
     elseif (r == 22) then
         -- worgen
         racialSpellID = 68992

@@ -1,7 +1,6 @@
 ---@alias HolySeasonType "SUMMER" | "AUTUMN" | "WINTER" | "SPRING"
 
 ---@class PalaHolyHUD : PaladinHUD
----@field pala_currentSeason HolySeasonType
 
 ---@param cFrame ERACombatFrame
 ---@param talents PaladinCommonTalents
@@ -34,7 +33,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 1, 223819, ERALIBTalent:Create(115489), true, 386730, ERALIBTalent:Create(115466), talents)
     ---@cast hud PalaHolyHUD
 
-    ERACombatFrames_PaladinConsecration(hud, 5, 9, nil)
+    ERACombatFrames_PaladinConsecration(hud, 5, 10, nil)
 
     local barrierR = 0.2
     local barrierG = 0.5
@@ -107,29 +106,17 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     local how = hud:AddRotationCooldown(hud:AddTrackedCooldown(24275, talents.how))
     how.checkUsable = true
 
-    local stackingSOTR = hud:AddRotationStacks(hud:AddTrackedBuff(414444, talent_sotr), 5, 4)
-    stackingSOTR.soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
-    local freeFromSOTR_icon = hud:AddRotationBuff(freeFromSOTR)
-    freeFromSOTR_icon.overlapsPrevious = stackingSOTR
-    function freeFromSOTR_icon.ShowWhenMissing()
-        return false
-    end
-
     local prism = hud:AddRotationCooldown(hud:AddTrackedCooldown(114165, talent_prism))
     local barrier = hud:AddRotationCooldown(hud:AddTrackedCooldown(148039, talent_barrier))
     local beaconVirtue = hud:AddRotationCooldown(hud:AddTrackedCooldown(200025, talent_beacon_virtue))
     local toll = hud:AddRotationCooldown(hud.pala_tollCooldown)
+    ERACombatFrames_PaladinLightSmith(hud, talents, 7, 17)
 
-    local awakening = hud:AddRotationStacks(hud:AddTrackedBuff(414196, talent_avenging_proc), 15, 14)
-    awakening.soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    local awakened = hud:AddRotationBuff(hud:AddTrackedBuff(414193, talent_avenging_proc))
-    awakened.overlapsPrevious = awakening
-    function awakened.ShowWhenMissing()
-        return false
-    end
-
+    ---@class PalaSeasonsCooldown : ERAHUDRotationCooldownIcon
+    ---@field pala_currentSeason HolySeasonType
     local seasons = hud:AddRotationCooldown(hud:AddTrackedCooldown(388007, talent_seasons))
-    function hud:DataUpdatedOverride(t)
+    seasons.pala_currentSeason = "SUMMER"
+    function seasons:UpdatedOverride(t, combat)
         local requiredIconID = C_Spell.GetSpellInfo(388007).iconID
         ---@type HolySeasonType
         local seasonType
@@ -143,12 +130,24 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
             -- 3636845
             seasonType = "SUMMER"
         end
-        if seasonType ~= self.pala_currentSeason then
-            self.pala_currentSeason = seasonType
-            seasons.icon:SetIconTexture(requiredIconID)
-            seasons.onTimer.icon:SetIconTexture(requiredIconID)
-            seasons.availableChargePriority.icon:SetIconTexture(requiredIconID)
-        end
+        self.pala_currentSeason = seasonType
+        self:setIconID(requiredIconID)
+    end
+
+    local awakening = hud:AddRotationStacks(hud:AddTrackedBuff(414196, talent_avenging_proc), 15, 14)
+    awakening.soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    local awakened = hud:AddRotationBuff(hud:AddTrackedBuff(414193, talent_avenging_proc))
+    awakened.overlapsPrevious = awakening
+    function awakened.ShowWhenMissing()
+        return false
+    end
+
+    local stackingSOTR = hud:AddRotationStacks(hud:AddTrackedBuff(414444, talent_sotr), 5, 4)
+    stackingSOTR.soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
+    local freeFromSOTR_icon = hud:AddRotationBuff(freeFromSOTR)
+    freeFromSOTR_icon.overlapsPrevious = stackingSOTR
+    function freeFromSOTR_icon.ShowWhenMissing()
+        return false
     end
 
     --[[
@@ -161,16 +160,17 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     4 - crustrike
     5 - consecr refresh
     6 - shock charged
-    7 - prism
-    8 - barrier
-    9 - consecr pretty soon
-    10 - seasons
-    11 - crustrike charged
-    12 - virtue
+    7 - armaments
+    8 - prism
+    9 - barrier
+    10 - consecr pretty soon
+    11 - seasons
+    12 - crustrike charged
     13 - toll
     14 - divinity
     15 - judgment charged
-    16 - tyr
+    17 - armaments charged
+    18 - tyr
 
     ]]
 
@@ -241,20 +241,20 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         return 4
     end
     function crustrike.availableChargePriority:ComputeAvailablePriorityOverride(t)
-        return 11
+        return 12
     end
 
     function prism.onTimer:ComputeAvailablePriorityOverride(t)
-        return 7
+        return 8
+    end
+
+    function seasons.onTimer:ComputeAvailablePriorityOverride(t)
+        return 11
     end
 
     --[[
     function barrier.onTimer:ComputeAvailablePriorityOverride(t)
-        return 8
-    end
-
-    function beaconVirtue.onTimer:ComputeAvailablePriorityOverride(t)
-        return 12
+        return 9
     end
 
     function toll.onTimer:ComputeAvailablePriorityOverride(t)
@@ -277,7 +277,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         return tyrCooldown.remDuration
     end
     function tyrPrio:ComputeAvailablePriorityOverride(t)
-        return 16
+        return 18
     end
 
     --- utility ---

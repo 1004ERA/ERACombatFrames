@@ -195,9 +195,9 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --#region moons ---
 
     local moons = hud:AddRotationCooldown(hud:AddTrackedCooldown(274281, talent_moons))
-    ---@cast moons  MoonsIcon
+    ---@cast moons MoonsIcon
     hud.moons = moons
-    function hud:DataUpdatedOverride(t)
+    function moons:UpdatedOverride(t, combat)
         local requiredIconID = C_Spell.GetSpellInfo(274281).iconID
         ---@type BalanceMoonType
         local moonType
@@ -209,12 +209,8 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
             -- 1392545
             moonType = "NEW"
         end
-        if moonType ~= self.moons.moonType then
-            self.moons.moonType = moonType
-            self.moons.icon:SetIconTexture(requiredIconID)
-            self.moons.onTimer.icon:SetIconTexture(requiredIconID)
-            self.moons.availableChargePriority.icon:SetIconTexture(requiredIconID)
-        end
+        self.moonType = moonType
+        self:setIconID(requiredIconID)
     end
 
     --#endregion
