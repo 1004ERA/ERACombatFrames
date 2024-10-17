@@ -139,10 +139,9 @@ end
 ---@param cFrame ERACombatFrame
 ---@param spec integer
 ---@param talents DruidCommonTalents
----@param talent_dispell ERALIBTalent|nil
 ---@param talent_bonus_wild ERALIBTalent|nil
 ---@return DruidHUD
-function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell, talent_bonus_wild)
+function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_bonus_wild)
     local baseGCD
     if spec == 2 then
         baseGCD = 1.0
@@ -326,11 +325,6 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(22812), hud.defenseGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.7 end) -- bark
 
-    if talent_dispell then
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(2782, talent_dispell), hud.specialGroup, nil, nil, nil, false, true, false, true, false)
-    end
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(29166, talents.innerv), hud.specialGroup)
-
     local maimCooldown = hud:AddTrackedCooldown(22570, talents.maim)
     local maimIcon = hud:AddUtilityCooldown(maimCooldown, hud.controlGroup)
     if spec ~= 2 then
@@ -357,6 +351,16 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_dispell
     ---------------------
 
     return hud
+end
+
+---@param hud DruidHUD
+---@param talents DruidCommonTalents
+---@param talent_nonhealer ERALIBTalent|nil
+function ERACombatFrames_Druid_UtilitySpecial(hud, talents, talent_nonhealer)
+    if talent_nonhealer then
+        hud:AddUtilityDispell(hud:AddTrackedCooldown(2782, talent_nonhealer), hud.specialGroup, nil, nil, nil, false, true, false, true, false)
+    end
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(29166, talents.innerv), hud.specialGroup)
 end
 
 ----------------------

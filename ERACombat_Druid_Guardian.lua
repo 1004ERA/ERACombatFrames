@@ -25,7 +25,7 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
     local htalent_ravage = ERALIBTalent:Create(117206)
     local htalent_wildpower = ERALIBTalent:Create(117209)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 3, talents, ERALIBTalent:Create(103293), nil)
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 3, talents, nil)
     ---@cast hud DruidGuardianHUD
     hud.furCost = 40
     hud.mangleCost = 40
@@ -232,4 +232,7 @@ function ERACombatFrames_DruidGuardianSetup(cFrame, talents)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(200851, talent_sleeper), hud.defenseGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(61336, talent_survival), hud.defenseGroup)
+
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(6795), hud.specialGroup)
+    ERACombatFrames_Druid_UtilitySpecial(hud, talents, ERALIBTalent:Create(103293))
 end

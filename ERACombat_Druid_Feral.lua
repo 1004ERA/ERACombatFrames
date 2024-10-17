@@ -16,7 +16,7 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     local htalent_vines = ERALIBTalent:Create(117226)
     local htalent_bursting = ERALIBTalent:Create(117232)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 2, talents, ERALIBTalent:Create(103282), nil)
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 2, talents, nil)
 
     ERACombatFrames_Druid_NonBalance(hud, talents, ERALIBTalentTrue)
     ERACombatFrames_Druid_NonGuardian(hud, talents)
@@ -141,4 +141,6 @@ function ERACombatFrames_DruidFeralSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup, nil, nil, nil, true)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(61336, talent_instincts), hud.defenseGroup)
+
+    ERACombatFrames_Druid_UtilitySpecial(hud, talents, ERALIBTalent:Create(103282))
 end

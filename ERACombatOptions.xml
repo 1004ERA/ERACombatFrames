@@ -166,15 +166,37 @@
                 </Anchors>
             </CheckButton>
 
-            <CheckButton parentKey="Grid" inherits="UICheckButtonTemplate">
+            <CheckButton parentKey="GRFrame" inherits="UICheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" x="16" y="-264"/>
                 </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptions_updateGRFrame()</OnClick>
+                </Scripts>
             </CheckButton>
-            <CheckButton parentKey="GridByRole" inherits="UICheckButtonTemplate">
+            <CheckButton parentKey="GRFrameHideRaid" inherits="UICheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" x="16" y="-286"/>
+                    <Anchor point="TOPLEFT" x="32" y="-286"/>
                 </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptions_updateGRFrame()</OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton parentKey="GRFrameByGroups" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="131" y="-286"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptions_updateGRFrame()</OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton parentKey="GRFrameHorizontalGroups" inherits="UICheckButtonTemplate">
+                <Anchors>
+                    <Anchor point="TOPLEFT" x="262" y="-286"/>
+                </Anchors>
+                <Scripts>
+                    <OnClick>ERACombatOptions_updateGRFrame()</OnClick>
+                </Scripts>
             </CheckButton>
 
             <CheckButton parentKey="TankWindow" inherits="UICheckButtonTemplate">

@@ -24,7 +24,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     ---@cast hud ERADKBloodHUD
     hud.strikeCost = 0
 
-    if ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_TankWindow) then
+    if ERACombatOptions_getOptionsForSpec(nil, 1).damageTakenWindow then
         local damageTaken = ERAHUDDamageTakenWindow:Create(hud, hud.damageTaken, 222, 333)
     end
 

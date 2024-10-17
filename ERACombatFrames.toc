@@ -17,6 +17,9 @@ ERACombatControls.lua
 ERACombatGrid.xml
 ERACombatGrid.lua
 
+ERAGroupFrames.xml
+ERAGroupFrames.lua
+
 ERACombatDamageWindow.xml
 ERACombatDamage.lua
 

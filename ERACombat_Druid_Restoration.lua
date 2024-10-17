@@ -1,9 +1,11 @@
----@class ERACombatGrid_DruidRestoration : ERACombatGrid
+---@class ERAGroupFrame_DruidRestoration : ERAGroupFrame
 ---@field hasLifebloom boolean
 
 ---@param cFrame ERACombatFrame
 ---@param talents DruidCommonTalents
 function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
+    local talent_normal_dispell = ERALIBTalent:CreateNotTalent(103281)
+    local talent_better_dispell = ERALIBTalent:Create(103281)
     local talent_swiftness = ERALIBTalent:Create(103101)
     local talent_ward = ERALIBTalent:Create(103104)
     local talent_overgrowth = ERALIBTalent:Create(103115)
@@ -23,7 +25,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local htalent_bursting = ERALIBTalent:Create(117232)
     local htalent_blooming = ERALIBTalent:Create(117196)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 4, talents, nil, talent_bonus_wild)
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 4, talents, talent_bonus_wild)
 
     local rejuv2OnSelf = hud:AddTrackedBuff(155777, talent_germination)
     hud:AddUtilityAuraOutOfCombat(rejuv2OnSelf)
@@ -37,33 +39,33 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local bloomB = 0.5
     local bloomOnSelf = hud:AddTrackedBuff(33763)
 
-    ------------------
-    --#region GRID ---
+    local dispellCooldown = hud:AddTrackedCooldown(88423)
 
-    ---@type ERACombatGrid|nil
-    local grid
-    if ERACombatOptions_IsSpecModuleActive(4, ERACombatOptions_Grid) then
-        grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(4, ERACombatOptions_GridByRole), hud, 4, 88423, "Magic", "Poison", "Curse")
-        ---@cast grid ERACombatGrid_DruidRestoration
+    -------------------------
+    --#region group frame ---
 
-        -- spellID, position, priority, rC, gC, bC, rB, gB, bB, talent
-        local ironbDef = grid:AddTrackedBuff(102342, 0, 1, 0.6, 0.4, 0.4, 0.6, 0.4, 0.4, talent_ironbark)
-        local bloomDef = grid:AddTrackedBuff(33763, 0, 2, bloomR, bloomG, bloomB, bloomR, bloomG, bloomB)
-        local regroDef = grid:AddTrackedBuff(8936, 1, 2, 0.0, 0.8, 0.0, 0.0, 0.8, 0.0)
-        local vinesDef = grid:AddTrackedBuff(439530, 2, 1, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B, htalent_bursting)
-        local rejuvDef = grid:AddTrackedBuff(774, 2, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)
-        local wildgDef = grid:AddTrackedBuff(48438, 3, 1, 0.7, 1.0, 0.3, 0.7, 1.0, 0.3)
-        local rejuv2Def = grid:AddTrackedBuff(155777, 3, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, talent_germination)
-
-        function grid:UpdatedInCombatOverride(t)
-            self.hasLifebloom = #(bloomDef.instances) > 0
-        end
-    else
-        grid = nil
+    local hOptions = ERACombatOptions_getOptionsForSpec(nil, 4).healerOptions
+    ---@cast hOptions ERACombatGroupFrameOptions
+    local groupFrame = ERAGroupFrame:Create(cFrame, hud, hOptions, 4)
+    local bloomOnGroup = groupFrame:AddBuff(33763, false)
+    if not hOptions.disabled then
+        groupFrame:AddDisplay(groupFrame:AddBuff(102342, false, talent_ironbark), 0, 1, 0.6, 0.4, 0.4, 0.6, 0.4, 0.4)
+        groupFrame:AddDisplay(bloomOnGroup, 0, 2, bloomR, bloomG, bloomB, bloomR, bloomG, bloomB)
+        groupFrame:AddDisplay(groupFrame:AddBuff(8936, false), 1, 1, 0.0, 0.8, 0.0, 0.0, 0.8, 0.0)                                                                                                                               -- regrowth
+        groupFrame:AddDisplay(groupFrame:AddBuff(439530, false, htalent_bursting), 2, 1, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B, ERA_Druid_Vine_R, ERA_Druid_Vine_G, ERA_Druid_Vine_B)
+        groupFrame:AddDisplay(groupFrame:AddBuff(774, false), 2, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B)                                            -- rejuv
+        groupFrame:AddDisplay(groupFrame:AddBuff(155777, false, talent_germination), 3, 2, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, ERA_Druid_Rejuv_R, ERA_Druid_Rejuv_G, ERA_Druid_Rejuv_B, talent_germination) -- rejuv2
+        groupFrame:AddDisplay(groupFrame:AddBuff(48438, false), 3, 1, 0.7, 1.0, 0.3, 0.7, 1.0, 0.3)                                                                                                                              -- wildg
+        groupFrame:AddDispell(dispellCooldown, talent_normal_dispell, true, false, false, false, false)
+        groupFrame:AddDispell(dispellCooldown, talent_better_dispell, true, true, false, true, false)
+    end
+    ---@cast groupFrame ERAGroupFrame_DruidRestoration
+    function groupFrame:UpdatedOverride(t)
+        self.hasLifebloom = #(bloomOnGroup.activeInstances) > 0
     end
 
     --#endregion
-    ------------------
+    -------------------------
 
     local elderDruidCooldown = hud:AddTrackedDebuffOnSelf(426790, talent_bonus_wild)
 
@@ -90,7 +92,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     function missingLifebloom:ConfirmIsActiveOverride(t, combat)
         if not combat then return false end
         if self.hud.isInGroup or self.hud.groupMembersExcludingSelf > 0 then
-            return grid ~= nil and not grid.hasLifebloom
+            return not groupFrame.hasLifebloom
         else
             return true
         end
@@ -183,4 +185,8 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(391528, talent_convoke), hud.powerUpGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(33891, talent_incarnation), hud.powerUpGroup)
+
+    hud:AddUtilityDispell(dispellCooldown, hud.specialGroup, nil, nil, talent_normal_dispell, true, false, false, false, false)
+    hud:AddUtilityDispell(dispellCooldown, hud.specialGroup, nil, nil, talent_better_dispell, true, true, false, true, false)
+    ERACombatFrames_Druid_UtilitySpecial(hud, talents, nil)
 end

@@ -548,7 +548,7 @@ function ERACombatGridUnitPrototype:updateHealth()
                 self.deadLine2:Show()
                 self.health:SetWidth(0)
                 self.absorbHealBar:Hide()
-                self.absorbDamageBar:Hide(0)
+                self.absorbDamageBar:Hide()
             end
         end
     else
@@ -653,14 +653,9 @@ function ERACombatGridUnitPrototype:update(t)
     if (self.grid.isGridVisible) then
         local threat = UnitThreatSituation(self.unit)
         local isTanking = threat and threat >= 2
-        if threat and threat >= 2 then
-            self:setBorder(1.0, 0.0, 0.0)
-        else
-
-        end
         if (UnitIsUnit("target", self.unit)) then
             if (isTanking) then
-                self:setBorder(1.0, 0.5, 0.0)
+                self:setBorder(1.0, 0.6, 0.6)
             else
                 self:setBorder(1.0, 1.0, 1.0)
             end

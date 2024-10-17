@@ -38,7 +38,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
 
     local plagueLongBar = hud:AddAuraBar(plague, nil, 0.3, 0.4, 0.1)
     function plagueLongBar:ComputeDurationOverride(t)
-        if (plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent())) then
+        if (plague.remDuration <= 8 and not talent_ebon_fever:PlayerHasTalent()) or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent()) then
             return 0
         else
             return plague.remDuration
@@ -46,7 +46,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     end
     local plagueShortBar = hud:AddAuraBar(plague, nil, 0.7, 1.0, 0.0)
     function plagueShortBar:ComputeDurationOverride(t)
-        if (plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent())) then
+        if (plague.remDuration <= 8 and not talent_ebon_fever:PlayerHasTalent()) or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent()) then
             return plague.remDuration
         else
             return 0
@@ -87,7 +87,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     local contagionIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(390279, talent_contagion))
 
     ERACombatFrames_DKSoulReaper(hud, 1)
-    
+
     local aboIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(455395, talent_abomination))
 
     --[[
@@ -111,7 +111,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     function outbreakPrio:ComputeAvailablePriorityOverride(t)
         if plague.remDuration <= hud.occupied + 0.1 then
             return 2
-        elseif plague.remDuration <= 8 or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent()) then
+        elseif (plague.remDuration <= 8 and not talent_ebon_fever:PlayerHasTalent()) or (plague.remDuration <= 4 and talent_ebon_fever:PlayerHasTalent()) then
             return 5
         else
             return 0

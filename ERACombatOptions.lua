@@ -13,6 +13,14 @@ end
 ---@field bottomY number|nil
 ---@field hideSAO boolean|nil
 ---@field hideUtility boolean|nil
+---@field damageTakenWindow boolean|nil
+---@field healerOptions ERACombatGroupFrameOptions|nil
+
+---@class (exact) ERACombatGroupFrameOptions
+---@field disabled boolean
+---@field byGroup boolean
+---@field horizontalGroups boolean
+---@field showRaid boolean
 
 ---@class OptionSliderFrame
 ---@field Slider Slider
@@ -23,6 +31,7 @@ end
 ---@field Result FontString
 
 ---@class (exact) ERACombatOptionsWindow : Frame
+---@field eventMasque boolean
 ---@field CBX CheckButton
 ---@field YSlider ERACombatOptionsSlider
 ---@field LeftSlider ERACombatOptionsSlider
@@ -30,8 +39,10 @@ end
 ---@field BottomSlider ERACombatOptionsSlider
 ---@field Utility CheckButton
 ---@field SAO CheckButton
----@field Grid CheckButton
----@field GridByRole CheckButton
+---@field GRFrame CheckButton
+---@field GRFrameHideRaid CheckButton
+---@field GRFrameByGroups CheckButton
+---@field GRFrameHorizontalGroups CheckButton
 ---@field TankWindow CheckButton
 ---@field currentSpec ERACombatSpecOptions|nil
 
@@ -54,40 +65,32 @@ ERACombatGlobals_SpecID4 = 0
 ERACombatOptions_FrameContentOffset = 32
 ERACombatOptions_FrameContentWidth = 1004
 
-ERACombatOptions_TankWindow = "damage chart"
-ERACombatOptions_Grid = "group/raid frames"
-ERACombatOptions_GridByRole = "grfbr"
-
 ---@param classID integer
 ---@param specID integer
----@param optionName string
-function ERACombatOptions_addSpecOption(classID, specID, optionName)
-    local class = ERACombatOptionsVariables[classID]
-    if (not class) then
-        class = {}
-        ERACombatOptionsVariables[classID] = class
+function ERACombatOptions_addDamageTakenWindowOption(classID, specID)
+    local spec = ERACombatOptions_getOptionsForSpec(classID, specID)
+    if spec.damageTakenWindow == nil then
+        spec.damageTakenWindow = true
     end
-    local spec = class[specID]
-    if (not spec) then
-        spec = {}
-        class[specID] = spec
-    end
-    spec.specID = specID
-    if (spec[optionName] == nil) then
-        spec[optionName] = true
-    end
-end
----@param classID integer
----@param specID integer
-function ERACombatOptions_addGridOption(classID, specID)
-    ERACombatOptions_addSpecOption(classID, specID, ERACombatOptions_Grid)
-    ERACombatOptions_addSpecOption(classID, specID, ERACombatOptions_GridByRole)
 end
 
 ---@param spec ERACombatSpecOptions
 ---@return boolean
 function ERACombatOptions_isHealer(spec)
-    return spec[ERACombatOptions_Grid] ~= nil
+    return spec.healerOptions ~= nil
+end
+---@param classID integer
+---@param specID integer
+function ERACombatOptions_setHealer(classID, specID)
+    local spec = ERACombatOptions_getOptionsForSpec(classID, specID)
+    if spec.healerOptions == nil then
+        spec.healerOptions = {
+            disabled = false,
+            byGroup = false,
+            horizontalGroups = false,
+            showRaid = true,
+        }
+    end
 end
 
 ---@param classID integer
@@ -96,14 +99,14 @@ function ERACombatOptions_setup(classID)
         ERACombatOptionsVariables = {}
     end
 
-    ERACombatOptions_addGridOption(2, 1)                               -- paladin holy
-    ERACombatOptions_addGridOption(5, 1)                               -- priest disc
-    ERACombatOptions_addGridOption(5, 2)                               -- priest holy
-    ERACombatOptions_addSpecOption(6, 1, ERACombatOptions_TankWindow)  -- dk blood
-    ERACombatOptions_addGridOption(10, 2)                              -- monk heal
-    ERACombatOptions_addGridOption(11, 4)                              -- druid heal
-    ERACombatOptions_addSpecOption(12, 2, ERACombatOptions_TankWindow) -- dh vengeance
-    ERACombatOptions_addGridOption(13, 2)                              -- evo heal
+    ERACombatOptions_setHealer(2, 1)                   -- paladin holy
+    ERACombatOptions_setHealer(5, 1)                   -- priest disc
+    ERACombatOptions_setHealer(5, 2)                   -- priest holy
+    ERACombatOptions_addDamageTakenWindowOption(6, 1)  -- dk blood
+    ERACombatOptions_setHealer(10, 2)                  -- monk heal
+    ERACombatOptions_setHealer(11, 4)                  -- druid heal
+    ERACombatOptions_addDamageTakenWindowOption(12, 2) -- dh vengeance
+    ERACombatOptions_setHealer(13, 2)                  -- evo heal
 
     local classOptions = ERACombatOptionsVariables[classID]
     if (not classOptions) then
@@ -125,18 +128,24 @@ function ERACombatOptions_setup(classID)
 
     local cbxUtility = w.Utility
     local cbxSAO = w.SAO
-    local cbxGrid = w.Grid
-    local cbxGridByRole = w.GridByRole
+    local cbxGR = w.GRFrame
+    local cbxGRHideRaid = w.GRFrameHideRaid
+    local cbxGRByGroups = w.GRFrameByGroups
+    local cbxGRHorizontalGroups = w.GRFrameHorizontalGroups
     local cbxTankWindow = w.TankWindow
     ---@cast cbxUtility unknown
     ---@cast cbxSAO unknown
-    ---@cast cbxGrid unknown
-    ---@cast cbxGridByRole unknown
+    ---@cast cbxGR unknown
+    ---@cast cbxGRHideRaid unknown
+    ---@cast cbxGRByGroups unknown
+    ---@cast cbxGRHorizontalGroups unknown
     ---@cast cbxTankWindow unknown
     cbxUtility.Text:SetText("utility cooldowns and icons")
     cbxSAO.Text:SetText("spell activation overlay")
-    cbxGrid.Text:SetText("group/raid frame")
-    cbxGridByRole.Text:SetText("group/raid frame : display by role rather than by groups")
+    cbxGR.Text:SetText("group/raid frame")
+    cbxGRHideRaid.Text:SetText("hide in raid")
+    cbxGRByGroups.Text:SetText("separate by groups")
+    cbxGRHorizontalGroups.Text:SetText("horizontal groups")
     cbxTankWindow.Text:SetText("damage taken chart")
 end
 
@@ -164,6 +173,7 @@ function ERACombatOptions_setupSlider(s, value, defaultValue)
 end
 
 function ERACombatOptions_close()
+    ERACombatOptionsWindow.eventMasque = false
     ERACombatOptionsWindow.currentSpec = nil
     ERACombatOptionsWindow:Hide()
 end
@@ -175,6 +185,8 @@ function ERACombatOptions_open()
     local w = ERACombatOptionsWindow
     local txt = w.CBX.Text
     ---@cast w ERACombatOptionsWindow
+    w.eventMasque = false
+
     ---@cast txt FontString
     txt:SetText("enable for specialization : " .. name)
 
@@ -198,35 +210,58 @@ function ERACombatOptions_open()
     w.Utility:SetChecked(not specOptions.hideUtility)
     w.SAO:SetChecked(not specOptions.hideSAO)
 
-    local grid = specOptions[ERACombatOptions_Grid]
-    if grid == nil then
-        w.Grid:Hide()
-        w.GridByRole:Hide()
+    if specOptions.healerOptions == nil then
+        w.GRFrame:Hide()
+        w.GRFrameHideRaid:Hide()
+        w.GRFrameByGroups:Hide()
+        w.GRFrameHorizontalGroups:Hide()
     else
-        w.Grid:SetChecked(grid)
-        w.Grid:Show()
-        local GridByRoles = specOptions[ERACombatOptions_GridByRole]
-        if GridByRoles == nil then
-            w.GridByRole:Hide()
-        else
-            w.GridByRole:SetChecked(GridByRoles)
-            w.GridByRole:Show()
-        end
+        w.GRFrame:SetChecked(not specOptions.healerOptions.disabled)
+        w.GRFrame:Show()
+        w.GRFrameHideRaid:SetChecked(not specOptions.healerOptions.showRaid)
+        w.GRFrameByGroups:SetChecked(specOptions.healerOptions.byGroup)
+        w.GRFrameHorizontalGroups:SetChecked(specOptions.healerOptions.horizontalGroups)
+        ERACombatOptions_updateGRFrame()
     end
 
-    local tw = specOptions[ERACombatOptions_TankWindow]
-    if tw == nil then
+    if specOptions.damageTakenWindow == nil then
         w.TankWindow:Hide()
     else
-        w.TankWindow:SetChecked(tw)
+        w.TankWindow:SetChecked(specOptions.damageTakenWindow)
         w.TankWindow:Show()
     end
 
     w.currentSpec = specOptions
 
     w:Show()
+    w.eventMasque = true
 end
 
+function ERACombatOptions_updateGRFrame()
+    local w = ERACombatOptionsWindow
+    ---@cast w ERACombatOptionsWindow
+    local remember_masque = w.eventMasque
+    w.eventMasque = false
+    if w.GRFrame:GetChecked() then
+        w.GRFrameHideRaid:Show()
+        if w.GRFrameHideRaid:GetChecked() then
+            w.GRFrameByGroups:Hide()
+            w.GRFrameHorizontalGroups:Hide()
+        else
+            w.GRFrameByGroups:Show()
+            if w.GRFrameByGroups:GetChecked() then
+                w.GRFrameHorizontalGroups:Show()
+            else
+                w.GRFrameHorizontalGroups:Hide()
+            end
+        end
+    else
+        w.GRFrameHideRaid:Hide()
+        w.GRFrameByGroups:Hide()
+        w.GRFrameHorizontalGroups:Hide()
+    end
+    w.eventMasque = remember_masque
+end
 function ERACombatOptions_confirmAndReload()
     local w = ERACombatOptionsWindow
     ---@cast w ERACombatOptionsWindow
@@ -238,12 +273,14 @@ function ERACombatOptions_confirmAndReload()
         w.currentSpec.bottomY = w.BottomSlider.SliderFrame.Slider:GetValue()
         w.currentSpec.hideUtility = not w.Utility:GetChecked()
         w.currentSpec.hideSAO = not w.SAO:GetChecked()
-        if w.currentSpec[ERACombatOptions_Grid] ~= nil then
-            w.currentSpec[ERACombatOptions_Grid] = w.Grid:GetChecked()
-            w.currentSpec[ERACombatOptions_GridByRole] = w.GridByRole:GetChecked()
+        if w.currentSpec.healerOptions ~= nil then
+            w.currentSpec.healerOptions.disabled = not w.GRFrame:GetChecked()
+            w.currentSpec.healerOptions.showRaid = not w.GRFrameHideRaid:GetChecked()
+            w.currentSpec.healerOptions.byGroup = w.GRFrameByGroups:GetChecked()
+            w.currentSpec.healerOptions.horizontalGroups = w.GRFrameHorizontalGroups:GetChecked()
         end
-        if w.currentSpec[ERACombatOptions_TankWindow] ~= nil then
-            w.currentSpec[ERACombatOptions_TankWindow] = w.TankWindow:GetChecked()
+        if w.currentSpec.damageTakenWindow ~= nil then
+            w.currentSpec.damageTakenWindow = w.TankWindow:GetChecked()
         end
     end
     C_UI.Reload()
@@ -271,23 +308,6 @@ function ERACombatOptions_getOptionsForSpec(classID, specID)
     end
     specData.specID = specID
     return specData
-end
-
----@param specID integer
----@param moduleName string
----@return boolean
-function ERACombatOptions_IsSpecModuleActive(specID, moduleName)
-    local c = ERACombatOptionsVariables[ERACombatFrames_classID]
-    if (c) then
-        local s = c[specID]
-        if (s) then
-            return s[moduleName]
-        else
-            return true
-        end
-    else
-        return true
-    end
 end
 
 ---@param specOptions ERACombatSpecOptions

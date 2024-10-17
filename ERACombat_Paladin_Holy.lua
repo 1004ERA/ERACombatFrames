@@ -47,15 +47,24 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     local springG = 1.0
     local springB = 0.5
 
-    if ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_Grid) then
-        local grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(1, ERACombatOptions_GridByRole), hud, 1, 4987, "Magic", "Poison", "Disease")
-        grid:AddTrackedBuff(53563, 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon)
-        grid:AddTrackedBuff(156910, 0, 2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, talent_beacon2)
-        grid:AddTrackedBuff(200025, 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, talent_beacon_virtue)
-        grid:AddTrackedBuff(148039, 1, 1, barrierR, barrierG, barrierB, barrierR, barrierG, barrierB, talent_barrier)
-        grid:AddTrackedBuff(200654, 2, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, talent_tyr)
-        grid:AddTrackedBuff(388007, 3, 1, summerR, summerG, summerB, summerR, summerG, summerB, talent_seasons)
-        grid:AddTrackedBuff(388013, 3, 2, springR, springG, springB, springR, springG, springB, talent_seasons)
+    local dispellCooldown = hud:AddTrackedCooldown(4987)
+
+    local hOptions = ERACombatOptions_getOptionsForSpec(nil, 1).healerOptions
+    ---@cast hOptions ERACombatGroupFrameOptions
+    if not hOptions.disabled then
+        local groupFrame = ERAGroupFrame:Create(cFrame, hud, hOptions, 1)
+        groupFrame:AddDisplay(groupFrame:AddBuff(53563, false, talent_beacon), 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+        groupFrame:AddDisplay(groupFrame:AddBuff(156910, false, talent_beacon2), 0, 2, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0)
+        groupFrame:AddDisplay(groupFrame:AddBuff(200025, false, talent_beacon_virtue), 0, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0)
+        groupFrame:AddDisplay(groupFrame:AddBuff(148039, false, talent_barrier), 1, 1, barrierR, barrierG, barrierB, barrierR, barrierG, barrierB, talent_barrier)
+        groupFrame:AddDisplay(groupFrame:AddBuff(200654, false, talent_tyr), 2, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0)
+        groupFrame:AddDisplay(groupFrame:AddBuff(388007, false, talent_seasons), 3, 1, summerR, summerG, summerB, summerR, summerG, summerB, talent_seasons)
+        groupFrame:AddDisplay(groupFrame:AddBuff(388013, false, talent_seasons), 3, 2, springR, springG, springB, springR, springG, springB, talent_seasons)
+
+        groupFrame:AddDisplay(groupFrame:AddDebuff(25771, true), -2, 2, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0)
+
+        groupFrame:AddDispell(dispellCooldown, talent_normal_cleanse, true, false, false, false, false)
+        groupFrame:AddDispell(dispellCooldown, talent_better_cleanse, true, true, true, false, false)
     end
 
     --- SAO ---
@@ -282,6 +291,6 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     ERACombatFrames_PaladinDivProt(hud, 498, -2, 26)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(31821, talent_auramastery), hud.defenseGroup, nil, -1)
 
-    hud:AddUtilityDispell(hud:AddTrackedCooldown(4987), hud.specialGroup, nil, nil, talent_normal_cleanse, true, false, false, false, false)
-    hud:AddUtilityDispell(hud:AddTrackedCooldown(4987), hud.specialGroup, nil, nil, talent_better_cleanse, true, true, true, false, false)
+    hud:AddUtilityDispell(dispellCooldown, hud.specialGroup, nil, nil, talent_normal_cleanse, true, false, false, false, false)
+    hud:AddUtilityDispell(dispellCooldown, hud.specialGroup, nil, nil, talent_better_cleanse, true, true, true, false, false)
 end

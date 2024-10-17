@@ -8,6 +8,8 @@
 ---@field evoker_unravelIcon ERAHUDRotationCooldownIcon
 ---@field evoker_unravelUsable boolean
 ---@field evoker_unravelAbsorbValue number
+---@field evoker_dispellCooldown ERACooldownBase
+---@field evoker_cauterizeCooldown ERACooldownBase
 
 ---@class (exact) ERACombat_EvokerCommonTalents
 ---@field quell ERALIBTalent
@@ -268,11 +270,14 @@ function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unr
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(372048, talents.roar), hud.controlGroup)
 
     if spec == 2 then
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(360823, talents.expunge), hud.specialGroup, nil, nil, nil, true, true, false, false, false)
+        hud.evoker_dispellCooldown = hud:AddTrackedCooldown(360823, talents.expunge)
+        hud:AddUtilityDispell(hud.evoker_dispellCooldown, hud.specialGroup, nil, nil, nil, true, true, false, false, false)
     else
-        hud:AddUtilityDispell(hud:AddTrackedCooldown(365585, talents.expunge), hud.specialGroup, nil, nil, nil, false, true, false, false, false)
+        hud.evoker_dispellCooldown = hud:AddTrackedCooldown(365585, talents.expunge)
+        hud:AddUtilityDispell(hud.evoker_dispellCooldown, hud.specialGroup, nil, nil, nil, false, true, false, false, false)
     end
-    hud:AddUtilityDispell(hud:AddTrackedCooldown(374251, talents.cauterize), hud.specialGroup, nil, nil, nil, false, true, true, true, true)
+    hud.evoker_cauterizeCooldown = hud:AddTrackedCooldown(374251, talents.cauterize)
+    hud:AddUtilityDispell(hud.evoker_cauterizeCooldown, hud.specialGroup, nil, nil, nil, false, true, true, true, true)
 
     return hud
 end

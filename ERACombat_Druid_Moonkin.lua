@@ -37,7 +37,7 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     local enemies = ERACombatEnemies:Create(cFrame, 1)
 
-    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 1, talents, ERALIBTalent:Create(103283), nil)
+    local hud = ERACombatFrames_Druid_CommonSetup(cFrame, 1, talents, nil)
     ---@cast hud DruidBalanceHUD
     hud.wrathStacks = hud:AddSpellStacks(190984)
     hud.starStacks = hud:AddSpellStacks(194153)
@@ -285,6 +285,8 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(194223, talent_alignment_without_orbital_strike), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(383410, talent_alignment_with_orbital_strike), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(102560, talent_incarnation), hud.powerUpGroup, nil, nil, nil, true)
+
+    ERACombatFrames_Druid_UtilitySpecial(hud, talents, ERALIBTalent:Create(103283))
 end
 
 ---@class ERADruidEclipse : ERACombatModule

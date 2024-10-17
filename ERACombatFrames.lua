@@ -6,7 +6,6 @@ TODO
 - debuffs raid
 - améliorer les charges de brez
 - ? icone trinket ?
-- grid : dispell types based on talents
 
 ERA_Debug = function()
 

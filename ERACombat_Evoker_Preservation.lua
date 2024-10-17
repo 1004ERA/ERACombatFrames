@@ -12,12 +12,16 @@ function ERACombatFrames_EvokerPreservationSetup(cFrame, talents)
 
     local hud = ERAEvokerCommonSetup(cFrame, 12, "TO_RIGHT", 369299, 1, talents, nil, 2)
 
-    if ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_Grid) then
-        local grid = ERACombatGrid:Create(cFrame, ERACombatOptions_IsSpecModuleActive(2, ERACombatOptions_GridByRole), hud, 2, 360823, "Magic", "Poison")
-        grid:AddTrackedBuff(364343, 0, 1, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0, nil) -- echo
-        grid:AddTrackedBuff(366155, 1, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0, nil) -- reversion
-        grid:AddTrackedBuff(355941, 2, 1, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, nil) -- breath
-        grid:AddTrackedBuff(357170, 3, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, nil) -- dilation
+    local hOptions = ERACombatOptions_getOptionsForSpec(nil, 2).healerOptions
+    ---@cast hOptions ERACombatGroupFrameOptions
+    if not hOptions.disabled then
+        local groupFrame = ERAGroupFrame:Create(cFrame, hud, hOptions, 2)
+        groupFrame:AddDisplay(groupFrame:AddBuff(364343, false), 0, 1, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0) -- echo
+        groupFrame:AddDisplay(groupFrame:AddBuff(366155, false), 1, 1, 1.0, 1.0, 0.0, 1.0, 1.0, 0.0) -- reversion
+        groupFrame:AddDisplay(groupFrame:AddBuff(355941, false), 2, 1, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0) -- breath
+        groupFrame:AddDisplay(groupFrame:AddBuff(357170, false), 3, 1, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0) -- dilation
+        groupFrame:AddDispell(hud.evoker_dispellCooldown, talents.expunge, true, true, false, false, false)
+        groupFrame:AddDispell(hud.evoker_cauterizeCooldown, talents.cauterize, true, true, true, true, true, 1.0, 0.0, 0.0, 0.4, 0.0, 0.0)
     end
 
     --- rotation ---
