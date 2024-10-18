@@ -1143,15 +1143,14 @@ function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(t, combat)
         or
         (self.enrage and self.hud.targetDispellableEnrage)
     then
-        if self.data.remDuration > 0 then
-            self.icon:StopHighlight()
-        else
-            self.icon:Highlight()
-        end
         self.icon:Show()
     else
         self.icon:Hide()
     end
+end
+
+function ERAHUDRotationOffensiveDispellIcon:HighlightOverride(t, combat)
+    return self.data.remDuration <= 0
 end
 
 --#endregion
@@ -2026,44 +2025,59 @@ end
 
 --#region MISSING
 
----@class (exact) ERAHUDEmptyTimer : ERAHUDUtilityIcon
+---@class (exact) ERAHUDMissingUtility : ERAHUDUtilityIcon
 ---@field private __index unknown
----@field timer ERATimer
----@field private update fun(this:ERAHUDEmptyTimer, t:number, combat:boolean)
----@field onlyIfPartyHasAnotherHealer boolean
+---@field miss ERAMissingDataItem
+---@field private update fun(this:ERAHUDMissingUtility, t:number, combat:boolean)
 ---@field fadeAfterSeconds number
+---@field repeatAfterSeconds number
 ---@field private lastAppeared number
-ERAHUDEmptyTimer = {}
-ERAHUDEmptyTimer.__index = ERAHUDEmptyTimer
-setmetatable(ERAHUDEmptyTimer, { __index = ERAHUDUtilityIcon })
+ERAHUDMissingUtility = {}
+ERAHUDMissingUtility.__index = ERAHUDMissingUtility
+setmetatable(ERAHUDMissingUtility, { __index = ERAHUDUtilityIcon })
 
----@param timer ERATimer
+---@param miss ERAMissingDataItem
 ---@param fadeAfterSeconds number
+---@param repeatAfterSeconds number
 ---@param iconID integer
 ---@param talent ERALIBTalent|nil
----@return ERAHUDEmptyTimer
-function ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
+---@return ERAHUDMissingUtility
+function ERAHUDMissingUtility:create(miss, fadeAfterSeconds, repeatAfterSeconds, iconID, talent)
     local et = {}
-    setmetatable(et, ERAHUDEmptyTimer)
-    ---@cast et ERAHUDEmptyTimer
-    et.timer = timer
-    et:constructUtilityIcon(timer.hud, iconID, true, talent)
+    setmetatable(et, ERAHUDMissingUtility)
+    ---@cast et ERAHUDMissingUtility
+    et.miss = miss
+    et:constructUtilityIcon(miss.hud, iconID, true, talent)
     et.lastAppeared = 0
     et.fadeAfterSeconds = fadeAfterSeconds
-    timer.hud:addEmpty(et)
+    et.repeatAfterSeconds = repeatAfterSeconds
+    miss.hud:addEmpty(et)
     return et
 end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDEmptyTimer:update(t, combat)
-    if self.timer.remDuration <= 0 and (self.hud.otherHealersInGroup > 0 or not self.onlyIfPartyHasAnotherHealer) then
-        if self.lastAppeared > 0 and t - self.lastAppeared > self.fadeAfterSeconds then
-            self.icon:Hide()
-        else
-            if self.lastAppeared <= 0 then
+function ERAHUDMissingUtility:update(t, combat)
+    if self.miss.talentActive and self.miss.isMissing then
+        if self.lastAppeared > 0 then
+            local delta = t - self.lastAppeared
+            local visible
+            if delta < self.fadeAfterSeconds then
+                visible = true
+            elseif delta < self.fadeAfterSeconds + self.repeatAfterSeconds then
+                visible = false
+            else
                 self.lastAppeared = t
+                visible = true
             end
+            if visible then
+                self.icon:Beam()
+                self.icon:Show()
+            else
+                self.icon:Hide()
+            end
+        else
+            self.lastAppeared = t
             self.icon:Beam()
             self.icon:Show()
         end
@@ -2308,14 +2322,6 @@ function ERASAOAura:getIsActive(t, combat)
     return self.aura.stacks >= self.minStacks
 end
 
----@class (exact) ERASAOMissingTimer : ERASAO
----@field private __index unknown
----@field private timer ERATimer
----@field private onlyIfHasTarget boolean
-ERASAOMissingTimer = {}
-ERASAOMissingTimer.__index = ERASAOMissingTimer
-setmetatable(ERASAOMissingTimer, { __index = ERASAO })
-
 --- BASED ON ANY TIMER ---
 
 ---@class (exact) ERASAOTimer : ERASAO
@@ -2357,7 +2363,17 @@ function ERASAOTimer:getIsActive(t, combat)
     return self.timer.remDuration > 0
 end
 
----@param timer ERATimer
+--- MISSING ---
+
+---@class (exact) ERASAOMissingTimer : ERASAO
+---@field private __index unknown
+---@field private miss ERAMissingDataItem
+---@field private onlyIfHasTarget boolean
+ERASAOMissingTimer = {}
+ERASAOMissingTimer.__index = ERASAOMissingTimer
+setmetatable(ERASAOMissingTimer, { __index = ERASAO })
+
+---@param miss ERAMissingDataItem
 ---@param onlyIfHasTarget boolean
 ---@param texture string|integer
 ---@param isAtlas boolean
@@ -2370,25 +2386,25 @@ end
 ---@param offsetX number
 ---@param offsetY number
 ---@return ERASAOMissingTimer
-function ERASAOMissingTimer:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+function ERASAOMissingTimer:create(miss, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     local a = {}
     setmetatable(a, ERASAOMissingTimer)
     ---@cast a ERASAOMissingTimer
-    a.timer = timer
+    a.miss = miss
     a.onlyIfHasTarget = onlyIfHasTarget
-    a:constructSAO(timer.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    a:constructSAO(miss.hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
     return a
 end
 
 ---@return boolean
 function ERASAOMissingTimer:checkTalentSAO()
-    return self.timer.talentActive
+    return self.miss.talentActive
 end
 
 ---@param combat boolean
 ---@param t number
 function ERASAOMissingTimer:getIsActive(t, combat)
-    return self.timer.remDuration <= 0 and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
+    return self.miss.isMissing and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
 end
 
 --- BASED ON ACTIVATION ---

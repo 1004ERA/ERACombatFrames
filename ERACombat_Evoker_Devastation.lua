@@ -23,7 +23,7 @@ function ERACombatFrames_EvokerDevastationSetup(cFrame, enemies, talents)
 
     local shatterIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(370452, talent_shatter))
 
-    ---@type ERACooldownAdditionalID
+    ---@type ERASpellAdditionalID
     local surge_alternative = {
         spellID = 382411,
         talent = talent_big_empower,

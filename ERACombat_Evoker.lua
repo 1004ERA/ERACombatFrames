@@ -123,7 +123,7 @@ function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unr
     hud.evoker_essence = ERAEvokerEssenceModule:create(hud, essenceDirection)
 
     if talent_big_empower then
-        ---@type ERACooldownAdditionalID
+        ---@type ERASpellAdditionalID
         local additionalFirebreath = {
             spellID = 382266,
             talent = talent_big_empower
@@ -240,11 +240,29 @@ function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unr
 
     --- utility ---
 
-    local bronzeBuffCooldown = hud:AddTrackedCooldown(364342)
-    hud:AddEmptyTimer(hud:AddOrTimer(false, bronzeBuffCooldown, hud:AddBuffOnAllPartyMembers(381748, nil,
-        442744, 432674, 364342, 381732, 381757, 381754, 381746, 381752, 381741, 381756, 381758, 381753, 381749, 432655, 381751, 381750, 432652, 432658
-    )), 8, 4622448, ERALIBTalent:CreateLevel(60))
-    hud:AddEmptyTimer(hud:AddBuffOnFriendlyHealer(369459, talents.source), 8, 4630412, talents.source)
+    local talent_bronzebuff = ERALIBTalent:CreateLevel(60)
+    hud:AddMissingUtility(hud:AddAnyActive(hud:AddTrackedCooldown(364342, talent_bronzebuff), hud:AddBuffOnAllPartyMembers(talent_bronzebuff,
+        hud:AddTrackedBuffAnyCaster(381748, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(442744, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(432674, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(364342, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381732, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381757, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381754, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381746, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381752, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381741, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381756, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381758, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381753, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381749, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(432655, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381751, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(381750, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(432652, talent_bronzebuff),
+        hud:AddTrackedBuffAnyCaster(432658, talent_bronzebuff)
+    )), 5, 15, 4622448, talent_bronzebuff)
+    hud:AddMissingUtility(hud:AddBuffOnFriendlyHealer(talents.source, hud:AddTrackedBuff(369459, talents.source)), 4, 12, 4630412, talents.source)
 
     hud:AddUtilityAuraOutOfCombat(hud.evoker_burnout)
     hud:AddUtilityAuraOutOfCombat(hud.evoker_leapingBuff)

@@ -200,7 +200,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         return 6
     end
 
-    local bonusDawnCooldown = hud:AddTrackedDebuffOnSelf(387441, talent_bonus_dawn)
+    local bonusDawnCooldown = hud:AddTrackedDebuffOnSelf(387441, false, talent_bonus_dawn)
     local bonusDawnCooldownTimer = hud:AddPriority(1519263, talent_bonus_dawn)
     function bonusDawnCooldownTimer:ComputeDurationOverride(t)
         if bonusDawnCooldown.remDuration > 0 then

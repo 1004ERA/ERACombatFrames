@@ -5,9 +5,9 @@ ERACombatFrames_initialized = false
 TODO
 - debuffs nerubar & mm+
 - améliorer les charges de brez
-- missing buff on group member
 - ? icone trinket ?
-- paladin steed (tauren, blood elf, lightforged, horde earthen)
+- paladin steed (lightforged)
+- dracthyr racial for 11.0.5
 
 ERA_Debug = function()
 

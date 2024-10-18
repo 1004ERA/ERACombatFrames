@@ -91,7 +91,7 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
 
     local explodingIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(325153, talent_exploding))
 
-    ---@type ERACooldownAdditionalID
+    ---@type ERASpellAdditionalID
     local bokAlternative = {
         spellID = 100784,
         talent = talent_no_shuffle
@@ -128,21 +128,22 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     ]]
 
     ---@class BMEHTimer : ERAHUDRawPriority
-    ---@field ehRatio number
+    ---@field ehPct number
     local ehTimer = hud:AddPriority(627486)
-    ehTimer.ehRatio = 0
+    ehTimer.ehPct = 0
     function ehTimer:ComputeDurationOverride(t)
-        self.ehRatio = (self.hud.health.maxHealth - self.hud.health.currentHealth) / ERACombatFrames_MonkBrewmasterEH(hud, talents)
-        if self.ehRatio > 1 then
+        local h = ERACombatFrames_MonkBrewmasterEH(hud, talents)
+        if h < self.hud.health.maxHealth - self.hud.health.currentHealth then
+            self.ehPct = h / self.hud.health.maxHealth
             return ehCooldown.remDuration
         else
             return -1
         end
     end
     function ehTimer:ComputeAvailablePriorityOverride(t)
-        if self.ehRatio > 4 then
+        if self.ehPct > 0.2 then
             return 2
-        elseif self.ehRatio > 1.5 then
+        elseif self.ehPct > 0.07 then
             return 17
         else
             return 0
@@ -157,10 +158,15 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
         end
     end
 
+    ---@class BMVVTimer : ERAHUDRawPriority
+    ---@field vvPct number
     local vivifyTimer = hud:AddPriority(1360980, talents.vivification)
+    vivifyTimer.vvPct = 0
     function vivifyTimer:ComputeDurationOverride(t)
-        if ERACombatFrames_InstaVivifyHealing(talents, 1.2) < self.hud.health.maxHealth - self.hud.health.currentHealth then
+        local h = ERACombatFrames_InstaVivifyHealing(talents, 1.2)
+        if h < self.hud.health.maxHealth - self.hud.health.currentHealth then
             self.icon:SetDesaturated(hud.instaVivify.stacks == 0)
+            self.vvPct = h / self.hud.health.maxHealth
             return hud.nextInstaVifify.remDuration
         else
             return -1
@@ -169,10 +175,9 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     local vivifyPrio = hud:AddPriority(1360980, talents.vivification)
     function vivifyPrio:ComputeAvailablePriorityOverride(t)
         if hud.instaVivify.stacks > 0 then
-            local ratio = (self.hud.health.maxHealth - self.hud.health.currentHealth) / ERACombatFrames_InstaVivifyHealing(talents, 1.2)
-            if ratio > 4 then
+            if vivifyTimer.vvPct > 0.2 then
                 return 4
-            elseif ratio > 1.5 then
+            elseif vivifyTimer.vvPct > 0.07 then
                 return 18
             else
                 return 0
@@ -239,18 +244,18 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
     local rjwBuff = hud:AddTrackedBuff(116847, talent_rjw)
     local rjwLongBar = hud:AddAuraBar(rjwBuff, nil, 0.0, 0.6, 0.2)
     function rjwLongBar:ComputeDurationOverride(t)
-        if rjwCooldown.remDuration <= self.hud.totGCD then
-            return rjwBuff.remDuration
+        if rjwCooldown.remDuration > 0 then
+            return self.aura.remDuration
         else
             return 0
         end
     end
     local rjwShortBar = hud:AddAuraBar(rjwBuff, nil, 0.0, 1.0, 0.7)
     function rjwShortBar:ComputeDurationOverride(t)
-        if rjwShortBar.remDuration <= self.hud.totGCD then
+        if rjwCooldown.remDuration > 0 then
             return 0
         else
-            return rjwBuff.remDuration
+            return self.aura.remDuration
         end
     end
 
@@ -330,9 +335,9 @@ function ERABMStagger:UpdateDisplayReturnVisibility(t, combat)
     if self.mhud.purifCooldown.currentCharges == 0 then
         self.bar:SetMainColor(1.0, 0.0, 0.0)
     elseif self.mhud.purifCooldown.currentCharges == 1 then
-        self.bar:SetMainColor(1.0, 1.0, 0.0)
+        self.bar:SetMainColor(1.0, 0.0, 1.0)
     else
-        self.bar:SetMainColor(0.0, 1.0, 0.0)
+        self.bar:SetMainColor(0.0, 0.9, 1.0)
     end
     return true
 end

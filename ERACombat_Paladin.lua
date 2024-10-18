@@ -125,7 +125,7 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
 
     hud.pala_tollCooldown = hud:AddTrackedCooldown(375576, talents.toll)
 
-    hud.pala_forebearance = hud:AddTrackedDebuffOnSelf(25771)
+    hud.pala_forebearance = hud:AddTrackedDebuffOnSelf(25771, true)
 
     function hud:AdditionalCLEU(t)
         local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
@@ -147,11 +147,11 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
     hud.pala_purpose = hud:AddTrackedBuff(purposeID, ERALIBTalent:CreateOr(talents.h_aurora, purposeTalent))
     hud:AddAuraOverlay(hud.pala_purpose, 1, 459314, false, "TOP", false, false, false, false)
 
-    local concentration = hud:AddTrackedBuffAnyCaster(317920, talents.auras)
-    local devotion = hud:AddTrackedBuffAnyCaster(465, talents.auras)
-    local crusaderAura = hud:AddTrackedBuffAnyCaster(32223, talents.crusaderAura)
+    local concentration = hud:AddTrackedBuff(317920, talents.auras)
+    local devotion = hud:AddOrTimer(false, hud:AddTrackedBuff(465, talents.auras), hud:AddTrackedBuffAnyCaster(353101, talents.auras))                     -- by self, by other paladin
+    local crusaderAura = hud:AddOrTimer(false, hud:AddTrackedBuff(32223, talents.crusaderAura), hud:AddTrackedBuffAnyCaster(328557, talents.crusaderAura)) -- by self, by other paladin
     local anyAura = hud:AddOrTimer(false, concentration, devotion, crusaderAura)
-    hud:AddMissingTimerOverlay(anyAura, false, 450920, false, "BOTTOM", false, false, true, false)
+    hud:AddMissingOverlay(anyAura, false, 450920, false, "BOTTOM", false, false, true, false)
 
     --- rotation ---
 
@@ -319,8 +319,8 @@ function ERACombatFrames_PaladinLightSmith(hud, talents, prio, chargedPrio)
     hud:AddAuraBar(hud:AddTrackedBuff(432496, talents.h_armaments), nil, 0.7, 0.4, 0.0)
     hud:AddAuraBar(hud:AddTrackedBuff(432502, talents.h_armaments), nil, 0.7, 0.4, 0.0)
 
-    hud:AddMissingTimerOverlay(hud:AddTrackedBuff(433550, talents.h_rite_sanctification), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
-    hud:AddMissingTimerOverlay(hud:AddTrackedBuff(433584, talents.h_rite_adjuration), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
+    hud:AddMissingOverlay(hud:AddTrackedBuff(433550, talents.h_rite_sanctification), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
+    hud:AddMissingOverlay(hud:AddTrackedBuff(433584, talents.h_rite_adjuration), false, 450923, false, "BOTTOM", false, true, false, false):SetVertexColor(0.7, 0.4, 0.0)
 end
 
 ---@param hud PaladinHUD

@@ -29,7 +29,7 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
     local mighCooldown = hud:AddTrackedCooldown(395152)
     local mightIcon = hud:AddRotationCooldown(mighCooldown)
 
-    ---@type ERACooldownAdditionalID
+    ---@type ERASpellAdditionalID
     local uph_alternative = {
         spellID = 408092,
         talent = talent_big_empower
@@ -156,7 +156,7 @@ function ERACombatFrames_EvokerAugmentationSetup(cFrame, enemies, talents)
 
     --- utility ---
 
-    hud:AddEmptyTimer(hud:AddOrTimer(true, hud:AddTrackedBuff(403264, talent_attunement), hud:AddTrackedBuff(403265, talent_attunement)), 12, 5199623, talent_attunement)
+    hud:AddMissingUtility(hud:AddOrTimer(true, hud:AddTrackedBuff(403264, talent_attunement), hud:AddTrackedBuff(403265, talent_attunement)), 8, 8, 5199623, talent_attunement)
 
     hud:AddUtilityCooldown(blossomCooldown, hud.healGroup, nil, nil, talent_blossom_utility, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(403631, ERALIBTalent:CreateAnd(talent_eons, talents.not_maneuverability)), hud.powerUpGroup, nil, -2, nil, true)

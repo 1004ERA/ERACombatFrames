@@ -144,10 +144,10 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private gcdBar Texture
 ---@field private gcdVisible boolean
 ---@field private castBar Texture
+---@field private castLine Line
 ---@field private castBackground Texture
 ---@field private castVisible boolean
 ---@field private events unknown
----@field private timeOrigin number
 ---@field offsetX number
 ---@field offsetY number
 ---@field private SAO ERASAO[]
@@ -161,7 +161,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private utilityIcons ERAHUDUtilityIcon[]
 ---@field private activeUtilityIcons ERAHUDUtilityIcon[]
 ---@field private outOfCombat ERAHUDUtilityIconOutOfCombat[]
----@field private emptyTimers ERAHUDEmptyTimer[]
+---@field private emptyUtility ERAHUDMissingUtility[]
 ---@field private utilityGroups ERAHUDUtilityGroup[]
 ---@field private must_update_utility_layout boolean
 ---@field mustUpdateUtilityLayout fun(this:ERAHUD)
@@ -343,7 +343,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, showPet, spec)
     hud.activeUtilityIcons = {}
     hud.utilityGroups = {}
     hud.outOfCombat = {}
-    hud.emptyTimers = {}
+    hud.emptyUtility = {}
     hud.modules = {}
     hud.activeModules = {}
 
@@ -458,6 +458,9 @@ function ERAHUD:Pack()
         table.insert(self.gcdTicks, line)
     end
 
+    self.castLine = self.timerFrameOverlay:CreateLine(nil, "OVERLAY", "ERAHUDCastLine")
+    self.castLine:Hide()
+
     self.targetCastBar = ERAHUDTargetCastBar:create(self)
 
     for lvl = 0, 4 do
@@ -488,11 +491,11 @@ function ERAHUD:Pack()
     -- warlock health stone
     self:AddBagItemIcon(self:AddBagItemCooldown(5512, self.healthstoneTalent), self.healGroup, 538745, nil, ERACombatFrames_classID == 9)
     --warlock portal
-    local portalDebuff = self:AddTrackedDebuffOnSelf(113942)
+    local portalDebuff = self:AddTrackedDebuffOnSelf(113942, true)
     portalDebuff.updateUtilityLayoutIfChanged = true
     self:AddExternalTimerIcon(portalDebuff, self.movementGroup, 607512)
 
-    -- racial
+    --#region racial
 
     local _, _, r = UnitRace("player")
     local racialSpellID = nil
@@ -548,8 +551,37 @@ function ERAHUD:Pack()
         racialGroup = self.movementGroup
     elseif (r == 10) then
         -- blood elf
-        racialSpellID = 202719
         racialGroup = self.specialGroup
+        --#region by class
+        if ERACombatFrames_classID == 1 then
+            -- warrior
+            racialSpellID = 69179
+        elseif ERACombatFrames_classID == 2 then
+            -- paladin
+            racialSpellID = 155145
+        elseif ERACombatFrames_classID == 3 then
+            -- hunter
+            racialSpellID = 80483
+        elseif ERACombatFrames_classID == 4 then
+            -- rogue
+            racialSpellID = 25046
+        elseif ERACombatFrames_classID == 5 then
+            -- priest
+            racialSpellID = 232633
+        elseif ERACombatFrames_classID == 6 then
+            -- dk
+            racialSpellID = 50613
+        elseif ERACombatFrames_classID == 8 or ERACombatFrames_classID == 9 then
+            -- mage, warlock
+            racialSpellID = 28730
+        elseif ERACombatFrames_classID == 10 then
+            -- monk
+            racialSpellID = 129597
+        elseif ERACombatFrames_classID == 12 then
+            -- dh
+            racialSpellID = 202719
+        end
+        --#endregion
     elseif (r == 11) then
         -- draenei
         racialGroup = self.healGroup
@@ -646,6 +678,8 @@ function ERAHUD:Pack()
         self:AddUtilityCooldown(self:AddTrackedCooldown(racialSpellID), racialGroup, nil, nil, nil, racialTimer)
     end
 
+    --#endregion
+
     -- equipment
     self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET1), self.powerUpGroup, 465875, nil, true)
     self:AddEquipmentIcon(self:AddEquipmentCooldown(INVSLOT_TRINKET2), self.powerUpGroup, 3610503, nil, true)
@@ -723,12 +757,18 @@ function ERAHUD:CheckTalents()
             table.insert(self.activeDataItems, t)
         end
     end
+
     table.wipe(self.activeBuffs)
+    self.hasBuffsAnyCaster = false
     for _, a in ipairs(self.buffs) do
         if a.talentActive then
+            if a.acceptAnyCaster then
+                self.hasBuffsAnyCaster = true
+            end
             self.activeBuffs[a.spellID] = a
         end
     end
+
     self.hasActiveBuffsOnPet = false
     table.wipe(self.activeBuffsOnPet)
     for _, a in ipairs(self.buffsOnPet) do
@@ -737,25 +777,31 @@ function ERAHUD:CheckTalents()
             self.activeBuffsOnPet[a.spellID] = a
         end
     end
+
     table.wipe(self.activeDebuffs)
     for _, a in ipairs(self.debuffs) do
         if a.talentActive then
             self.activeDebuffs[a.spellID] = a
         end
     end
+
     table.wipe(self.activeDebuffsOnSelf)
+    self.hasDebuffsAnyCaster = false
     for _, a in ipairs(self.debuffsOnSelf) do
         if a.talentActive then
+            if a.acceptAnyCaster then
+                self.hasDebuffsAnyCaster = true
+            end
             self.activeDebuffsOnSelf[a.spellID] = a
         end
     end
+
     self.hasActiveBuffsOnParty = false
     for _, a in ipairs(self.buffsOnParty) do
         if a.talentActive then
             self.hasActiveBuffsOnParty = true
-            self.activeBuffsOnParty[a.spellID] = a
-            for _, alternative in ipairs(a.alternativeIDAuraIDs) do
-                self.activeBuffsOnParty[alternative] = a
+            for _, auraItem in ipairs(a.activeAuras) do
+                self.activeBuffsOnParty[auraItem.spellID] = a
             end
         end
     end
@@ -1177,24 +1223,31 @@ function ERAHUD:UpdateCombat(t)
     end
 
     if self.remCast > 0 then
+        local castX = self:calcTimerPixel(self.remCast)
+        local castY
+        if self.topdown then
+            castY = timersY - ERAHUD_TimerBarSpacing
+            self.castBar:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", castX, castY)
+            self.castBackground:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), castY)
+            self.castLine:SetStartPoint("RIGHT", self.timerFrameOverlay, castX, ERAHUD_TimerIconSize)
+        else
+            castY = timersY + ERAHUD_TimerBarSpacing
+            self.castBar:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", castX, castY)
+            self.castBackground:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), castY)
+            self.castLine:SetStartPoint("RIGHT", self.timerFrameOverlay, castX, -ERAHUD_TimerIconSize)
+        end
+        self.castLine:SetEndPoint("RIGHT", self.timerFrameOverlay, castX, castY)
         if not self.castVisible then
             self.castVisible = true
             self.castBar:Show()
+            self.castLine:Show()
             self.castBackground:Show()
-        end
-        if self.topdown then
-            local y = timersY - ERAHUD_TimerBarSpacing
-            self.castBar:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.remCast), y)
-            self.castBackground:SetPoint("BOTTOMLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), y)
-        else
-            local y = timersY + ERAHUD_TimerBarSpacing
-            self.castBar:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.remCast), y)
-            self.castBackground:SetPoint("TOPLEFT", self.timerFrame, "RIGHT", self:calcTimerPixel(self.totCast), y)
         end
     else
         if self.castVisible then
             self.castVisible = false
             self.castBar:Hide()
+            self.castLine:Hide()
             self.castBackground:Hide()
         end
     end
@@ -1433,10 +1486,6 @@ end
 ---@param t number
 ---@param combat boolean
 function ERAHUD:updateData(t, combat)
-    if not self.timeOrigin then
-        self.timeOrigin = t
-    end
-
     self.hasteMultiplier = 1 / (1 + GetHaste() / 100)
     local cdInfo = C_Spell.GetSpellCooldown(61304)
     self.totGCD = math.max(self.minGCD, self.baseGCD * self.hasteMultiplier)
@@ -1476,7 +1525,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
+                    a:auraFound(t, auraInfo, false)
                 end
                 i = i + 1
             else
@@ -1489,7 +1538,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, false)
+                    a:auraFound(t, auraInfo, true)
                 end
                 i = i + 1
             else
@@ -1498,25 +1547,18 @@ function ERAHUD:updateData(t, combat)
         end
     end
     i = 1
-    if self.hasBuffsAnyCaster or self.hasActiveBuffsOnParty then
+    if self.hasBuffsAnyCaster then
         while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("player", i)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
-                end
-                a = self.activeBuffsOnParty[auraInfo.spellId]
-                if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
+                    a:auraFound(t, auraInfo, false)
                 end
                 i = i + 1
             else
                 break
             end
-        end
-        for _, v in pairs(self.activeBuffsOnParty) do
-            v:memberParsed()
         end
     else
         while true do
@@ -1524,7 +1566,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, false)
+                    a:auraFound(t, auraInfo, true)
                 end
                 i = i + 1
             else
@@ -1538,7 +1580,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffsOnPet[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, false)
+                    a:auraFound(t, auraInfo, true)
                 end
                 i = i + 1
             else
@@ -1578,7 +1620,7 @@ function ERAHUD:updateData(t, combat)
 
     local friendsCount = GetNumGroupMembers()
     if self.hasActiveBuffsOnParty then
-        if t - self.lastParseParty < 2 and self.timeOrigin + 2 < t then
+        if t - self.lastParseParty < 2 then
             for _, v in pairs(self.activeBuffsOnParty) do
                 v:notChecked()
             end
@@ -1616,7 +1658,7 @@ function ERAHUD:updateData(t, combat)
                             if (auraInfo) then
                                 local a = self.activeBuffsOnParty[auraInfo.spellId]
                                 if (a ~= nil) then
-                                    a:auraFound(t, auraInfo, true)
+                                    a:auraFound(t, auraInfo)
                                 end
                                 i = i + 1
                             else
@@ -1666,7 +1708,7 @@ function ERAHUD:updateData(t, combat)
                 end
                 if (auraInfo.dispelName == "Magic") then
                     self.targetDispellableMagic = true
-                elseif (auraInfo.dispelName == "Enrage") then
+                elseif (auraInfo.dispelName == "") then -- bug blizzard api : enrage is ""
                     self.targetDispellableEnrage = true
                 end
                 i = i + 1
@@ -1894,9 +1936,9 @@ function ERAHUD:addOutOfCombat(i)
     table.insert(self.outOfCombat, i)
 end
 
----@param i ERAHUDEmptyTimer
+---@param i ERAHUDMissingUtility
 function ERAHUD:addEmpty(i)
-    table.insert(self.emptyTimers, i)
+    table.insert(self.emptyUtility, i)
 end
 
 --#endregion
@@ -2112,7 +2154,7 @@ function ERAHUD:updateUtilityLayout()
     local yMissing = self.UtilityMinBottomY
     local largeColumn = true
     count = 0
-    for _, i in ipairs(self.emptyTimers) do
+    for _, i in ipairs(self.emptyUtility) do
         if i.talentActive then
             i.icon:Draw(xMissing, yMissing, false)
             count = count + 1
@@ -2602,7 +2644,7 @@ end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedBuff(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
@@ -2612,7 +2654,7 @@ end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedBuffOnPet(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
@@ -2622,18 +2664,17 @@ end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedBuffAnyCaster(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
-    self.hasBuffsAnyCaster = true
     table.insert(self.buffs, a)
     return a
 end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedDebuffOnTarget(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
@@ -2643,22 +2684,23 @@ end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAHUD:AddTrackedDebuffOnTargetAnyCaster(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
     a.acceptAnyCaster = true
-    self.hasDebuffsAnyCaster = true
     table.insert(self.debuffs, a)
     return a
 end
 
 ---@param spellID integer
+---@param anyCaster boolean
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
-function ERAHUD:AddTrackedDebuffOnSelf(spellID, talent, ...)
+function ERAHUD:AddTrackedDebuffOnSelf(spellID, anyCaster, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
+    a.acceptAnyCaster = anyCaster
     table.insert(self.debuffsOnSelf, a)
     return a
 end
@@ -2666,38 +2708,36 @@ end
 ---@return ERATimerOr
 function ERAHUD:AddSatedDebuff()
     return ERATimerOr:create(self, false,
-        self:AddTrackedDebuffOnSelf(57723),
-        self:AddTrackedDebuffOnSelf(57724),
-        self:AddTrackedDebuffOnSelf(80354),
-        self:AddTrackedDebuffOnSelf(288293),
-        self:AddTrackedDebuffOnSelf(264689),
-        self:AddTrackedDebuffOnSelf(390435)
+        self:AddTrackedDebuffOnSelf(57723, true),
+        self:AddTrackedDebuffOnSelf(57724, true),
+        self:AddTrackedDebuffOnSelf(80354, true),
+        self:AddTrackedDebuffOnSelf(288293, true),
+        self:AddTrackedDebuffOnSelf(264689, true),
+        self:AddTrackedDebuffOnSelf(390435, true)
     )
 end
 
----@param mainSpellID integer
 ---@param talent ERALIBTalent|nil
----@param ... integer alternative spell IDs
+---@param ... ERAAura
 ---@return ERAAuraOnAllGroupMembers
-function ERAHUD:AddBuffOnAllPartyMembers(mainSpellID, talent, ...)
-    local a = ERAAuraOnAllGroupMembers:create(self, talent, mainSpellID, ...)
+function ERAHUD:AddBuffOnAllPartyMembers(talent, ...)
+    local a = ERAAuraOnAllGroupMembers:create(self, talent, ...)
     table.insert(self.buffsOnParty, a)
     return a
 end
 
----@param mainSpellID integer
 ---@param talent ERALIBTalent|nil
----@param ... integer alternative spell IDs
+---@param ... ERAAura
 ---@return ERAAuraOnFriendlyHealer
-function ERAHUD:AddBuffOnFriendlyHealer(mainSpellID, talent, ...)
-    local a = ERAAuraOnFriendlyHealer:create(self, talent, mainSpellID, ...)
+function ERAHUD:AddBuffOnFriendlyHealer(talent, ...)
+    local a = ERAAuraOnFriendlyHealer:create(self, talent, ...)
     table.insert(self.buffsOnParty, a)
     return a
 end
 
 ---@param spellID integer
 ---@param talent ERALIBTalent|nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERACooldown
 function ERAHUD:AddTrackedCooldown(spellID, talent, ...)
     return ERACooldown:create(self, spellID, talent, ...)
@@ -2728,6 +2768,12 @@ end
 ---@return ERATimerOr
 function ERAHUD:AddOrTimer(shortest, ...)
     return ERATimerOr:create(self, shortest, ...)
+end
+
+---@param ... ERAMissingDataItem
+---@return ERAAnyActive
+function ERAHUD:AddAnyActive(...)
+    return ERAAnyActive:create(self, ...)
 end
 
 --#endregion
@@ -2779,7 +2825,7 @@ function ERAHUD:AddTimerOverlay(timer, texture, isAtlas, position, flipH, flipV,
     return ERASAOTimer:create(timer, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
----@param timer ERATimer
+---@param miss ERAMissingDataItem
 ---@param onlyIfHasTarget boolean
 ---@param texture string|integer
 ---@param isAtlas boolean
@@ -2790,8 +2836,8 @@ end
 ---@param rotateRight boolean
 ---@param talent ERALIBTalent|nil
 ---@return ERASAOMissingTimer
-function ERAHUD:AddMissingTimerOverlay(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
-    return ERASAOMissingTimer:create(timer, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+function ERAHUD:AddMissingOverlay(miss, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOMissingTimer:create(miss, onlyIfHasTarget, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
 --- rotation ---
@@ -2974,13 +3020,14 @@ function ERAHUD:AddUtilityAuraOutOfCombat(aura, iconID, talent)
     return ERAHUDUtilityAuraOutOfCombat:create(aura, iconID, talent)
 end
 
----@param timer ERATimer
+---@param miss ERAMissingDataItem
 ---@param fadeAfterSeconds number
+---@param repeatAfterSeconds number
 ---@param iconID integer
 ---@param talent ERALIBTalent|nil
----@return ERAHUDEmptyTimer
-function ERAHUD:AddEmptyTimer(timer, fadeAfterSeconds, iconID, talent)
-    return ERAHUDEmptyTimer:create(timer, fadeAfterSeconds, iconID, talent)
+---@return ERAHUDMissingUtility
+function ERAHUD:AddMissingUtility(miss, fadeAfterSeconds, repeatAfterSeconds, iconID, talent)
+    return ERAHUDMissingUtility:create(miss, fadeAfterSeconds, repeatAfterSeconds, iconID, talent)
 end
 
 ---@param timer ERATimer

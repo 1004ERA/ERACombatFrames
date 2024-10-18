@@ -339,14 +339,17 @@ function ERAGroupFrame:updateGroup()
 end
 
 ---@param triggeredBy ERAGroupSecureFrame
+---@param unit ERAGroupUnitFrame
 ---@param unitID string
-function ERAGroupFrame:unitRemoved(triggeredBy, unitID)
+function ERAGroupFrame:unitRemoved(triggeredBy, unit, unitID)
     if triggeredBy == self.combinedFrame then
         if not self.activeIsCombined then return end
     else
         if self.activeIsCombined then return end
     end
-    self.unitByID[unitID] = nil
+    if self.unitByID[unitID] == unit then
+        self.unitByID[unitID] = nil
+    end
 end
 ---@param triggeredBy ERAGroupSecureFrame
 ---@param unit ERAGroupUnitFrame
@@ -644,18 +647,20 @@ function ERAGroupSecureFrame:create(owner, containerFrame, groupFilter, horizont
     return x
 end
 
----@param unitID string
-function ERAGroupSecureFrame:removeUnit(unitID)
-    self.unitByID[unitID] = nil
-    self.owner:unitRemoved(self, unitID)
+---@param unit ERAGroupUnitFrame
+function ERAGroupSecureFrame:removeUnit(unit)
+    if self.unitByID[unit.unit] == unit then
+        self.unitByID[unit.unit] = nil
+        self.owner:unitRemoved(self, unit, unit.unit)
+    end
 end
 
 ---@param unit ERAGroupUnitFrame
 ---@param oldID string|nil
 function ERAGroupSecureFrame:setUnit(unit, oldID)
-    if oldID then
+    if oldID and self.unitByID[oldID] == unit then
         self.unitByID[oldID] = nil
-        self.owner:unitRemoved(self, oldID)
+        self.owner:unitRemoved(self, unit, oldID)
     end
     self.unitByID[unit.unit] = unit
     self.owner:unitAdded(self, unit)
@@ -687,7 +692,7 @@ function ERAGroupFrameUnitEvents:OnAttributeChanged(name, value)
         ---@cast this ERAGroupUnitFrame
         if (value == nil) then
             if (this.unit ~= nil) then
-                this.owner:removeUnit(this.unit)
+                this.owner:removeUnit(this)
                 this.unit = nil
             end
         else

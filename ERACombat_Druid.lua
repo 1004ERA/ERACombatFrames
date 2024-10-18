@@ -312,7 +312,7 @@ function ERACombatFrames_Druid_CommonSetup(cFrame, spec, talents, talent_bonus_w
 
     hud:AddUtilityAuraOutOfCombat(rejuvOnSelf)
 
-    hud:AddEmptyTimer(hud:AddBuffOnAllPartyMembers(1126), 8, 136078, ERALIBTalent:CreateLevel(9))
+    hud:AddMissingUtility(hud:AddBuffOnAllPartyMembers(nil, hud:AddTrackedBuffAnyCaster(1126, ERALIBTalent:CreateLevel(11))), 8, 8, 136078)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(124974, talents.vigil), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.8 end)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(108238, talents.renewal), hud.healGroup, nil, nil, nil, function(cd, t) return cd.hud.health.currentHealth / cd.hud.health.maxHealth <= 0.7 end)
@@ -452,7 +452,7 @@ function ERACombatFrames_Druid_OffSpecDOT(hud, spellID, duration, showFullDurati
         end
     end
 
-    local missing = hud:AddMissingTimerOverlay(debuff, true, missingTexture, isAtlas, "MIDDLE", false, false, rotateLeft, rotateRight)
+    local missing = hud:AddMissingOverlay(debuff, true, missingTexture, isAtlas, "MIDDLE", false, false, rotateLeft, rotateRight)
     if displayMissingBasedOnRecent then
         function missing:ConfirmIsActiveOverride(t, combat)
             if form and form.remDuration <= 0 then return false end

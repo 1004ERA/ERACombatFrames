@@ -67,7 +67,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     --#endregion
     -------------------------
 
-    local elderDruidCooldown = hud:AddTrackedDebuffOnSelf(426790, talent_bonus_wild)
+    local elderDruidCooldown = hud:AddTrackedDebuffOnSelf(426790, false, talent_bonus_wild)
 
     --- SAO ---
 
@@ -76,7 +76,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     hud:AddAuraOverlay(clearcast, 2, 450929, false, "RIGHT", true, false, false, false)
 
     local effloDuration = hud:AddTrackedBuff(145205, talent_efflo)
-    local missingEfflo = hud:AddMissingTimerOverlay(effloDuration, false, "perks-tick-glow", true, "MIDDLE", false, false, false, false)
+    local missingEfflo = hud:AddMissingOverlay(effloDuration, false, "perks-tick-glow", true, "MIDDLE", false, false, false, false)
     function missingEfflo:ConfirmIsActiveOverride(t, combat)
         return combat and self.hud.isInGroup and self.hud.groupMembersExcludingSelf > 4
     end
@@ -87,7 +87,7 @@ function ERACombatFrames_DruidRestorationSetup(cFrame, talents)
     local bloomingHeal = hud:AddTrackedBuff(429438, htalent_blooming)
     hud:AddAuraOverlay(bloomingHeal, 1, 450929, false, "LEFT", false, false, false, false)
 
-    local missingLifebloom = hud:AddMissingTimerOverlay(bloomOnSelf, false, "Mobile-Herbalism", true, "MIDDLE", false, false, false, false)
+    local missingLifebloom = hud:AddMissingOverlay(bloomOnSelf, false, "Mobile-Herbalism", true, "MIDDLE", false, false, false, false)
     missingLifebloom:SetMaxSize(64, 64)
     function missingLifebloom:ConfirmIsActiveOverride(t, combat)
         if not combat then return false end

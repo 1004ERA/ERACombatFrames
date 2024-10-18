@@ -40,7 +40,7 @@ function ERACombatFrames_WarlockAfflictionSetup(cFrame, talents)
     --- SAO ---
 
     local timersForMissingCorruption = hud:AddOrTimer(false, hud:AddTrackedDebuffOnTarget(146739, talent_infinite_corruption), hud:AddTrackedDebuffOnTarget(445474, talent_infinite_wither))
-    hud:AddMissingTimerOverlay(timersForMissingCorruption, true, "Relic-Shadow-TraitBG", true, "MIDDLE", false, false, false, false, talent_infinite_any)
+    hud:AddMissingOverlay(timersForMissingCorruption, true, "Relic-Shadow-TraitBG", true, "MIDDLE", false, false, false, false, talent_infinite_any)
 
     local nightfall = hud:AddTrackedBuff(264571, talent_nightfall)
     hud:AddAuraOverlay(nightfall, 1, 449492, false, "LEFT", false, false, false, false, nil)

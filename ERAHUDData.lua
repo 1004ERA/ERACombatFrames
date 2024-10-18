@@ -27,7 +27,10 @@ function ERADataItem:checkTalent()
     end
 end
 
----@class (exact) ERATimer : ERADataItem
+---@class ERAMissingDataItem : ERADataItem
+---@field isMissing boolean
+
+---@class ERATimer : ERADataItem, ERAMissingDataItem
 ---@field private __index unknown
 ---@field protected constructTimer fun(this:ERATimer, hud:ERAHUD)
 ---@field remDuration number
@@ -42,6 +45,7 @@ setmetatable(ERATimer, { __index = ERADataItem })
 function ERATimer:constructTimer(hud)
     self.remDuration = 0
     self.totDuration = 1
+    self.isMissing = true
     self:constructItem(hud)
 end
 
@@ -52,18 +56,18 @@ end
 function ERATimer:clearTimer()
 end
 
----@class (exact) ERACooldownAdditionalID
+---@class (exact) ERASpellAdditionalID
 ---@field spellID integer
 ---@field talent ERALIBTalent
 
 ---@class (exact) ERATimerWithID : ERATimer
 ---@field private __index unknown
----@field protected constructID fun(this:ERATimer, hud:ERAHUD, spellID:integer, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
+---@field protected constructID fun(this:ERATimer, hud:ERAHUD, spellID:integer, talent:ERALIBTalent|nil, ...:ERASpellAdditionalID)
 ---@field spellID integer
 ---@field private mainSpellID integer
 ---@field private talent ERALIBTalent | nil
 ---@field private mainTalent ERALIBTalent | nil
----@field private additionalSpellIDs ERACooldownAdditionalID[]
+---@field private additionalSpellIDs ERASpellAdditionalID[]
 ERATimerWithID = {}
 ERATimerWithID.__index = ERATimerWithID
 setmetatable(ERATimerWithID, { __index = ERATimer })
@@ -71,7 +75,7 @@ setmetatable(ERATimerWithID, { __index = ERATimer })
 ---@param hud ERAHUD
 ---@param spellID integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 function ERATimerWithID:constructID(hud, spellID, talent, ...)
     self:constructTimer(hud)
     self.spellID = spellID
@@ -100,7 +104,7 @@ end
 
 --#region GENERIC
 
----@class (exact) ERACooldownBase : ERATimerWithID
+---@class ERACooldownBase : ERATimerWithID
 ---@field private __index unknown
 ---@field hasCharges boolean
 ---@field maxCharges integer
@@ -111,7 +115,7 @@ end
 ---@field isPetSpell boolean
 ---@field mustRedrawUtilityLayoutIfChangedStatus boolean
 ---@field private wasKnown boolean
----@field protected constructCooldownBase fun(this:ERACooldownBase, hud:ERAHUD, spellID:number, talent:ERALIBTalent|nil, ...:ERACooldownAdditionalID)
+---@field protected constructCooldownBase fun(this:ERACooldownBase, hud:ERAHUD, spellID:number, talent:ERALIBTalent|nil, ...:ERASpellAdditionalID)
 ---@field protected updateCooldownData fun(this:ERACooldownBase, t:number)
 ---@field private clearTimer fun(this:ERACooldownBase)
 ERACooldownBase = {}
@@ -121,7 +125,7 @@ setmetatable(ERACooldownBase, { __index = ERATimerWithID })
 ---@param hud ERAHUD
 ---@param spellID integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 function ERACooldownBase:constructCooldownBase(hud, spellID, talent, ...)
     self:constructID(hud, spellID, talent, ...)
     self.hasCharges = false
@@ -162,6 +166,7 @@ function ERACooldownBase:updateData(t)
     end
     local wasAvailable = self.isAvailable
     self:updateCooldownData(t)
+    self.isMissing = self.remDuration <= 0
     if self.mustRedrawUtilityLayoutIfChangedStatus and self.isAvailable ~= wasAvailable then
         self.hud:mustUpdateUtilityLayout()
     end
@@ -178,7 +183,7 @@ setmetatable(ERACooldown, { __index = ERACooldownBase })
 ---@param hud ERAHUD
 ---@param spellID integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERACooldown
 function ERACooldown:create(hud, spellID, talent, ...)
     local cd = {}
@@ -317,6 +322,7 @@ function ERACooldownEquipment:updateData(t)
             self.hud:mustUpdateUtilityLayout()
         end
     end
+    self.isMissing = self.remDuration <= 0
 end
 
 --#endregion
@@ -405,6 +411,7 @@ function ERACooldownBagItem:updateData(t)
         self.totDuration = 1
         self.stacks = 0
     end
+    self.isMissing = self.remDuration <= 0
 end
 
 --#endregion
@@ -478,7 +485,7 @@ end
 
 --#region AURA
 
----@class ERAAura : ERATimerWithID, ERAStacks
+---@class ERAAura : ERATimerWithID, ERAStacks, ERAMissingDataItem
 ---@field private __index unknown
 ---@field private clearTimer fun(this:ERAAura)
 ---@field stacks integer
@@ -488,7 +495,6 @@ end
 ---@field updateUtilityLayoutIfChanged boolean
 ---@field acceptAnyCaster boolean
 ---@field appliedBySelf boolean
----@field auraFound fun(this:ERAAura, t:number, data:AuraData, checkSourceUnit:boolean)
 ---@field updateData fun(this:ERAAura, t:number)
 ERAAura = {}
 ERAAura.__index = ERAAura
@@ -497,7 +503,7 @@ setmetatable(ERAAura, { __index = ERATimerWithID })
 ---@param hud ERAHUD
 ---@param spellID integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERAAura
 function ERAAura:create(hud, spellID, talent, ...)
     local a = {}
@@ -507,19 +513,21 @@ function ERAAura:create(hud, spellID, talent, ...)
     a.foundDuration = -1
     a.foundStacks = 0
     a.foundBySelf = false
+    a.appliedBySelf = false
     return a
 end
 
 function ERAAura:clearTimer()
     self.stacks = 0
     self.appliedBySelf = false
+    self.isMissing = true
 end
 
 ---@param t number
 ---@param data AuraData
----@param checkSourceUnit boolean
-function ERAAura:auraFound(t, data, checkSourceUnit)
-    if self.acceptAnyCaster or data.sourceUnit == "player" then
+---@param trustSourceUnit boolean
+function ERAAura:auraFound(t, data, trustSourceUnit)
+    if trustSourceUnit or self.acceptAnyCaster or data.sourceUnit == "player" then
         if data.expirationTime and data.expirationTime > 0 then
             local remDur = data.expirationTime - t
             if remDur > self.foundDuration then
@@ -548,6 +556,7 @@ function ERAAura:updateData(t)
         self.stacks = self.foundStacks
         self.foundDuration = -1
         self.appliedBySelf = self.foundBySelf
+        self.isMissing = false
     else
         if self.remDuration > 0 and self.updateUtilityLayoutIfChanged then
             self.hud:mustUpdateUtilityLayout()
@@ -555,74 +564,89 @@ function ERAAura:updateData(t)
         self.remDuration = 0
         self.stacks = 0
         self.appliedBySelf = false
+        self.isMissing = true
     end
     self.foundStacks = 0
     self.foundBySelf = false
 end
 
----@class ERAAuraOnGroupMembers : ERAAura
+---@class ERAAuraOnGroupMembers : ERADataItem, ERAMissingDataItem
 ---@field private __index unknown
----@field protected constructOnGroupMembers fun(this:ERAAuraOnGroupMembers, ...:integer)
----@field private totalCount integer
----@field private numberOfGroupMembersIncludingSelf integer
----@field private last_checked number
+---@field private talent ERALIBTalent|nil
+---@field auras ERAAura[]
+---@field activeAuras ERAAura[]
+---@field private activeFetcher table<number, ERAAura>
+---@field protected constructOnGroupMembers fun(this:ERAAuraOnGroupMembers, hud:ERAHUD, talent:ERALIBTalent|nil, ...:ERAAura)
+---@field membersWithAuraExcludingSelf integer
+---@field foundBySelf boolean
+---@field foundOnSelf boolean
 ---@field private not_checked boolean
 ---@field private found_on_current_member boolean
----@field alternativeIDAuraIDs integer[]
----@field protected computeParty fun(this:ERAAuraOnGroupMembers, groupMembersCountExcludingSelf: integer, totalCount:integer, numberOfGroupMembersIncludingSelf:number, foundBySelf:boolean)
----@field private computed boolean
+---@field private found_by_self boolean
+---@field protected computeSelf_returnMissing fun(this:ERAAuraOnGroupMembers): boolean|nil
+---@field protected computeGroup_returnMissing fun(this:ERAAuraOnGroupMembers): boolean
 ERAAuraOnGroupMembers = {}
 ERAAuraOnGroupMembers.__index = ERAAuraOnGroupMembers
 setmetatable(ERAAuraOnGroupMembers, { __index = ERAAura })
 
----@param ... integer
-function ERAAuraOnGroupMembers:constructOnGroupMembers(...)
+---@param hud ERAHUD
+---@param talent ERALIBTalent|nil
+---@param ... ERAAura
+function ERAAuraOnGroupMembers:constructOnGroupMembers(hud, talent, ...)
+    self:constructItem(hud)
+    self.talent = talent
+    self.auras = { ... }
+    self.activeAuras = {}
+    self.activeFetcher = {}
+    self.membersWithAuraExcludingSelf = 0
+    self.foundBySelf = false
+    self.foundOnSelf = false
     self.not_checked = false
-    self.last_checked = 0
-    self.totalCount = 0
-    self.numberOfGroupMembersIncludingSelf = 0
-    self.alternativeIDAuraIDs = { ... }
-    self.acceptAnyCaster = true
+    self.found_on_current_member = false
+    self.found_by_self = false
+    self.isMissing = false
+end
+
+function ERAAuraOnGroupMembers:checkDataItemTalent()
+    table.wipe(self.activeAuras)
+    self.activeFetcher = {}
+    for _, a in ipairs(self.auras) do
+        if a.talentActive then
+            table.insert(self.activeAuras, a)
+            self.activeFetcher[a.spellID] = a
+        end
+    end
+    return #(self.activeAuras) > 0 and ((not self.talent) or self.talent:PlayerHasTalent())
 end
 
 function ERAAuraOnGroupMembers:notChecked()
     self.not_checked = true
-    self.totalCount = 0
-    self.numberOfGroupMembersIncludingSelf = 0
+end
+
+function ERAAuraOnGroupMembers:parsingParty()
+    self.computed = false
+    self.membersWithAuraExcludingSelf = 0
+    self.foundBySelf = false
 end
 
 ---@param t number
 ---@param data AuraData
----@param checkSourceUnit boolean
-function ERAAuraOnGroupMembers:auraFound(t, data, checkSourceUnit)
-    if data.expirationTime and data.expirationTime > 0 then
-        local remDur = data.expirationTime - t
-        if remDur > self.foundDuration then
-            self.foundDuration = remDur
-            self.totDuration = data.duration
-            self.foundStacks = math.max(self.foundStacks, data.applications, 1)
-        end
+function ERAAuraOnGroupMembers:auraFound(t, data)
+    if data.sourceUnit == "player" then
+        self.found_by_self = true
     else
-        self.foundDuration = 1004
-        self.totDuration = 1004
-        self.foundStacks = math.max(self.foundStacks, data.applications, 1)
+        local def = self.activeFetcher[data.spellId]
+        if not def then return end -- impossible
+        if not def.acceptAnyCaster then return end
     end
     self.found_on_current_member = true
-    self.totalCount = self.totalCount + 1
-    if data.sourceUnit == "player" then
-        self.foundBySelf = true
-    end
 end
 
 function ERAAuraOnGroupMembers:memberParsed()
     if self.found_on_current_member then
         self.found_on_current_member = false
-        self.numberOfGroupMembersIncludingSelf = self.numberOfGroupMembersIncludingSelf + 1
+        self.membersWithAuraExcludingSelf = self.membersWithAuraExcludingSelf + 1
     end
-end
-
-function ERAAuraOnGroupMembers:parsingParty()
-    self.computed = false
 end
 
 ---@param groupMembersCountExcludingSelf integer
@@ -630,28 +654,35 @@ end
 function ERAAuraOnGroupMembers:partyParsed(groupMembersCountExcludingSelf, t)
     if not self.computed then
         self.computed = true
-        self.last_checked = t
-        self.appliedBySelf = self.foundBySelf
-        self:computeParty(groupMembersCountExcludingSelf, self.totalCount, self.numberOfGroupMembersIncludingSelf, self.foundBySelf)
-        self.foundCount = 0
-        self.foundDuration = 0
-        self.foundStacks = 0
-        self.foundBySelf = false
-        self.totalCount = 0
-        self.numberOfGroupMembersIncludingSelf = 0
+        if self.found_by_self then
+            self.found_by_self = false
+            self.foundBySelf = true
+        end
     end
 end
 
 ---@param t number
 function ERAAuraOnGroupMembers:updateData(t)
-    if self.not_checked then
-        self.not_checked = false
-        if self.remDuration > 0 then
-            self.remDuration = self.remDuration - (t - self.last_checked)
-            if self.remDuration <= 0 then
-                self.remDuration = 0.1
+    self.foundOnSelf = false
+    for _, aa in ipairs(self.activeAuras) do
+        if aa.remDuration > 0 then
+            self.foundOnSelf = true
+            if aa.appliedBySelf then
+                self.foundBySelf = true
             end
         end
+    end
+    if self.not_checked then
+        self.not_checked = false
+        local miss = self:computeSelf_returnMissing()
+        if miss == nil then
+            -- indéterminé, on ne met pas à jour
+        else
+            self.isMissing = miss
+        end
+        self.foundBySelf = false
+    else
+        self.isMissing = self:computeGroup_returnMissing()
     end
 end
 
@@ -663,28 +694,29 @@ setmetatable(ERAAuraOnAllGroupMembers, { __index = ERAAuraOnGroupMembers })
 
 ---@param hud ERAHUD
 ---@param talent ERALIBTalent|nil
----@param mainSpellID integer
----@param ... integer
+---@param ... ERAAura
 ---@return ERAAuraOnAllGroupMembers
-function ERAAuraOnAllGroupMembers:create(hud, talent, mainSpellID, ...)
-    local a = ERAAura:create(hud, mainSpellID, talent)
+function ERAAuraOnAllGroupMembers:create(hud, talent, ...)
+    local a = {}
     setmetatable(a, ERAAuraOnAllGroupMembers)
     ---@cast a ERAAuraOnAllGroupMembers
-    a:constructOnGroupMembers(...)
+    a:constructOnGroupMembers(hud, talent, ...)
     return a
 end
 
----@param groupMembersCountExcludingSelf integer
----@param totalCount integer
----@param numberOfGroupMembersIncludingSelf integer
----@param foundBySelf boolean
-function ERAAuraOnAllGroupMembers:computeParty(groupMembersCountExcludingSelf, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
-    if numberOfGroupMembersIncludingSelf <= groupMembersCountExcludingSelf then
-        self.remDuration = 0
-        self.stacks = 0
+function ERAAuraOnAllGroupMembers:computeSelf_returnMissing()
+    if self.foundOnSelf then
+        return nil
     else
-        self.remDuration = self.foundDuration
-        self.stacks = self.foundStacks
+        return true
+    end
+end
+
+function ERAAuraOnAllGroupMembers:computeGroup_returnMissing()
+    if self.foundOnSelf and self.membersWithAuraExcludingSelf == self.hud.groupMembersExcludingSelf then
+        return false
+    else
+        return true
     end
 end
 
@@ -696,29 +728,22 @@ setmetatable(ERAAuraOnFriendlyHealer, { __index = ERAAuraOnGroupMembers })
 
 ---@param hud ERAHUD
 ---@param talent ERALIBTalent|nil
----@param mainSpellID integer
----@param ... integer
+---@param ... ERAAura
 ---@return ERAAuraOnFriendlyHealer
-function ERAAuraOnFriendlyHealer:create(hud, talent, mainSpellID, ...)
-    local a = ERAAura:create(hud, mainSpellID, talent)
+function ERAAuraOnFriendlyHealer:create(hud, talent, ...)
+    local a = {}
     setmetatable(a, ERAAuraOnFriendlyHealer)
     ---@cast a ERAAuraOnFriendlyHealer
-    a:constructOnGroupMembers(...)
+    a:constructOnGroupMembers(hud, talent, ...)
     return a
 end
 
----@param groupMembersCountExcludingSelf integer
----@param totalCount integer
----@param numberOfGroupMembersIncludingSelf integer
----@param foundBySelf boolean
-function ERAAuraOnFriendlyHealer:computeParty(groupMembersCountExcludingSelf, totalCount, numberOfGroupMembersIncludingSelf, foundBySelf)
-    if totalCount < self.hud.otherHealersInGroup and not foundBySelf then
-        self.remDuration = 0
-        self.stacks = 0
-    else
-        self.remDuration = math.max(0.01, self.foundDuration)
-        self.stacks = math.max(1, self.foundStacks)
-    end
+function ERAAuraOnFriendlyHealer:computeSelf_returnMissing()
+    return nil
+end
+
+function ERAAuraOnFriendlyHealer:computeGroup_returnMissing()
+    return self.hud.otherHealersInGroup > 0 and not self.foundBySelf
 end
 
 --#endregion
@@ -729,7 +754,7 @@ end
 
 --#region AGGREGATE
 
----@class (exact) ERAAggregateTimer : ERATimer
+---@class (exact) ERAAggregateTimer : ERATimer, ERAMissingDataItem
 ---@field private __index unknown
 ---@field protected timers ERATimer[]
 ---@field shortest boolean
@@ -777,8 +802,10 @@ end
 function ERATimerOr:updateData(t)
     local foundDuration = 0
     local foundTotDuration = 0
+    self.isMissing = true
     for _, tim in ipairs(self.timers) do
         if tim.talentActive and tim.remDuration > 0 then
+            self.isMissing = false
             if self.shortest then
                 if foundDuration <= 0 or foundDuration > tim.remDuration then
                     foundDuration = tim.remDuration
@@ -794,6 +821,46 @@ function ERATimerOr:updateData(t)
     end
     self.remDuration = foundDuration
     self.totDuration = foundTotDuration
+end
+
+---@class ERAAnyActive : ERAMissingDataItem
+---@field private __index unknown
+---@field private miss ERAMissingDataItem[]
+ERAAnyActive = {}
+ERAAnyActive.__index = ERAAnyActive
+setmetatable(ERAAnyActive, { __index = ERADataItem })
+
+---@param hud ERAHUD
+---@param ... ERAMissingDataItem
+---@return ERAAnyActive
+function ERAAnyActive:create(hud, ...)
+    local x = {}
+    setmetatable(x, ERAAnyActive)
+    ---@cast x ERAAnyActive
+    x:constructItem(hud)
+    x.miss = { ... }
+    x.isMissing = true
+    return x
+end
+
+function ERAAnyActive:checkDataItemTalent()
+    for _, t in ipairs(self.miss) do
+        if t.talentActive then
+            return true
+        end
+    end
+    return false
+end
+
+---@param t number
+function ERAAnyActive:updateData(t)
+    self.isMissing = true
+    for _, m in ipairs(self.miss) do
+        if m.talentActive and not m.isMissing then
+            self.isMissing = false
+            return
+        end
+    end
 end
 
 --#endregion

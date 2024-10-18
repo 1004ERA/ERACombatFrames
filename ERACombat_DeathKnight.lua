@@ -218,7 +218,7 @@ end
 ---@param hud ERADKHUD
 ---@param debuff ERAAura
 function ERACombatFrames_DK_MissingDisease(hud, debuff)
-    hud:AddMissingTimerOverlay(debuff, true, "PowerSwirlAnimation-Whirls-Soulbinds", true, "MIDDLE", false, false, false, false)
+    hud:AddMissingOverlay(debuff, true, "PowerSwirlAnimation-Whirls-Soulbinds", true, "MIDDLE", false, false, false, false)
 end
 
 ---@param hud ERADKHUD
@@ -389,7 +389,7 @@ setmetatable(ERACooldownIgnoringRunes, { __index = ERACooldownBase })
 ---@param spellID integer
 ---@param runeCost integer
 ---@param talent ERALIBTalent | nil
----@param ... ERACooldownAdditionalID
+---@param ... ERASpellAdditionalID
 ---@return ERACooldownIgnoringRunes
 function ERACooldownIgnoringRunes:Create(hud, spellID, runeCost, talent, ...)
     local cd = {}

@@ -92,27 +92,27 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
     --- SAO ---
 
     ---@class MissingWarlockCurse : ERASAOMissingTimer
-    ---@field lastTriggered number|nil
-    ---@field lastTarGUID string|nil
+    ---@field warlock_lastTriggered number|nil
+    ---@field warlock_lastTarGUID string|nil
 
     local anyCurseByAnyone = hud:AddOrTimer(true, hud:AddTrackedDebuffOnTargetAnyCaster(334275, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(1714, talents.curses), hud:AddTrackedDebuffOnTargetAnyCaster(702),
         hud:AddTrackedDebuffOnTargetAnyCaster(442804, talents.satyr))
-    local missingCurse = hud:AddMissingTimerOverlay(anyCurseByAnyone, true, 461878, false, "BOTTOM", false, true, false, false)
+    local missingCurse = hud:AddMissingOverlay(anyCurseByAnyone, true, 461878, false, "BOTTOM", false, true, false, false)
     ---@cast missingCurse MissingWarlockCurse
     function missingCurse:ConfirmIsActiveOverride(t, combat)
         local tarHealth = UnitHealth("target")
         if tarHealth and tarHealth > 0 then
             if UnitCanAttack("player", "target") and (UnitIsPlayer("target") or tarHealth > 2 * self.hud.health.maxHealth) then
                 local tarGUID = UnitGUID("target")
-                if self.lastTriggered and tarGUID == self.lastTarGUID and t - self.lastTriggered < 42 then
-                    return t - self.lastTriggered < 3
+                if self.warlock_lastTriggered and tarGUID == self.warlock_lastTarGUID and t - self.warlock_lastTriggered < 42 then
+                    return t - self.warlock_lastTriggered < 3
                 else
-                    self.lastTarGUID = tarGUID
-                    self.lastTriggered = t
+                    self.warlock_lastTarGUID = tarGUID
+                    self.warlock_lastTriggered = t
                     return true
                 end
             else
-                self.lastTriggered = nil
+                self.warlock_lastTriggered = nil
                 return false
             end
         else
@@ -122,13 +122,13 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
     ---@param combat boolean
     ---@param t number
     function missingCurse:DeactivatedOverride(t, combat)
-        self.lastTarGUID = nil
-        self.lastTriggered = nil
+        self.warlock_lastTarGUID = nil
+        self.warlock_lastTriggered = nil
     end
 
     local sacriCooldown = hud:AddTrackedCooldown(108503, talent_sacrifice)
     local sacriBuff = hud:AddTrackedBuff(196099, talent_sacrifice)
-    local sacriMissing = hud:AddMissingTimerOverlay(sacriBuff, false, "CovenantSanctum-Reservoir-Idle-NightFae-Spiral1", true, "MIDDLE", false, false, false, false)
+    local sacriMissing = hud:AddMissingOverlay(sacriBuff, false, "CovenantSanctum-Reservoir-Idle-NightFae-Spiral1", true, "MIDDLE", false, false, false, false)
     function sacriMissing:ConfirmIsActiveOverride(t)
         return sacriCooldown.remDuration <= self.hud.occupied
     end
