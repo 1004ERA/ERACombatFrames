@@ -2451,6 +2451,53 @@ end
 
 --#endregion
 
+--- BASED ON ICON ---
+
+---@class (exact) ERASAOSpellIcon : ERASAO
+---@field private __index unknown
+---@field private spellID integer
+---@field private iconID integer
+ERASAOSpellIcon = {}
+ERASAOSpellIcon.__index = ERASAOSpellIcon
+setmetatable(ERASAOSpellIcon, { __index = ERASAO })
+
+---@param spellID integer
+---@param iconID integer
+---@param hud ERAHUD
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@param offsetX number
+---@param offsetY number
+---@return ERASAOSpellIcon
+function ERASAOSpellIcon:create(spellID, iconID, hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    local a = {}
+    setmetatable(a, ERASAOSpellIcon)
+    ---@cast a ERASAOSpellIcon
+    a.spellID = spellID
+    a.iconID = iconID
+    a:constructSAO(hud, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, offsetX, offsetY)
+    return a
+end
+
+---@return boolean
+function ERASAOSpellIcon:checkTalentSAO()
+    return true
+end
+
+---@param combat boolean
+---@param t number
+function ERASAOSpellIcon:getIsActive(t, combat)
+    return C_Spell.GetSpellInfo(self.spellID).iconID == self.iconID
+end
+
+--#endregion
+
 ------------
 --- MISC ---
 ------------

@@ -33,6 +33,8 @@
 ---@field reapermark ERALIBTalent
 ---@field reapermark1rune ERALIBTalent
 ---@field reapermark2rune ERALIBTalent
+---@field h_sanlayn ERALIBTalent
+---@field h_sanlayn_gift ERALIBTalent
 
 ---@param cFrame ERACombatFrame
 function ERACombatFrames_DeathKnightSetup(cFrame)
@@ -78,6 +80,8 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         reapermark = ERALIBTalent:Create(117659),
         reapermark2rune = ERALIBTalent:CreateAnd(ERALIBTalent:Create(117659), ERALIBTalent:CreateNotTalent(117629)),
         reapermark1rune = ERALIBTalent:Create(117629),
+        h_sanlayn = ERALIBTalent:Create(117648),
+        h_sanlayn_gift = ERALIBTalent:Create(117650),
     }
 
     local enemies = ERACombatEnemies:Create(cFrame, ERACombatOptions_specIDOrNilIfDisabled(bloodOptions), ERACombatOptions_specIDOrNilIfDisabled(frostOptions), ERACombatOptions_specIDOrNilIfDisabled(unholyOptions))

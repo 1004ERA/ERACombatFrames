@@ -53,7 +53,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     hud:AddOverlayBasedOnSpellActivation(31935, 450925, false, "LEFT", false, false, false, false, talent_grand_crusader)
 
     local hTemplarWrath = ERACombatFrames_PaladinTemplar_returnWrath(hud, talents)
-    hud:AddAuraOverlay(hTemplarWrath, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)
+    hud:AddAuraOverlay(hTemplarWrath, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)--Adventures-Buff-Heal-Burst
 
     --- bars ---
 

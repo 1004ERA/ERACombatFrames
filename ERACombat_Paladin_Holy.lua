@@ -72,7 +72,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     hud:AddAuraOverlay(infusionBuff, 1, 459313, false, "RIGHT", true, false, false, false)
 
     local howProc = hud:AddTrackedBuff(392939, talent_how_proc)
-    hud:AddAuraOverlay(howProc, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)
+    hud:AddAuraOverlay(howProc, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)--Adventures-Buff-Heal-Burst
 
     local freeFromSOTR = hud:AddTrackedBuff(414445, talent_sotr)
     hud:AddAuraOverlay(freeFromSOTR, 1, 459314, false, "BOTTOM", false, true, false, false)

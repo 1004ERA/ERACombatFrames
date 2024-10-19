@@ -1575,6 +1575,7 @@ function ERAHUD:updateData(t, combat)
         end
     end
     if self.hasActiveBuffsOnPet then
+        i = 1
         while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("pet", i)
             if (auraInfo) then
@@ -2809,6 +2810,21 @@ end
 ---@return ERASAOActivation
 function ERAHUD:AddOverlayBasedOnSpellActivation(spellID, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
     return ERASAOActivation:create(spellID, self, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
+end
+
+---@param spellID integer
+---@param iconID integer
+---@param texture string|integer
+---@param isAtlas boolean
+---@param position ERASAOPosition
+---@param flipH boolean
+---@param flipV boolean
+---@param rotateLeft boolean
+---@param rotateRight boolean
+---@param talent ERALIBTalent|nil
+---@return ERASAOSpellIcon
+function ERAHUD:AddOverlayBasedOnSpellIcon(spellID, iconID, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent)
+    return ERASAOSpellIcon:create(spellID, iconID, self, texture, isAtlas, position, flipH, flipV, rotateLeft, rotateRight, talent, self.offsetX, self.offsetY)
 end
 
 ---@param timer ERATimer

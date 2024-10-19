@@ -110,6 +110,11 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     local crimson = hud:AddTrackedBuff(81141)
     hud:AddAuraOverlay(crimson, 1, 511104, false, "LEFT", false, false, false, false)
 
+    local vampStrike = hud:AddOverlayBasedOnSpellIcon(206930, 5927645, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "BOTTOM", false, false, false, false, talents.h_sanlayn)
+    function vampStrike:ConfirmIsActiveOverride(t, combat)
+        return combat and vblood.remDuration <= 0
+    end
+
     ERACombatFrames_DK_MissingDisease(hud, plague)
 
     --- rotation ---

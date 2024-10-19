@@ -72,7 +72,7 @@ function ERACombatFrames_PaladinRetributionSetup(cFrame, talents)
     local hTemplarWrath = ERACombatFrames_PaladinTemplar_returnWrath(hud, talents)
     local anshe = hud:AddTrackedBuff(445206, htalent_anshe)
     local howAllowed = hud:AddOrTimer(false, hTemplarWrath, howProc, anshe)
-    hud:AddTimerOverlay(howAllowed, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)
+    hud:AddTimerOverlay(howAllowed, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil) --Adventures-Buff-Heal-Burst
 
     hud:AddOverlayBasedOnSpellActivation(184575, 450913, false, "LEFT", false, false, false, false, nil)
 

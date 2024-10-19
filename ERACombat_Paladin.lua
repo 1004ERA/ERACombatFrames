@@ -147,9 +147,9 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
     hud.pala_purpose = hud:AddTrackedBuff(purposeID, ERALIBTalent:CreateOr(talents.h_aurora, purposeTalent))
     hud:AddAuraOverlay(hud.pala_purpose, 1, 459314, false, "TOP", false, false, false, false)
 
-    local concentration = hud:AddTrackedBuff(317920, talents.auras)
-    local devotion = hud:AddOrTimer(false, hud:AddTrackedBuff(465, talents.auras), hud:AddTrackedBuffAnyCaster(353101, talents.auras))                     -- by self, by other paladin
-    local crusaderAura = hud:AddOrTimer(false, hud:AddTrackedBuff(32223, talents.crusaderAura), hud:AddTrackedBuffAnyCaster(328557, talents.crusaderAura)) -- by self, by other paladin
+    local concentration = hud:AddTrackedBuffAnyCaster(317920, talents.auras)
+    local devotion = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(465, talents.auras), hud:AddTrackedBuffAnyCaster(353101, talents.auras))                     -- by self, by other paladin
+    local crusaderAura = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(32223, talents.crusaderAura), hud:AddTrackedBuffAnyCaster(328557, talents.crusaderAura)) -- by self, by other paladin
     local anyAura = hud:AddOrTimer(false, concentration, devotion, crusaderAura)
     hud:AddMissingOverlay(anyAura, false, 450920, false, "BOTTOM", false, false, true, false)
 

@@ -53,11 +53,12 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
         end
     end
 
-    hud:AddAuraBar(hud:AddTrackedBuffOnPet(63560, talent_transfo), nil, 0.4, 0.6, 0.4, talent_eternal_agony)
+    local transfoDuration = hud:AddTrackedBuffOnPet(63560, talent_transfo)
+    hud:AddAuraBar(transfoDuration, nil, 0.8, 0.0, 0.2, ERALIBTalent:CreateOr(talent_eternal_agony, talents.h_sanlayn_gift))
 
     hud:AddAuraBar(hud:AddTrackedBuff(207289, talent_frenzy), nil, 1.0, 0.8, 0.8)
 
-    local scytheBuff = hud:AddTrackedBuff(459238, talent_scythe)
+    local scytheBuff = hud:AddTrackedBuff(458123, talent_scythe)
     local scytheBar = hud:AddAuraBar(scytheBuff, nil, 0.0, 0.7, 0.6)
 
     --- SAO ---
@@ -66,6 +67,11 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
 
     hud:AddAuraOverlay(doom, 1, 450932, false, "LEFT", false, false, false, false)
     hud:AddAuraOverlay(doom, 2, 450932, false, "RIGHT", true, false, false, false)
+
+    local vampStrike = hud:AddOverlayBasedOnSpellIcon(55090, 5927645, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "BOTTOM", false, false, false, false, talents.h_sanlayn)
+    function vampStrike:ConfirmIsActiveOverride(t, combat)
+        return combat and transfoDuration.remDuration <= 0
+    end
 
     ERACombatFrames_DK_MissingDisease(hud, plague)
 
@@ -80,7 +86,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     local transfoIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(63560, talent_transfo))
 
     local dndIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 43265, 1, talent_dnd))
-    local defileIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 43265, 1, talent_defile))
+    local defileIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 152280, 1, talent_defile), 136144)
 
     local apoIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(275699, talent_apo))
 
@@ -89,6 +95,8 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     ERACombatFrames_DKSoulReaper(hud, 1)
 
     local aboIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(455395, talent_abomination))
+
+    hud:AddRotationStacks(hud:AddTrackedBuff(459238, talent_scythe), 20, 18).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --[[
 
