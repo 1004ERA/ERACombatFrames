@@ -2669,6 +2669,7 @@ end
 ---@return ERAAura
 function ERAHUD:AddTrackedBuffAnyCaster(spellID, talent, ...)
     local a = ERAAura:create(self, spellID, talent, ...)
+    a.acceptAnyCaster = true
     table.insert(self.buffs, a)
     return a
 end

@@ -706,7 +706,11 @@ end
 
 function ERAAuraOnAllGroupMembers:computeSelf_returnMissing()
     if self.foundOnSelf then
-        return nil
+        if self.hud.isInGroup then
+            return nil
+        else
+            return false
+        end
     else
         return true
     end

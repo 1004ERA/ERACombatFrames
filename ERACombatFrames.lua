@@ -8,6 +8,13 @@ TODO
 - ? icone trinket ?
 - paladin steed (lightforged)
 - dracthyr racial for 11.0.5
+- mage displacement duration
+- mage check greaterinvis id
+- mage check massinvis id
+- mage arcane leydrinker
+- mage arcane aether attunement
+- mage arcane harmony
+- mage arcane spark
 
 ERA_Debug = function()
 
@@ -16,7 +23,7 @@ end
 /run print(C_Spell.GetSpellInfo("").spellID)
 -- buff player
 /run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
-/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("pet",i);if ai then print(ai.spellId, ai.name);i=i+1 else break end end
+/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("target",i);if ai then print(ai.spellId, ai.name);i=i+1 else break end end
 -- debuff target
 /run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
 -- debuff player
@@ -46,6 +53,8 @@ function ERACombatFrames_event(event, ...)
             ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
+        elseif (classID == 8) then
+            ERACombatFrames_MageSetup(cFrame)
         elseif (classID == 9) then
             ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
@@ -59,5 +68,6 @@ function ERACombatFrames_event(event, ...)
         end
         cFrame:Pack()
         print("Welcome to ERACombatFrames. Enter the /ecf command for options.")
+        print("ECF : Arcane Mage available as a work in progress.")
     end
 end

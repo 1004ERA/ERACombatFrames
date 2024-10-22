@@ -811,10 +811,11 @@ end
 ---@param remdurDesat number
 ---@param checkUsable boolean
 ---@param hideIfAvailable boolean
+---@param forceHide boolean
 ---@param forceHighlight boolean
 ---@param forceHighlightValue boolean
 ---@param t number
-function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceHighlight, forceHighlightValue, t)
+function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceHide, forceHighlight, forceHighlightValue, t)
     if data.isKnown then
         local available
         if data.hasCharges then
@@ -863,7 +864,11 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
                     icon:StopHighlight()
                 end
             end
-            icon:Show()
+            if forceHide then
+                icon:Hide()
+            else
+                icon:Show()
+            end
         end
     else
         icon:Hide()
@@ -923,6 +928,7 @@ end
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
 ---@field HighlightOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
+---@field HideOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
 ---@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean)
 ERAHUDRotationCooldownIcon = {}
 ERAHUDRotationCooldownIcon.__index = ERAHUDRotationCooldownIcon
@@ -983,7 +989,13 @@ function ERAHUDRotationCooldownIcon:update(t, combat)
         forceHighlight = false
         forceHighlightValue = false
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceHighlight, forceHighlightValue, t)
+    local forceHide
+    if self.HideOverride then
+        forceHide = self:HideOverride(t, combat)
+    else
+        forceHide = false
+    end
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceHide, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     if self.data.isKnown then
@@ -1626,7 +1638,7 @@ function ERAHUDUtilityCooldownInGroup:update(t, combat)
         forceHighlight = false
         forceHighlightValue = false
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, forceHighlight, forceHighlightValue, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, false, forceHighlight, forceHighlightValue, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     self:UpdatedOverride(t, combat)
@@ -2031,6 +2043,8 @@ end
 ---@field private update fun(this:ERAHUDMissingUtility, t:number, combat:boolean)
 ---@field fadeAfterSeconds number
 ---@field repeatAfterSeconds number
+---@field private refreshCount integer
+---@field private watchRefreshed boolean
 ---@field private lastAppeared number
 ERAHUDMissingUtility = {}
 ERAHUDMissingUtility.__index = ERAHUDMissingUtility
@@ -2051,6 +2065,8 @@ function ERAHUDMissingUtility:create(miss, fadeAfterSeconds, repeatAfterSeconds,
     et.lastAppeared = 0
     et.fadeAfterSeconds = fadeAfterSeconds
     et.repeatAfterSeconds = repeatAfterSeconds
+    et.refreshCount = 0
+    et.watchRefreshed = false
     miss.hud:addEmpty(et)
     return et
 end
@@ -2060,15 +2076,27 @@ end
 function ERAHUDMissingUtility:update(t, combat)
     if self.miss.talentActive and self.miss.isMissing then
         if self.lastAppeared > 0 then
-            local delta = t - self.lastAppeared
             local visible
+            local delta = t - self.lastAppeared
             if delta < self.fadeAfterSeconds then
                 visible = true
             elseif delta < self.fadeAfterSeconds + self.repeatAfterSeconds then
                 visible = false
+                self.watchRefreshed = true
             else
-                self.lastAppeared = t
-                visible = true
+                if self.watchRefreshed then
+                    if self.refreshCount < 2 then
+                        self.refreshCount = self.refreshCount + 1
+                        self.watchRefreshed = false
+                        visible = true
+                        self.lastAppeared = t
+                    else
+                        visible = false
+                    end
+                else
+                    self.lastAppeared = t
+                    visible = true
+                end
             end
             if visible then
                 self.icon:Beam()
@@ -2077,6 +2105,7 @@ function ERAHUDMissingUtility:update(t, combat)
                 self.icon:Hide()
             end
         else
+            self.refreshCount = 0
             self.lastAppeared = t
             self.icon:Beam()
             self.icon:Show()

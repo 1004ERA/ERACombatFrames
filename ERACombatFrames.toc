@@ -51,6 +51,11 @@ ERACombat_Evoker_Devastation.lua
 ERACombat_Evoker_Preservation.lua
 ERACombat_Evoker_Augmentation.lua
 
+ERACombat_Mage.lua
+ERACombat_Mage_Arcane.lua
+ERACombat_Mage_Fire.lua
+ERACombat_Mage_Frost.lua
+
 ERACombat_Monk.lua
 ERACombat_Monk_Brewmaster.lua
 ERACombat_Monk_Mistweaver.lua
