@@ -811,11 +811,10 @@ end
 ---@param remdurDesat number
 ---@param checkUsable boolean
 ---@param hideIfAvailable boolean
----@param forceHide boolean
----@param forceHighlight boolean
----@param forceHighlightValue boolean
+---@param forceShowHide boolean|nil
+---@param forceHighlight boolean|nil
 ---@param t number
-function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceHide, forceHighlight, forceHighlightValue, t)
+function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceShowHide, forceHighlight, t)
     if data.isKnown then
         local available
         if data.hasCharges then
@@ -840,35 +839,35 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
             icon:SetDesaturated(data.remDuration >= remdurDesat or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
             available = data.remDuration <= 0
         end
-        if available and hideIfAvailable then
-            icon:Hide()
-            icon:SetMainText(nil)
-            icon:SetOverlayValue(0)
+        local visible
+        if forceShowHide == nil then
+            visible = not (available and hideIfAvailable)
         else
+            visible = forceShowHide
+        end
+        if visible then
             icon:SetOverlayValue(data.remDuration / data.totDuration)
             if data.remDuration > 0 then
                 icon:SetMainText(tostring(math.floor(data.remDuration)))
             else
                 icon:SetMainText(nil)
             end
-            if forceHighlight then
-                if forceHighlightValue then
-                    icon:Highlight()
-                else
-                    icon:StopHighlight()
-                end
-            else
+            if forceHighlight == nil then
                 if IsSpellOverlayed(data.spellID) then
                     icon:Highlight()
                 else
                     icon:StopHighlight()
                 end
-            end
-            if forceHide then
-                icon:Hide()
             else
-                icon:Show()
+                if forceHighlight then
+                    icon:Highlight()
+                else
+                    icon:StopHighlight()
+                end
             end
+            icon:Show()
+        else
+            icon:Hide()
         end
     else
         icon:Hide()
@@ -927,8 +926,8 @@ end
 ---@field checkUsable boolean
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
----@field HighlightOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
----@field HideOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
+---@field HighlightOverride nil|fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
+---@field ShowHideOverride nil|fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
 ---@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean)
 ERAHUDRotationCooldownIcon = {}
 ERAHUDRotationCooldownIcon.__index = ERAHUDRotationCooldownIcon
@@ -980,22 +979,15 @@ end
 ---@param combat boolean
 ---@param t number
 function ERAHUDRotationCooldownIcon:update(t, combat)
-    local forceHighlight
-    local forceHighlightValue = false
+    local forceHighlight = nil
     if self.HighlightOverride then
-        forceHighlight = true
-        forceHighlightValue = self:HighlightOverride(t, combat)
-    else
-        forceHighlight = false
-        forceHighlightValue = false
+        forceHighlight = self:HighlightOverride(t, combat)
     end
-    local forceHide
-    if self.HideOverride then
-        forceHide = self:HideOverride(t, combat)
-    else
-        forceHide = false
+    local forceShowHide = nil
+    if self.ShowHideOverride then
+        forceShowHide = self:ShowHideOverride(t, combat)
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceHide, forceHighlight, forceHighlightValue, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceShowHide, forceHighlight, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     if self.data.isKnown then
@@ -1149,20 +1141,15 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationOffensiveDispellIcon:UpdatedOverride(t, combat)
-    if
+function ERAHUDRotationOffensiveDispellIcon:ShowHideOverride(t, combat)
+    return
         (self.magic and self.hud.targetDispellableMagic)
         or
         (self.enrage and self.hud.targetDispellableEnrage)
-    then
-        self.icon:Show()
-    else
-        self.icon:Hide()
-    end
 end
 
 function ERAHUDRotationOffensiveDispellIcon:HighlightOverride(t, combat)
-    return self.data.remDuration <= 0
+    return self.data.remDuration <= 0 and combat
 end
 
 --#endregion
@@ -1189,7 +1176,7 @@ end
 
 ---@param combat boolean
 ---@param t number
-function ERAHUDRotationKickIcon:UpdatedOverride(t, combat)
+function ERAHUDRotationKickIcon:ShowHideOverride(t, combat)
     if self.hud.targetCast > self.data.remDuration then
         if self.data.remDuration <= 0 then
             self.hud.targetCastBar:kickIsAvailable()
@@ -1197,18 +1184,18 @@ function ERAHUDRotationKickIcon:UpdatedOverride(t, combat)
             self.hud.targetCastBar:kickWillBeAvailable()
         end
         self.icon:SetAlpha(1.0)
-        self.icon:Show()
         self.onTimer.preventVisible = false
         self.availableChargePriority.preventVisible = false
+        return true
     elseif self.data.remDuration > 0 then
         self.icon:SetAlpha(0.5)
-        self.icon:Show()
         self.onTimer.preventVisible = true
         self.availableChargePriority.preventVisible = true
+        return combat
     else
-        self.icon:Hide()
         self.onTimer.preventVisible = true
         self.availableChargePriority.preventVisible = true
+        return false
     end
 end
 
@@ -1569,7 +1556,7 @@ end
 ---@class (exact) ERAHUDUtilityCooldownInGroup : ERAHUDUtilityIconInGroup
 ---@field private __index unknown
 ---@field update fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
----@field HighlightOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean): boolean
+---@field HighlightOverride nil|fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean): boolean
 ---@field UpdatedOverride fun(this:ERAHUDUtilityCooldownInGroup, t:number, combat:boolean)
 ---@field data ERACooldownBase
 ---@field ConfirmShowOverride nil|fun(this:ERAHUDUtilityCooldownInGroup): boolean
@@ -1629,16 +1616,11 @@ function ERAHUDUtilityCooldownInGroup:update(t, combat)
         self.hud:mustUpdateUtilityLayout()
         return
     end
-    local forceHighlight
-    local forceHighlightValue = false
+    local forceHighlight = nil
     if self.HighlightOverride then
-        forceHighlight = true
-        forceHighlightValue = self:HighlightOverride(t, combat)
-    else
-        forceHighlight = false
-        forceHighlightValue = false
+        forceHighlight = self:HighlightOverride(t, combat)
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, false, forceHighlight, forceHighlightValue, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, nil, forceHighlight, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     self:UpdatedOverride(t, combat)
@@ -1980,6 +1962,7 @@ end
 ---@class (exact) ERAHUDUtilityAuraOutOfCombat : ERAHUDUtilityIconOutOfCombat
 ---@field private __index unknown
 ---@field aura ERAAura
+---@field HideOverride nil|fun(this:ERAHUDUtilityIconOutOfCombat, t:number): boolean
 ERAHUDUtilityAuraOutOfCombat = {}
 ERAHUDUtilityAuraOutOfCombat.__index = ERAHUDUtilityAuraOutOfCombat
 setmetatable(ERAHUDUtilityAuraOutOfCombat, { __index = ERAHUDUtilityIconOutOfCombat })
@@ -2021,6 +2004,10 @@ end
 ---@param t number
 function ERAHUDUtilityAuraOutOfCombat:updateOutOfCombat(t)
     if self.aura.remDuration > 0 then
+        if self.HideOverride and self:HideOverride(t) then
+            self.icon:Hide()
+            return
+        end
         if self.aura.stacks > 1 then
             self.icon:SetMainText(tostring(self.aura.stacks))
         else
@@ -2433,7 +2420,7 @@ end
 ---@param combat boolean
 ---@param t number
 function ERASAOMissingTimer:getIsActive(t, combat)
-    return self.miss.isMissing and ((not self.onlyIfHasTarget) or (combat and UnitCanAttack("player", "target")))
+    return self.miss.isMissing and ((not self.onlyIfHasTarget) or (combat and self.hud.canAttackTarget))
 end
 
 --- BASED ON ACTIVATION ---

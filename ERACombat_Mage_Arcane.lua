@@ -33,6 +33,12 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     hud:AddAuraOverlay(clearcast, 2, 449486, false, "RIGHT", true, false, false, false)
     hud:AddAuraOverlay(clearcast, 3, 449486, false, "TOP", false, false, false, true)
 
+    local attunement = hud:AddTrackedBuff(453601, talent_attunement)
+    hud:AddAuraOverlay(attunement, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
+
+    local leydrinker = hud:AddAuraOverlay(hud:AddTrackedBuff(453758, talent_leydrinker), 1, 450918, false, "BOTTOM", false, false, true, false)
+    leydrinker:SetVertexColor(1.0, 0.0, 1.0)
+
     --- bars ---
 
     local clearBar = hud:AddAuraBar(clearcast, nil, 0.0, 1.0, 0.5)
@@ -48,7 +54,17 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(210824, talent_touch), nil, 1.0, 0.0, 0.0)
     hud:AddAuraBar(hud:AddTrackedBuff(365362, talent_surge), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedBuff(383997, talent_tempo), nil, 0.8, 0.9, 0.0)
-    hud:AddAuraBar(hud:AddTrackedBuff(393939, talent_impetus), nil, 0.4, 0.0, 0.8)
+    --hud:AddAuraBar(hud:AddTrackedBuff(393939, talent_impetus), nil, 0.4, 0.0, 0.8) -- finalement pas la peine
+    hud:AddAuraBar(hud:AddTrackedBuff(383783), nil, 1.0, 0.7, 1.0) -- nether precision
+
+    local fadingAttunement = hud:AddAuraBar(attunement, nil, 0.0, 0.6, 0.4)
+    function fadingAttunement:ComputeDurationOverride(t)
+        if self.aura.remDuration < self.hud.timerDuration - 1 and clearcast.remDuration > self.hud.occupied then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     --- rotation ---
 
@@ -58,13 +74,25 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     local pom = hud:AddRotationCooldown(hud:AddTrackedCooldown(205025, talent_pom))
     local pomStacks = hud:AddRotationStacks(hud:AddTrackedBuff(205025, talent_pom), 2, 3, 135735)
     pomStacks.overlapsPrevious = pom
-    function pom:HideOverride(t, combat)
-        return pomStacks.data.stacks > 0
+    function pom:ShowHideOverride(t, combat)
+        return pomStacks.data.stacks == 0 and (combat or self.data.remDuration > 0)
     end
 
     ERACombatFrames_MageFae(hud, talents, 6)
 
     local orb = hud:AddRotationCooldown(hud:AddTrackedCooldown(153626))
+
+    local attunementBuild = hud:AddRotationStacks(hud:AddTrackedBuff(458388, talent_attunement), 3, 3)
+    function attunementBuild:ShowCombatMissing()
+        return false
+    end
+    local attunedIcon = hud:AddRotationBuff(attunement)
+    attunedIcon.overlapsPrevious = attunementBuild
+    function attunedIcon:ShowWhenMissing(t, combat)
+        return false
+    end
+
+    hud:AddRotationStacks(hud:AddTrackedBuff(384455, talent_harmony), 20, 17)
 
     --[[
 

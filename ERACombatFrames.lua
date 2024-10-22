@@ -8,12 +8,7 @@ TODO
 - ? icone trinket ?
 - paladin steed (lightforged)
 - dracthyr racial for 11.0.5
-- mage displacement duration
-- mage check greaterinvis id
-- mage check massinvis id
-- mage arcane leydrinker
-- mage arcane aether attunement
-- mage arcane harmony
+- mage arcane supernova/gravity prio
 - mage arcane spark
 
 ERA_Debug = function()
@@ -34,7 +29,7 @@ end
 
 ]]
 
-ERA_TALENTS_DO_PRINT_N = 0
+ERA_TALENTS_DO_PRINT_N = 500
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")

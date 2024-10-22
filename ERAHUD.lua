@@ -67,6 +67,7 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field occupied number
 ---@field castingSpellID integer|nil
 ---@field hasteMultiplier number
+---@field canAttackTarget boolean
 ---@field selfDispellableMagic boolean
 ---@field selfDispellablePoison boolean
 ---@field selfDispellableDisease boolean
@@ -246,6 +247,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, showPet, spec)
 
     hud.hasteMultiplier = 1
     hud.channelingSpellID = nil
+    hud.canAttackTarget = false
 
     hud.targetCast = 0
     hud.targetDispellableEnrage = false
@@ -1697,9 +1699,11 @@ function ERAHUD:updateData(t, combat)
 
     --#region TARGET
 
-    if (self.watchTargetDispellable) then
-        self.targetDispellableMagic = false
-        self.targetDispellableEnrage = false
+    self.canAttackTarget = UnitCanAttack("player", "target")
+
+    self.targetDispellableMagic = false
+    self.targetDispellableEnrage = false
+    if self.watchTargetDispellable and self.canAttackTarget then
         i = 1
         while true do
             local auraInfo = C_UnitAuras.GetBuffDataByIndex("target", i)
@@ -1720,7 +1724,7 @@ function ERAHUD:updateData(t, combat)
     end
 
     self.targetCast = 0
-    if (UnitIsEnemy("player", "target")) then
+    if self.canAttackTarget then
         local name, _, _, _, endTargetCastMS, _, _, notInterruptible = UnitCastingInfo("target")
         if (endTargetCastMS and endTargetCastMS > 0 and not notInterruptible) then
             self.targetCast = endTargetCastMS / 1000 - t

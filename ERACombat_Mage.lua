@@ -20,6 +20,7 @@
 ---@field massSheep ERALIBTalent
 ---@field massInvis ERALIBTalent
 ---@field massBarrier ERALIBTalent
+---@field h_sunfury_gravity ERALIBTalent
 
 ---@class MageHUD : ERAHUD
 ---@field mage_mana ERAHUDPowerBarModule
@@ -53,13 +54,14 @@ function ERACombatFrames_MageSetup(cFrame)
         floes = ERALIBTalent:Create(80162),
         wave = ERALIBTalent:Create(80160),
         dragon = ERALIBTalent:Create(125819),
-        supernova = ERALIBTalent:Create(125818),
+        supernova = ERALIBTalent:CreateAnd(ERALIBTalent:Create(125818), ERALIBTalent:CreateNotTalent(123832)),
         displacement = ERALIBTalent:Create(80152),
         invis = ERALIBTalent:CreateNotTalent(115877),
         greaterInvis = ERALIBTalent:Create(115877),
         massSheep = ERALIBTalent:Create(80164),
         massInvis = ERALIBTalent:Create(115878),
         massBarrier = ERALIBTalent:Create(125817),
+        h_sunfury_gravity = ERALIBTalent:Create(123832),
     }
 
     if (not arcaneOptions.disabled) then
@@ -108,9 +110,20 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
     --- bars ---
 
     local displacementCooldown = hud:AddTrackedCooldown(389713, talents.displacement)
+    local displacementAvailable = hud:AddTrackedBuff(389714, talents.displacement)
     local invis_progress_duration = hud:AddTrackedBuff(66, talents.invis)
     local invisDuration = hud:AddTrackedBuff(32612, talents.invis)
-    local greaterInvisDuration = hud:AddTrackedBuff(110959, talents.greaterInvis)
+    local greaterInvisDuration = hud:AddTrackedBuff(110960, talents.greaterInvis)
+
+    local displacementBar = hud:AddAuraBar(displacementAvailable, nil, 0.9, 0.9, 1.0)
+    function displacementBar:ComputeDurationOverride(t)
+        if displacementCooldown.remDuration <= 0 and C_Spell.IsSpellUsable(displacementCooldown.spellID) then
+            self:SetColor(0.9, 0.9, 1.0)
+        else
+            self:SetColor(1.0, 0.0, 0.0)
+        end
+        return self.aura.remDuration
+    end
 
     hud:AddAuraBar(invis_progress_duration, 135994, 0.5, 0.5, 0.5)
     hud:AddAuraBar(invisDuration, nil, 0.7, 0.7, 0.7)
@@ -142,7 +155,7 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
 
     --- utility ---
 
-    hud:AddMissingUtility(hud:AddBuffOnAllPartyMembers(nil, hud:AddTrackedBuffAnyCaster(1459)), 5, 5, 135932)
+    hud:AddMissingUtility(hud:AddBuffOnAllPartyMembers(nil, hud:AddTrackedBuffAnyCaster(1459), hud:AddTrackedBuffAnyCaster(432778)), 5, 5, 135932)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(235450), hud.defenseGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(45438, talents.iblock), hud.defenseGroup)
@@ -154,6 +167,19 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(110959, talents.greaterInvis), hud.specialGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(414664, talents.massInvis), hud.specialGroup)
 
+    local displacementOutOfCombat = hud:AddUtilityAuraOutOfCombat(displacementAvailable)
+    function displacementOutOfCombat:HideOverride(t)
+        if displacementCooldown.remDuration <= 0 then
+            if C_Spell.IsSpellUsable(389713) then
+                self.icon:SetVertexColor(1.0, 1.0, 1.0, 1.0)
+            else
+                self.icon:SetVertexColor(1.0, 0.0, 0.0, 1.0)
+            end
+            return false
+        else
+            return true
+        end
+    end
     hud:AddUtilityAuraOutOfCombat(hud:AddTrackedBuff(414664, talents.massInvis))
     hud:AddUtilityAuraOutOfCombat(greaterInvisDuration)
     hud:AddUtilityAuraOutOfCombat(invisDuration)
@@ -162,6 +188,7 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(120), hud.controlGroup) -- cone
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(122), hud.controlGroup) -- frost nova
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(157980, talents.supernova), hud.controlGroup)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(449700, talents.h_sunfury_gravity), hud.controlGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(31661, talents.dragon), hud.controlGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(113724, talents.rof), hud.controlGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(157997, talents.nova), hud.controlGroup)
@@ -170,9 +197,9 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(212653, talents.shimmer), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(1953, talents.blink), hud.movementGroup)
+    hud:AddUtilityCooldown(displacementCooldown, hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(108839, talents.floes), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(342245, talents.alter), hud.movementGroup)
-    hud:AddUtilityCooldown(displacementCooldown, hud.movementGroup)
 
     return hud
 end

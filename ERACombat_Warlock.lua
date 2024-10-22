@@ -102,7 +102,7 @@ function ERACombatFrames_WarlockCommonSetup(cFrame, spec, requireCLEU, talents, 
     function missingCurse:ConfirmIsActiveOverride(t, combat)
         local tarHealth = UnitHealth("target")
         if tarHealth and tarHealth > 0 then
-            if UnitCanAttack("player", "target") and (UnitIsPlayer("target") or tarHealth > 2 * self.hud.health.maxHealth) then
+            if self.hud.canAttackTarget and (tarHealth > 2 * self.hud.health.maxHealth or UnitIsPlayer("target")) then
                 local tarGUID = UnitGUID("target")
                 if self.warlock_lastTriggered and tarGUID == self.warlock_lastTarGUID and t - self.warlock_lastTriggered < 42 then
                     return t - self.warlock_lastTriggered < 3
