@@ -12,7 +12,8 @@
 ---@param cFrame ERACombatFrame
 ---@param talents MonkCommonTalents
 function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
-    local talent_rsk = ERALIBTalent:Create(124984)
+    local talent_rwk = ERALIBTalent:Create(128221)
+    local talent_rsk = ERALIBTalent:CreateAnd(ERALIBTalent:Create(124984), ERALIBTalent:CreateNot(talent_rwk))
     local talent_renewing = ERALIBTalent:Create(124888)
     local talent_invigorating = ERALIBTalent:Create(124891)
     local talent_zenpulse = ERALIBTalent:Create(124889)
@@ -33,13 +34,10 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     local talent_fast_sheilun = ERALIBTalent:Create(124903)
     local talent_cocoon = ERALIBTalent:Create(124875)
     local talent_stronger_invigorating_10pct = ERALIBTalent:Create(124900)
-    local talent_ancient_teachings = ERALIBTalent:Create(124882)
-    local talent_ancient_concordance = ERALIBTalent:Create(124886)
+    local talent_jadefire_teachings = ERALIBTalent:Create(124882)
     local talent_normal_detox = ERALIBTalent:CreateNotTalent(124866)
     local talent_better_detox = ERALIBTalent:Create(124866)
-
-    local htalent_conduit = ERALIBTalent:Create(125062)
-    local htalent_blackox = ERALIBTalent:Create(125060)
+    local talent_crackling_tea = ERALIBTalent:Create(128220)
 
     local hud = ERAHUD:Create(cFrame, 1.5, true, true, false, 2)
     ---@cast hud MonkMistweaverHUD
@@ -152,6 +150,8 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     --#endregion
     -------------------------
 
+    ERACombatMonk_HHarmony(hud, talents)
+
     --- SAO ---
 
     local instaVivivySAO = hud:AddAuraOverlay(hud.instaVivify, 1, 623951, false, "RIGHT", true, false, false, false)
@@ -161,8 +161,12 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         return combat or self.hud.health.currentHealth < self.hud.health.maxHealth
     end
 
-    local blackOxBuff = hud:AddTrackedBuff(443112, htalent_blackox)
+    local blackOxBuff = hud:AddTrackedBuff(443112, talents.h_conduit_blackox)
     hud:AddAuraOverlay(blackOxBuff, 1, 623950, false, "TOP", false, false, false, true)
+
+    local danceDuration = hud:AddTrackedBuff(438443, talent_chiji_sck)
+    hud:AddAuraOverlay(danceDuration, 1, 1001512, false, "BOTTOM", false, false, true, false)
+    hud:AddAuraOverlay(hud:AddTrackedBuff(467317, talent_crackling_tea), 1, 623952, false, "BOTTOM", false, false, true, false)
 
     --- rotation ---
 
@@ -254,6 +258,14 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     function rskIcon:ComputeAvailablePriorityOverride(t)
         return 2
     end
+    local rwkCooldown = hud:AddTrackedCooldown(467307, talent_rwk)
+    local rwkIcon = hud:AddPriority(1381298, talent_rwk)
+    function rwkIcon:ComputeDurationOverride(t)
+        return rwkCooldown.remDuration
+    end
+    function rwkIcon:ComputeAvailablePriorityOverride(t)
+        return 2
+    end
 
     function faeIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 3
@@ -296,19 +308,28 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         end
     end
 
-    hud:AddAuraBar(hud:AddTrackedBuff(388026, talent_ancient_teachings), nil, 1.0, 0.2, 0.8)
-    --hud:AddAuraBar(hud:AddTrackedBuff(389391, talent_ancient_concordance), 3528275, 0.2, 0.1, 0.8)
+    hud:AddAuraBar(hud:AddTrackedBuff(388026, talent_jadefire_teachings), nil, 1.0, 0.2, 0.8)
     local blackOxBar = hud:AddAuraBar(blackOxBuff, nil, 0.5, 0.6, 0.0)
     function blackOxBar:ComputeDurationOverride()
-        if self.aura.remDuration < self.hud.timerDuration then
+        if self.aura.remDuration < self.hud.timerDuration - 1 then
             return self.aura.remDuration
         else
             return 0
         end
     end
-    hud:AddAuraBar(hud:AddTrackedBuff(438443, talent_chiji_sck), 606543, 0.8, 1.0, 0.5)
+
+    local danceBar = hud:AddAuraBar(danceDuration, 606543, 0.4, 1.0, 0.6)
+    function danceBar:ComputeDurationOverride()
+        if self.aura.remDuration < self.hud.timerDuration - 1 then
+            return self.aura.remDuration
+        else
+            return 0
+        end
+    end
 
     hud:AddAuraBar(hud:AddTrackedBuff(197908, talent_manatea), nil, 0.1, 0.5, 1.0)
+
+    hud:AddAuraBar(hud:AddTrackedBuff(443421, talents.h_conduit_heartofyulon), nil, 1.0, 0.5, 0.0)
 
     --- utility ---
 
@@ -317,7 +338,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(322118, talent_yulon), hud.powerUpGroup, nil, -1, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(325197, talent_chiji), hud.powerUpGroup, nil, -1, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(116849, talent_cocoon), hud.healGroup, nil, nil, nil, true)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, htalent_conduit), hud.healGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(443028, talents.h_conduit), hud.healGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(115310, talent_revival), hud.healGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(388615, talent_restoral), hud.healGroup)
 end

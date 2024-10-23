@@ -63,9 +63,9 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
 
     local streakIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 305392, 2, talent_chillstreak))
 
-    ERACombatFrames_DKSoulReaper(hud, 1)
 
-    ERACombatFrames_DK_ReaperMark(hud, talents, 3)
+    local reaperOfSouls = ERACombatFrames_DKSoulReaper(hud, 1, talents)
+    ERACombatFrames_DK_ReaperMark(hud, talents, 3, reaperOfSouls)
 
     local pofIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(51271, talent_pof))
 

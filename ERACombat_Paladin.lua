@@ -11,16 +11,16 @@
 ---@class (exact) PaladinCommonTalents
 ---@field loh ERALIBTalent
 ---@field bof ERALIBTalent
+---@field autobof ERALIBTalent
+---@field anybof ERALIBTalent
 ---@field how ERALIBTalent
 ---@field cleanse ERALIBTalent
 ---@field auras ERALIBTalent
----@field crusaderAura ERALIBTalent
 ---@field turn ERALIBTalent
 ---@field steed ERALIBTalent
 ---@field repent ERALIBTalent
 ---@field blind ERALIBTalent
 ---@field kick ERALIBTalent
----@field avenging ERALIBTalent
 ---@field sacrifice ERALIBTalent
 ---@field bop ERALIBTalent
 ---@field toll ERALIBTalent
@@ -55,17 +55,17 @@ function ERACombatFrames_PaladinSetup(cFrame)
     ---@type PaladinCommonTalents
     local talents = {
         loh = ERALIBTalent:Create(102583),
-        bof = ERALIBTalent:Create(102587),
+        bof = ERALIBTalent:Create(128251),
+        autobof = ERALIBTalent:Create(102624),
+        anybof = ERALIBTalent:CreateOr(ERALIBTalent:Create(128251), ERALIBTalent:Create(102624)),
         how = ERALIBTalent:Create(102479),
         cleanse = ERALIBTalent:Create(102476),
-        auras = ERALIBTalent:Create(102586),
-        crusaderAura = ERALIBTalent:Create(102588),
+        auras = ERALIBTalent:Create(102587),
         turn = ERALIBTalent:Create(102623),
         steed = ERALIBTalent:Create(102625),
         repent = ERALIBTalent:Create(102585),
         blind = ERALIBTalent:Create(102584),
         kick = ERALIBTalent:Create(102591),
-        avenging = ERALIBTalent:Create(102593),
         sacrifice = ERALIBTalent:Create(102602),
         bop = ERALIBTalent:Create(102604),
         toll = ERALIBTalent:Create(102465),
@@ -148,8 +148,8 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
     hud:AddAuraOverlay(hud.pala_purpose, 1, 459314, false, "TOP", false, false, false, false)
 
     local concentration = hud:AddTrackedBuffAnyCaster(317920, talents.auras)
-    local devotion = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(465, talents.auras), hud:AddTrackedBuffAnyCaster(353101, talents.auras))                     -- by self, by other paladin
-    local crusaderAura = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(32223, talents.crusaderAura), hud:AddTrackedBuffAnyCaster(328557, talents.crusaderAura)) -- by self, by other paladin
+    local devotion = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(465, talents.auras), hud:AddTrackedBuffAnyCaster(353101, talents.auras))       -- by self, by other paladin
+    local crusaderAura = hud:AddOrTimer(false, hud:AddTrackedBuffAnyCaster(32223, talents.auras), hud:AddTrackedBuffAnyCaster(328557, talents.auras)) -- by self, by other paladin
     local anyAura = hud:AddOrTimer(false, concentration, devotion, crusaderAura)
     hud:AddMissingOverlay(anyAura, false, 450920, false, "BOTTOM", false, false, true, false)
 
@@ -179,7 +179,7 @@ function ERACombatFrames_PaladinCommonSetup(cFrame, spec, purposeID, purposeTale
     hud:AddAuraBar(hud:AddTrackedBuff(642), nil, 1.0, 1.0, 1.0) -- bubble
     hud:AddAuraBar(hud:AddTrackedBuff(1022, talents.bop), nil, 0.5, 0.5, 0.5)
 
-    local bofDuration = hud:AddTrackedBuff(1044, talents.bof)
+    local bofDuration = hud:AddTrackedBuff(1044, talents.anybof)
     hud:AddAuraBar(bofDuration, nil, 0.7, 1.0, 0.0)
 
     -------------------

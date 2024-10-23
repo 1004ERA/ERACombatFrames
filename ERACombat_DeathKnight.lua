@@ -30,9 +30,8 @@
 ---@field cleavednd ERALIBTalent
 ---@field deathcharger ERALIBTalent
 ---@field not_deathcharger ERALIBTalent
----@field reapermark ERALIBTalent
----@field reapermark1rune ERALIBTalent
----@field reapermark2rune ERALIBTalent
+---@field h_deathbringer ERALIBTalent
+---@field h_deathbringer_soulreaper ERALIBTalent
 ---@field h_sanlayn ERALIBTalent
 ---@field h_sanlayn_gift ERALIBTalent
 
@@ -77,9 +76,8 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         cleavednd = ERALIBTalent:Create(96202),
         deathcharger = ERALIBTalent:Create(123412),
         not_deathcharger = ERALIBTalent:CreateNotTalent(123412),
-        reapermark = ERALIBTalent:Create(117659),
-        reapermark2rune = ERALIBTalent:CreateAnd(ERALIBTalent:Create(117659), ERALIBTalent:CreateNotTalent(117629)),
-        reapermark1rune = ERALIBTalent:Create(117629),
+        h_deathbringer = ERALIBTalent:Create(117659),
+        h_deathbringer_soulreaper = ERALIBTalent:Create(128235),
         h_sanlayn = ERALIBTalent:Create(117648),
         h_sanlayn_gift = ERALIBTalent:Create(117650),
     }
@@ -152,7 +150,7 @@ function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
     hud:AddAuraBar(hud:AddTrackedBuff(49039), nil, 0.4, 0.4, 0.4)     -- lichborne
     hud:AddAuraBar(hud:AddTrackedBuff(188290), 136144, 0.8, 0.5, 0.0) -- cleave dnd
     hud:AddAuraBar(hud:AddTrackedBuff(444347, talents.deathcharger), nil, 0.8, 1.0, 0.9)
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(434765, talents.reapermark), nil, 0.6, 0.2, 0.4)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(434765, talents.h_deathbringer), nil, 0.6, 0.2, 0.4)
 
     --- utility ---
 
@@ -185,37 +183,36 @@ end
 
 ---@param hud ERADKHUD
 ---@param prio integer
-function ERACombatFrames_DKSoulReaper(hud, prio)
+---@param talents DKCommonTalents
+---@return ERAAura
+function ERACombatFrames_DKSoulReaper(hud, prio, talents)
+    local reaperOfSouls = hud:AddTrackedBuff(469172, talents.h_deathbringer_soulreaper)
     local soulReaperIcon = hud:AddRotationCooldown(hud.soulReaperCooldown)
     function soulReaperIcon.onTimer:ComputeDurationOverride(t)
-        if hud.soulReaperCooldown.targetIsLowHealth then
+        if hud.soulReaperCooldown.targetIsLowHealth or reaperOfSouls.remDuration > self.hud.occupied + 0.1 then
             return self.cd.data.remDuration
         else
             return 0
         end
     end
     function soulReaperIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        if hud.soulReaperCooldown.targetIsLowHealth then
+        if hud.soulReaperCooldown.targetIsLowHealth or reaperOfSouls.remDuration > self.hud.occupied + 0.1 then
             return prio
         else
             return 0
         end
     end
+    return reaperOfSouls
 end
 
 ---@param hud ERADKHUD
 ---@param talents DKCommonTalents
 ---@param prio number
-function ERACombatFrames_DK_ReaperMark(hud, talents, prio)
-    local reapermark1rune = ERACooldownIgnoringRunes:Create(hud, 439843, 1, talents.reapermark1rune)
-    local reapermark2rune = ERACooldownIgnoringRunes:Create(hud, 439843, 2, talents.reapermark2rune)
-    local reapermarkIcons = {}
-    table.insert(reapermarkIcons, hud:AddRotationCooldown(reapermark1rune))
-    table.insert(reapermarkIcons, hud:AddRotationCooldown(reapermark2rune))
-    for _, i in ipairs(reapermarkIcons) do
-        function i.onTimer:ComputeAvailablePriorityOverride(t)
-            return prio
-        end
+---@param reaperOfSouls ERAAura
+function ERACombatFrames_DK_ReaperMark(hud, talents, prio, reaperOfSouls)
+    local reapermark = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 439843, 2, talents.h_deathbringer))
+    function reapermark.onTimer:ComputeAvailablePriorityOverride(t)
+        return prio
     end
 end
 

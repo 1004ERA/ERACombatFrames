@@ -18,6 +18,11 @@
 ---@field strongEH ERALIBTalent
 ---@field scalingEH ERALIBTalent
 ---@field tod15 ERALIBTalent
+---@field h_shadopan ERALIBTalent
+---@field h_conduit ERALIBTalent
+---@field h_conduit_heartofyulon ERALIBTalent
+---@field h_conduit_blackox ERALIBTalent
+---@field h_harmony ERALIBTalent
 
 ---@class MonkHUD : ERAHUD
 ---@field lastInstaVivify number
@@ -63,6 +68,11 @@ function ERACombatFrames_MonkSetup(cFrame)
         strongEH = ERALIBTalent:Create(124948),
         scalingEH = ERALIBTalent:Create(124924),
         tod15 = ERALIBTalent:Create(124930),
+        h_shadopan = ERALIBTalent:Create(125069),
+        h_conduit = ERALIBTalent:Create(125062),
+        h_conduit_heartofyulon = ERALIBTalent:Create(125055),
+        h_conduit_blackox = ERALIBTalent:Create(125060),
+        h_harmony = ERALIBTalent:Create(125033),
     }
 
     local enemies = ERACombatEnemies:Create(cFrame, ERACombatOptions_specIDOrNilIfDisabled(bmOptions), ERACombatOptions_specIDOrNilIfDisabled(wwOptions))
@@ -199,6 +209,69 @@ function ERACombatFrames_InstaVivifyHealing(talents, vivificationMultiplier)
     return 6 * GetSpellBonusHealing() * mult
 end
 
+----------------------
+--#region HHARMONY ---
+
+---@param hud MonkHUD
+---@param talents MonkCommonTalents
+function ERACombatMonk_HHarmony(hud, talents)
+    local h = ERAHUD_MonkHHarmony:create(hud, talents)
+    hud:AddAuraBar(h.auraSpend, nil, 1.0, 0.5, 0.0)
+end
+
+---@class (exact) ERAHUD_MonkHHarmony : ERAHUD_PseudoResourceBar
+---@field private __index unknown
+---@field aura1 ERAAura
+---@field aura2 ERAAura
+---@field aura3 ERAAura
+---@field auraSpend ERAAura
+ERAHUD_MonkHHarmony = {}
+ERAHUD_MonkHHarmony.__index = ERAHUD_MonkHHarmony
+setmetatable(ERAHUD_MonkHHarmony, { __index = ERAHUD_PseudoResourceBar })
+
+---@param hud MonkHUD
+---@param talents MonkCommonTalents
+---@return ERAHUD_MonkHHarmony
+function ERAHUD_MonkHHarmony:create(hud, talents)
+    local wi = {}
+    setmetatable(wi, ERAHUD_MonkHHarmony)
+    ---@cast wi ERAHUD_MonkHHarmony
+    wi:constructPseudoResource(hud, 12, 2, 0.0, 0.5, 1.0, false, talents.h_harmony)
+    wi.showOutOfCombat = false
+    wi.aura1 = hud:AddTrackedBuff(450521, talents.h_harmony)
+    wi.aura1.fetchTooltipValue = true
+    wi.aura2 = hud:AddTrackedBuff(450526, talents.h_harmony)
+    wi.aura2.fetchTooltipValue = true
+    wi.aura3 = hud:AddTrackedBuff(450531, talents.h_harmony)
+    wi.aura3.fetchTooltipValue = true
+    wi.auraSpend = hud:AddTrackedBuff(450711, talents.h_harmony)
+    wi.auraSpend.fetchTooltipValue = true
+    return wi
+end
+
+function ERAHUD_MonkHHarmony:getValue(t, combat)
+    if self.auraSpend.remDuration > 0 then
+        return self.auraSpend.value
+    else
+        return self.aura1.value + self.aura2.value + self.aura3.value
+    end
+end
+
+function ERAHUD_MonkHHarmony:getMax(t, combat)
+    return self.hud.health.maxHealth
+end
+
+function ERAHUD_MonkHHarmony:DisplayUpdatedOverride(t, combat)
+    if self.auraSpend.remDuration > 0 then
+        self:SetColor(1.0, 0.5, 0.0)
+    else
+        self:SetColor(0.0, 0.5, 1.0)
+    end
+end
+
+--#endregion
+----------------------
+
 ------------------------
 --#region TIMER CLEU ---
 ------------------------
@@ -276,3 +349,63 @@ function MonkInstaVivify:setLastTime(t)
 end
 
 --#endregion
+
+--------------------
+--#region FLURRY ---
+
+---@class (exact) ERAHUD_MonkFlurry : ERAHUD_PseudoResourceBar
+---@field private __index unknown
+---@field progressAura ERAAura
+---@field chargesAura ERAAura
+---@field private fillerCost1 number
+---@field private fillerCost2 number
+---@field private talentFillerCost2 ERALIBTalent|nil
+ERAHUD_MonkFlurry = {}
+ERAHUD_MonkFlurry.__index = ERAHUD_MonkFlurry
+setmetatable(ERAHUD_MonkFlurry, { __index = ERAHUD_PseudoResourceBar })
+
+---@param hud MonkHUD
+---@param talents MonkCommonTalents
+---@param fillerCost1 number
+---@param fillerCost2 number
+---@param talentFillerCost2 ERALIBTalent|nil
+---@return ERAHUD_MonkFlurry
+function ERAHUD_MonkFlurry:create(hud, talents, fillerCost1, fillerCost2, talentFillerCost2)
+    local wi = {}
+    setmetatable(wi, ERAHUD_MonkFlurry)
+    ---@cast wi ERAHUD_MonkFlurry
+    wi:constructPseudoResource(hud, 12, 2, 1.0, 0.5, 0.0, false, talents.h_shadopan)
+    wi.showOutOfCombat = false
+    wi.fillerCost1 = fillerCost1
+    wi.fillerCost2 = fillerCost2
+    wi.talentFillerCost2 = talentFillerCost2
+    wi.progressAura = hud:AddTrackedBuff(470670, talents.h_shadopan)
+    wi.chargesAura = hud:AddTrackedBuff(451021, talents.h_shadopan)
+    return wi
+end
+
+function ERAHUD_MonkFlurry:getValue(t, combat)
+    return self.progressAura.stacks
+end
+
+function ERAHUD_MonkFlurry:getMax(t, combat)
+    return 240
+end
+
+function ERAHUD_MonkFlurry:DisplayUpdatedOverride(t, combat)
+    local fc
+    if self.talentFillerCost2 and self.talentFillerCost2:PlayerHasTalent() then
+        fc = self.fillerCost2
+    else
+        fc = self.fillerCost1
+    end
+    if self.progressAura.stacks + fc >= 240 then
+        self:SetColor(0.5, 1.0, 0.0)
+    else
+        self:SetColor(1.0, 0.5, 0.0)
+    end
+    self:SetText(tostring(self.chargesAura.stacks))
+end
+
+--#endregion
+--------------------

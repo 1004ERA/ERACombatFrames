@@ -20,7 +20,10 @@
 ---@field massSheep ERALIBTalent
 ---@field massInvis ERALIBTalent
 ---@field massBarrier ERALIBTalent
+---@field h_sunfury ERALIBTalent
 ---@field h_sunfury_gravity ERALIBTalent
+---@field h_spellslinger ERALIBTalent
+---@field h_spellslinger_supernova ERALIBTalent
 
 ---@class MageHUD : ERAHUD
 ---@field mage_mana ERAHUDPowerBarModule
@@ -61,7 +64,10 @@ function ERACombatFrames_MageSetup(cFrame)
         massSheep = ERALIBTalent:Create(80164),
         massInvis = ERALIBTalent:Create(115878),
         massBarrier = ERALIBTalent:Create(125817),
+        h_sunfury = ERALIBTalent:Create(117250),
         h_sunfury_gravity = ERALIBTalent:Create(123832),
+        h_spellslinger = ERALIBTalent:Create(117267),
+        h_spellslinger_supernova = ERALIBTalent:Create(123407),
     }
 
     if (not arcaneOptions.disabled) then
@@ -211,5 +217,23 @@ function ERACombatFrames_MageFae(hud, talents, prio)
     local icon = hud:AddRotationCooldown(hud:AddTrackedCooldown(382440, talents.fae))
     function icon.onTimer:ComputeAvailablePriorityOverride(t)
         return prio
+    end
+end
+
+---@param hud MageHUD
+---@param talents ERACombat_MageCommonTalents
+---@param prio number
+function ERACombatFrames_MageSpellsingerSupernova(hud, talents, prio)
+    local talent = ERALIBTalent:CreateAnd(talents.supernova, talents.h_spellslinger_supernova)
+    local acc = hud:AddTrackedBuff(444981, talent)
+    hud:AddRotationStacks(acc, 30, 26).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
+
+    local prioIcon = hud:AddPriority(1033912, talent)
+    function prioIcon:ComputeAvailablePriorityOverride(t)
+        if acc.stacks >= 26 then
+            return prio
+        else
+            return 0
+        end
     end
 end

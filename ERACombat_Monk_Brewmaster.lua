@@ -35,6 +35,9 @@ function ERACombatFrames_MonkBrewmasterSetup(cFrame, enemies, talents)
 
     local stagger = ERABMStagger:create(hud)
 
+    ERACombatMonk_HHarmony(hud, talents)
+    ERAHUD_MonkFlurry:create(hud, talents, 25, 25, nil)
+
     nrj.bar:AddMarkingFrom0(65)
     local kegConsumer = nrj.bar:AddMarkingFrom0(40)
     function kegConsumer:ComputeValueOverride(t)

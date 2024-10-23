@@ -2299,7 +2299,8 @@ end
 ---@class (exact) ERASAOAura : ERASAO
 ---@field private __index unknown
 ---@field private aura ERAAura
----@field private minStacks integer
+---@field minStacks integer
+---@field maxStacks integer|nil
 ERASAOAura = {}
 ERASAOAura.__index = ERASAOAura
 setmetatable(ERASAOAura, { __index = ERASAO })
@@ -2335,7 +2336,7 @@ end
 ---@param combat boolean
 ---@param t number
 function ERASAOAura:getIsActive(t, combat)
-    return self.aura.stacks >= self.minStacks
+    return self.aura.stacks >= self.minStacks and (self.maxStacks == nil or self.aura.stacks <= self.maxStacks)
 end
 
 --- BASED ON ANY TIMER ---

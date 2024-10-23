@@ -14,23 +14,15 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     local talent_long_consecration = ERALIBTalent:Create(102432)
     local talent_ardef = ERALIBTalent:Create(102445)
     local talent_spellwarding = ERALIBTalent:Create(111886)
-    local talent_wog_titans = ERALIBTalent:Create(102472)
-    local talent_wog_block = ERALIBTalent:Create(102450)
-    local talent_sotr_wog_consecration = ERALIBTalent:Create(102444)
-    local talent_sotr_heal = ERALIBTalent:Create(115447)
-    local talent_sotr_armor = ERALIBTalent:Create(102464)
-    local talent_sotr_block = ERALIBTalent:Create(102463)
-    local talent_avenging_might = ERALIBTalent:Create(102448)
-    local talent_avenging_sanctified = ERALIBTalent:Create(102611)
+    local talent_avenging = ERALIBTalent:Create(102448)
     local talent_sentinel = ERALIBTalent:Create(102447)
-    local talent_any_avenging = ERALIBTalent:CreateAnd(ERALIBTalent:CreateOr(talent_avenging_might, talent_avenging_sanctified, talents.avenging), ERALIBTalent:CreateNot(talent_sentinel))
     local talent_gak = ERALIBTalent:Create(102456)
     local talent_tyr = ERALIBTalent:Create(102466)
     local talent_bastion = ERALIBTalent:Create(102454)
     local talent_finest_hour = ERALIBTalent:Create(102474)
     local htalent_smith_lda = ERALIBTalent:Create(117885)
 
-    local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 2, 223819, ERALIBTalent:Create(115490), false, 386730, ERALIBTalent:Create(102443), talents)
+    local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 2, 223819, ERALIBTalent:Create(128244), true, 386730, ERALIBTalent:Create(102443), talents)
     ---@cast hud PalaProtHUD
     hud.pala_lastTyr = 0
     hud.pala_lastHammerTemplar = 0
@@ -53,7 +45,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     hud:AddOverlayBasedOnSpellActivation(31935, 450925, false, "LEFT", false, false, false, false, talent_grand_crusader)
 
     local hTemplarWrath = ERACombatFrames_PaladinTemplar_returnWrath(hud, talents)
-    hud:AddAuraOverlay(hTemplarWrath, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)--Adventures-Buff-Heal-Burst
+    hud:AddAuraOverlay(hTemplarWrath, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil) --Adventures-Buff-Heal-Burst
 
     --- bars ---
 
@@ -77,9 +69,9 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
 
     local sentinelDuration = hud:AddTrackedBuff(389539, talent_sentinel)
     hud:AddAuraBar(sentinelDuration, nil, 1.0, 0.0, 1.0)
-    local avengingDuration = hud:AddTrackedBuff(31884, talent_any_avenging)
+    local avengingDuration = hud:AddTrackedBuff(31884, talent_avenging)
     hud:AddAuraBar(avengingDuration, nil, 1.0, 0.0, 1.0)
-    local avengingOrCrusade = hud:AddOrTimer(false, sentinelDuration, avengingDuration)
+    local avengingOrSentinel = hud:AddOrTimer(false, sentinelDuration, avengingDuration)
 
     local shiningShortBar = hud:AddAuraBar(shining, 133192, 0.5, 1.0, 0.2)
     function shiningShortBar:ComputeDurationOverride(t)
@@ -145,7 +137,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
     function how.onTimer:ComputeDurationOverride(t)
         local dur = self.cd.data.remDuration
         if dur <= 0 then return 0 end
-        if dur < avengingOrCrusade.remDuration then
+        if dur < avengingOrSentinel.remDuration then
             return dur
         end
         if UnitExists("target") and 5 * UnitHealth("target") < UnitHealthMax("target") then
@@ -198,7 +190,7 @@ function ERACombatFrames_PaladinProtectionSetup(cFrame, talents)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(327193, talent_finest_hour), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(389539, talent_sentinel), hud.powerUpGroup, nil, nil, nil, true)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(31884, talent_any_avenging), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(31884, talent_avenging), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(378974, talent_bastion), hud.powerUpGroup, nil, nil, nil, true)
 
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(31850, talent_ardef), hud.defenseGroup, nil, -1)

@@ -12,7 +12,7 @@ ERAHUDModulePointsPartial_PointSpacing = 4
 
 ---@class (exact) ERAHUDModulePoints : ERAHUDResourceModule
 ---@field private __index unknown
----@field protected constructPoints fun(this:ERAHUDModulePoints, hud:ERAHUD, rB:number, gB:number, bB:number, rP:number, gP:number, bP:number, talent:ERALIBTalent|nil)
+---@field protected constructPoints fun(this:ERAHUDModulePoints, hud:ERAHUD, rB:number, gB:number, bB:number, rP:number, gP:number, bP:number, talent:ERALIBTalent|nil, size:number|nil)
 ---@field private checkTalentOverride fun(this:ERAHUDModulePoints): boolean
 ---@field private rB number
 ---@field private gB number
@@ -27,6 +27,7 @@ ERAHUDModulePointsPartial_PointSpacing = 4
 ---@field PreUpdateDisplayOverride nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean)
 ---@field ConfirmIsVisibleOverride nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean): boolean
 ---@field CollapseIfTransparent nil|fun(this:ERAHUDModulePoints, t:number, combat:boolean): boolean
+---@field private psize number
 ---@field private points ERAHUDModulePoint[]
 ---@field currentPoints integer
 ---@field maxPoints integer
@@ -42,8 +43,13 @@ setmetatable(ERAHUDModulePoints, { __index = ERAHUDResourceModule })
 ---@param gP number
 ---@param bP number
 ---@param talent ERALIBTalent|nil
-function ERAHUDModulePoints:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent)
-    self:constructModule(hud, ERAHUDModulePoints_PointSize, talent)
+---@param size number|nil
+function ERAHUDModulePoints:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent, size)
+    if not size then
+        size = ERAHUDModulePoints_PointSize
+    end
+    self.psize = size
+    self:constructModule(hud, size, talent)
     self.points = {}
     self.rB = rB
     self.gB = gB
@@ -66,7 +72,7 @@ function ERAHUDModulePoints:updateMaxPoints()
         if maxPoints > self.maxPoints then
             for i = self.maxPoints + 1, maxPoints do
                 if i > #(self.points) then
-                    local p = ERAHUDModulePoint:create(self.frame, self.rB, self.gB, self.bB, self.rP, self.gP, self.bP)
+                    local p = ERAHUDModulePoint:create(self.frame, self.rB, self.gB, self.bB, self.rP, self.gP, self.bP, self.psize)
                     table.insert(self.points, p)
                 end
             end
@@ -76,7 +82,7 @@ function ERAHUDModulePoints:updateMaxPoints()
             end
         end
         self.maxPoints = maxPoints
-        local pointSize = ERAHUDModulePoints_PointSize + ERAHUDModulePoints_PointSpacing
+        local pointSize = self.psize + ERAHUDModulePoints_PointSpacing
         local x = (self.hud.barsWidth - maxPoints * pointSize) / 2 + pointSize / 2
         for i = 1, maxPoints do
             self.points[i]:draw(x, self.frame)
@@ -168,8 +174,9 @@ ERAHUDModulePoint.__index = ERAHUDModulePoint
 ---@param rP number
 ---@param gP number
 ---@param bP number
+---@param size number
 ---@return ERAHUDModulePoint
-function ERAHUDModulePoint:create(parentFrame, rB, gB, bB, rP, gP, bP)
+function ERAHUDModulePoint:create(parentFrame, rB, gB, bB, rP, gP, bP, size)
     local p = {}
     setmetatable(p, ERAHUDModulePoint)
     ---@cast p ERAHUDModulePoint
@@ -180,7 +187,7 @@ function ERAHUDModulePoint:create(parentFrame, rB, gB, bB, rP, gP, bP)
     p.frame = frame
     p.border = border
     p.point = point
-    frame:SetSize(ERAHUDModulePoints_PointSize, ERAHUDModulePoints_PointSize)
+    frame:SetSize(size, size)
     p.border:SetVertexColor(rB, gB, bB)
     p.point:SetVertexColor(rP, gP, bP)
     p.r = rP
@@ -239,8 +246,6 @@ end
 ---@class ERAHUDModulePointsUnitPower : ERAHUDModulePoints
 ---@field private __index unknown
 ---@field private powerType Enum.PowerType
----@field protected getMaxPoints fun(this:ERAHUDModulePointsUnitPower): integer
----@field protected getCurrentPoints fun(this:ERAHUDModulePointsUnitPower): integer
 ERAHUDModulePointsUnitPower = {}
 ERAHUDModulePointsUnitPower.__index = ERAHUDModulePointsUnitPower
 setmetatable(ERAHUDModulePointsUnitPower, { __index = ERAHUDModulePoints })
@@ -254,13 +259,14 @@ setmetatable(ERAHUDModulePointsUnitPower, { __index = ERAHUDModulePoints })
 ---@param gP number
 ---@param bP number
 ---@param talent ERALIBTalent|nil
+---@param size number|nil
 ---@return ERAHUDModulePointsUnitPower
-function ERAHUDModulePointsUnitPower:Create(hud, powerType, rB, gB, bB, rP, gP, bP, talent)
+function ERAHUDModulePointsUnitPower:Create(hud, powerType, rB, gB, bB, rP, gP, bP, talent, size)
     local up = {}
     setmetatable(up, ERAHUDModulePointsUnitPower)
     ---@cast up ERAHUDModulePointsUnitPower
     up.powerType = powerType
-    up:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent)
+    up:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent, size)
     return up
 end
 
@@ -273,6 +279,51 @@ end
 
 --#endregion
 ------------------------
+
+--------------------
+--#region STACKS ---
+
+---@class ERAHUDModulePointsStacks : ERAHUDModulePoints
+---@field private __index unknown
+---@field private data ERAStacks
+---@field private maxStacks integer
+---@field protected getMaxPoints fun(this:ERAHUDModulePointsUnitPower): integer
+---@field protected getCurrentPoints fun(this:ERAHUDModulePointsUnitPower): integer
+ERAHUDModulePointsStacks = {}
+ERAHUDModulePointsStacks.__index = ERAHUDModulePointsStacks
+setmetatable(ERAHUDModulePointsStacks, { __index = ERAHUDModulePoints })
+
+---@param hud ERAHUD
+---@param data ERAStacks
+---@param maxStacks integer
+---@param rB number
+---@param gB number
+---@param bB number
+---@param rP number
+---@param gP number
+---@param bP number
+---@param talent ERALIBTalent|nil
+---@param size number|nil
+---@return ERAHUDModulePointsStacks
+function ERAHUDModulePointsStacks:Create(hud, data, maxStacks, rB, gB, bB, rP, gP, bP, talent, size)
+    local up = {}
+    setmetatable(up, ERAHUDModulePointsStacks)
+    ---@cast up ERAHUDModulePointsStacks
+    up.data = data
+    up.maxStacks = maxStacks
+    up:constructPoints(hud, rB, gB, bB, rP, gP, bP, talent, size)
+    return up
+end
+
+function ERAHUDModulePointsStacks:getCurrentPoints()
+    return self.data.stacks
+end
+function ERAHUDModulePointsStacks:getMaxPoints()
+    return self.maxStacks
+end
+
+--#endregion
+--------------------
 
 --#endregion
 -------------------

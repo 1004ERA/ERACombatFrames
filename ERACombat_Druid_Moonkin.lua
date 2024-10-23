@@ -11,23 +11,23 @@
 ---@param talents DruidCommonTalents
 function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
     --local talent_short_dots = ERALIBTalent:Create(109863)
+    local talent_cheap_spenders_communion = ERALIBTalent:Create(109871)
     local talent_cheap_spenders = ERALIBTalent:Create(109872)
     local talent_cheap_spenders_during_incarnation = ERALIBTalent:Create(109864)
     local talent_flare = ERALIBTalent:Create(109841)
     local talent_balanced_power = ERALIBTalent:Create(109862)
-    local talent_starfall = ERALIBTalent:Create(109833)
     local talent_beam = ERALIBTalent:Create(109867)
     local talent_treants = ERALIBTalent:Create(109844)
     local talent_warrior = ERALIBTalent:Create(114648)
     local talent_dreamstate = ERALIBTalent:Create(109857)
-    local talent_shroom = ERALIBTalent:Create(117100)
+    local talent_shroom = ERALIBTalent:Create(128232)
     local talent_incarnation = ERALIBTalent:Create(109839)
     local talent_alignment = ERALIBTalent:CreateAnd(ERALIBTalent:Create(109849), ERALIBTalent:CreateNot(talent_incarnation))
     local talent_convoke = ERALIBTalent:Create(109838)
     local talent_fury = ERALIBTalent:Create(109859)
     local talent_moons = ERALIBTalent:Create(109860)
     --local talent_amplification = ERALIBTalent:Create(109865)
-    local talent_cosmos = ERALIBTalent:Create(123859)
+    local talent_cosmos = ERALIBTalent:Create(109857)
     local talent_starweaver = ERALIBTalent:Create(109873)
     local talent_orbital_strike = ERALIBTalent:Create(109855)
     local talent_not_orbital_strike = ERALIBTalent:CreateNotTalent(109855)
@@ -48,12 +48,13 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     ERADruidEclipse:Create(cFrame, hud)
 
+    local communion = hud:AddTrackedBuff(450599, talent_cheap_spenders_communion)
     local incarnationDuration = hud:AddTrackedBuff(102560, talent_incarnation)
-    local starfallDuration = hud:AddTrackedBuff(191034, talent_starfall)
+    local starfallDuration = hud:AddTrackedBuff(191034)
 
     local power = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.LunarPower, 14, 0.7, 0.3, 1.0, nil)
     function power:ConfirmIsVisibleOverride(t, combat)
-        return combat or (talent_balanced_power:PlayerHasTalent() and math.abs(self.currentPower - 50) < 2) or ((not talent_balanced_power:PlayerHasTalent()) and self.currentPower > 0)
+        return combat or (talent_balanced_power:PlayerHasTalent() and math.abs(self.currentPower - 50) > 2) or ((not talent_balanced_power:PlayerHasTalent()) and self.currentPower > 0)
     end
     local surgeMark = power.bar:AddMarkingFrom0(40)
     function surgeMark:ComputeValueOverride(t)
@@ -63,12 +64,15 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
         else
             cost = 40
         end
+        if communion.remDuration > hud.occupied then
+            cost = cost - 15
+        end
         if talent_cheap_spenders_during_incarnation:PlayerHasTalent() and incarnationDuration.remDuration > hud.occupied then
             cost = cost - 10
         end
         return cost
     end
-    local fallMark = power.bar:AddMarkingFrom0(50, talent_starfall)
+    local fallMark = power.bar:AddMarkingFrom0(50)
     function fallMark:PreUpdateDisplayOverride(t)
         if starfallDuration.remDuration > 0 and starfallDuration.remDuration >= starfallDuration.hud.occupied then
             self:SetAvailableColor(1.0, 0.6, 0.0)
@@ -85,6 +89,9 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
                 cost = 45
             else
                 cost = 50
+            end
+            if communion.remDuration > hud.occupied then
+                cost = cost - 15
             end
             if talent_cheap_spenders_during_incarnation:PlayerHasTalent() and incarnationDuration.remDuration > hud.occupied then
                 cost = cost - 12
@@ -134,13 +141,12 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     --- SAO ---
 
-    local cosmos_starsurge = hud:AddTrackedBuff(450360, talent_cosmos)
+    local cosmos = hud:AddTrackedBuff(450360, talent_cosmos)
+    hud:AddTimerOverlay(cosmos, "Adventures-Buff-Heal-Burst", true, "MIDDLE", false, false, false, false)
     local starweaver_starsurge = hud:AddTrackedBuff(393944, talent_starweaver)
-    hud:AddTimerOverlay(hud:AddOrTimer(false, cosmos_starsurge, starweaver_starsurge), "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
-
-    local cosmos_starfall = hud:AddTrackedBuff(450361, talent_cosmos)
+    hud:AddTimerOverlay(starweaver_starsurge, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
     local starweaver_starfall = hud:AddTrackedBuff(393942, talent_starweaver)
-    hud:AddTimerOverlay(hud:AddOrTimer(false, cosmos_starfall, starweaver_starfall), 463452, false, "TOP", false, false, false, false)
+    hud:AddTimerOverlay(starweaver_starfall, 463452, false, "TOP", false, false, false, false)
 
     local instaRegrowth = hud:AddTrackedBuff(429438, htalent_blooming)
     hud:AddAuraOverlay(instaRegrowth, 1, 450929, false, "RIGHT", true, false, false, false)
@@ -161,17 +167,8 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     hud:AddAuraBar(starfallDuration, nil, 1.0, 1.0, 1.0)
 
-    local cosmos_starsurge_bar = hud:AddAuraBar(cosmos_starsurge, nil, 1.0, 0.7, 1.0)
-    function cosmos_starsurge_bar:ComputeDurationOverride(t)
-        if self.aura.remDuration < 5 then
-            return self.aura.remDuration
-        else
-            return 0
-        end
-    end
-
-    local cosmos_starfall_bar = hud:AddAuraBar(cosmos_starfall, nil, 0.5, 0.5, 1.0)
-    function cosmos_starfall_bar:ComputeDurationOverride(t)
+    local cosmosbar = hud:AddAuraBar(cosmos, nil, 1.0, 0.7, 1.0)
+    function cosmosbar:ComputeDurationOverride(t)
         if self.aura.remDuration < 5 then
             return self.aura.remDuration
         else
@@ -238,18 +235,19 @@ function ERACombatFrames_DruidMoonkinSetup(cFrame, talents)
 
     local starsurgePrio = hud:AddPriority(135730)
     function starsurgePrio:ComputeAvailablePriorityOverride(t)
-        if cosmos_starsurge.remDuration > self.hud.occupied then
+        if starweaver_starsurge.remDuration > self.hud.occupied or (cosmos.remDuration > self.hud.occupied and enemies:GetCount() <= 1) then
             return 1
         else
             return 0
         end
     end
 
-    local starfallPrio = hud:AddPriority(236168, talent_starfall)
+    local starfallPrio = hud:AddPriority(236168)
     function starfallPrio:ComputeAvailablePriorityOverride(t)
-        if cosmos_starfall.remDuration > self.hud.occupied then
+        local multi = enemies:GetCount() > 1
+        if starweaver_starfall.remDuration > self.hud.occupied or (cosmos.remDuration > self.hud.occupied and multi) then
             return 2
-        elseif starfallDuration.remDuration <= self.hud.occupied and enemies:GetCount() > 1 then
+        elseif starfallDuration.remDuration <= self.hud.occupied and multi then
             return 4
         else
             return 0

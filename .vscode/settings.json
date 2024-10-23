@@ -19,6 +19,7 @@
         "class",
         "ERACombatOptionsWindow",
         "ERACombatFrameMain",
-        "SOUND"
+        "SOUND",
+        "LARGE_NUMBER_SEPERATOR"
     ]
 }

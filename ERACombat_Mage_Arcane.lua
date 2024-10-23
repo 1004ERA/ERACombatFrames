@@ -20,6 +20,8 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     hud.mage_mana.hideFullOutOfCombat = true
 
     local aPoints = ERAHUDModulePointsUnitPower:Create(hud, Enum.PowerType.ArcaneCharges, 1.0, 0.0, 1.0, 0.5, 0.0, 1.0)
+    local buildingSunfurySphere = hud:AddTrackedBuff(449400, talents.h_sunfury)
+    --ERAHUDModulePointsStacks:Create(hud, buildingSunfurySphere, 5, 0.8, 0.5, 0.0, 0.9, 0.4, 0.3, talents.h_sunfury, 16)
 
     local enlightenedMark = hud.mage_mana.bar:AddMarkingFrom0(-1, talent_enlightened)
     function enlightenedMark:ComputeValueOverride(t)
@@ -29,15 +31,30 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     --- SAO ---
 
     local clearcast = hud:AddTrackedBuff(263725)
+    hud:AddAuraOverlay(clearcast, 1, 1027131, false, "LEFT", false, false, false, false).maxStacks = 1
+    hud:AddAuraOverlay(clearcast, 2, 1027132, false, "LEFT", false, false, false, false).maxStacks = 2
+    hud:AddAuraOverlay(clearcast, 3, 1027133, false, "LEFT", false, false, false, false)
+    --[[
     hud:AddAuraOverlay(clearcast, 1, 449486, false, "LEFT", false, false, false, false)
     hud:AddAuraOverlay(clearcast, 2, 449486, false, "RIGHT", true, false, false, false)
     hud:AddAuraOverlay(clearcast, 3, 449486, false, "TOP", false, false, false, true)
+    hud:AddAuraOverlay(attunement, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
+    ]] --
 
     local attunement = hud:AddTrackedBuff(453601, talent_attunement)
-    hud:AddAuraOverlay(attunement, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
+    hud:AddAuraOverlay(attunement, 1, 449486, false, "RIGHT", true, false, false, false)
 
     local leydrinker = hud:AddAuraOverlay(hud:AddTrackedBuff(453758, talent_leydrinker), 1, 450918, false, "BOTTOM", false, false, true, false)
     leydrinker:SetVertexColor(1.0, 0.0, 1.0)
+
+    --[[
+    local sunsphere_minus2 = hud:AddAuraOverlay(buildingSunfurySphere, 4, 450922, false, "TOP", false, false, false, true)
+    sunsphere_minus2.maxStacks = 4
+    sunsphere_minus2:SetVertexColor(0.0, 0.0, 1.0)
+    hud:AddAuraOverlay(buildingSunfurySphere, 5, 450921, false, "TOP", false, false, false, true):SetVertexColor(0.0, 0.0, 1.0)
+    ]]
+    hud:AddAuraOverlay(hud:AddTrackedBuff(451049, talents.h_sunfury), 1, 450923, false, "TOP", false, false, false, false):SetVertexColor(1.0, 1.0, 0.0) -- burden of power
+    hud:AddAuraOverlay(hud:AddTrackedBuff(451073, talents.h_sunfury), 1, 449490, false, "TOP", true, false, true, false)                                 -- glorious incandescence
 
     --- bars ---
 
@@ -66,6 +83,8 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
         end
     end
 
+    hud:AddAuraBar(hud:AddTrackedBuff(451038, talents.h_sunfury), nil, 0.0, 1.0, 0.0)
+
     --- rotation ---
 
     local touch = hud:AddRotationCooldown(hud:AddTrackedCooldown(321507, talent_touch))
@@ -78,7 +97,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
         return pomStacks.data.stacks == 0 and (combat or self.data.remDuration > 0)
     end
 
-    ERACombatFrames_MageFae(hud, talents, 6)
+    ERACombatFrames_MageFae(hud, talents, 7)
 
     local orb = hud:AddRotationCooldown(hud:AddTrackedCooldown(153626))
 
@@ -94,6 +113,8 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
 
     hud:AddRotationStacks(hud:AddTrackedBuff(384455, talent_harmony), 20, 17)
 
+    ERACombatFrames_MageSpellsingerSupernova(hud, talents, 5)
+
     --[[
 
     prio
@@ -102,9 +123,10 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     - 2 surge
     - 3 pom
     - 4 orb
-    - 5 evo
-    - 6 fae
-    - 7 orb charged
+    - 5 supernoval spellslinger
+    - 6 evo
+    - 7 fae
+    - 8 orb charged
 
     ]]
 
@@ -128,7 +150,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
         return 4
     end
     function orb.availableChargePriority:ComputeAvailablePriorityOverride(t)
-        return 7
+        return 8
     end
 
     local evoCooldown = hud:AddTrackedCooldown(12051, talent_evocation)
@@ -137,7 +159,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
         return evoCooldown.remDuration
     end
     function evoPrio:ComputeAvailablePriorityOverride(t)
-        return 5
+        return 6
     end
 
     --- utility ---

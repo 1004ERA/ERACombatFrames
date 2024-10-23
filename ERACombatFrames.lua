@@ -8,8 +8,8 @@ TODO
 - ? icone trinket ?
 - paladin steed (lightforged)
 - dracthyr racial for 11.0.5
-- mage arcane supernova/gravity prio
-- mage arcane spark
+- ? mage arcane supernova/gravity prio
+- ? mage arcane spark
 
 ERA_Debug = function()
 
@@ -29,7 +29,7 @@ end
 
 ]]
 
-ERA_TALENTS_DO_PRINT_N = 500
+ERA_TALENTS_DO_PRINT_N = 0
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")

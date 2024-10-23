@@ -489,6 +489,9 @@ end
 ---@field private __index unknown
 ---@field private clearTimer fun(this:ERAAura)
 ---@field stacks integer
+---@field value number
+---@field fetchTooltipValue boolean
+---@field protected foundValue number
 ---@field protected foundDuration number
 ---@field protected foundStacks integer
 ---@field protected foundBySelf boolean
@@ -514,6 +517,8 @@ function ERAAura:create(hud, spellID, talent, ...)
     a.foundStacks = 0
     a.foundBySelf = false
     a.appliedBySelf = false
+    a.value = 0
+    a.foundValue = 0
     return a
 end
 
@@ -521,12 +526,16 @@ function ERAAura:clearTimer()
     self.stacks = 0
     self.appliedBySelf = false
     self.isMissing = true
+    self.value = 0
 end
 
 ---@param t number
 ---@param data AuraData
+---@param index integer
+---@param unit string
+---@param filter string|nil
 ---@param trustSourceUnit boolean
-function ERAAura:auraFound(t, data, trustSourceUnit)
+function ERAAura:auraFound(t, data, trustSourceUnit, index, unit, filter)
     if trustSourceUnit or self.acceptAnyCaster or data.sourceUnit == "player" then
         if data.expirationTime and data.expirationTime > 0 then
             local remDur = data.expirationTime - t
@@ -543,6 +552,26 @@ function ERAAura:auraFound(t, data, trustSourceUnit)
         if data.sourceUnit == "player" then
             self.foundBySelf = true
         end
+        if self.fetchTooltipValue then -- and data.points and #(data.points) > 0 then
+            local tooltip = C_TooltipInfo.GetUnitBuff(unit, index, filter)
+            if tooltip and #(tooltip.lines) >= 2 then
+                ---@type string
+                local txt = tooltip.lines[2].leftText
+                local valString = txt:match("(-?%d[%d%.,]*)")
+                if valString then
+                    if (LARGE_NUMBER_SEPERATOR == ",") then
+                        valString = valString:gsub(",", "");
+                    else
+                        valString = valString:gsub("%.", "");
+                        valString = valString:gsub(",", ".");
+                    end
+                    local val = tonumber(valString)
+                    if val then
+                        self.foundValue = math.max(self.foundValue, val)
+                    end
+                end
+            end
+        end
     end
 end
 
@@ -557,6 +586,7 @@ function ERAAura:updateData(t)
         self.foundDuration = -1
         self.appliedBySelf = self.foundBySelf
         self.isMissing = false
+        self.value = self.foundValue
     else
         if self.remDuration > 0 and self.updateUtilityLayoutIfChanged then
             self.hud:mustUpdateUtilityLayout()
@@ -564,10 +594,12 @@ function ERAAura:updateData(t)
         self.remDuration = 0
         self.stacks = 0
         self.appliedBySelf = false
+        self.value = 0
         self.isMissing = true
     end
     self.foundStacks = 0
     self.foundBySelf = false
+    self.foundValue = 0
 end
 
 ---@class ERAAuraOnGroupMembers : ERADataItem, ERAMissingDataItem

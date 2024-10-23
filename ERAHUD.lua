@@ -670,11 +670,18 @@ function ERAHUD:Pack()
         -- mechagnome
         racialSpellID = 312924
         racialGroup = self.specialGroup
+    elseif (r == 52 or r == 70) then
+        -- dracthyr
+        if ERACombatFrames_classID ~= 13 then
+            self:AddUtilityCooldown(self:AddTrackedCooldown(357214), self.controlGroup) -- wing buffet
+            racialSpellID = 368970                                                      -- tail swipe
+            racialGroup = self.controlGroup
+            racialTimer = true
+        end
     elseif (r == 84 or r == 85) then
         -- earthen
         racialSpellID = 436344
-        racialGroup = self.powerUpGroup
-        racialTimer = true
+        racialGroup = self.controlGroup
     end
     if (racialSpellID and racialGroup) then
         self:AddUtilityCooldown(self:AddTrackedCooldown(racialSpellID), racialGroup, nil, nil, nil, racialTimer)
@@ -1527,7 +1534,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, false)
+                    a:auraFound(t, auraInfo, false, i, "target", nil)
                 end
                 i = i + 1
             else
@@ -1540,7 +1547,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeDebuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
+                    a:auraFound(t, auraInfo, true, i, "target", "PLAYER")
                 end
                 i = i + 1
             else
@@ -1555,7 +1562,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, false)
+                    a:auraFound(t, auraInfo, false, i, "player", nil)
                 end
                 i = i + 1
             else
@@ -1568,7 +1575,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffs[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
+                    a:auraFound(t, auraInfo, true, i, "player", "PLAYER")
                 end
                 i = i + 1
             else
@@ -1583,7 +1590,7 @@ function ERAHUD:updateData(t, combat)
             if (auraInfo) then
                 local a = self.activeBuffsOnPet[auraInfo.spellId]
                 if (a ~= nil) then
-                    a:auraFound(t, auraInfo, true)
+                    a:auraFound(t, auraInfo, true, i, "pet", nil)
                 end
                 i = i + 1
             else
@@ -1613,7 +1620,7 @@ function ERAHUD:updateData(t, combat)
             end
             local a = self.activeDebuffsOnSelf[auraInfo.spellId]
             if (a ~= nil) then
-                a:auraFound(t, auraInfo, true)
+                a:auraFound(t, auraInfo, true, i, "player", nil)
             end
             i = i + 1
         else

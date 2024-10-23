@@ -12,6 +12,7 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
     local talent_sef = ERALIBTalent:Create(124826)
     local talent_ordered_elements = ERALIBTalent:Create(124823)
     local talent_inner_peace = ERALIBTalent:Create(125021)
+    local talent_inner_war = ERALIBTalent:CreateNotTalent(125021)
     local talent_capacitor = ERALIBTalent:Create(124832)
     local talent_spinning_ignition = ERALIBTalent:Create(124822)
     local talent_combat_wisdom = ERALIBTalent:Create(125025)
@@ -40,8 +41,10 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
         end
     end
 
+    ERAHUD_MonkFlurry:create(hud, talents, 55, 60, talent_inner_war)
+
     nrj.bar:AddMarkingFrom0(55, talent_inner_peace)
-    nrj.bar:AddMarkingFrom0(60, ERALIBTalent:CreateNot(talent_inner_peace))
+    nrj.bar:AddMarkingFrom0(60, talent_inner_war)
 
     -------------
     --- PROCS ---
@@ -56,6 +59,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
 
     local chib = hud:AddTrackedBuff(460490, talent_chib)
     hud:AddAuraOverlay(chib, 1, "ChallengeMode-Runes-BackgroundBurst", true, "MIDDLE", false, false, false, false)
+
+    hud:AddAuraOverlay(hud:AddTrackedBuff(443112, talents.h_conduit_blackox), 1, 1028091, false, "BOTTOM", false, false, true, false)
 
     ----------------
     --- ROTATION ---
@@ -231,6 +236,8 @@ function ERACombatFrames_MonkWindwalkerSetup(cFrame, enemies, talents)
             return 0
         end
     end
+
+    hud:AddAuraBar(hud:AddTrackedBuff(443421, talents.h_conduit_heartofyulon), nil, 1.0, 0.5, 0.0)
 
     ---------------
     --- UTILITY ---

@@ -92,7 +92,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
 
     local contagionIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(390279, talent_contagion))
 
-    ERACombatFrames_DKSoulReaper(hud, 1)
+    ERACombatFrames_DKSoulReaper(hud, 1, talents)
 
     local aboIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(455395, talent_abomination))
 

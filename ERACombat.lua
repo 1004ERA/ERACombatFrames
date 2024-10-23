@@ -202,12 +202,14 @@ function ERACombatFrame_updateComputeTalents()
         end
     end
 
-    if (ERA_TALENTS_DO_PRINT_N > 0 and not ERA_TALENTS_PRINTED) then
+    if not ERA_TALENTS_PRINTED then
         ERA_TALENTS_PRINTED = true
         table.sort(ERA_TALENTS_TO_PRINT, ERAPrintTalents_sort)
-        for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
-            if (i < ERA_TALENTS_DO_PRINT_N) then
-                print(t.talentId, t.name)
+        if ERA_TALENTS_DO_PRINT_N > 0 then
+            for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
+                if (i < ERA_TALENTS_DO_PRINT_N) then
+                    print(t.talentId, t.name)
+                end
             end
         end
     end
@@ -228,6 +230,17 @@ function ERAPrintTalents_sort(t1, t2)
         end
     else
         return true
+    end
+end
+
+---@param startIndexInclusive integer|nil
+---@param endIndexInclusive integer|nil
+---@param firstLetter string|nil
+function ECF_print_talents(startIndexInclusive, endIndexInclusive, firstLetter)
+    for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
+        if ((not startIndexInclusive) or i >= startIndexInclusive) and ((not endIndexInclusive) or i <= endIndexInclusive) and (((not firstLetter) or firstLetter == '') or string.lower(string.sub(t.name, 1, 1)) == string.lower(firstLetter)) then
+            print(t.talentId, t.name)
+        end
     end
 end
 

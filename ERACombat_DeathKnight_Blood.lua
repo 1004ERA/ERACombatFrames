@@ -112,7 +112,7 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
 
     local vampStrike = hud:AddOverlayBasedOnSpellIcon(206930, 5927645, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "BOTTOM", false, false, false, false, talents.h_sanlayn)
     function vampStrike:ConfirmIsActiveOverride(t, combat)
-        return combat and vblood.remDuration <= 0
+        return combat and drw.aura.remDuration <= 0
     end
 
     ERACombatFrames_DK_MissingDisease(hud, plague)
@@ -128,9 +128,8 @@ function ERACombatFrames_DeathKnightBloodSetup(cFrame, enemies, talents)
     local drinkerIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 206931, 1, talent_drinker))
     local consumptionIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(274156, talent_consumption))
 
-    ERACombatFrames_DKSoulReaper(hud, 1)
-
-    ERACombatFrames_DK_ReaperMark(hud, talents, 6)
+    local reaperOfSouls = ERACombatFrames_DKSoulReaper(hud, 1, talents)
+    ERACombatFrames_DK_ReaperMark(hud, talents, 6, reaperOfSouls)
 
     local runetapIcon = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 194679, 1, talent_runetap))
 

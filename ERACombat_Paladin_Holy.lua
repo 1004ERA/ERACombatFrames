@@ -20,17 +20,14 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     local talent_bonus_dawn = ERALIBTalent:Create(102576)
     local talent_how_proc = ERALIBTalent:Create(102565)
     local talent_crusader = ERALIBTalent:Create(102568)
-    local talent_avenging_might = ERALIBTalent:Create(102569)
-    local talent_avenging_sanctified = ERALIBTalent:Create(102578)
-    local talent_any_avenging = ERALIBTalent:CreateAnd(ERALIBTalent:CreateOr(talent_avenging_might, talent_avenging_sanctified, talents.avenging), ERALIBTalent:CreateNot(talent_crusader))
-    local talent_avenging_proc = ERALIBTalent:Create(116205)
-    --local talent_avenging_buff = ERALIBTalent:CreateOr(talent_any_avenging, talent_avenging_proc)
+    local talent_avenging = ERALIBTalent:Create(102569)
+    local talent_avencrus_proc = ERALIBTalent:Create(116205)
     local talent_silver = ERALIBTalent:Create(102574)
     local talent_tyr = ERALIBTalent:Create(102573)
     local talent_sotr = ERALIBTalent:Create(102541)
     local talent_seasons = ERALIBTalent:Create(116183)
 
-    local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 1, 223819, ERALIBTalent:Create(115489), true, 386730, ERALIBTalent:Create(115466), talents)
+    local hud = ERACombatFrames_PaladinCommonSetup(cFrame, 1, 223819, ERALIBTalent:Create(128246), true, 386730, ERALIBTalent:Create(115466), talents)
     ---@cast hud PalaHolyHUD
 
     ERACombatFrames_PaladinConsecration(hud, 5, 10, nil)
@@ -72,7 +69,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     hud:AddAuraOverlay(infusionBuff, 1, 459313, false, "RIGHT", true, false, false, false)
 
     local howProc = hud:AddTrackedBuff(392939, talent_how_proc)
-    hud:AddAuraOverlay(howProc, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil)--Adventures-Buff-Heal-Burst
+    hud:AddAuraOverlay(howProc, 1, "talents-animations-class-paladin", true, "MIDDLE", false, false, false, false, nil) --Adventures-Buff-Heal-Burst
 
     local freeFromSOTR = hud:AddTrackedBuff(414445, talent_sotr)
     hud:AddAuraOverlay(freeFromSOTR, 1, 459314, false, "BOTTOM", false, true, false, false)
@@ -92,7 +89,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(200656, talent_silver), nil, 0.7, 0.7, 0.6)
 
-    local avengingDuration = hud:AddTrackedBuff(31884, talent_any_avenging)
+    local avengingDuration = hud:AddTrackedBuff(31884, talent_avenging)
     hud:AddAuraBar(avengingDuration, nil, 1.0, 0.0, 1.0)
     local crusaderDuration = hud:AddTrackedBuff(216331, talent_crusader)
     hud:AddAuraBar(crusaderDuration, nil, 1.0, 0.0, 1.0)
@@ -134,9 +131,9 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
         self:setIconID(requiredIconID)
     end
 
-    local awakening = hud:AddRotationStacks(hud:AddTrackedBuff(414196, talent_avenging_proc), 15, 14)
+    local awakening = hud:AddRotationStacks(hud:AddTrackedBuff(414196, talent_avencrus_proc), 15, 14)
     awakening.soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    local awakened = hud:AddRotationBuff(hud:AddTrackedBuff(414193, talent_avenging_proc))
+    local awakened = hud:AddRotationBuff(hud:AddTrackedBuff(414193, talent_avencrus_proc))
     awakened.overlapsPrevious = awakening
     function awakened.ShowWhenMissing()
         return false
@@ -285,7 +282,7 @@ function ERACombatFrames_PaladinHolySetup(cFrame, talents)
     hud:AddUtilityCooldown(tyrCooldown, hud.healGroup)
 
     hud:AddUtilityCooldown(divinityCooldown, hud.powerUpGroup)
-    hud:AddUtilityCooldown(hud:AddTrackedCooldown(31884, talent_any_avenging), hud.powerUpGroup, nil, nil, nil, true)
+    hud:AddUtilityCooldown(hud:AddTrackedCooldown(31884, talent_avenging), hud.powerUpGroup, nil, nil, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(216331, talent_crusader), hud.powerUpGroup, nil, nil, nil, true)
 
     ERACombatFrames_PaladinDivProt(hud, 498, -2, 26)

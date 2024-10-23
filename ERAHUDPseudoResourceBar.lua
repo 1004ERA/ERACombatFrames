@@ -4,6 +4,9 @@
 ---@field private text FontString
 ---@field private textValue string|nil
 ---@field private margin number
+---@field private rBar number
+---@field private gBar number
+---@field private bBar number
 ---@field value number
 ---@field max number
 ---@field getValue fun(this:ERAHUD_PseudoResourceBar, t:number, combat:boolean)
@@ -36,6 +39,9 @@ function ERAHUD_PseudoResourceBar:constructPseudoResource(hud, height, margin, r
     self.bar = self.frame:CreateTexture(nil, "ARTWORK")
     self.bar:SetPoint("TOPLEFT", self.frame, "TOPLEFT", margin, -margin)
     self.bar:SetPoint("BOTTOMLEFT", self.frame, "BOTTOMLEFT", margin, margin)
+    self.rBar = r
+    self.gBar = g
+    self.bBar = b
     self.bar:SetColorTexture(r, g, b, 1.0)
     self.bar:SetWidth(0)
 
@@ -85,5 +91,17 @@ function ERAHUD_PseudoResourceBar:SetText(txt)
     if txt ~= self.textValue then
         self.textValue = txt
         self.text:SetText(txt)
+    end
+end
+
+---@param r number
+---@param g number
+---@param b number
+function ERAHUD_PseudoResourceBar:SetColor(r, g, b)
+    if r ~= self.rBar or g ~= self.gBar or b ~= self.bBar then
+        self.rBar = r
+        self.gBar = g
+        self.bBar = b
+        self.bar:SetColorTexture(r, g, b, 1.0)
     end
 end

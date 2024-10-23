@@ -229,8 +229,8 @@ function ERACombatFrames_WarlockDemonologySetup(cFrame, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(111898, talent_felguard), hud.powerUpGroup, nil, nil, nil, true)
 end
 
--------------------
---#region HAVOC ---
+--------------------
+--#region SUMMON ---
 
 ---@class ERAHUD_Warlock_SummonedTimer : ERATimer
 ---@field private __index unknown
@@ -308,7 +308,7 @@ function ERAHUD_Warlock_FiendTimer:updateData(t)
 end
 
 --#endregion
--------------------
+--------------------
 
 ------------------
 --#region IMPS ---
