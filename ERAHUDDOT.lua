@@ -24,15 +24,16 @@ ERAHUDDOT.__index = ERAHUDDOT
 setmetatable(ERAHUDDOT, { __index = ERAHUDNestedModule })
 
 ---@param hud ERAHUD
+---@param talent ERALIBTalent|nil
 ---@return ERAHUDDOT
-function ERAHUDDOT:Create(hud)
+function ERAHUDDOT:Create(hud, talent)
     local w = {}
     setmetatable(w, ERAHUDDOT)
     ---@cast w ERAHUDDOT
     w.defs = {}
     w.activeDefs = {}
     w.activeDefsArray = {}
-    w.timerFrame = w:constructNested(hud, true)
+    w.timerFrame = w:constructNested(hud, true, talent)
 
     w.enemiesByGUID = {}
     w.enemiesByPlate = {}
@@ -117,7 +118,7 @@ end
 
 ---@param t number
 function ERAHUDDOT:updateData(t)
-    for _, d in pairs(self.activeDefs) do
+    for _, d in ipairs(self.activeDefsArray) do
         d:prepareUpdateData(t)
     end
     local targetGUID = UnitGUID("target")
@@ -192,12 +193,14 @@ end
 ---@field private onOthers ERAHUDDOTInstance[]
 ---@field private activeOnOthers ERAHUDDOTInstance[]
 ---@field private maxDurationIndex integer
----@field private foundCount integer
+---@field private displayedCount integer
 ---@field mainBar ERAHUDDOTBar
 ---@field castTime number
 ---@field baseCastTime number
 ---@field baseTotDuration number
 ---@field refreshDuration number
+---@field totalCount integer
+---@field totalStacks integer
 ---@field minActiveDuration number
 ---@field minActiveIsOnTarget boolean
 ---@field couldRefresh boolean
@@ -240,12 +243,14 @@ function ERAHUDDOTDefinition:create(owner, frame, spellID, iconID, r, g, b, tale
         table.insert(d.onOthers, ERAHUDDOTInstance:create(d, frame, r, g, b, iconID))
     end
     d.maxDurationIndex = -1
-    d.foundCount = 0
+    d.displayedCount = 0
 
     d.castTime = castTime
     d.baseCastTime = castTime
     d.baseTotDuration = baseTotDuration
     d.refreshDuration = 0.3 * baseTotDuration
+    d.totalCount = 0
+    d.totalStacks = 0
     d.minActiveDuration = 0
     d.minActiveIsOnTarget = false
 
@@ -274,7 +279,9 @@ function ERAHUDDOTDefinition:prepareUpdateData(t)
     for _, i in ipairs(self.onOthers) do
         i:prepareUpdateData()
     end
-    self.foundCount = 0
+    self.totalCount = 0
+    self.totalStacks = 0
+    self.displayedCount = 0
     self.refreshDuration = self:ComputeRefreshDurationOverride(t)
     self.castTime = self:ComputeCastTimeOverride(t) * self.owner.hud.hasteMultiplier
     if not self.singleInstance then
@@ -303,17 +310,20 @@ function ERAHUDDOTDefinition:found(t, auraInfo, e)
         dur = self.baseTotDuration
     end
 
-    if self.foundCount == 0 then
+    self.totalCount = self.totalCount + 1
+    self.totalStacks = self.totalStacks + (auraInfo.applications or 1)
+
+    if self.displayedCount == 0 then
         self.maxDurationIndex = 1
-        self.foundCount = 1
+        self.displayedCount = 1
         self.onOthers[1]:assign(dur, e)
     else
-        if self.foundCount < #(self.onOthers) then
-            self.foundCount = self.foundCount + 1
-            self.onOthers[self.foundCount]:assign(dur, e)
+        if self.displayedCount < #(self.onOthers) then
+            self.displayedCount = self.displayedCount + 1
+            self.onOthers[self.displayedCount]:assign(dur, e)
             local currentMax = self.onOthers[self.maxDurationIndex].duration
             if currentMax < dur then
-                self.maxDurationIndex = self.foundCount
+                self.maxDurationIndex = self.displayedCount
             end
         else
             local currentMax = self.onOthers[self.maxDurationIndex].duration
@@ -338,6 +348,8 @@ function ERAHUDDOTDefinition:computeUpdateData()
     local min
     if self.onTarget.remDuration > 0 then
         min = self.onTarget.remDuration
+        self.totalCount = self.totalCount + 1
+        self.totalStacks = self.totalStacks + self.onTarget.stacks
     else
         min = 0
     end

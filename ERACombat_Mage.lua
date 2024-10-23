@@ -220,6 +220,9 @@ function ERACombatFrames_MageFae(hud, talents, prio)
     end
 end
 
+--------------------------
+--#region SPELLSLINGER ---
+
 ---@param hud MageHUD
 ---@param talents ERACombat_MageCommonTalents
 ---@param prio number
@@ -237,3 +240,47 @@ function ERACombatFrames_MageSpellsingerSupernova(hud, talents, prio)
         end
     end
 end
+
+---@param hud MageHUD
+---@param talents ERACombat_MageCommonTalents
+function ERACombatFrames_MageSpellsinger(hud, talents)
+    local dots = ERAHUDDOT:Create(hud, talents.h_spellslinger)
+    local splinters = dots:AddDOT(444735, nil, 0.9, 0.4, 0.7, nil, 0, 1004)
+    ERAHUD_MageSplinterstorm:create(hud, talents, splinters)
+end
+
+---@class (exact) ERAHUD_MageSplinterstorm : ERAHUD_PseudoResourceBar
+---@field private __index unknown
+---@field splinters ERAHUDDOTDefinition
+ERAHUD_MageSplinterstorm = {}
+ERAHUD_MageSplinterstorm.__index = ERAHUD_MageSplinterstorm
+setmetatable(ERAHUD_MageSplinterstorm, { __index = ERAHUD_PseudoResourceBar })
+
+---@param hud MageHUD
+---@param talents ERACombat_MageCommonTalents
+---@param splinters ERAHUDDOTDefinition
+---@return ERAHUD_MageSplinterstorm
+function ERAHUD_MageSplinterstorm:create(hud, talents, splinters)
+    local wi = {}
+    setmetatable(wi, ERAHUD_MageSplinterstorm)
+    ---@cast wi ERAHUD_MageSplinterstorm
+    wi:constructPseudoResource(hud, 8, 1, 0.9, 0.4, 0.7, false, talents.h_spellslinger)
+    wi.showOutOfCombat = false
+    wi.splinters = splinters
+    return wi
+end
+
+function ERAHUD_MageSplinterstorm:getValue(t, combat)
+    return self.splinters.totalStacks
+end
+
+function ERAHUD_MageSplinterstorm:getMax(t, combat)
+    return 8
+end
+
+function ERAHUD_MageSplinterstorm:DisplayUpdatedOverride(t, combat)
+    self:SetText(tostring(self.splinters.totalStacks))
+end
+
+--#endregion
+--------------------------

@@ -1,6 +1,7 @@
 ---@param cFrame ERACombatFrame
 ---@param talents ERACombat_MageCommonTalents
 function ERACombatFrames_MageArcaneSetup(cFrame, talents)
+    local talent_aethervision = ERALIBTalent:Create(126518)
     local talent_surge = ERALIBTalent:Create(126519)
     local talent_tempo = ERALIBTalent:Create(126506)
     local talent_familiar = ERALIBTalent:Create(126509)
@@ -22,6 +23,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     local aPoints = ERAHUDModulePointsUnitPower:Create(hud, Enum.PowerType.ArcaneCharges, 1.0, 0.0, 1.0, 0.5, 0.0, 1.0)
     local buildingSunfurySphere = hud:AddTrackedBuff(449400, talents.h_sunfury)
     --ERAHUDModulePointsStacks:Create(hud, buildingSunfurySphere, 5, 0.8, 0.5, 0.0, 0.9, 0.4, 0.3, talents.h_sunfury, 16)
+    ERACombatFrames_MageSpellsinger(hud, talents)
 
     local enlightenedMark = hud.mage_mana.bar:AddMarkingFrom0(-1, talent_enlightened)
     function enlightenedMark:ComputeValueOverride(t)
@@ -71,6 +73,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(210824, talent_touch), nil, 1.0, 0.0, 0.0)
     hud:AddAuraBar(hud:AddTrackedBuff(365362, talent_surge), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedBuff(383997, talent_tempo), nil, 0.8, 0.9, 0.0)
+    hud:AddAuraBar(hud:AddTrackedBuff(467634, talent_aethervision), nil, 0.6, 0.0, 0.3)
     --hud:AddAuraBar(hud:AddTrackedBuff(393939, talent_impetus), nil, 0.4, 0.0, 0.8) -- finalement pas la peine
     hud:AddAuraBar(hud:AddTrackedBuff(383783), nil, 1.0, 0.7, 1.0) -- nether precision
 
