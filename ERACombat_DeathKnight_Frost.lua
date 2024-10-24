@@ -1,3 +1,6 @@
+---@class DKFrostHUD : ERADKHUD
+---@field lastSindragosa number
+
 ---@param cFrame ERACombatFrame
 ---@param enemies ERACombatEnemiesCount
 ---@param talents DKCommonTalents
@@ -15,11 +18,20 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     local talent_bonegrinder = ERALIBTalent:Create(96253)
 
     local hud = ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, 2)
+    ---@cast hud DKFrostHUD
+    hud.lastSindragosa = 0
 
     hud.runicPower.bar:AddMarkingFrom0(30)
     hud.runicPower.bar:AddMarkingFromMax(20)
 
     ERACombatFrames_DK_DPS(hud, talents)
+
+    function hud:AdditionalCLEU(t)
+        local _, evt, _, sourceGUID, _, _, _, _, _, _, _, spellID = CombatLogGetCurrentEventInfo()
+        if spellID == 155166 and sourceGUID == self.cFrame.playerGUID and evt == "SPELL_DAMAGE" then
+            self.lastSindragosa = t
+        end
+    end
 
     local fever = hud:AddTrackedDebuffOnTarget(55095)
 
@@ -36,11 +48,13 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(51271, talent_pof), nil, 0.8, 0.8, 1.0)
 
-    hud:AddAuraBar(hud:AddTrackedBuff(377192, talent_enduring_pof), 136213, 0.6, 0.6, 0.8)
+    hud:AddAuraBar(hud:AddTrackedBuff(377195, talent_enduring_pof), 136213, 0.8, 0.2, 0.4)
 
     hud:AddAuraBar(hud:AddTrackedBuff(377103, talent_bonegrinder), nil, 0.0, 0.0, 1.0)
 
     hud:AddAuraBar(hud:AddTrackedBuff(196770, talent_remorseless_important), nil, 0.5, 0.8, 1.0)
+
+    hud:AddGenericBar(ERASindragosaTimer:create(hud, talent_sindragosa, hud:AddTrackedBuff(152279, talent_sindragosa)), 1029007, 1.0, 0.0, 0.0)
 
     --- SAO ---
 
@@ -85,7 +99,7 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     5 - scythe
     6 - streak
     7 - chains of ice all stacks
-    8 - dnd
+    8 - dnd (many enemies)
     9 - chains of ice most stacks
     10 - horn
 
@@ -104,7 +118,11 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
         return 6
     end
     function dndIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        return 8
+        if enemies:GetCount() > 2 then
+            return 8
+        else
+            return 0
+        end
     end
     function hornIcon.onTimer:ComputeAvailablePriorityOverride(t)
         local hud = self.hud
@@ -133,3 +151,56 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(47568, talent_empower), hud.powerUpGroup, nil, -2, nil, true)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(152279, talent_sindragosa), hud.powerUpGroup, nil, -1, nil, true)
 end
+
+------------------------
+--#region SINDRAGOSA ---
+
+---@class ERASindragosaTimer : ERATimer
+---@field private __index unknown
+---@field private talent ERALIBTalent
+---@field private fhud DKFrostHUD
+---@field aura ERAAura
+ERASindragosaTimer = {}
+ERASindragosaTimer.__index = ERASindragosaTimer
+setmetatable(ERASindragosaTimer, { __index = ERATimer })
+
+---@param hud DKFrostHUD
+---@param talent ERALIBTalent
+---@param aura ERAAura
+---@return ERASindragosaTimer
+function ERASindragosaTimer:create(hud, talent, aura)
+    local x = {}
+    setmetatable(x, ERASindragosaTimer)
+    ---@cast x ERASindragosaTimer
+    x:constructTimer(hud)
+    x.talent = talent
+    x.fhud = hud
+    x.aura = aura
+    return x
+end
+
+function ERASindragosaTimer:checkDataItemTalent()
+    return self.talent:PlayerHasTalent()
+end
+
+---@param t number
+function ERASindragosaTimer:updateData(t)
+    if self.aura.remDuration > 0 then
+        local delta = t - self.fhud.lastSindragosa
+        local rp = self.fhud.runicPower.currentPower
+        if delta > 1 then
+            self.remDuration = math.ceil(rp / 17)
+        else
+            if rp >= 17 then
+                self.remDuration = (1 - delta) + math.ceil((rp - 17) / 17)
+            else
+                self.remDuration = 1 - delta
+            end
+        end
+    else
+        self.remDuration = 0
+    end
+end
+
+--#endregion
+------------------------

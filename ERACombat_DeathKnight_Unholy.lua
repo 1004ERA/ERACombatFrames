@@ -16,6 +16,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     local talent_eternal_agony = ERALIBTalent:Create(96318)
     local talent_scythe = ERALIBTalent:Create(96330)
     local talent_ebon_fever = ERALIBTalent:Create(96294)
+    local talent_rotten_touch = ERALIBTalent:Create(96310)
 
     local hud = ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, 3)
 
@@ -57,6 +58,8 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     hud:AddAuraBar(transfoDuration, nil, 0.8, 0.0, 0.2, ERALIBTalent:CreateOr(talent_eternal_agony, talents.h_sanlayn_gift))
 
     hud:AddAuraBar(hud:AddTrackedBuff(207289, talent_frenzy), nil, 1.0, 0.8, 0.8)
+
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(390276, talent_rotten_touch), nil, 0.7, 0.3, 0.5)
 
     local scytheBuff = hud:AddTrackedBuff(458123, talent_scythe)
     local scytheBar = hud:AddAuraBar(scytheBuff, nil, 0.0, 0.7, 0.6)
@@ -104,7 +107,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
 
     1 - soul reaper
     2 - outbreak now
-    3 - dnd / defile
+    3 - dnd (many enemies) / defile
     4 - contagion many ememies
     5 - outbreak soon
     6 - transfo
@@ -127,7 +130,11 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     end
 
     function dndIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        return 3
+        if enemies:GetCount() > 1 then
+            return 3
+        else
+            return 0
+        end
     end
     function defileIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 3

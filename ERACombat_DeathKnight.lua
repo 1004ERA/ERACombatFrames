@@ -150,7 +150,6 @@ function ERACombatFrames_DKCommonSetup(cFrame, enemies, talents, spec)
     hud:AddAuraBar(hud:AddTrackedBuff(49039), nil, 0.4, 0.4, 0.4)     -- lichborne
     hud:AddAuraBar(hud:AddTrackedBuff(188290), 136144, 0.8, 0.5, 0.0) -- cleave dnd
     hud:AddAuraBar(hud:AddTrackedBuff(444347, talents.deathcharger), nil, 0.8, 1.0, 0.9)
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(434765, talents.h_deathbringer), nil, 0.6, 0.2, 0.4)
 
     --- utility ---
 
@@ -210,6 +209,7 @@ end
 ---@param prio number
 ---@param reaperOfSouls ERAAura
 function ERACombatFrames_DK_ReaperMark(hud, talents, prio, reaperOfSouls)
+    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(434765, talents.h_deathbringer), nil, 0.6, 0.2, 0.4)
     local reapermark = hud:AddRotationCooldown(ERACooldownIgnoringRunes:Create(hud, 439843, 2, talents.h_deathbringer))
     function reapermark.onTimer:ComputeAvailablePriorityOverride(t)
         return prio
