@@ -673,8 +673,8 @@ function ERAHUD:Pack()
     elseif (r == 52 or r == 70) then
         -- dracthyr
         if ERACombatFrames_classID ~= 13 then
-            self:AddUtilityCooldown(self:AddTrackedCooldown(357214), self.controlGroup) -- wing buffet
-            racialSpellID = 368970                                                      -- tail swipe
+            -- tail swipe 368970
+            racialSpellID = 357214
             racialGroup = self.controlGroup
             racialTimer = true
         end
