@@ -135,8 +135,9 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
     hud:AddAuraBar(invisDuration, nil, 0.7, 0.7, 0.7)
     hud:AddAuraBar(greaterInvisDuration, nil, 0.7, 0.7, 0.7)
 
+    local alterDuration = hud:AddTrackedBuff(342246, talents.alter)
+    hud:AddAuraBar(alterDuration, nil, 1.0, 0.8, 0.2)
     hud:AddAuraBar(hud:AddTrackedBuff(45438, talents.iblock), nil, 0.5, 0.5, 1.0)
-    hud:AddAuraBar(hud:AddTrackedBuff(342246, talents.alter), nil, 1.0, 0.8, 0.2)
     hud:AddAuraBar(hud:AddTrackedBuff(108839, talents.floes), nil, 0.5, 1.0, 0.8)
 
     --- rotation ---
@@ -186,6 +187,7 @@ function ERACombatFrames_MageCommonSetup(cFrame, talents, spec, barrierID)
             return true
         end
     end
+    hud:AddUtilityAuraOutOfCombat(alterDuration)
     hud:AddUtilityAuraOutOfCombat(hud:AddTrackedBuff(414664, talents.massInvis))
     hud:AddUtilityAuraOutOfCombat(greaterInvisDuration)
     hud:AddUtilityAuraOutOfCombat(invisDuration)
@@ -231,7 +233,15 @@ function ERACombatFrames_MageSpellsingerSupernova(hud, talents, prio)
     local acc = hud:AddTrackedBuff(444981, talent)
     hud:AddRotationStacks(acc, 30, 26).soundOnHighlight = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
+    local supernovaCooldown = hud:AddTrackedCooldown(157980, talent)
     local prioIcon = hud:AddPriority(1033912, talent)
+    function prioIcon:ComputeDurationOverride(t)
+        if acc.stacks >= 26 then
+            return supernovaCooldown.remDuration
+        else
+            return -1
+        end
+    end
     function prioIcon:ComputeAvailablePriorityOverride(t)
         if acc.stacks >= 26 then
             return prio

@@ -170,7 +170,7 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
 
     --- rotation ---
 
-    local chibIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(123986, talent_chib))
+    local ehIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(322101))
 
     hud:AddRotationCooldown(hud:AddTrackedCooldown(115151, talent_renewing))
 
@@ -229,6 +229,8 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         end
     end
 
+    local chibIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(123986, talent_chib))
+
     hud:AddRotationStacks(hud:AddTrackedBuff(115867, talent_manatea), 20, 18).soundOnHighlight = SOUNDKIT.UI_COVENANT_SANCTUM_RENOWN_MAX_NIGHTFAE
 
     local tftBuff = hud:AddTrackedBuff(116680, talent_tft)
@@ -245,9 +247,10 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
     prio
     1 - tod
     2 - rsk
-    3 - fae
-    4 - chib
-    5 - tft
+    3 - eh
+    4 - fae
+    5 - chib
+    6 - tft
     ]]
 
     local rskCooldown = hud:AddTrackedCooldown(107428, talent_rsk)
@@ -267,16 +270,24 @@ function ERACombatFrames_MonkMistweaverSetup(cFrame, talents)
         return 2
     end
 
-    function faeIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        return 3
+    function ehIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        if self.hud.health.currentHealth / self.hud.health.maxHealth < 0.8 then
+            return 3
+        else
+            return 0
+        end
     end
 
-    function chibIcon.onTimer:ComputeAvailablePriorityOverride(t)
+    function faeIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 4
     end
 
-    function tftIcon.onTimer:ComputeAvailablePriorityOverride(t)
+    function chibIcon.onTimer:ComputeAvailablePriorityOverride(t)
         return 5
+    end
+
+    function tftIcon.onTimer:ComputeAvailablePriorityOverride(t)
+        return 6
     end
 
     --- bars ---

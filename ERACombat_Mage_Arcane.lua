@@ -69,7 +69,7 @@ function ERACombatFrames_MageArcaneSetup(cFrame, talents)
         end
     end
 
-    hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(453599, talent_debilitation), nil, 0.2, 0.0, 0.6)
+    --hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(453599, talent_debilitation), nil, 0.2, 0.0, 0.6)
     hud:AddAuraBar(hud:AddTrackedDebuffOnTarget(210824, talent_touch), nil, 1.0, 0.0, 0.0)
     hud:AddAuraBar(hud:AddTrackedBuff(365362, talent_surge), nil, 1.0, 0.0, 1.0)
     hud:AddAuraBar(hud:AddTrackedBuff(383997, talent_tempo), nil, 0.8, 0.9, 0.0)

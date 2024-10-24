@@ -46,6 +46,8 @@ function ERACombatFrames_event(event, ...)
         local cFrame = ERACombatFrame:Create()
         if (classID == 2) then
             ERACombatFrames_PaladinSetup(cFrame)
+        elseif (classID == 5) then
+            --ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then
@@ -63,6 +65,5 @@ function ERACombatFrames_event(event, ...)
         end
         cFrame:Pack()
         print("Welcome to ERACombatFrames. Enter the /ecf command for options.")
-        print("ECF : Arcane Mage available as a work in progress.")
     end
 end

@@ -66,6 +66,11 @@ ERACombat_Paladin_Holy.lua
 ERACombat_Paladin_Protection.lua
 ERACombat_Paladin_Retribution.lua
 
+ERACombat_Priest.lua
+ERACombat_Priest_Discipline.lua
+ERACombat_Priest_Holy.lua
+ERACombat_Priest_Shadow.lua
+
 ERACombat_Warlock.lua
 ERACombat_Warlock_Affliction.lua
 ERACombat_Warlock_Demonology.lua
