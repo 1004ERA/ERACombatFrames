@@ -204,34 +204,46 @@ function ERAEvokerCommonSetup(cFrame, manaHeight, essenceDirection, burstID, unr
     local unravelIcon = hud:AddRotationCooldown(hud:AddTrackedCooldown(368432, talents.unravel))
     hud.evoker_unravelIcon = unravelIcon
     unravelIcon.specialPosition = true
-    function unravelIcon:UpdatedOverride(t, combat)
+    function unravelIcon:ShowHideOverride(t, combat)
         if self.data.remDuration > 0 then
-            if hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0 then
-                self.icon:SetAlpha(1.0)
-            else
-                self.icon:SetAlpha(0.4)
-            end
-            self.icon:StopHighlight()
-            self.icon:Show()
+            return true
         else
-            if combat and (hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0) then
-                self.icon:SetAlpha(1.0)
-                self.icon:Highlight()
-                self.icon:Show()
-            else
-                self.icon:Hide()
-            end
+            local lhud = self.hud
+            ---@cast lhud ERAEvokerHUD
+            return lhud.evoker_unravelUsable or lhud.evoker_unravelAbsorbValue > 0
+        end
+    end
+    function unravelIcon:HighlightOverride(t, combat)
+        if combat then
+            local lhud = self.hud
+            ---@cast lhud ERAEvokerHUD
+            return lhud.evoker_unravelUsable
+        else
+            return false
+        end
+    end
+    function unravelIcon:UpdatedOverride(t, combat)
+        local lhud = self.hud
+        ---@cast lhud ERAEvokerHUD
+        if lhud.evoker_unravelUsable or lhud.evoker_unravelAbsorbValue > 0 then
+            self.icon:SetAlpha(1.0)
+        else
+            self.icon:SetAlpha(0.4)
         end
     end
     function unravelIcon.onTimer:ComputeDurationOverride(t)
-        if hud.evoker_unravelUsable or hud.evoker_unravelAbsorbValue > 0 then
+        local lhud = self.hud
+        ---@cast lhud ERAEvokerHUD
+        if lhud.evoker_unravelUsable or lhud.evoker_unravelAbsorbValue > 0 then
             return self.cd.data.remDuration
         else
             return -1
         end
     end
     function unravelIcon.onTimer:ComputeAvailablePriorityOverride(t)
-        if hud.evoker_unravelUsable then
+        local lhud = self.hud
+        ---@cast lhud ERAEvokerHUD
+        if lhud.evoker_unravelUsable then
             return unravelPrio
         else
             return 0
