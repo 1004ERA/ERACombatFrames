@@ -14,6 +14,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     local talent_clawing = ERALIBTalent:Create(96320)
     local talent_scourge = ERALIBTalent:CreateNotTalent(96320)
     local talent_eternal_agony = ERALIBTalent:Create(96318)
+    local talent_ghoulish = ERALIBTalent:Create(96331)
     local talent_scythe = ERALIBTalent:Create(96330)
     local talent_ebon_fever = ERALIBTalent:Create(96294)
     local talent_rotten_touch = ERALIBTalent:Create(96310)
@@ -55,7 +56,7 @@ function ERACombatFrames_DeathKnightUnholySetup(cFrame, enemies, talents)
     end
 
     local transfoDuration = hud:AddTrackedBuffOnPet(63560, talent_transfo)
-    hud:AddAuraBar(transfoDuration, nil, 0.8, 0.0, 0.2, ERALIBTalent:CreateOr(talent_eternal_agony, talents.h_sanlayn_gift))
+    hud:AddAuraBar(transfoDuration, nil, 0.8, 0.0, 0.2, ERALIBTalent:CreateOr(talent_eternal_agony, talent_ghoulish, talents.h_sanlayn_gift))
 
     hud:AddAuraBar(hud:AddTrackedBuff(207289, talent_frenzy), nil, 1.0, 0.8, 0.8)
 

@@ -50,11 +50,20 @@ function ERACombatFrames_DeathKnightFrostSetup(cFrame, enemies, talents)
 
     hud:AddAuraBar(hud:AddTrackedBuff(377195, talent_enduring_pof), 136213, 0.8, 0.2, 0.4)
 
+    hud:AddAuraBar(hud:AddTrackedBuff(377101, talent_bonegrinder), nil, 0.5, 0.4, 0.0)
     hud:AddAuraBar(hud:AddTrackedBuff(377103, talent_bonegrinder), nil, 0.0, 0.0, 1.0)
 
     hud:AddAuraBar(hud:AddTrackedBuff(196770, talent_remorseless_important), nil, 0.5, 0.8, 1.0)
 
-    hud:AddGenericBar(ERASindragosaTimer:create(hud, talent_sindragosa, hud:AddTrackedBuff(152279, talent_sindragosa)), 1029007, 1.0, 0.0, 0.0)
+    local sindragosaura = hud:AddTrackedBuff(152279, talent_sindragosa)
+    hud:AddGenericBar(ERASindragosaTimer:create(hud, talent_sindragosa, sindragosaura), 1029007, 1.0, 0.0, 0.0)
+    function hud:DisplayUpdatedOverride(t, combat)
+        if sindragosaura.remDuration > 0 then
+            self.runicPower.bar:SetMainColor(1.0, 0.0, 0.0)
+        else
+            self.runicPower.bar:SetMainColor(0.2, 0.7, 1.0)
+        end
+    end
 
     --- SAO ---
 

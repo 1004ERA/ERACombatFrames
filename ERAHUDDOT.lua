@@ -152,13 +152,23 @@ end
 function ERAHUDDOT:updateDisplay_returnHeight(t, y, timerFrame, overlayFrame)
     local height = 0
     for _, d in ipairs(self.activeDefsArray) do
-        y = y + ERAHUD_TimerBarSpacing
-        d:drawTarget(y, timerFrame, overlayFrame)
-        y = y + ERAHUDDOT_MainBarSize
+        if self.hud.topdown then
+            y = y - ERAHUD_TimerBarSpacing
+            d:drawTarget(y, timerFrame, overlayFrame)
+            y = y - ERAHUDDOT_MainBarSize
+        else
+            y = y + ERAHUD_TimerBarSpacing
+            d:drawTarget(y, timerFrame, overlayFrame)
+            y = y + ERAHUDDOT_MainBarSize
+        end
         height = height + ERAHUD_TimerBarSpacing + ERAHUDDOT_MainBarSize
     end
     if height > 0 then
-        y = y + ERAHUD_TimerBarSpacing
+        if self.hud.topdown then
+            y = y - ERAHUD_TimerBarSpacing
+        else
+            y = y + ERAHUD_TimerBarSpacing
+        end
         height = height + ERAHUD_TimerBarSpacing
     end
     for _, d in ipairs(self.activeDefsArray) do
@@ -420,7 +430,11 @@ function ERAHUDDOTDefinition:drawTarget(y, frame, overlayFrame)
     if self.owner.hud.timerDuration > self.refreshDuration and self.refreshDuration < dur then
         local x = self.owner.hud:calcTimerPixel(self.refreshDuration)
         self.refreshLine:SetStartPoint("RIGHT", overlayFrame, x, y)
-        self.refreshLine:SetEndPoint("RIGHT", overlayFrame, x, y + ERAHUDDOT_MainBarSize)
+        if self.owner.hud.topdown then
+            self.refreshLine:SetEndPoint("RIGHT", overlayFrame, x, y - ERAHUDDOT_MainBarSize)
+        else
+            self.refreshLine:SetEndPoint("RIGHT", overlayFrame, x, y + ERAHUDDOT_MainBarSize)
+        end
         if not self.refreshLineVisible then
             self.refreshLineVisible = true
             self.refreshLine:Show()
@@ -557,18 +571,22 @@ end
 function ERAHUDDOTBar:draw(y, frame, duration, alpha, iconDesat)
     if self.visible then
         if self.y ~= y then
+            self.y = y
             self.translation:SetOffset(0, y - self.y)
             self.anim:Play()
         else
             self:endAnimate(frame)
         end
     else
+        if self.y ~= y then
+            self.y = y
+            self:endAnimate(frame)
+        end
         self.visible = true
         self.display:Show()
         self.text:Show()
         self.icon:Show()
     end
-    self.y = y
     if duration > 0 then
         local hud = self.definition.owner.hud
         local max = hud.timerDuration
@@ -679,7 +697,11 @@ end
 ---@param frame Frame
 ---@return number
 function ERAHUDDOTInstance:draw(y, frame)
-    y = y + ERAHUD_TimerBarSpacing
+    if self.def.owner.hud.topdown then
+        y = y - ERAHUD_TimerBarSpacing
+    else
+        y = y + ERAHUD_TimerBarSpacing
+    end
     local alpha, desat
     if self.couldRefresh then
         alpha = ERAHUDDOT_alpha_REFRESH_OTHER
@@ -690,7 +712,11 @@ function ERAHUDDOTInstance:draw(y, frame)
     end
     self.bar:SetText(self.enemy.name)
     self.bar:draw(y, frame, self.duration, alpha, desat)
-    return y + ERAHUDDOT_SecondaryBarSize
+    if self.def.owner.hud.topdown then
+        return y - ERAHUDDOT_SecondaryBarSize
+    else
+        return y + ERAHUDDOT_SecondaryBarSize
+    end
 end
 function ERAHUDDOTInstance:hide()
     self.bar:hide()

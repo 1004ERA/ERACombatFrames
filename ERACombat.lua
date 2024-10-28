@@ -239,6 +239,7 @@ end
 function ECF_print_talents(startIndexInclusive, endIndexInclusive, firstLetter)
     for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
         if ((not startIndexInclusive) or i >= startIndexInclusive) and ((not endIndexInclusive) or i <= endIndexInclusive) and (((not firstLetter) or firstLetter == '') or string.lower(string.sub(t.name, 1, 1)) == string.lower(firstLetter)) then
+            --if t.talentId ==  then
             print(t.talentId, t.name)
         end
     end

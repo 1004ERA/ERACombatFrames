@@ -1,3 +1,4 @@
+ERAGroupFrame_ProcSize = 16
 ERAGroupFrame_DispellSize = 10
 ERAGroupFrame_AuraSize = 20
 ERAGroupFrame_CellPadding = 2
@@ -35,6 +36,8 @@ ERAGroupFrame_MainFrameWidthIncludingBorder = ERAGroupFrame_CellWidth - 2 * ERAG
 ---@field private activeDisplays ERAGroupAuraDisplay[]
 ---@field private dispells ERAGroupDispell[]
 ---@field private activeDispells ERAGroupDispell[]
+---@field private procs ERAGroupProcDefinition[]
+---@field private activeProcs ERAGroupProcDefinition[]
 ---@field private update fun(this:ERAGroupFrame, t:number)
 ---@field private UpdateIdle fun(this:ERAGroupFrame, t:number)
 ---@field private UpdateCombat fun(this:ERAGroupFrame, t:number)
@@ -111,6 +114,15 @@ function ERAGroupFrame:AddDispell(hudCD, talent, magic, poison, disease, curse, 
     return d
 end
 
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+---@return ERAGroupProcDefinition
+function ERAGroupFrame:AddProc(iconID, talent)
+    local prc = ERAGroupProcDefinition:create(iconID, talent)
+    table.insert(self.procs, prc)
+    return prc
+end
+
 --#endregion
 ---------------------
 
@@ -146,6 +158,8 @@ function ERAGroupFrame:Create(cFrame, hud, options, spec)
     x.activeDisplays = {}
     x.dispells = {}
     x.activeDispells = {}
+    x.procs = {}
+    x.activeProcs = {}
 
     x.isSolo = true
 
@@ -236,6 +250,10 @@ function ERAGroupFrame:ResetToIdle()
         end
     end
     self:updateGroup()
+
+    for _, v in pairs(self.unitByID) do
+        v:resetProcs()
+    end
 end
 
 function ERAGroupFrame:SpecInactive(wasActive)
@@ -278,6 +296,17 @@ function ERAGroupFrame:CheckTalents()
             index = index + 1
             table.insert(self.activeDispells, d)
         end
+    end
+
+    table.wipe(self.activeProcs)
+    for _, prc in ipairs(self.procs) do
+        if (not prc.talent) or prc.talent:PlayerHasTalent() then
+            table.insert(self.activeProcs, prc)
+        end
+    end
+
+    for _, v in pairs(self.unitByID) do
+        v:resetProcs()
     end
 end
 
@@ -409,6 +438,9 @@ function ERAGroupFrame:update(t)
             self:parseAuras(t, u, true)
             for _, disp in pairs(self.activeDispells) do
                 disp:unitParsed(u)
+            end
+            for procIndex, proc in ipairs(self.activeProcs) do
+                u:updateProc(procIndex, #(self.activeProcs), proc, t)
             end
             if u:updateDisplay_returnInRange(self.activeDisplays) then
                 inRangeCount = inRangeCount + 1
@@ -726,6 +758,7 @@ end
 ---@field private inRange boolean
 ---@field private auraFrames ERAGroupAuraFrame[]
 ---@field private dispellMarks table<integer,ERAGroupDispellMark>
+---@field private procs table<integer, ERAGroupProcIcon>
 ERAGroupUnitFrame = {}
 ERAGroupUnitFrame.__index = ERAGroupUnitFrame
 
@@ -756,6 +789,7 @@ function ERAGroupUnitFrame:initialize(owner)
     self.auras = {}
     self.auraFrames = {}
     self.dispellMarks = {}
+    self.procs = {}
 
     local mf = CreateFrame("Frame", nil, self, "BackdropTemplate")
     ---@cast mf BackdropTemplate
@@ -815,6 +849,12 @@ function ERAGroupUnitFrame:initialize(owner)
     self.deadLine2:Hide()
 end
 
+function ERAGroupUnitFrame:resetProcs()
+    for _, v in pairs(self.procs) do
+        v:reset()
+    end
+end
+
 ---@param unitID string
 function ERAGroupUnitFrame:setUnit(unitID)
     self.unit = unitID
@@ -831,6 +871,7 @@ function ERAGroupUnitFrame:setUnit(unitID)
     self:updateMemberStatus()
     self:updateBorder()
     self:updateHealth()
+    self:resetProcs()
 end
 
 function ERAGroupUnitFrame:updateMemberStatus()
@@ -1051,7 +1092,7 @@ function ERAGroupUnitFrame:updateDisplay_returnInRange(displayedAuras)
             else
                 x = ERAGroupFrame_HealthOffsetFromMainFrame + d.position * ERAGroupFrame_AuraSize
             end
-            d.frame_temp:show(self.mainFrame, x, ERAGroupFrame_HealthOffsetFromMainFrame, inst.remDuration, inst.totDuration, inst.stacks, d)
+            d.frame_temp:show(self.mainFrame, x, ERAGroupFrame_HealthOffsetFromMainFrame / 2, inst.remDuration, inst.totDuration, inst.stacks, d)
             d.frame_temp = nil
             d.instance_temp = nil
         end
@@ -1078,86 +1119,23 @@ function ERAGroupUnitFrame:updateDisplay_returnInRange(displayedAuras)
     --#endregion
 end
 
----@class ERAGroupDispellMark
----@field private __index unknown
----@field private r number
----@field private g number
----@field private b number
----@field private x number
----@field private y number
----@field active boolean
----@field private asFrame Frame
----@field private asBackdrop BackdropTemplate
----@field private visible boolean
-ERAGroupDispellMark = {}
-ERAGroupDispellMark.__index = ERAGroupDispellMark
-
----@param parentFrame BackdropTemplate
----@param r number
----@param g number
----@param b number
----@return ERAGroupDispellMark
-function ERAGroupDispellMark:create(parentFrame, r, g, b)
-    local x = {}
-    setmetatable(x, ERAGroupDispellMark)
-    ---@cast x ERAGroupDispellMark
-    x.r = r
-    x.g = g
-    x.b = b
-    x.x = -1004
-    x.y = -1004
-    x.visible = true
-
-    local frame = CreateFrame("Frame", nil, parentFrame, "BackdropTemplate")
-    ---@cast frame Frame
-    x.asFrame = frame
-    frame:SetSize(ERAGroupFrame_DispellSize, ERAGroupFrame_DispellSize)
-    frame:SetFrameLevel(10)
-    frame:Show()
-    ---@cast frame BackdropTemplate
-    x.asBackdrop = frame
-    frame:SetBackdrop(
-        {
-            bgFile = "Interface\\Buttons\\WHITE8x8",
-            edgeFile = "Interface\\Buttons\\WHITE8x8",
-            edgeSize = 2
-        }
-    )
-    frame:SetBackdropColor(r, g, b, 1.0)
-    frame:SetBackdropBorderColor(0.0, 0.0, 0.0, 1.0)
-
-    return x
-end
-
-function ERAGroupDispellMark:hide()
-    if self.visible then
-        self.visible = false
-        self.asFrame:Hide()
-    end
-end
-
----@param parentFrame BackdropTemplate
----@param x number
----@param y number
----@param r number
----@param g number
----@param b number
-function ERAGroupDispellMark:show(parentFrame, x, y, r, g, b)
-    if self.x ~= x or self.y ~= y then
-        self.x = x
-        self.y = y
-        self.asFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", x, y)
-    end
-    if r ~= self.r or g ~= self.g or b ~= self.b then
-        self.r = r
-        self.g = g
-        self.b = b
-        self.asBackdrop:SetBackdropColor(r, g, b, 1.0)
-    end
-    self.active = true
-    if not self.visible then
-        self.visible = true
-        self.asFrame:Show()
+---@param index integer
+---@param maxIndex integer
+---@param proc ERAGroupProcDefinition
+---@param t number
+function ERAGroupUnitFrame:updateProc(index, maxIndex, proc, t)
+    local prc = self.procs[index]
+    if proc:IsActive(self, t) then
+        if prc then
+            prc:show(proc.iconID, self.mainFrame, index, maxIndex)
+        else
+            prc = ERAGroupProcIcon:create(proc.iconID, self.mainFrame, index, maxIndex)
+            self.procs[index] = prc
+        end
+    else
+        if prc then
+            prc:hide()
+        end
     end
 end
 
@@ -1497,6 +1475,89 @@ end
 ---------------------
 --#region DISPELL ---
 
+---@class ERAGroupDispellMark
+---@field private __index unknown
+---@field private r number
+---@field private g number
+---@field private b number
+---@field private x number
+---@field private y number
+---@field active boolean
+---@field private asFrame Frame
+---@field private asBackdrop BackdropTemplate
+---@field private visible boolean
+ERAGroupDispellMark = {}
+ERAGroupDispellMark.__index = ERAGroupDispellMark
+
+---@param parentFrame BackdropTemplate
+---@param r number
+---@param g number
+---@param b number
+---@return ERAGroupDispellMark
+function ERAGroupDispellMark:create(parentFrame, r, g, b)
+    local x = {}
+    setmetatable(x, ERAGroupDispellMark)
+    ---@cast x ERAGroupDispellMark
+    x.r = r
+    x.g = g
+    x.b = b
+    x.x = -1004
+    x.y = -1004
+    x.visible = true
+
+    local frame = CreateFrame("Frame", nil, parentFrame, "BackdropTemplate")
+    ---@cast frame Frame
+    x.asFrame = frame
+    frame:SetSize(ERAGroupFrame_DispellSize, ERAGroupFrame_DispellSize)
+    frame:SetFrameLevel(10)
+    frame:Show()
+    ---@cast frame BackdropTemplate
+    x.asBackdrop = frame
+    frame:SetBackdrop(
+        {
+            bgFile = "Interface\\Buttons\\WHITE8x8",
+            edgeFile = "Interface\\Buttons\\WHITE8x8",
+            edgeSize = 2
+        }
+    )
+    frame:SetBackdropColor(r, g, b, 1.0)
+    frame:SetBackdropBorderColor(0.0, 0.0, 0.0, 1.0)
+
+    return x
+end
+
+function ERAGroupDispellMark:hide()
+    if self.visible then
+        self.visible = false
+        self.asFrame:Hide()
+    end
+end
+
+---@param parentFrame BackdropTemplate
+---@param x number
+---@param y number
+---@param r number
+---@param g number
+---@param b number
+function ERAGroupDispellMark:show(parentFrame, x, y, r, g, b)
+    if self.x ~= x or self.y ~= y then
+        self.x = x
+        self.y = y
+        self.asFrame:SetPoint("TOPLEFT", parentFrame, "TOPLEFT", x, y)
+    end
+    if r ~= self.r or g ~= self.g or b ~= self.b then
+        self.r = r
+        self.g = g
+        self.b = b
+        self.asBackdrop:SetBackdropColor(r, g, b, 1.0)
+    end
+    self.active = true
+    if not self.visible then
+        self.visible = true
+        self.asFrame:Show()
+    end
+end
+
 ---@class (exact) ERAGroupDispell
 ---@field private __index unknown
 ---@field private hudCD ERACooldownBase
@@ -1602,3 +1663,98 @@ end
 
 --#endregion
 ---------------------
+
+------------------
+--#region PROC ---
+
+---@class (exact) ERAGroupProcIcon
+---@field private __index unknown
+---@field icon Texture
+---@field private x number
+---@field private iconID integer
+---@field private visible boolean
+---@field private draw fun(this:ERAGroupProcIcon, parentFrame:Frame, index:integer, maxIndex:integer)
+ERAGroupProcIcon = {}
+ERAGroupProcIcon.__index = ERAGroupProcIcon
+
+---@param iconID integer
+---@param parentFrame Frame|BackdropTemplate
+---@param index integer
+---@param maxIndex integer
+function ERAGroupProcIcon:create(iconID, parentFrame, index, maxIndex)
+    local x = {}
+    setmetatable(x, ERAGroupProcIcon)
+    ---@cast x ERAGroupProcIcon
+    ---@cast parentFrame Frame
+    x.visible = true
+    x.icon = parentFrame:CreateTexture(nil, "ARTWORK")
+    x.iconID = iconID
+    x.icon:SetTexture(iconID)
+    x.icon:SetSize(ERAGroupFrame_ProcSize, ERAGroupFrame_ProcSize)
+    x.x = 1004
+    x:draw(parentFrame, index, maxIndex)
+    return x
+end
+
+function ERAGroupProcIcon:reset()
+    self.icon:Hide()
+    self.visible = false
+end
+
+function ERAGroupProcIcon:hide()
+    if self.visible then
+        self.visible = false
+        self.icon:Hide()
+    end
+end
+
+---@param parentFrame Frame
+---@param index integer
+---@param maxIndex integer
+function ERAGroupProcIcon:draw(parentFrame, index, maxIndex)
+    local x = ERAGroupFrame_ProcSize * (index - maxIndex / 2 - 0.5)
+    if self.x ~= x then
+        self.x = x
+        self.icon:SetPoint("TOP", parentFrame, "TOP", x, ERAGroupFrame_CellPadding)
+    end
+end
+
+---@param iconID integer
+---@param parentFrame Frame|BackdropTemplate
+---@param index integer
+---@param maxIndex integer
+function ERAGroupProcIcon:show(iconID, parentFrame, index, maxIndex)
+    ---@cast parentFrame Frame
+    if self.iconID ~= iconID then
+        self.iconID = iconID
+        self.icon:SetTexture(iconID)
+    end
+    self:draw(parentFrame, index, maxIndex)
+    if not self.visible then
+        self.visible = true
+        self.icon:Show()
+    end
+end
+
+---@class (exact) ERAGroupProcDefinition
+---@field private __index unknown
+---@field iconID integer
+---@field talent ERALIBTalent|nil
+---@field IsActive fun(this:ERAGroupProcDefinition, unit:ERAGroupUnitFrame, t:number): boolean
+ERAGroupProcDefinition = {}
+ERAGroupProcDefinition.__index = ERAGroupProcDefinition
+
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+---@return ERAGroupProcDefinition
+function ERAGroupProcDefinition:create(iconID, talent)
+    local x = {}
+    setmetatable(x, ERAGroupProcDefinition)
+    ---@cast x ERAGroupProcDefinition
+    x.iconID = iconID
+    x.talent = talent
+    return x
+end
+
+--#endregion
+------------------

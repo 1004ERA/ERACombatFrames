@@ -15,6 +15,8 @@ ERA_Debug = function()
 
 end
 
+/run ECF_print_talents(nil,nil,'')
+
 /run print(C_Spell.GetSpellInfo("").spellID)
 -- buff player
 /run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
@@ -47,7 +49,7 @@ function ERACombatFrames_event(event, ...)
         if (classID == 2) then
             ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 5) then
-            --ERACombatFrames_PriestSetup(cFrame)
+            ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then

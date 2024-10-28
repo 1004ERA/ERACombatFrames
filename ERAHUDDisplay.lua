@@ -812,9 +812,10 @@ end
 ---@param checkUsable boolean
 ---@param hideIfAvailable boolean
 ---@param forceShowHide boolean|nil
+---@param forceDesaturated boolean|nil
 ---@param forceHighlight boolean|nil
 ---@param t number
-function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceShowHide, forceHighlight, t)
+function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdurDesat, checkUsable, hideIfAvailable, forceShowHide, forceDesaturated, forceHighlight, t)
     if data.isKnown then
         local available
         if data.hasCharges then
@@ -833,10 +834,18 @@ function ERAHUDIcon_updateStandard(icon, data, currentCharges, maxCharges, remdu
                 icon:SetSecondaryText(txt)
             end
             available = data.currentCharges >= data.maxCharges
-            icon:SetDesaturated(data.currentCharges == 0 or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
+            if forceDesaturated == nil then
+                icon:SetDesaturated(data.currentCharges == 0 or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
+            else
+                icon:SetDesaturated(forceDesaturated)
+            end
         else
             icon:SetSecondaryText(nil)
-            icon:SetDesaturated(data.remDuration >= remdurDesat or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
+            if forceDesaturated == nil then
+                icon:SetDesaturated(data.remDuration >= remdurDesat or (checkUsable and not C_Spell.IsSpellUsable(data.spellID)))
+            else
+                icon:SetDesaturated(forceDesaturated)
+            end
             available = data.remDuration <= 0
         end
         local visible
@@ -927,6 +936,7 @@ end
 ---@field onTimer ERAHUDRotationCooldownIconPriority
 ---@field availableChargePriority ERAHUDRotationCooldownIconChargedPriority
 ---@field HighlightOverride nil|fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
+---@field DesaturatedOverride nil|fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
 ---@field ShowHideOverride nil|fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean): boolean
 ---@field UpdatedOverride fun(this:ERAHUDRotationCooldownIcon, t:number, combat:boolean)
 ERAHUDRotationCooldownIcon = {}
@@ -983,11 +993,15 @@ function ERAHUDRotationCooldownIcon:update(t, combat)
     if self.HighlightOverride then
         forceHighlight = self:HighlightOverride(t, combat)
     end
+    local forceDesaturated = nil
+    if self.DesaturatedOverride then
+        forceDesaturated = self:DesaturatedOverride(t, combat)
+    end
     local forceShowHide = nil
     if self.ShowHideOverride then
         forceShowHide = self:ShowHideOverride(t, combat)
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceShowHide, forceHighlight, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 1004, self.checkUsable, not combat, forceShowHide, forceDesaturated, forceHighlight, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     if self.data.isKnown then
@@ -1620,7 +1634,7 @@ function ERAHUDUtilityCooldownInGroup:update(t, combat)
     if self.HighlightOverride then
         forceHighlight = self:HighlightOverride(t, combat)
     end
-    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, nil, forceHighlight, t)
+    ERAHUDIcon_updateStandard(self.icon, self.data, self.currentCharges, self.maxCharges, 30, false, not combat, nil, nil, forceHighlight, t)
     self.currentCharges = self.data.currentCharges
     self.maxCharges = self.data.maxCharges
     self:UpdatedOverride(t, combat)

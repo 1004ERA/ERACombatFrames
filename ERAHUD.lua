@@ -39,6 +39,16 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field healAbsorb number
 ---@field bar ERAHUDStatusBar
 
+---@class (exact) ERAHUDChannelInfo
+---@field spellID integer
+---@field tickTime number
+---@field talent ERALIBTalent|nil
+---@field tickTimeFunc nil|fun(t:number): number
+
+---@class (exact) ERAHUDActiveChannelInfo
+---@field tickTime number
+---@field tickTimeFunc nil|fun(t:number): number
+
 ---@class (exact) ERAHUD
 ---@field private __index unknown
 ---@field showUtility boolean
@@ -131,7 +141,8 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field private timerFrame Frame
 ---@field private timerFrameOverlay Frame
 ---@field private timerMaxY number
----@field private channelInfo table<integer, number>
+---@field private channelInfo ERAHUDChannelInfo[]
+---@field private activeChannelInfo table<integer, ERAHUDActiveChannelInfo>
 ---@field private markers ERAHUDTimerMarker[]
 ---@field private activeMarkers ERAHUDTimerMarker[]
 ---@field private bars ERAHUDBar[]
@@ -320,6 +331,7 @@ function ERAHUD:Create(cFrame, baseGCD, requireCLEU, isHealer, showPet, spec)
     hud.wasCasting = false
 
     hud.channelInfo = {}
+    hud.activeChannelInfo = {}
     hud.channelTicks = {}
     hud.channelTicksCount = 0
 
@@ -760,6 +772,13 @@ function ERAHUD:SpecInactive(wasActive)
 end
 
 function ERAHUD:CheckTalents()
+    table.wipe(self.activeChannelInfo)
+    for _, ci in ipairs(self.channelInfo) do
+        if (not ci.talent) or ci.talent:PlayerHasTalent() then
+            self.activeChannelInfo[ci.spellID] = { tickTime = ci.tickTime, tickTimeFunc = ci.tickTimeFunc }
+        end
+    end
+
     table.wipe(self.activeDataItems)
     for _, t in ipairs(self.dataItems) do
         if (t:checkTalent()) then
@@ -1185,9 +1204,16 @@ function ERAHUD:UpdateCombat(t)
     local nestedY = timersY
     for _, n in ipairs(self.activeNested) do
         local nh = n:updateDisplay_returnHeight(t, nestedY, self.timerFrame, self.timerFrameOverlay)
-        nestedY = nestedY + nh
-        if n.includeInTimer then
-            timersY = timersY + nh
+        if self.topdown then
+            nestedY = nestedY - nh
+            if n.includeInTimer then
+                timersY = timersY - nh
+            end
+        else
+            nestedY = nestedY + nh
+            if n.includeInTimer then
+                timersY = timersY + nh
+            end
         end
     end
 
@@ -1263,9 +1289,17 @@ function ERAHUD:UpdateCombat(t)
 
     local channelTickVisible = false
     if self.channelingSpellID then
-        local tickInfo = self.channelInfo[self.channelingSpellID]
-        if (tickInfo and tickInfo > 0) then
-            tickInfo = tickInfo * self.hasteMultiplier
+        local tickInfo = self.activeChannelInfo[self.channelingSpellID]
+        ---@cast tickInfo ERAHUDActiveChannelInfo
+        if tickInfo then
+            ---@type number
+            local tickTime
+            if tickInfo.tickTimeFunc then
+                tickTime = tickInfo.tickTimeFunc(t)
+            else
+                tickTime = tickInfo.tickTime
+            end
+            tickTime = tickTime * self.hasteMultiplier
             local t_channelTick = t + self.remCast
             local i = 0
             while (t_channelTick > t) do
@@ -1284,7 +1318,7 @@ function ERAHUD:UpdateCombat(t)
                     tickLine:SetStartPoint("RIGHT", self.timerFrameOverlay, x, -ERAHUD_TimerIconSize)
                 end
                 tickLine:SetEndPoint("RIGHT", self.timerFrameOverlay, x, timersY)
-                t_channelTick = t_channelTick - tickInfo
+                t_channelTick = t_channelTick - tickTime
             end
             for j = self.channelTicksCount + 1, i do
                 self.channelTicks[j]:Show()
@@ -1927,8 +1961,10 @@ end
 
 ---@param spellID integer
 ---@param tickTime number
-function ERAHUD:AddChannelInfo(spellID, tickTime)
-    self.channelInfo[spellID] = tickTime
+---@param talent ERALIBTalent|nil
+---@param tickTimeFunc nil|fun(t:number): number
+function ERAHUD:AddChannelInfo(spellID, tickTime, talent, tickTimeFunc)
+    table.insert(self.channelInfo, { spellID = spellID, tickTime = tickTime, talent = talent, tickTimeFunc = tickTimeFunc })
 end
 
 ---@param r ERAHUDRotationIcon
