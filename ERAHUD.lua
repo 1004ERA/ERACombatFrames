@@ -44,10 +44,12 @@ ERAHUD_IconDeltaDiagonal = 0.86 -- sqrt(0.75)
 ---@field tickTime number
 ---@field talent ERALIBTalent|nil
 ---@field tickTimeFunc nil|fun(t:number): number
+---@field affectedByHaste boolean
 
 ---@class (exact) ERAHUDActiveChannelInfo
 ---@field tickTime number
 ---@field tickTimeFunc nil|fun(t:number): number
+---@field affectedByHaste boolean
 
 ---@class (exact) ERAHUD
 ---@field private __index unknown
@@ -775,7 +777,7 @@ function ERAHUD:CheckTalents()
     table.wipe(self.activeChannelInfo)
     for _, ci in ipairs(self.channelInfo) do
         if (not ci.talent) or ci.talent:PlayerHasTalent() then
-            self.activeChannelInfo[ci.spellID] = { tickTime = ci.tickTime, tickTimeFunc = ci.tickTimeFunc }
+            self.activeChannelInfo[ci.spellID] = { tickTime = ci.tickTime, tickTimeFunc = ci.tickTimeFunc, affectedByHaste = ci.affectedByHaste }
         end
     end
 
@@ -1299,7 +1301,9 @@ function ERAHUD:UpdateCombat(t)
             else
                 tickTime = tickInfo.tickTime
             end
-            tickTime = tickTime * self.hasteMultiplier
+            if tickInfo.affectedByHaste then
+                tickTime = tickTime * self.hasteMultiplier
+            end
             local t_channelTick = t + self.remCast
             local i = 0
             while (t_channelTick > t) do
@@ -1963,8 +1967,12 @@ end
 ---@param tickTime number
 ---@param talent ERALIBTalent|nil
 ---@param tickTimeFunc nil|fun(t:number): number
-function ERAHUD:AddChannelInfo(spellID, tickTime, talent, tickTimeFunc)
-    table.insert(self.channelInfo, { spellID = spellID, tickTime = tickTime, talent = talent, tickTimeFunc = tickTimeFunc })
+---@param affectedByHaste nil|boolean
+function ERAHUD:AddChannelInfo(spellID, tickTime, talent, tickTimeFunc, affectedByHaste)
+    if affectedByHaste == nil then
+        affectedByHaste = true
+    end
+    table.insert(self.channelInfo, { spellID = spellID, tickTime = tickTime, talent = talent, tickTimeFunc = tickTimeFunc, affectedByHaste = affectedByHaste })
 end
 
 ---@param r ERAHUDRotationIcon

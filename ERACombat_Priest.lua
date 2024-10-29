@@ -103,7 +103,7 @@ function ERACombatFrames_PriestCommonSetup(cFrame, talents, spec)
     end
 
     function hud:PreUpdateDisplayOverride(t, combat)
-        if self.priest_lifeCooldown.remDuration <= self.remGCD and self.health.currentHealth / self.health.maxHealth < 0.35 then
+        if talents.life:PlayerHasTalent() and self.priest_lifeCooldown.remDuration <= self.remGCD and self.health.currentHealth / self.health.maxHealth < 0.35 then
             self.health.bar:SetForecast(10.35 * GetSpellBonusHealing())
         else
             self.health.bar:SetForecast(0)
@@ -147,7 +147,7 @@ function ERACombatFrames_PriestCommonSetup(cFrame, talents, spec)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(121536, talents.feather), hud.movementGroup)
     hud:AddUtilityCooldown(hud:AddTrackedCooldown(73325, talents.leap), hud.movementGroup)
 
-    hud:AddMissingUtility(hud:AddBuffOnAllPartyMembers(nil, hud:AddTrackedBuff(21562)), 5, 5, 135987)
+    hud:AddMissingUtility(hud:AddBuffOnAllPartyMembers(nil, hud:AddTrackedBuffAnyCaster(21562)), 5, 5, 135987)
 
     return hud
 end
@@ -168,6 +168,7 @@ end
 function ERACombatFrames_PriestHealerSetup(hud, group, talents, dispellCooldown)
     local mana = ERAHUDPowerBarModule:Create(hud, Enum.PowerType.Mana, 13, 0.0, 0.0, 1.0, nil)
     mana.hideFullOutOfCombat = true
+    mana.placeAtBottomIfHealer = true
 
     if group then
         local lifeProc = group:AddProc(4667420, talents.life)

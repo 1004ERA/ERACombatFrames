@@ -65,9 +65,9 @@ function ERACombatFrames_PriestShadowSetup(cFrame, talents)
 
     hud:AddKick(hud:AddTrackedCooldown(15487, talent_silence))
 
-    hud:AddChannelInfo(15407, 0.9)
-    hud:AddChannelInfo(391403, 0.375)
-    hud:AddChannelInfo(263165, 0.6)
+    hud:AddChannelInfo(15407, 0.75)                              -- mind flay 4.5 seconds, delayed first hit
+    hud:AddChannelInfo(391403, 0.375, talent_surge)              -- mind flay insanity 1.5 seconds, delayed first hit
+    hud:AddChannelInfo(263165, 0.75, talent_torrent, nil, false) -- torrent 3 seconds, instant first hit, unaffected by haste
 
     local enemies = ERACombatEnemies:Create(cFrame, 3)
 
