@@ -37,7 +37,10 @@ end
 ---@field ClearPoints fun(self:LuaCurveObject)
 
 ---@class LuaDurationObject
----@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject)
+---@field Reset fun(self:LuaDurationObject)
+---@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject|nil): number
+---@field GetStartTime fun(self:LuaDurationObject): number
+---@field GetTotalDuration fun(self:LuaDurationObject): number
 
 ERA_TALENTS_DO_PRINT_N = 0
 

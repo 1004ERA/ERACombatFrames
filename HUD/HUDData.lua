@@ -7,7 +7,7 @@
 ---@field talent ERALIBTalent|nil
 ---@field talentActive boolean
 ---@field hud HUDModule
----@field Update fun(self:HUDDataItem, t:number)
+---@field Update fun(self:HUDDataItem, t:number, combat:boolean)
 ---@field protected constructItem fun(self:HUDDataItem, hud:HUDModule, talent:ERALIBTalent|nil)
 ---@field protected talentIsActive fun(self:HUDDataItem)
 HUDDataItem = {}
@@ -103,11 +103,16 @@ function HUDPower:constructPower(hud, powerType, talent)
     self:constructItem(hud, talent)
 end
 
-function HUDPower:Update()
+---comment
+---@param t number
+---@param combat boolean
+function HUDPower:Update(t, combat)
     self.current = UnitPower("player", self.powerType)
     self.max = UnitPowerMax("player", self.powerType)
     self.percent100 = UnitPowerPercent("player", self.powerType, false, CurveConstants.ScaleTo100)
-    self.idleAlphaOOC = self:updateIdleAlpha()
+    if (not combat) then
+        self.idleAlphaOOC = self:updateIdleAlpha()
+    end
 end
 ---@class (exact) HUDPowerLowIdle : HUDPower
 ---@field private __index HUDPowerLowIdle
@@ -156,7 +161,9 @@ end
 ---@class (exact) HUDPowerTargetIdle : HUDPower
 ---@field private __index HUDPowerTargetIdle
 ---@field private idleCurve LuaCurveObject
----@field private targetPercent fun(): number
+---@field private idleValueGetter fun(): number
+---@field private idleValueResult number
+---@field private idlePercent number
 HUDPowerTargetIdle = {}
 HUDPowerTargetIdle.__index = HUDPowerTargetIdle
 setmetatable(HUDPowerTargetIdle, { __index = HUDPower })
@@ -164,29 +171,33 @@ setmetatable(HUDPowerTargetIdle, { __index = HUDPower })
 ---@param hud HUDModule
 ---@param powerType Enum.PowerType
 ---@param talent ERALIBTalent|nil
----@param targetPercent fun(): number
+---@param idleValue fun(): number
 ---@return HUDPowerTargetIdle
-function HUDPowerTargetIdle:Create(hud, powerType, talent, targetPercent)
+function HUDPowerTargetIdle:Create(hud, powerType, talent, idleValue)
     local x = {}
     setmetatable(x, HUDPowerTargetIdle)
     ---@cast x HUDPowerTargetIdle
     x:constructPower(hud, powerType, talent)
     x.idleCurve = C_CurveUtil:CreateCurve()
     x.idleCurve:SetType(Enum.LuaCurveType.Step)
-    x.targetPercent = targetPercent
+    x.idleValueGetter = idleValue
     return x
 end
 function HUDPowerTargetIdle:talentIsActive()
-    local target = self.targetPercent()
-    self.idleCurve:ClearPoints()
-    self.idleCurve:AddPoint(target - 1, 1)
-    self.idleCurve:AddPoint(target - 0.011, 1)
-    self.idleCurve:AddPoint(target - 0.01, 0)
-    self.idleCurve:AddPoint(target + 0.01, 0)
-    self.idleCurve:AddPoint(target + 0.011, 1)
-    self.idleCurve:AddPoint(target + 1, 1)
+    self.idleValueResult = self.idleValueGetter()
 end
 function HUDPowerTargetIdle:updateIdleAlpha()
+    local pct = self.idleValueResult / self.max
+    if (pct ~= self.idlePercent) then
+        self.idlePercent = pct
+        self.idleCurve:ClearPoints()
+        self.idleCurve:AddPoint(pct - 1, 1)
+        self.idleCurve:AddPoint(pct - 0.011, 1)
+        self.idleCurve:AddPoint(pct - 0.01, 0)
+        self.idleCurve:AddPoint(pct + 0.01, 0)
+        self.idleCurve:AddPoint(pct + 0.011, 1)
+        self.idleCurve:AddPoint(pct + 1, 1)
+    end
     ---@diagnostic disable-next-line: param-type-mismatch
     return UnitPowerPercent("player", self.powerType, false, self.idleCurve)
 end
@@ -198,8 +209,8 @@ end
 ---@class (exact) HUDTimer : HUDDataItem
 ---@field private __index HUDTimer
 ---@field protected constructTimer fun(self:HUDTimer, hud:HUDModule, talent:ERALIBTalent|nil)
----@field protected updateDuration fun(self:HUDTimer, t:number): LuaDurationObject
----@field duration LuaDurationObject
+---@field protected updateTimerDuration fun(self:HUDTimer, t:number): LuaDurationObject
+---@field timerDuration LuaDurationObject
 HUDTimer = {}
 HUDTimer.__index = HUDTimer
 setmetatable(HUDTimer, { __index = HUDDataItem })
@@ -209,7 +220,7 @@ function HUDTimer:constructTimer(hud, talent)
 end
 
 function HUDTimer:Update(t)
-    self.duration = self:updateDuration(t)
+    self.timerDuration = self:updateTimerDuration(t)
 end
 
 ----------------------------------------------------------------
@@ -220,6 +231,9 @@ end
 ---@field private __index HUDCooldown
 ---@field spellID number
 ---@field cdData SpellCooldownInfo
+---@field swipeDuration LuaDurationObject
+---@field maxCharges number
+---@field currentCharges number
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
 setmetatable(HUDCooldown, { __index = HUDTimer })
@@ -240,7 +254,25 @@ function HUDCooldown:Create(spellID, hud, talent)
     return x
 end
 
-function HUDCooldown:updateDuration(t)
+function HUDCooldown:updateTimerDuration(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
-    return C_Spell.GetSpellCooldownDuration(self.spellID)
+    local charges = C_Spell.GetSpellCharges(self.spellID)
+    if (charges) then
+        self.maxCharges = charges.maxCharges
+        self.currentCharges = charges.currentCharges
+        self.swipeDuration = C_Spell.GetSpellChargeDuration(self.spellID)
+        if (self.cdData.isOnGCD == true) then
+            return self.hud.duration0
+        else
+            return C_Spell.GetSpellCooldownDuration(self.spellID)
+        end
+    else
+        self.maxCharges = 1
+        if (self.cdData.isOnGCD == true) then
+            self.swipeDuration = self.hud.duration0
+        else
+            self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+        end
+        return self.swipeDuration
+    end
 end

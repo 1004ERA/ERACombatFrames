@@ -212,6 +212,10 @@ function ERAPieIcon:create(parentFrame, point, relativePoint, size, iconID)
     x.highlightAnim1 = frame.BHIGH.HighlightGroup1
     x.highlightAnim2 = frame.BHIGH.HighlightGroup2
     ---@cast frame Frame
+    -- highlight
+    --x.highlight:SetAtlas("PowerSwirlAnimation-SpinningGlowys")
+    --x.highlight:SetAtlas("UF-Essence-SpinnerOut")
+    x.highlight:SetAtlas("Spinner_Ring")
     x.highlighted = true
     x:SetHighlight(false)
 
@@ -252,4 +256,12 @@ function ERAPieIcon:SetHighlight(h)
             self.highlight:Hide()
         end
     end
+end
+
+---comment
+---@param r number
+---@param g number
+---@param b number
+function ERAPieIcon:SetBorderColor(r, g, b)
+    self.border:SetVertexColor(r, g, b, 1.0)
 end

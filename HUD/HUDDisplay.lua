@@ -5,25 +5,41 @@
 ---@class (exact) HUDEssentialsPlacement
 ---@field private __index HUDEssentialsPlacement
 ---@field icon HUDIcon
+---@field hud HUDModule
+---@field private bars HUDTimerBar[]
 HUDEssentialsPlacement = {}
 HUDEssentialsPlacement.__index = HUDEssentialsPlacement
 
 ---comment
 ---@param icon HUDIcon
+---@param hud HUDModule
 ---@return HUDEssentialsPlacement
-function HUDEssentialsPlacement:Create(icon)
+function HUDEssentialsPlacement:Create(icon, hud)
     local x = {}
     setmetatable(x, HUDEssentialsPlacement)
     ---@cast x HUDEssentialsPlacement
     x.icon = icon
+    x.hud = hud
+    x.bars = {}
     return x
 end
 
 ---comment
----@param x number
----@param frame Frame
-function HUDEssentialsPlacement:setPlacement(x, frame)
-    self.icon:setPosition(x, 0)
+---@param xMid number
+---@param iconSize number
+function HUDEssentialsPlacement:setPlacement(xMid, iconSize)
+    self.icon:setPosition(xMid, 0)
+    for _, tb in ipairs(self.bars) do
+        if (tb.talentActive) then
+            tb:updateLayout(xMid, iconSize)
+        end
+    end
+end
+
+---comment
+---@param bar HUDTimerBar
+function HUDEssentialsPlacement:addBar(bar)
+    table.insert(self.bars, bar)
 end
 
 ----------------------------------------------------------------
@@ -345,6 +361,14 @@ function HUDPieIcon:constructPie(hud, frame, point, relativePoint, size, iconID,
     self:constructIcon(hud, self.icon, talent)
 end
 
+---comment
+---@param r number
+---@param g number
+---@param b number
+function HUDPieIcon:SetBorderColor(r, g, b)
+    self.icon:SetBorderColor(r, g, b)
+end
+
 ----------------------------------------------------------------
 --- COOLDOWN ICON ----------------------------------------------
 ----------------------------------------------------------------
@@ -393,7 +417,83 @@ function HUDCooldownIcon:Update(t, combat)
     if (combat) then
         self.icon:SetVisibilityAlpha(1.0, false)
     else
-        self.icon:SetVisibilityAlpha(self.cd.duration:EvaluateRemainingDuration(self.hud.curveHideNoDuration), true)
+        self.icon:SetVisibilityAlpha(self.cd.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideNoDuration), true)
     end
-    self.icon:SetValue(self.cd.cdData.startTime, self.cd.cdData.duration)
+    self.icon:SetValue(self.cd.swipeDuration:GetStartTime(), self.cd.swipeDuration:GetTotalDuration())
+    self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.cd.spellID))
+end
+
+----------------------------------------------------------------
+--- TIMER BAR --------------------------------------------------
+----------------------------------------------------------------
+
+---@class (exact) HUDTimerBar : HUDDisplay
+---@field private __index HUDTimerBar
+---@field private position number
+---@field private timer HUDTimer
+---@field private bar StatusBar
+HUDTimerBar = {}
+HUDTimerBar.__index = HUDTimerBar
+setmetatable(HUDTimerBar, { __index = HUDDisplay })
+
+---comment
+---@param placement HUDEssentialsPlacement
+---@param position number
+---@param timer HUDTimer
+---@param talent ERALIBTalent|nil
+---@param r number
+---@param g number
+---@param b number
+---@return HUDTimerBar
+function HUDTimerBar:Create(placement, position, timer, talent, r, g, b)
+    local x = {}
+    setmetatable(x, HUDTimerBar)
+    ---@cast x HUDTimerBar
+    x:constructDisplay(placement.hud, talent)
+    x.timer = timer
+    x.position = position
+    placement.hud:addTimerBar(x)
+    placement:addBar(x)
+
+    x.bar = CreateFrame("StatusBar", nil, placement.hud.timerFrame)
+    x.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar-Glow")
+    x.bar:SetRotatesTexture(true)
+    x.bar:SetStatusBarColor(r, g, b, 1.0)
+    x.bar:SetHeight(ERA_HUDModule_TimerHeight)
+    x.bar:SetFrameLevel(2)
+    x.bar:SetOrientation("VERTICAL")
+
+    return x
+end
+
+function HUDTimerBar:Activate()
+    self.bar:Show()
+end
+
+function HUDTimerBar:Deactivate()
+    self.bar:Hide()
+end
+
+---comment
+---@param xMid number
+---@param iconWidth number
+function HUDTimerBar:updateLayout(xMid, iconWidth)
+    self.bar:SetWidth(self.hud.options.essentialsBarSize)
+    self.bar:SetPoint("BOTTOM", self.hud.timerFrame, "BOTTOM", xMid + (self.position - 0.5) * iconWidth, 0)
+end
+
+---comment
+---@param maxTimer number
+function HUDTimerBar:updateMaxDuration(maxTimer)
+    self.bar:SetMinMaxValues(0, maxTimer)
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDTimerBar:Update(t, combat)
+    if (combat) then
+        ---@diagnostic disable-next-line: missing-parameter
+        self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+    end
 end

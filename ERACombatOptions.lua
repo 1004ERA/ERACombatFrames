@@ -14,6 +14,8 @@ end
 ---@field resourcePadding number
 ---@field healthHeight number
 ---@field powerHeight number
+---@field gcdHeight number
+---@field gcdCount number
 ERACombatSpecOptions = {}
 ERACombatSpecOptions.__index = ERACombatSpecOptions
 
@@ -28,10 +30,12 @@ function ERACombatSpecOptions:Create()
     x.essentialsY = -128
     x.essentialsIconCount = 7
     x.essentialsIconSize = 44
-    x.essentialsBarSize = 13 -- yes-yes!
+    x.essentialsBarSize = 8
     x.resourcePadding = 2
     x.healthHeight = 31
     x.powerHeight = 31
+    x.gcdHeight = 64
+    x.gcdCount = 4
 
     return x
 end
