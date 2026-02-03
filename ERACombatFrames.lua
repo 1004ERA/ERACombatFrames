@@ -31,6 +31,14 @@ end
 
 ]]
 
+---@class LuaCurveObject
+---@field SetType fun(self:LuaCurveObject, type:Enum.LuaCurveType)
+---@field AddPoint fun(self:LuaCurveObject, pointX:number, pointY:number)
+---@field ClearPoints fun(self:LuaCurveObject)
+
+---@class LuaDurationObject
+---@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject)
+
 ERA_TALENTS_DO_PRINT_N = 0
 
 function ERACombatFrames_loaded()
@@ -40,32 +48,32 @@ end
 function ERACombatFrames_event(event, ...)
     local addonName = ...
     if (addonName == "ERACombatFrames") then
-        --ERACombatFrames_PlayerIsNotMaxLevel = UnitLevel("player") < 70
+        --ERACombatFrames_PlayerIsNotMaxLevel = UnitLevel("player") < 80
         local _, _, classID = UnitClass("player")
         ERACombatFrames_classID = classID
         ERACombatOptions_setup(classID)
         --ERACombatOptions_initialize()
-        local cFrame = ERACombatFrame:Create()
+        local cFrame = ERACombatMainFrame:Create()
         if (classID == 2) then
-            ERACombatFrames_PaladinSetup(cFrame)
+            --ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 5) then
-            ERACombatFrames_PriestSetup(cFrame)
+            --ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
-            ERACombatFrames_DeathKnightSetup(cFrame)
+            --ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then
-            ERACombatFrames_MageSetup(cFrame)
+            --ERACombatFrames_MageSetup(cFrame)
         elseif (classID == 9) then
-            ERACombatFrames_WarlockSetup(cFrame)
+            --ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
-            ERACombatFrames_MonkSetup(cFrame)
+            --ERACombatFrames_MonkSetup(cFrame)
         elseif (classID == 11) then
-            ERACombatFrames_DruidSetup(cFrame)
+            --ERACombatFrames_DruidSetup(cFrame)
         elseif (classID == 12) then
-            --ERACombatFrames_DemonHunterSetup(cFrame)
+            ERACombatFrames_DemonHunterSetup(cFrame)
         elseif (classID == 13) then
-            ERACombatFrames_EvokerSetup(cFrame)
+            --ERACombatFrames_EvokerSetup(cFrame)
         end
         cFrame:Pack()
-        print("Welcome to ERACombatFrames. Enter the /ecf command for options.")
+        print("Welcome to ERACombatFrames. Type the \"/ecf\" command for options.")
     end
 end

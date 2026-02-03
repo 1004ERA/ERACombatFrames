@@ -1,4 +1,4 @@
-if ERACombatFrame then
+if ERACombatMainFrame then
     return
 end
 
@@ -6,25 +6,28 @@ end
 -- rien
 
 --------------------------------------------------------------------------------------------------------------------------------
--- COMBAT FRAME ----------------------------------------------------------------------------------------------------------------
+-- MAIN COMBAT FRAME -----------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
----@class ERACombatFrame
+---@class ERACombatMainFrame
 ---@field frame unknown
 ---@field Pack function
 ---@field playerGUID string
----@field inCombat boolean
+---@field private inCombat boolean
+---@field private inVehicle boolean
 ---@field hideAlertsForSpec (ERACombatSpecOptions|nil)[]
 ---@field private talents_changed number
-
-ERACombatFrame = {}
-ERACombatFrame.__index = ERACombatFrame
+---@field private modules ERACombatModule[]
+---@field private activeModules ERACombatModule[]
+---@field private updateableModules ERACombatModule[]
+ERACombatMainFrame = {}
+ERACombatMainFrame.__index = ERACombatMainFrame
 
 ---comment
----@return ERACombatFrame
-function ERACombatFrame:Create()
+---@return ERACombatMainFrame
+function ERACombatMainFrame:Create()
     local c = {}
-    setmetatable(c, ERACombatFrame)
+    setmetatable(c, ERACombatMainFrame)
     c.playerGUID = UnitGUID("player")
     c.inCombat = false
     c.inVehicle = false
@@ -34,7 +37,6 @@ function ERACombatFrame:Create()
     c.modules = {}
     c.activeModules = {}
     c.updateableModules = {}
-    c.cleuModules = {}
 
     c.talents_changed = 0
 
@@ -119,47 +121,59 @@ function ERACombatFrame:Create()
     c.frame:SetScript(
         "OnEvent",
         function(self, event, ...)
-            if (event == "COMBAT_LOG_EVENT_UNFILTERED") then
-                local t = GetTime()
-                for i, m in ipairs(c.cleuModules) do
-                    m:CLEU(t)
-                end
-            else
-                events[event](self, ...)
-            end
+            events[event](self, ...)
         end
     )
     for k, v in pairs(events) do
         c.frame:RegisterEvent(k)
     end
 
+    c.frame:SetScript(
+        "OnUpdate",
+        function(self, elapsed)
+            if (#c.updateableModules > 0) then
+                local t = GetTime()
+                c:checkReset(t)
+                if c.talents_changed > 0 then
+                    c:checkModuleTalents()
+                end
+                if (c.inCombat) then
+                    for _, m in ipairs(c.updateableModules) do
+                        m:updateCombat(t, elapsed)
+                    end
+                else
+                    for _, m in ipairs(c.updateableModules) do
+                        m:updateIdle(t, elapsed)
+                    end
+                end
+                c:UpdateCombat(t, elapsed)
+            end
+        end
+    )
+
     return c
 end
 
-function ERACombatFrame:newModule(m)
-    table.insert(self.modules, m)
-end
-
-function ERACombatFrame:Pack()
+function ERACombatMainFrame:Pack()
     for _, m in ipairs(self.modules) do
         m:Pack()
     end
     self:resetToIdle(true)
 end
 
-function ERACombatFrame:updateTalents()
-    ERACombatFrame_updateComputeTalents()
+function ERACombatMainFrame:updateTalents()
+    ERACombatMainFrame_updateComputeTalents()
     self:checkModuleTalents()
     self.talents_changed = GetTime()
 end
-function ERACombatFrame:checkModuleTalents()
+function ERACombatMainFrame:checkModuleTalents()
     self.talents_changed = 0
     for _, m in ipairs(self.activeModules) do
         m:CheckTalents()
     end
 end
 
-function ERACombatFrame_updateComputeTalents()
+function ERACombatMainFrame_updateComputeTalents()
     local selectedTalentsById = {}
     local configId = C_ClassTalents.GetActiveConfigID()
     if configId then
@@ -246,11 +260,11 @@ function ECF_print_talents(startIndexInclusive, endIndexInclusive, firstLetter)
 end
 
 
-function ERACombatFrame:resetToIdle(fullReset)
-    ERACombatFrame_updateComputeTalents()
+function ERACombatMainFrame:resetToIdle(fullReset)
+    ERACombatMainFrame_updateComputeTalents()
     self.activeModules = {}
-    self.cleuModules = {}
     local specID = GetSpecialization()
+    --[[
     if (self.hideAlertsForSpec) then
         local hideA = false
         for _, specOptions in ipairs(self.hideAlertsForSpec) do
@@ -266,13 +280,11 @@ function ERACombatFrame:resetToIdle(fullReset)
             SetCVar("displaySpellActivationOverlays", 1)
         end
     end
+    ]]
     for _, m in ipairs(self.modules) do
         m:updateSpec(specID, fullReset)
         if (m.specActive) then
             table.insert(self.activeModules, m)
-            if (m.requiresCLEU) then
-                table.insert(self.cleuModules, m)
-            end
         end
     end
     for _, m in ipairs(self.activeModules) do
@@ -282,7 +294,7 @@ function ERACombatFrame:resetToIdle(fullReset)
     self.lastReset = GetTime()
 end
 
-function ERACombatFrame:checkReset(t)
+function ERACombatMainFrame:checkReset(t)
     if (self.lastReset and t - self.lastReset >= 4) then
         self.lastReset = nil
         for _, m in ipairs(self.activeModules) do
@@ -291,34 +303,12 @@ function ERACombatFrame:checkReset(t)
     end
 end
 
-function ERACombatFrame:enterCombat(fromIdle)
+function ERACombatMainFrame:enterCombat(fromIdle)
     self.updateableModules = {}
     for _, m in ipairs(self.activeModules) do
         if (m.combatUpdate >= 0) then
             table.insert(self.updateableModules, m)
         end
-    end
-    if (#self.updateableModules > 0) then
-        local thisself = self
-        self.frame:SetScript(
-            "OnUpdate",
-            function(self, elapsed)
-                local t = GetTime()
-                thisself:checkReset(t)
-                if thisself.talents_changed > 0 then
-                    thisself:checkModuleTalents()
-                end
-                for _, m in ipairs(thisself.updateableModules) do
-                    m:updateCombat(t, elapsed)
-                end
-                thisself:UpdateCombat(t, elapsed)
-            end
-        )
-    else
-        self.frame:SetScript("OnUpdate", nil)
-    end
-    if (#self.cleuModules > 0) then
-        self.frame:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     end
     for _, m in ipairs(self.activeModules) do
         m:EnterCombat(fromIdle)
@@ -326,81 +316,58 @@ function ERACombatFrame:enterCombat(fromIdle)
     self:EnterCombat(fromIdle)
 end
 
-function ERACombatFrame:EnterCombat(fromIdle)
+function ERACombatMainFrame:EnterCombat(fromIdle)
 end
 
-function ERACombatFrame:UpdateCombat(t, elapsed)
+function ERACombatMainFrame:UpdateCombat(t, elapsed)
 end
 
-function ERACombatFrame:exitCombat(toIdle)
-    self.frame:SetScript("OnUpdate", nil)
-    if (#self.cleuModules > 0) then
-        self.frame:UnregisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
-    end
+function ERACombatMainFrame:exitCombat(toIdle)
     for _, m in ipairs(self.activeModules) do
         m:ExitCombat(toIdle)
     end
 end
 
-function ERACombatFrame:registerUpdateIdle()
+function ERACombatMainFrame:registerUpdateIdle()
     self.updateableModules = {}
     for _, m in ipairs(self.activeModules) do
         if (m.idleUpdate >= 0) then
             table.insert(self.updateableModules, m)
         end
     end
-    if (#self.updateableModules > 0) then
-        local thisself = self
-        self.frame:SetScript(
-            "OnUpdate",
-            function(self, elapsed)
-                local t = GetTime()
-                thisself:checkReset(t)
-                if thisself.talents_changed > 0 and t - thisself.talents_changed > 2 then
-                    thisself:checkModuleTalents()
-                end
-                for _, m in ipairs(thisself.updateableModules) do
-                    m:updateIdle(t, elapsed)
-                end
-            end
-        )
-    else
-        self.frame:SetScript("OnUpdate", nil)
-    end
 end
 
-function ERACombatFrame:enterIdle(fromCombat)
+function ERACombatMainFrame:enterIdle(fromCombat)
     self:registerUpdateIdle()
     for _, m in ipairs(self.activeModules) do
         m:EnterIdle(fromCombat)
     end
 end
 
-function ERACombatFrame:exitIdle(toCombat)
-    self.frame:SetScript("OnUpdate", nil)
+function ERACombatMainFrame:exitIdle(toCombat)
     for _, m in ipairs(self.activeModules) do
         m:ExitIdle(toCombat)
     end
 end
 
-function ERACombatFrame:enterVehicle(fromCombat)
+function ERACombatMainFrame:enterVehicle(fromCombat)
     for _, m in ipairs(self.activeModules) do
         m:EnterVehicle(fromCombat)
     end
     self:EnterVehicle(fromCombat)
 end
 
-function ERACombatFrame:EnterVehicle(fromCombat)
+function ERACombatMainFrame:EnterVehicle(fromCombat)
 end
 
-function ERACombatFrame:exitVehicle(toCombat)
+function ERACombatMainFrame:exitVehicle(toCombat)
     for _, m in ipairs(self.activeModules) do
         m:ExitVehicle(toCombat)
     end
     self:ExitVehicle(toCombat)
 end
 
-function ERACombatFrame:ExitVehicle(toCombat)
+function ERACombatMainFrame:ExitVehicle(toCombat)
 end
 
 --------------------------------------------------------------------------------------------------------------------------------
@@ -408,21 +375,24 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERACombatModule
----@field frame unknown
----@field cFrame ERACombatFrame
----@field CLEU fun(this:ERACombatModule, t:number)
----@field protected construct fun(this:ERACombatModule, cFrame:ERACombatFrame, idleUpdate:number, combatUpdate:number, requiresCLEU:boolean, ...:number)
-
+---@field cFrame ERACombatMainFrame
+---@field protected construct fun(this:ERACombatModule, cFrame:ERACombatMainFrame, idleUpdate:number, combatUpdate:number, ...:number)
+---@field protected UpdateIdle fun(this:ERACombatModule, t:number, elapsed:number): nil
+---@field protected UpdateCombat fun(this:ERACombatModule, t:number, elapsed:number): nil
 ERACombatModule = {}
 ERACombatModule.__index = ERACombatModule
 
-function ERACombatModule:construct(cFrame, idleUpdate, combatUpdate, requiresCLEU, ...)
+---comment
+---@param cFrame ERACombatMainFrame
+---@param idleUpdate number
+---@param combatUpdate number
+---@param ... number
+function ERACombatModule:constructModule(cFrame, idleUpdate, combatUpdate, ...)
     self.cFrame = cFrame
     self.idleUpdate = idleUpdate
     self.combatUpdate = combatUpdate
     self.lastIdleUpdate = 0
     self.lastCombatUpdate = 0
-    self.requiresCLEU = requiresCLEU
     self.specActive = false
     self.specs = {}
     for i, s in ipairs { ... } do
@@ -430,7 +400,8 @@ function ERACombatModule:construct(cFrame, idleUpdate, combatUpdate, requiresCLE
             table.insert(self.specs, s)
         end
     end
-    cFrame:newModule(self)
+    ---@cast cFrame unknown
+    table.insert(cFrame.modules, self)
 end
 
 function ERACombatModule:updateSpec(specID, fullReset)
@@ -443,6 +414,7 @@ function ERACombatModule:updateSpec(specID, fullReset)
         end
     end
     if (self.specActive) then
+        self:SpecActive(old)
         self:CheckTalents()
     else
         self:SpecInactive(old)
@@ -452,6 +424,8 @@ end
 function ERACombatModule:CheckTalents()
 end
 
+function ERACombatModule:SpecActive(wasActive)
+end
 function ERACombatModule:SpecInactive(wasActive)
 end
 
@@ -464,21 +438,33 @@ end
 function ERACombatModule:UpdateAfterReset(t)
 end
 
+---comment
+---@param fromCombat boolean
 function ERACombatModule:EnterIdle(fromCombat)
 end
 
+---comment
+---@param toCombat boolean
 function ERACombatModule:ExitIdle(toCombat)
 end
 
+---comment
+---@param fromIdle boolean
 function ERACombatModule:EnterCombat(fromIdle)
 end
 
+---comment
+---@param toIdle boolean
 function ERACombatModule:ExitCombat(toIdle)
 end
 
+---comment
+---@param fromCombat boolean
 function ERACombatModule:EnterVehicle(fromCombat)
 end
 
+---comment
+---@param toCombat boolean
 function ERACombatModule:ExitVehicle(toCombat)
 end
 
@@ -490,182 +476,10 @@ function ERACombatModule:updateCombat(t, elapsed)
     self:UpdateCombat(t, elapsed)
 end
 
-function ERACombatModule:UpdateCombat(t, elapsed)
-end
-
 function ERACombatModule:updateIdle(t, elapsed)
     if (t - self.lastIdleUpdate < self.idleUpdate) then
         return
     end
     self.lastIdleUpdate = t
     self:UpdateIdle(t, elapsed)
-end
-
-function ERACombatModule:UpdateIdle(t, elapsed)
-end
-
-function ERACombatModule:CLEU(t)
-end
-
---------------------------------------------------------------------------------------------------------------------------------
--- ENEMIES ---------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-
-ERACombatEnemies = {}
-ERACombatEnemies.__index = ERACombatEnemies
-setmetatable(ERACombatEnemies, { __index = ERACombatModule })
-
----@class ERACombatEnemiesCount
----@field GetCount fun(this:ERACombatEnemiesCount): number
-
----comment
----@param cFrame ERACombatFrame
----@param ... number specializations
----@return ERACombatEnemiesCount
-function ERACombatEnemies:Create(cFrame, ...)
-    local e = {}
-    setmetatable(e, ERACombatEnemies)
-    e.enemies = {}
-    e.eCount = 0
-    e:construct(cFrame, -1, 1, true, ...)
-    return e
-end
-
-function ERACombatEnemies:GetCount()
-    return self.eCount
-end
-
-function ERACombatEnemies:ResetToIdle()
-    self.enemies = {}
-    self.eCount = 0
-end
-
-function ERACombatEnemies:SpecInactive(wasActive)
-    if (wasActive) then
-        self.enemies = {}
-        self.eCount = 0
-    end
-end
-
-function ERACombatEnemies:EnterCombat()
-    self.enemies = {}
-    self.eCount = 0
-end
-
-function ERACombatEnemies:ExitCombat()
-    self.enemies = {}
-    self.eCount = 0
-end
-
-function ERACombatEnemies:CLEU(t)
-    local _, evt, _, sourceGUY, _, _, _, targetGUY = CombatLogGetCurrentEventInfo()
-    if (evt == "SPELL_DAMAGE" or evt == "SWING_DAMAGE" or evt == "SPELL_PERIODIC_DAMAGE" or evt == "SWING_MISSED" or evt == "SPELL_MISSED") then
-        if (sourceGUY == self.cFrame.playerGUID) then
-            local already = self.enemies[targetGUY]
-            if (not already) then
-                self.eCount = self.eCount + 1
-            end
-            self.enemies[targetGUY] = t
-        end
-    elseif (evt == "UNIT_DIED" or evt == "UNIT_DESTROYED" or evt == "UNIT_DISSIPATES") then
-        if (self.enemies[targetGUY]) then
-            self.enemies[targetGUY] = nil
-            self.eCount = self.eCount - 1
-        end
-    end
-end
-
-function ERACombatEnemies:UpdateCombat(t, elapsed)
-    local toRemove = {}
-    for id, lastHit in pairs(self.enemies) do
-        if (t - lastHit > 13) then
-            table.insert(toRemove, id)
-        end
-    end
-    for _, id in ipairs(toRemove) do
-        self.enemies[id] = nil
-    end
-    self.eCount = self.eCount - #toRemove
-end
-
---------------------------------------------------------------------------------------------------------------------------------
--- FRIENDS ---------------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
-
-ERACombatFriends = {}
-ERACombatFriends.__index = ERACombatFriends
-
-function ERACombatFriends:Create()
-    local f = {}
-    setmetatable(f, ERACombatFriends)
-    f.maxFriends = 0
-    f.prefix = nil
-    f.lastCombatUpdate = 0
-    return f
-end
-
-function ERACombatFriends:updateGroupType(t)
-    self.lastGroupType = t
-    if (IsInRaid()) then
-        self.prefix = "raid"
-        self.maxFriends = GetNumGroupMembers() -- CHANGE 11 GetNumRaidMembers()
-    elseif (IsInGroup()) then
-        self.prefix = "party"
-        self.maxFriends = GetNumGroupMembers()
-    else
-        self.maxFriends = 0
-        self.prefix = nil
-    end
-end
-
-function ERACombatFriends:ParseFriends(t)
-    if (t - self.lastCombatUpdate >= 1) then
-        self:updateGroupType(t)
-    end
-    if (self.maxFriends > 0) then
-        -- note : UnitIsUnit(unit, "player")
-        for i = 1, self.maxFriends do
-            if (not self:ParseFriend(t, self.prefix .. i)) then
-                break
-            end
-        end
-    else
-        self:ParseFriend(t, "player")
-    end
-end
-
-function ERACombatFriends:ParseFriend(t, unitID)
-    return false
-end
-
-ERACombatFriendsModule = {}
-ERACombatFriendsModule.__index = ERACombatFriendsModule
-setmetatable(ERACombatFriendsModule, { __index = ERACombatModule })
-
-function ERACombatFriendsModule:constructFriends(cFrame, updateTime, ...)
-    self:construct(cFrame, -1, updateTime, true, ...)
-    self.friends = ERACombatFriends:Create()
-    function self.friends:ParseFriend(t, unitID)
-        return self:ParseFriend(t, unitID)
-    end
-end
-
-function ERACombatFriendsModule:EnterCombat()
-    self.friends.lastGroupType = 0
-end
-
-function ERACombatFriendsModule:UpdateCombat(t, elapsed)
-    self:StartParse(t)
-    self.friends:ParseFriends(t)
-    self:EndParse(t)
-end
-
-function ERACombatFriendsModule:StartParse(t)
-end
-
-function ERACombatFriendsModule:ParseFriend(t, unitID)
-    return false
-end
-
-function ERACombatFriendsModule:EndParse(t)
 end

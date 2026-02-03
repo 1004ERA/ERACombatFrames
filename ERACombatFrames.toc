@@ -1,4 +1,4 @@
-## Interface: 110005
+## Interface: 120000, 120001
 ## Title: ERACombatFrames
 ## Notes: ERA's Combat Interface
 ## SavedVariables: ERACombatOptionsVariables
@@ -7,77 +7,18 @@
 
 ERALIB.lua
 
-ERACombatUIConstants.lua
-
-ERACombat.lua
-
-ERACombatControls.xml
-ERACombatControls.lua
-
-ERACombatGrid.xml
-ERACombatGrid.lua
-
-ERAGroupFrames.xml
-ERAGroupFrames.lua
-
-ERACombatDamageWindow.xml
-ERACombatDamage.lua
-
-ERACombatStatusBars.xml
-ERAHUD.xml
-ERAHUDData.lua
-ERAHUDDisplay.lua
-ERAHUDStatusBars.lua
-ERAHUD.lua
-ERAHUDModulePoints.xml
-ERAHUDModulePoints.lua
-ERAHUDPseudoResourceBar.lua
-ERAHUDDamageTakenModule.lua
-ERAHUDDOT.lua
-
-ERACombat_DeathKnight.lua
-ERACombat_DeathKnight_Blood.lua
-ERACombat_DeathKnight_Frost.lua
-ERACombat_DeathKnight_Unholy.lua
-
-ERACombat_Druid.lua
-ERACombat_Druid_Moonkin.lua
-ERACombat_Druid_Feral.lua
-ERACombat_Druid_Guardian.lua
-ERACombat_Druid_Restoration.lua
-
-ERACombat_Evoker.lua
-ERACombat_Evoker_Devastation.lua
-ERACombat_Evoker_Preservation.lua
-ERACombat_Evoker_Augmentation.lua
-
-ERACombat_Mage.lua
-ERACombat_Mage_Arcane.lua
-ERACombat_Mage_Fire.lua
-ERACombat_Mage_Frost.lua
-
-ERACombat_Monk.lua
-ERACombat_Monk_Brewmaster.lua
-ERACombat_Monk_Mistweaver.lua
-ERACombat_Monk_Windwalker.lua
-
-ERACombat_Paladin.lua
-ERACombat_Paladin_Holy.lua
-ERACombat_Paladin_Protection.lua
-ERACombat_Paladin_Retribution.lua
-
-ERACombat_Priest.lua
-ERACombat_Priest_Discipline.lua
-ERACombat_Priest_Holy.lua
-ERACombat_Priest_Shadow.lua
-
-ERACombat_Warlock.lua
-ERACombat_Warlock_Affliction.lua
-ERACombat_Warlock_Demonology.lua
-ERACombat_Warlock_Destruction.lua
-
-ERACombatOptions.xml
+ERACombatMainFrame.lua
 ERACombatOptions.lua
+
+Frames/ERAIcons.xml
+Frames/ERAIcons.lua
+Frames/ERABars.lua
+
+HUD/HUDData.lua
+HUD/HUDDisplay.lua
+HUD/HUDModule.lua
+
+Classes/DemonHunter.lua
 
 ERACombatFrames.xml
 ERACombatFrames.lua

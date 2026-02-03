@@ -48,7 +48,6 @@
             <AnimationGroup parentKey="TranslationGroup">
                 <Translation parentKey="Translation" duration="0.3"/>
             </AnimationGroup>
-            <!--<AnimationGroup parentKey="BeamGroup" looping="BOUNCE" looping="BOUNCE">-->
             <AnimationGroup parentKey="BeamGroup" looping="REPEAT">
                 <Scale parentKey="Beam" duration="0.5" scaleX="2" scaleY="2"/>
             </AnimationGroup>
@@ -92,6 +91,7 @@
 
             <Layer level="ARTWORK">
 
+
                 <!--
                 <Texture parentKey="BHIGH" file="Interface/Addons/ERACombatFrames/textures/circle_256_32.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
                     <Color r="1.0" g="1.0" b="0.7" a="0.0"/>
@@ -103,70 +103,7 @@
                 </Texture>
                 -->
 
-                <Texture parentKey="TRT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_br.tga">
-                    <Anchors>
-                        <Anchor point="BOTTOMLEFT" relativePoint="CENTER"/>
-                    </Anchors>
-                </Texture>
-                <Texture parentKey="TRR">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT"/>
-                        <Anchor point="BOTTOMRIGHT" relativePoint="RIGHT"/>
-                    </Anchors>
-                </Texture>
 
-                <Texture parentKey="BRT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_bl.tga">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativePoint="CENTER"/>
-                    </Anchors>
-                </Texture>
-                <Texture parentKey="BRR">
-                    <Anchors>
-                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOM"/>
-                        <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
-                    </Anchors>
-                </Texture>
-
-                <Texture parentKey="BLT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_tl.tga">
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" relativePoint="CENTER"/>
-                    </Anchors>
-                </Texture>
-                <Texture parentKey="BLR">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativePoint="LEFT"/>
-                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT"/>
-                    </Anchors>
-                </Texture>
-
-                <Texture parentKey="TLT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_tr.tga">
-                    <Anchors>
-                        <Anchor point="BOTTOMRIGHT" relativePoint="CENTER"/>
-                    </Anchors>
-                </Texture>
-                <Texture parentKey="TLR">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
-                        <Anchor point="TOPRIGHT" relativePoint="TOP"/>
-                    </Anchors>
-                </Texture>
-
-                <MaskTexture file="Interface/Addons/ERACombatFrames/textures/disk_256.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
-                    <Anchors>
-                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
-                        <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
-                    </Anchors>
-                    <MaskedTextures>
-                        <MaskedTexture childKey="TRT"/>
-                        <MaskedTexture childKey="TRR"/>
-                        <MaskedTexture childKey="BRT"/>
-                        <MaskedTexture childKey="BRR"/>
-                        <MaskedTexture childKey="BLT"/>
-                        <MaskedTexture childKey="BLR"/>
-                        <MaskedTexture childKey="TLT"/>
-                        <MaskedTexture childKey="TLR"/>
-                    </MaskedTextures>
-                </MaskTexture>
 
             </Layer>
 
@@ -193,6 +130,25 @@
             </Layer>
 
         </Layers>
+        <Frames>
+            <Cooldown parentKey="CD">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                </Anchors>
+            </Cooldown>
+            <!--
+            <MaskTexture file="Interface/Addons/ERACombatFrames/textures/disk_256.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                </Anchors>
+                <MaskedTextures>
+                    <MaskedTexture childKey="CD"/>
+                </MaskedTextures>
+            </MaskTexture>
+                -->
+        </Frames>
     </Frame>
 
 </Ui>
