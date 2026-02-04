@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
---- ESSENTIALS PLACEMENT ---------------------------------------
+--#region ESSENTIALS PLACEMENT ---------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDEssentialsPlacement
@@ -42,8 +42,22 @@ function HUDEssentialsPlacement:addBar(bar)
     table.insert(self.bars, bar)
 end
 
+---@param position number
+---@param timer HUDTimer
+---@param talent ERALIBTalent|nil
+---@param r number
+---@param g number
+---@param b number
+---@return HUDTimerBar
+function HUDEssentialsPlacement:AddTimerBar(position, timer, talent, r, g, b)
+    return HUDTimerBar:Create(self, position, timer, talent, r, g, b)
+end
+
+--#endregion
 ----------------------------------------------------------------
---- GENERIC DISPLAY --------------------------------------------
+
+----------------------------------------------------------------
+--#region GENERIC DISPLAY --------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDDisplay
@@ -100,8 +114,11 @@ end
 function HUDDisplay:talentIsActive()
 end
 
+--#endregion
 ----------------------------------------------------------------
---- RESOURCE ---------------------------------------------------
+
+----------------------------------------------------------------
+--#region RESOURCE ---------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDResourceDisplay : HUDDisplay
@@ -122,9 +139,9 @@ function HUDResourceDisplay:constructResource(hud, beforeHealth, talent)
     hud:addResource(self, beforeHealth)
 end
 
-------------
--- HEALTH --
-------------
+------------------------
+--#region HEALTH -------
+------------------------
 
 ---@class (exact) HUDHealthDisplay : HUDResourceDisplay
 ---@field private __index HUDHealthDisplay
@@ -193,16 +210,23 @@ function HUDHealthDisplay:Update(t, combat)
     self.bar:SetRightText(string.format("%i", self.data.healthPercent100), true)
 end
 
------------
--- POWER --
------------
+--#endregion
+------------------------
+
+------------------------
+--#region POWER --------
+------------------------
+
+--#region BAR
 
 ---@class (exact) HUDPowerBarDisplay : HUDResourceDisplay
 ---@field private __index HUDPowerBarDisplay
----@field protected data HUDPower
+---@field data HUDPower
 ---@field protected bar ERAStatusBar
 ---@field private height number -- inherited
 ---@field protected displayTexts fun(self:HUDPowerBarDisplay)
+---@field private ticks HUDPowerBarTick[]
+---@field private ticksActive HUDPowerBarTick[]
 HUDPowerBarDisplay = {}
 HUDPowerBarDisplay.__index = HUDPowerBarDisplay
 setmetatable(HUDPowerBarDisplay, { __index = HUDResourceDisplay })
@@ -215,14 +239,10 @@ setmetatable(HUDPowerBarDisplay, { __index = HUDResourceDisplay })
 ---@param b number
 ---@param talent ERALIBTalent|nil
 function HUDPowerBarDisplay:constructPower(hud, data, r, g, b, talent)
-    if (talent) then
-        if (data.talent) then
-            talent = ERALIBTalent:CreateAnd(talent, data.talent)
-        end
-    else
-        talent = data.talent
-    end
-    self:constructResource(hud, true, talent)
+    self:constructResource(hud, true, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+
+    self.ticks = {}
+    self.ticksActive = {}
 
     self.data = data
     self.bar = ERAStatusBar:Create(hud.essentialsFrame, "TOP", "CENTER")
@@ -244,7 +264,26 @@ end
 ---@return number
 function HUDPowerBarDisplay:updateLayout_returnHeight(y, width)
     self.bar:UpdateLayout(0, y, width, self.height)
+
+    self.ticksActive = {}
+    local bThick = self.bar:GetBorderThickness()
+    for _, t in ipairs(self.ticks) do
+        if (t:checkTalentAndHideOrLayout(width, self.height, bThick)) then
+            table.insert(self.ticksActive, t)
+        end
+    end
+
     return self.height
+end
+
+---@param iconID number
+---@param talent ERALIBTalent|nil
+---@param tickValue fun(): number
+---@return HUDPowerBarTick
+function HUDPowerBarDisplay:AddTick(iconID, talent, tickValue)
+    local t = HUDPowerBarTick:create(self, iconID, talent, tickValue, self.bar)
+    table.insert(self.ticks, t)
+    return t
 end
 
 ---comment
@@ -259,7 +298,12 @@ function HUDPowerBarDisplay:Update(t, combat)
     self.bar:SetMinMax(0, self.data.max)
     self.bar:SetValue(self.data.current)
     self:displayTexts()
+    for _, tk in ipairs(self.ticksActive) do
+        tk:update(t, combat)
+    end
 end
+
+--#region DISPLAY KINDS
 
 ---@class (exact) HUDPowerBarPercentDisplay : HUDPowerBarDisplay
 ---@field private __index HUDPowerBarPercentDisplay
@@ -310,11 +354,124 @@ function HUDPowerBarValueDisplay:Create(hud, data, r, g, b, talent)
 end
 
 function HUDPowerBarValueDisplay:displayTexts()
-    self.bar:SetMiddleText(string.format("%i", self.data.current), true)
+    self.bar:SetLeftText(string.format("%i", self.data.current), true)
 end
 
+--#endregion
+
+--#endregion
+
+--#region TICKS
+
+---@class (exact) HUDPowerBarTick
+---@field private __index HUDPowerBarTick
+---@field private owner HUDPowerBarDisplay
+---@field private parentFrame Frame
+---@field private talent ERALIBTalent|nil
+---@field private icon Texture
+---@field private tick Line
+---@field private tickValueGetter fun(): number
+---@field private tickValue number
+---@field private curve LuaColorCurveObject
+---@field OverrideAlpha nil|fun(self:HUDPowerBarTick): number
+---@field OverrideDesaturated nil|fun(self:HUDPowerBarTick): number
+HUDPowerBarTick = {}
+HUDPowerBarTick.__index = HUDPowerBarTick
+
+---comment
+---@param owner HUDPowerBarDisplay
+---@param iconID number
+---@param talent ERALIBTalent|nil
+---@param tickValue fun(): number
+---@param sBar ERAStatusBar
+---@return HUDPowerBarTick
+function HUDPowerBarTick:create(owner, iconID, talent, tickValue, sBar)
+    local x = {}
+    setmetatable(x, HUDPowerBarTick)
+    ---@cast x HUDPowerBarTick
+    x.owner = owner
+    x.talent = talent
+    x.tickValueGetter = tickValue
+    x.tickValue = 0
+
+    x.parentFrame = sBar:GetDrawFrame()
+    local drawLevel = sBar:GetDrawFrameLevel()
+    x.tick = x.parentFrame:CreateLine(nil, "OVERLAY", nil, drawLevel)
+    x.tick:SetColorTexture(1.0, 1.0, 1.0, 1.0)
+    x.tick:SetThickness(1)
+    x.icon = x.parentFrame:CreateTexture(nil, "OVERLAY")
+    x.icon:SetTexture(iconID)
+
+    x.curve = C_CurveUtil.CreateColorCurve()
+    x.curve:SetType(Enum.LuaCurveType.Step)
+
+    return x
+end
+
+---@param barWidth number
+---@param height number
+---@param borderThickness number
+---@return boolean
+function HUDPowerBarTick:checkTalentAndHideOrLayout(barWidth, height, borderThickness)
+    if (self.talent and not self.talent:PlayerHasTalent()) then
+        self.tick:Hide()
+        self.icon:Hide()
+        return false
+    else
+        self.tickValue = self.tickValueGetter()
+        local pct1 = self.tickValue / self.owner.data.maxNotSecret
+        self.curve:ClearPoints()
+        self.curve:AddPoint(0, CreateColor(0.8, 0.1, 0.1, 1.0))
+        --self.curve:AddPoint(pct1 - 0.01, CreateColor(0.8, 0.1, 0.1, 1.0))
+        self.curve:AddPoint(pct1, CreateColor(0.0, 1.0, 0.0, 1.0))
+        --self.curve:AddPoint(1, CreateColor(0.0, 1.0, 0.0, 1.0))
+
+        local x = (barWidth - 2 * borderThickness) * pct1
+        local y = -height * 0.5
+        self.tick:SetStartPoint("TOPLEFT", self.parentFrame, x, 0)
+        self.tick:SetEndPoint("TOPLEFT", self.parentFrame, x, y)
+        self.icon:SetSize(height / 2, height / 2)
+        self.icon:SetPoint("TOP", self.parentFrame, "TOPLEFT", x, y)
+
+        self.tick:Show()
+        self.icon:Show()
+
+        return true
+    end
+end
+
+---@param t number
+---@param combat boolean
+function HUDPowerBarTick:update(t, combat)
+    local alpha
+    if (self.OverrideAlpha) then
+        alpha = self.OverrideAlpha(self)
+        self.icon:SetAlpha(alpha)
+    else
+        alpha = 1.0
+        self.icon:SetAlpha(1.0)
+    end
+
+    ---@diagnostic disable-next-line: param-type-mismatch
+    local tickColor = UnitPowerPercent("player", self.owner.data.powerType, false, self.curve)
+    ---@diagnostic disable-next-line: undefined-field
+    self.tick:SetColorTexture(tickColor.r, tickColor.g, tickColor.b, alpha)
+
+    if (self.OverrideDesaturated) then
+        self.icon:SetDesaturation(self.OverrideDesaturated(self))
+    end
+end
+
+--#endregion
+
+--#endregion
+------------------------
+
+--#endregion
 ----------------------------------------------------------------
---- GENERIC ICON -----------------------------------------------
+
+----------------------------------------------------------------
+--#region GENERIC ICON -----------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDIcon : HUDDisplay
@@ -344,8 +501,11 @@ function HUDIcon:Deactivate()
     self.icon:SetActiveShown(false)
 end
 
+--#endregion
 ----------------------------------------------------------------
---- PIE ICON ---------------------------------------------------
+
+----------------------------------------------------------------
+--#region PIE ICON ---------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDPieIcon : HUDIcon
@@ -369,13 +529,20 @@ function HUDPieIcon:SetBorderColor(r, g, b)
     self.icon:SetBorderColor(r, g, b)
 end
 
+--#endregion
 ----------------------------------------------------------------
---- COOLDOWN ICON ----------------------------------------------
+
+----------------------------------------------------------------
+--#region COOLDOWN ICON ----------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDCooldownIcon : HUDPieIcon
 ---@field private __index HUDCooldownIcon
----@field private cd HUDCooldown
+---@field private data HUDCooldown
+---@field OverrideSecondaryText nil|fun(self:HUDCooldownIcon): string
+---@field OverrideDesaturation nil|fun(self:HUDCooldownIcon): number
+---@field watchIconChange boolean
+---@field watchAdditionalOverlay number
 HUDCooldownIcon = {}
 HUDCooldownIcon.__index = HUDCooldownIcon
 setmetatable(HUDCooldownIcon, { __index = HUDPieIcon })
@@ -385,27 +552,20 @@ setmetatable(HUDCooldownIcon, { __index = HUDPieIcon })
 ---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
 ---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
 ---@param size number
----@param cd HUDCooldown
+---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldownIcon
-function HUDCooldownIcon:Create(frame, point, relativePoint, size, cd, iconID, talent)
+function HUDCooldownIcon:Create(frame, point, relativePoint, size, data, iconID, talent)
     local x = {}
     setmetatable(x, HUDCooldownIcon)
     ---@cast x HUDCooldownIcon
     if (not iconID) then
-        local info = C_Spell.GetSpellInfo(cd.spellID)
+        local info = C_Spell.GetSpellInfo(data.spellID)
         iconID = info.originalIconID
     end
-    if (talent) then
-        if (cd.talent) then
-            talent = ERALIBTalent:CreateAnd(cd.talent, talent)
-        end
-    else
-        talent = cd.talent
-    end
-    x:constructPie(cd.hud, frame, point, relativePoint, size, iconID, talent)
-    x.cd = cd
+    x:constructPie(data.hud, frame, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
 
     return x
 end
@@ -417,14 +577,118 @@ function HUDCooldownIcon:Update(t, combat)
     if (combat) then
         self.icon:SetVisibilityAlpha(1.0, false)
     else
-        self.icon:SetVisibilityAlpha(self.cd.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideNoDuration), true)
+        ---@diagnostic disable-next-line: param-type-mismatch
+        self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideNoDuration), true)
     end
-    self.icon:SetValue(self.cd.swipeDuration:GetStartTime(), self.cd.swipeDuration:GetTotalDuration())
-    self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.cd.spellID))
+    self.icon:SetValue(self.data.swipeDuration:GetStartTime(), self.data.swipeDuration:GetTotalDuration())
+
+    if (self.watchAdditionalOverlay) then
+        self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay))
+    else
+        self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID))
+    end
+
+    --self.icon:SetMainText(string.format("%i", self.data.swipeDuration:GetRemainingDuration()), true)
+
+    if (self.OverrideSecondaryText) then
+        self.icon:SetSecondaryText(self.OverrideSecondaryText(self), false)
+    else
+        if (self.data.hasCharges) then
+            self.icon:SetSecondaryText(self.data.currentCharges, true)
+        else
+            self.icon:SetSecondaryText(nil, false)
+        end
+    end
+    if (self.OverrideDesaturation) then
+        self.icon:SetDesaturation(self:OverrideDesaturation(), true)
+    else
+        if (self.data.hasCharges) then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveFalse0), true)
+        else
+            self.icon:SetDesaturated(false)
+        end
+    end
+
+    if (self.watchIconChange) then
+        local info = C_Spell.GetSpellInfo(self.data.spellID)
+        self.icon:SetIconTexture(info.iconID, false)
+    end
 end
 
+--#endregion
 ----------------------------------------------------------------
---- TIMER BAR --------------------------------------------------
+
+----------------------------------------------------------------
+--#region AURA ICON --------------------------------------------
+----------------------------------------------------------------
+
+---@class (exact) HUDAuraIcon : HUDPieIcon
+---@field private __index HUDAuraIcon
+---@field private data HUDAura
+---@field private stackMode boolean
+---@field showRedIfMissingInCombat boolean
+HUDAuraIcon = {}
+HUDAuraIcon.__index = HUDAuraIcon
+setmetatable(HUDAuraIcon, { __index = HUDPieIcon })
+
+---comment
+---@param frame Frame
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param size number
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDAuraIcon
+function HUDAuraIcon:Create(frame, point, relativePoint, size, data, iconID, talent)
+    local x = {}
+    setmetatable(x, HUDAuraIcon)
+    ---@cast x HUDAuraIcon
+    if (not iconID) then
+        local info = C_Spell.GetSpellInfo(data.spellID)
+        iconID = info.originalIconID
+    end
+    x:constructPie(data.hud, frame, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
+    x.icon:SetupAura()
+
+    return x
+end
+
+function HUDAuraIcon:ShowStacksRatherThanDuration()
+    self.icon:HideDefaultCountdown()
+    self.stackMode = true
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDAuraIcon:Update(t, combat)
+    if (self.showRedIfMissingInCombat and combat) then
+        local color = self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveRedIf0)
+        ---@diagnostic disable-next-line: undefined-field
+        self.icon:SetTint(color.r, color.g, color.b, true)
+        self.icon:SetVisibilityAlpha(1.0, false)
+    else
+        self.icon:SetTint(1.0, 1.0, 1.0, false)
+        local alpha = self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveFalse0)
+        ---@cast alpha number
+        self.icon:SetVisibilityAlpha(alpha, true)
+    end
+    if (self.stackMode) then
+        self.icon:SetMainText(self.data.stacksDisplay, true)
+    else
+        self.icon:SetSecondaryText(self.data.stacksDisplay, true)
+    end
+    self.icon:SetValue(self.data.timerDuration:GetStartTime(), self.data.timerDuration:GetTotalDuration())
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region TIMER BAR --------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDTimerBar : HUDDisplay
@@ -432,11 +696,11 @@ end
 ---@field private position number
 ---@field private timer HUDTimer
 ---@field private bar StatusBar
+---@field doNotCutLongDuration boolean
 HUDTimerBar = {}
 HUDTimerBar.__index = HUDTimerBar
 setmetatable(HUDTimerBar, { __index = HUDDisplay })
 
----comment
 ---@param placement HUDEssentialsPlacement
 ---@param position number
 ---@param timer HUDTimer
@@ -455,7 +719,7 @@ function HUDTimerBar:Create(placement, position, timer, talent, r, g, b)
     placement.hud:addTimerBar(x)
     placement:addBar(x)
 
-    x.bar = CreateFrame("StatusBar", nil, placement.hud.timerFrame)
+    x.bar = CreateFrame("StatusBar", nil, placement.hud.timerFrameBack)
     x.bar:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar-Glow")
     x.bar:SetRotatesTexture(true)
     x.bar:SetStatusBarColor(r, g, b, 1.0)
@@ -479,7 +743,7 @@ end
 ---@param iconWidth number
 function HUDTimerBar:updateLayout(xMid, iconWidth)
     self.bar:SetWidth(self.hud.options.essentialsBarSize)
-    self.bar:SetPoint("BOTTOM", self.hud.timerFrame, "BOTTOM", xMid + (self.position - 0.5) * iconWidth, 0)
+    self.bar:SetPoint("BOTTOM", self.hud.timerFrameBack, "BOTTOM", xMid + (self.position - 0.5) * iconWidth, 0)
 end
 
 ---comment
@@ -493,7 +757,14 @@ end
 ---@param combat boolean
 function HUDTimerBar:Update(t, combat)
     if (combat) then
-        ---@diagnostic disable-next-line: missing-parameter
-        self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+        if (self.doNotCutLongDuration) then
+            self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
+        else
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+        end
     end
 end
+
+--#endregion
+----------------------------------------------------------------

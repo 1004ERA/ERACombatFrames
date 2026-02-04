@@ -1,5 +1,5 @@
 ----------------------------------------------------------------
---- GENERIC DATA -----------------------------------------------
+--#region GENERIC DATA -----------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDDataItem
@@ -34,8 +34,11 @@ end
 function HUDDataItem:talentIsActive()
 end
 
+--#endregion
 ----------------------------------------------------------------
---- HEALTH -----------------------------------------------------
+
+----------------------------------------------------------------
+--#region HEALTH -----------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDHealth : HUDDataItem
@@ -76,8 +79,11 @@ function HUDHealth:Update()
     self.badAbsorb = UnitGetTotalHealAbsorbs(self.unit)
 end
 
+--#endregion
 ----------------------------------------------------------------
---- POWER ------------------------------------------------------
+
+----------------------------------------------------------------
+--#region POWER ------------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDPower : HUDDataItem
@@ -85,6 +91,7 @@ end
 ---@field powerType Enum.PowerType
 ---@field current number
 ---@field max number
+---@field maxNotSecret number
 ---@field percent100 number
 ---@field idleAlphaOOC number
 ---@field protected updateIdleAlpha fun(self:HUDPower): number
@@ -99,8 +106,16 @@ setmetatable(HUDPower, { __index = HUDDataItem })
 function HUDPower:constructPower(hud, powerType, talent)
     self.current = 0
     self.max = 100
+    self.maxNotSecret = 100
     self.powerType = powerType
     self:constructItem(hud, talent)
+end
+
+function HUDPower:talentIsActive()
+    self.maxNotSecret = UnitPowerMax("player", self.powerType)
+    if (self.maxNotSecret < 1) then
+        self.maxNotSecret = 1
+    end
 end
 
 ---comment
@@ -114,6 +129,7 @@ function HUDPower:Update(t, combat)
         self.idleAlphaOOC = self:updateIdleAlpha()
     end
 end
+
 ---@class (exact) HUDPowerLowIdle : HUDPower
 ---@field private __index HUDPowerLowIdle
 HUDPowerLowIdle = {}
@@ -202,8 +218,11 @@ function HUDPowerTargetIdle:updateIdleAlpha()
     return UnitPowerPercent("player", self.powerType, false, self.idleCurve)
 end
 
+--#endregion
 ----------------------------------------------------------------
---- GENERIC TIMER ----------------------------------------------
+
+----------------------------------------------------------------
+--#region GENERIC TIMER ----------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDTimer : HUDDataItem
@@ -223,17 +242,22 @@ function HUDTimer:Update(t)
     self.timerDuration = self:updateTimerDuration(t)
 end
 
+--#endregion
 ----------------------------------------------------------------
---- COOLDOWN ---------------------------------------------------
+
+----------------------------------------------------------------
+--#region COOLDOWN ---------------------------------------------
 ----------------------------------------------------------------
 
 ---@class (exact) HUDCooldown : HUDTimer
 ---@field private __index HUDCooldown
 ---@field spellID number
 ---@field cdData SpellCooldownInfo
+---@field cooldownDuration LuaDurationObject
 ---@field swipeDuration LuaDurationObject
 ---@field maxCharges number
 ---@field currentCharges number
+---@field hasCharges boolean
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
 setmetatable(HUDCooldown, { __index = HUDTimer })
@@ -258,21 +282,121 @@ function HUDCooldown:updateTimerDuration(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
     local charges = C_Spell.GetSpellCharges(self.spellID)
     if (charges) then
+        self.hasCharges = true
         self.maxCharges = charges.maxCharges
         self.currentCharges = charges.currentCharges
         self.swipeDuration = C_Spell.GetSpellChargeDuration(self.spellID)
         if (self.cdData.isOnGCD == true) then
-            return self.hud.duration0
+            self.cooldownDuration = self.hud.duration0
         else
-            return C_Spell.GetSpellCooldownDuration(self.spellID)
+            self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
         end
+        return self.cooldownDuration
     else
+        self.hasCharges = false
         self.maxCharges = 1
         if (self.cdData.isOnGCD == true) then
             self.swipeDuration = self.hud.duration0
         else
             self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
         end
+        self.cooldownDuration = self.swipeDuration
         return self.swipeDuration
     end
 end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region AURA -------------------------------------------------
+----------------------------------------------------------------
+
+---@class (exact) HUDAura : HUDTimer
+---@field private __index HUDAura
+---@field spellID number
+---@field isTarget boolean
+---@field private unit string
+---@field stacks number
+---@field stacksDisplay string|nil
+---@field private cdmFrame CDMAuraFrame
+HUDAura = {}
+HUDAura.__index = HUDAura
+setmetatable(HUDAura, { __index = HUDTimer })
+
+---comment
+---@param spellID number
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param isTarget boolean
+---@return HUDAura
+function HUDAura:createAura(spellID, hud, talent, isTarget)
+    local x = {}
+    setmetatable(x, HUDAura)
+    ---@cast x HUDAura
+    x:constructTimer(hud, talent)
+    x.spellID = spellID
+    x.isTarget = isTarget
+    x.stacks = 0
+    if (isTarget) then
+        x.unit = "target"
+    else
+        x.unit = "player"
+    end
+    return x
+end
+
+function HUDAura:talentIsActive()
+    self.hud:addActiveAura(self, self.isTarget)
+end
+
+function HUDAura:prepareParseCDM()
+    self.cdmFrame = nil
+end
+---@param frame CDMAuraFrame
+function HUDAura:setCDM(frame)
+    self.cdmFrame = frame
+end
+
+--[[
+---@param dur LuaDurationObject
+---@param a AuraData
+function HUDAura:auraFound(dur, a)
+    self.auraDuration = dur
+    self.stacks = a.charges
+    if (self.isTarget) then
+        self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount("target", a.auraInstanceID)
+    else
+        self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount("player", a.auraInstanceID)
+    end
+    self.found = true
+end
+]]
+
+function HUDAura:updateTimerDuration(t)
+    --[[
+    if (self.found) then
+        self.found = false
+    else
+        self.auraDuration = self.hud.duration0
+        self.stacks = 0
+        self.stacksDisplay = nil
+    end
+    return self.auraDuration
+    ]]
+    if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
+        local cdmData
+        cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(self.unit, self.cdmFrame.auraInstanceID)
+        if (cdmData) then
+            self.stacks = cdmData.charges
+            self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
+            return C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
+        end
+    end
+    self.stacks = 0
+    self.stacksDisplay = nil
+    return self.hud.duration0
+end
+
+--#endregion
+----------------------------------------------------------------

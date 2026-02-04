@@ -27,7 +27,12 @@
         "INVSLOT_BACK",
         "INVSLOT_WAIST",
         "NUM_BAG_SLOTS",
-        "CurveConstants"
+        "CurveConstants",
+        "SecondsFormatter",
+        "BuffBarCooldownViewer",
+        "BuffIconCooldownViewer",
+        "EssentialCooldownViewer",
+        "UtilityCooldownViewer"
     ],
     "Lua.diagnostics.disable": [
         "assign-type-mismatch"

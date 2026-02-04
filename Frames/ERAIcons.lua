@@ -1,16 +1,18 @@
 --------------------------------------------------------------------------------------------------------------------------------
----- ICONS ---------------------------------------------------------------------------------------------------------------------
+--#region ICONS ----------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class (exact) ERAIcon
 ---@field private __index ERAIcon
----@field protected constructIcon fun(self:ERAIcon, parentFrame:Frame, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", size:number, iconID:number, frame:Frame)
----@field protected additionalSetDesaturated fun(self:ERAIcon, desat:boolean)
+---@field protected constructIcon fun(self:ERAIcon, parentFrame:Frame, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", size:number, iconID:number, mainFrame:Frame, overlayFrame:Frame)
+---@field protected additionalSetDesaturation nil|fun(self:ERAIcon, desat:number)
 ---@field private frame Frame
 ---@field private icon Texture
 ---@field private iconID number
 ---@field private mainText FontString
+---@field private mainTextValue string|nil
 ---@field private secondaryText FontString
+---@field private secondaryTextValue string|nil
 ---@field private point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
 ---@field private relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
 ---@field private parentFrame Frame
@@ -20,7 +22,7 @@
 ---@field private beamAnim AnimationGroup
 ---@field private beamScale Scale
 ---@field private beaming boolean
----@field private desat boolean
+---@field private desat number|nil
 ---@field private visible boolean
 ---@field private r number
 ---@field private g number
@@ -33,20 +35,20 @@
 ERAIcon = {}
 ERAIcon.__index = ERAIcon
 
-function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, frame)
-    ---@cast frame unknown
-    self.mainText = frame.MainText
-    self.secondaryText = frame.SecondaryText
-    self.icon = frame.Icon
+function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, mainFrame, overlayFrame)
+    ---@cast mainFrame unknown
+    ---@cast overlayFrame unknown
+    self.mainText = overlayFrame.MainText
+    self.secondaryText = overlayFrame.SecondaryText
+    self.icon = mainFrame.Icon
     self.iconID = iconID
-    self.beamAnim = frame.BeamGroup
-    self.beamScale = frame.BeamGroup.Beam
-    ---@cast frame Frame
-    ---@
+    self.beamAnim = mainFrame.BeamGroup
+    self.beamScale = mainFrame.BeamGroup.Beam
+    ---@cast mainFrame Frame
     -- affichage
-    self.frame = frame
+    self.frame = mainFrame
     self.size = size
-    frame:SetSize(size, size)
+    mainFrame:SetSize(size, size)
     ERALIB_SetFont(self.mainText, size * 0.4)
     ERALIB_SetFont(self.secondaryText, size * 0.32)
     self:SetIconTexture(iconID, true)
@@ -60,7 +62,7 @@ function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, 
     self.beaming = false
 
     -- colors
-    self.desat = false
+    self.desat = nil
     self.alpha = 1
     self.r = 1
     self.g = 1
@@ -88,8 +90,21 @@ function ERAIcon:SetIconTexture(iconID, force)
     end
 end
 
-function ERAIcon:SetMainText(txt)
+---@param txt any|nil
+---@param maybeSecret boolean
+function ERAIcon:SetMainText(txt, maybeSecret)
     self.mainText:SetText(txt)
+    --[[
+    if (maybeSecret) then
+        self.mainTextValue = nil
+        self.mainText:SetText(txt)
+    else
+        if (self.mainTextValue ~= txt) then
+            self.mainTextValue = txt
+            self.mainText:SetText(txt)
+        end
+    end
+    ]]
 end
 function ERAIcon:SetMainTextColor(r, g, b, a)
     if (self.mainTextR ~= r or self.mainTextG ~= g or self.mainTextB ~= b or self.mainTextA ~= a) then
@@ -100,25 +115,48 @@ function ERAIcon:SetMainTextColor(r, g, b, a)
         self.mainText:SetTextColor(r, g, b, a)
     end
 end
-function ERAIcon:SetSecondaryText(txt)
+
+---@param txt any|nil
+---@param maybeSecret boolean
+function ERAIcon:SetSecondaryText(txt, maybeSecret)
     self.secondaryText:SetText(txt)
+    --[[
+    if (maybeSecret) then
+        self.secondaryTextValue = nil
+        self.secondaryText:SetText(txt)
+    else
+        if (self.secondaryTextValue ~= txt) then
+            self.secondaryTextValue = txt
+            self.secondaryText:SetText(txt)
+        end
+    end
+    ]]
 end
 function ERAIcon:SetSecondaryTextColor(r, g, b, a)
     self.secondaryText:SetTextColor(r, g, b, a)
 end
 
+---@param d boolean
 function ERAIcon:SetDesaturated(d)
-    if (d) then
-        if (not self.desat) then
-            self.desat = true
-            self.icon:SetDesaturated(true)
-            self:additionalSetDesaturated(true)
+    self:SetDesaturation(d and 1.0 or 0.0, false)
+end
+
+---@param d number
+---@param maybeSecret boolean
+function ERAIcon:SetDesaturation(d, maybeSecret)
+    if (maybeSecret) then
+        self.desat = nil
+        self.icon:SetDesaturation(d)
+        if (self.additionalSetDesaturation) then
+            self:additionalSetDesaturation(d)
         end
     else
-        if (self.desat) then
-            self.desat = false
-            self.icon:SetDesaturated(false)
-            self:additionalSetDesaturated(false)
+        if (self.desat ~= d) then
+            self.desat = d
+            self.icon:SetDesaturation(d)
+            if (self.additionalSetDesaturation) then
+                self:additionalSetDesaturation(d)
+            end
         end
     end
 end
@@ -138,6 +176,7 @@ function ERAIcon:SetVisibilityAlpha(a, maybeSecret)
     end
 end
 
+--[[
 function ERAIcon:SetVertexColor(r, g, b, a)
     if (not a) then
         a = self.alpha
@@ -148,6 +187,26 @@ function ERAIcon:SetVertexColor(r, g, b, a)
         self.b = b
         self.alpha = a
         self.icon:SetVertexColor(r, g, b, a)
+    end
+end
+]]
+---@param r number
+---@param g number
+---@param b number
+---@param maybeSecret boolean
+function ERAIcon:SetTint(r, g, b, maybeSecret)
+    if (maybeSecret) then
+        self.r = nil
+        self.g = nil
+        self.b = nil
+        self.icon:SetVertexColor(r, g, b, 1.0)
+    else
+        if (self.r ~= r or self.g ~= g or self.b ~= b) then
+            self.r = r
+            self.g = g
+            self.b = b
+            self.icon:SetVertexColor(r, g, b, 1.0)
+        end
     end
 end
 
@@ -175,8 +234,11 @@ function ERAIcon:SetPosition(x, y)
     end
 end
 
+--#endregion
 --------------------------------------------------------------------------------------------------------------------------------
----- PIE ICONS -----------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region PIE ICONS ------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
 
 ---@class (exact) ERAPieIcon : ERAIcon
@@ -203,14 +265,13 @@ function ERAPieIcon:create(parentFrame, point, relativePoint, size, iconID)
     setmetatable(x, ERAPieIcon)
     ---@cast x ERAPieIcon
     local frame = CreateFrame("Frame", nil, parentFrame, "ERAPieIconFrame")
-    ---@cast frame Frame
-    x:constructIcon(parentFrame, point, relativePoint, size, iconID, frame)
     ---@cast frame unknown
     x.swipe = frame.CD
     x.border = frame.AROUND
-    x.highlight = frame.BHIGH
-    x.highlightAnim1 = frame.BHIGH.HighlightGroup1
-    x.highlightAnim2 = frame.BHIGH.HighlightGroup2
+    x.highlight = frame.OVER.BHIGH
+    x.highlightAnim1 = frame.OVER.BHIGH.HighlightGroup1
+    x.highlightAnim2 = frame.OVER.BHIGH.HighlightGroup2
+    x:constructIcon(parentFrame, point, relativePoint, size, iconID, frame, frame.OVER)
     ---@cast frame Frame
     -- highlight
     --x.highlight:SetAtlas("PowerSwirlAnimation-SpinningGlowys")
@@ -222,13 +283,18 @@ function ERAPieIcon:create(parentFrame, point, relativePoint, size, iconID)
     x.swipe:SetSwipeTexture("Interface/Addons/ERACombatFrames/textures/disk_256.tga", 0.0, 0.0, 0.0, 0.88)
     x.swipe:SetSwipeColor(0.0, 0.0, 0.0, 0.88)
     x.swipe:SetUseCircularEdge(true)
+    --x.swipe:SetHideCountdownNumbers(true)
 
     return x
 end
 
-function ERAPieIcon:SetAura()
+function ERAPieIcon:SetupAura()
     self.swipe:SetReverse(true)
     self.swipe:SetUseAuraDisplayTime(true)
+end
+
+function ERAPieIcon:HideDefaultCountdown()
+    self.swipe:SetHideCountdownNumbers(true)
 end
 
 ---comment
@@ -265,3 +331,6 @@ end
 function ERAPieIcon:SetBorderColor(r, g, b)
     self.border:SetVertexColor(r, g, b, 1.0)
 end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------

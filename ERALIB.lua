@@ -16,6 +16,22 @@ function ERALIB_GetSpellSlot(spellID)
     return -1
 end
 
+function ERALIB_FormatSecretTime(t)
+    local success, result = pcall(function()
+        local value = string.format("%i", t)
+        if (value == "0") then
+            return ""
+        else
+            return value
+        end
+    end)
+    if (success) then
+        return result
+    else
+        return t
+    end
+end
+
 --------------------------------------------------------------------------------------------------------------------------------
 -- TALENTS ---------------------------------------------------------------------------------------------------------------------
 --------------------------------------------------------------------------------------------------------------------------------
@@ -116,7 +132,7 @@ end
 ---@param t1 ERALIBTalent | nil
 ---@param t2 ERALIBTalent | nil
 ---@return ERALIBTalent | nil
-function ERALIBTalent_MakeAnd(t1, t2)
+function ERALIBTalent_CombineMakeAnd(t1, t2)
     if (t1) then
         if (t2) then
             if (t1 == t2) then

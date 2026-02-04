@@ -19,6 +19,9 @@ HUD/HUDDisplay.lua
 HUD/HUDModule.lua
 
 Classes/DemonHunter.lua
+Classes/DemonHunter_Havoc.lua
+Classes/Priest.lua
+Classes/Priest_Shadow.lua
 
 ERACombatFrames.xml
 ERACombatFrames.lua

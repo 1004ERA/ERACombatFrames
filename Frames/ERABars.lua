@@ -1,3 +1,7 @@
+--------------------------------------------------------------------------------------------------------------------------------
+--#region CSTR  ----------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
 ---@class (exact) ERAStatusBar
 ---@field private __index ERAStatusBar
 ---@field private parentFrame Frame
@@ -75,6 +79,26 @@ function ERAStatusBar:Create(parentFrame, point, relativePoint)
     return x
 end
 
+---@return Frame
+function ERAStatusBar:GetDrawFrame()
+    return self.bar
+end
+---@return number
+function ERAStatusBar:GetDrawFrameLevel()
+    return 4
+end
+---@return number
+function ERAStatusBar:GetBorderThickness()
+    return self.borderThickness
+end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region LAYOUT & VISIBILITY  -------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
 ---comment
 ---@param x number
 ---@param y number
@@ -118,6 +142,13 @@ function ERAStatusBar:SetVisibilityAlpha(alpha, maybeSecret)
         end
     end
 end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region BORDER  --------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
 
 ---comment
 ---@param thick number
@@ -198,6 +229,13 @@ function ERAStatusBar:SetBarColor(r, g, b, maybeSecret)
     end
 end
 
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region VALUE  ---------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
 ---comment
 ---@param min number
 ---@param max number
@@ -216,66 +254,12 @@ function ERAStatusBar:SetValue(val)
     self.bar:SetValue(val)
 end
 
-function ERAStatusBar:createText(point, offX)
-    local txt = self.bar:CreateFontString(nil, "ARTWORK")
-    txt:SetPoint(point, self.bar, point, offX, 0)
-    ERALIB_SetFont(txt, self.mainFrame:GetHeight() / 2)
-    return txt
-end
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
 
----comment
----@param txt string
----@param maybeSecret boolean
-function ERAStatusBar:SetLeftText(txt, maybeSecret)
-    if (not self.left) then
-        self.left = self:createText("LEFT", 2)
-    end
-    if (maybeSecret) then
-        self.leftTxt = nil
-        self.left:SetText(txt)
-    else
-        if (txt ~= self.leftTxt) then
-            self.leftTxt = txt
-            self.left:SetText(txt)
-        end
-    end
-end
-
----comment
----@param txt string
----@param maybeSecret boolean
-function ERAStatusBar:SetRightText(txt, maybeSecret)
-    if (not self.right) then
-        self.right = self:createText("RIGHT", -2)
-    end
-    if (maybeSecret) then
-        self.rightTxt = nil
-        self.right:SetText(txt)
-    else
-        if (txt ~= self.rightTxt) then
-            self.rightTxt = txt
-            self.right:SetText(txt)
-        end
-    end
-end
-
----comment
----@param txt string
----@param maybeSecret boolean
-function ERAStatusBar:SetMiddleText(txt, maybeSecret)
-    if (not self.middle) then
-        self.middle = self:createText("CENTER", 0)
-    end
-    if (maybeSecret) then
-        self.middleTxt = nil
-        self.middle:SetText(txt)
-    else
-        if (txt ~= self.middleTxt) then
-            self.middleTxt = txt
-            self.middle:SetText(txt)
-        end
-    end
-end
+--------------------------------------------------------------------------------------------------------------------------------
+--#region EXCESS  --------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
 
 function ERAStatusBar:ensureMin()
     if (not self.excessMin) then
@@ -359,3 +343,74 @@ function ERAStatusBar:SetExcessMax(val)
     self:ensureMax()
     self.excessMax:SetValue(val)
 end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region TEXT  ----------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------
+
+function ERAStatusBar:createText(point, offX)
+    local txt = self.bar:CreateFontString(nil, "ARTWORK")
+    txt:SetPoint(point, self.bar, point, offX, 0)
+    ERALIB_SetFont(txt, self.mainFrame:GetHeight() / 2)
+    return txt
+end
+
+---comment
+---@param txt string
+---@param maybeSecret boolean
+function ERAStatusBar:SetLeftText(txt, maybeSecret)
+    if (not self.left) then
+        self.left = self:createText("LEFT", 2)
+    end
+    if (maybeSecret) then
+        self.leftTxt = nil
+        self.left:SetText(txt)
+    else
+        if (txt ~= self.leftTxt) then
+            self.leftTxt = txt
+            self.left:SetText(txt)
+        end
+    end
+end
+
+---comment
+---@param txt string
+---@param maybeSecret boolean
+function ERAStatusBar:SetRightText(txt, maybeSecret)
+    if (not self.right) then
+        self.right = self:createText("RIGHT", -2)
+    end
+    if (maybeSecret) then
+        self.rightTxt = nil
+        self.right:SetText(txt)
+    else
+        if (txt ~= self.rightTxt) then
+            self.rightTxt = txt
+            self.right:SetText(txt)
+        end
+    end
+end
+
+---comment
+---@param txt string
+---@param maybeSecret boolean
+function ERAStatusBar:SetMiddleText(txt, maybeSecret)
+    if (not self.middle) then
+        self.middle = self:createText("CENTER", 0)
+    end
+    if (maybeSecret) then
+        self.middleTxt = nil
+        self.middle:SetText(txt)
+    else
+        if (txt ~= self.middleTxt) then
+            self.middleTxt = txt
+            self.middle:SetText(txt)
+        end
+    end
+end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------

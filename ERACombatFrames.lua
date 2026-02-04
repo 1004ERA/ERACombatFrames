@@ -31,16 +31,61 @@ end
 
 ]]
 
+function ECF_TEST()
+    --[[
+    for k, v in pairs(CooldownViewerDataProvider) do
+        --print(k, v)
+    end
+    for _, cid in ipairs(C_CooldownViewer.GetCooldownViewerCategorySet(Enum.CooldownViewerCategory.TrackedBuff)) do
+        --print("---- ID ", cid, " ----")
+        local info = C_CooldownViewer.GetCooldownViewerCooldownInfo(cid)
+        info = CooldownViewerDataProvider:GetCooldownInfoForID(cid)
+        if (info) then
+            for k, v in pairs(info) do
+                if (issecretvalue(v) or issecrettable(v)) then
+                    --print("SECRET", k, v)
+                else
+                    --print("PUBLIC", k, v)
+                end
+            end
+        else
+            --print("NO INFO")
+        end
+    end
+    ]]
+end
+
+function ECF_PRINT_CDM()
+    local printFrame = function(frame)
+        local auraFrames = { frame:GetChildren() }
+        for _, c in ipairs(auraFrames) do
+            if (c.cooldownInfo) then
+                print(c.cooldownInfo.spellID, C_Spell.GetSpellInfo(c.cooldownInfo.spellID).name)
+            end
+        end
+    end
+    printFrame(BuffIconCooldownViewer)
+    printFrame(BuffBarCooldownViewer)
+end
+
 ---@class LuaCurveObject
 ---@field SetType fun(self:LuaCurveObject, type:Enum.LuaCurveType)
 ---@field AddPoint fun(self:LuaCurveObject, pointX:number, pointY:number)
 ---@field ClearPoints fun(self:LuaCurveObject)
 
+---@class LuaColorCurveObject
+---@field SetType fun(self:LuaColorCurveObject, type:Enum.LuaCurveType)
+---@field AddPoint fun(self:LuaColorCurveObject, pointX:number, pointY:ColorMixin)
+---@field ClearPoints fun(self:LuaColorCurveObject)
+
 ---@class LuaDurationObject
 ---@field Reset fun(self:LuaDurationObject)
----@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject|nil): number
+---@field IsZero fun(self:LuaDurationObject): boolean
+---@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject|LuaColorCurveObject): number|ColorMixin
+---@field EvaluateRemainingPercent fun(self:LuaDurationObject, curve:LuaCurveObject|LuaColorCurveObject): number|ColorMixin
 ---@field GetStartTime fun(self:LuaDurationObject): number
 ---@field GetTotalDuration fun(self:LuaDurationObject): number
+---@field GetRemainingDuration fun(self:LuaDurationObject): number
 
 ERA_TALENTS_DO_PRINT_N = 0
 
@@ -60,7 +105,7 @@ function ERACombatFrames_event(event, ...)
         if (classID == 2) then
             --ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 5) then
-            --ERACombatFrames_PriestSetup(cFrame)
+            ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
             --ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then
