@@ -53,6 +53,14 @@ function ECF_TEST()
         end
     end
     ]]
+    --[[
+    local count = C_Spell.GetSpellCastCount(247454)
+    if (issecretvalue(count)) then
+        print("SECRET", count)
+    else
+        print("PUBLIC", count)
+    end
+    ]]
 end
 
 function ECF_PRINT_CDM()
@@ -67,6 +75,12 @@ function ECF_PRINT_CDM()
     printFrame(BuffIconCooldownViewer)
     printFrame(BuffBarCooldownViewer)
 end
+
+---@class UnitHealPredictionCalculator
+---@field GetHealAbsorbs fun(self:UnitHealPredictionCalculator): number
+---@field GetDamageAbsorbs fun(self:UnitHealPredictionCalculator): number
+---@field SetHealAbsorbClampMode fun(self:UnitHealPredictionCalculator, mode:Enum.UnitHealAbsorbClampMode): number
+---@field SetDamageAbsorbClampMode fun(self:UnitHealPredictionCalculator, mode:Enum.UnitDamageAbsorbClampMode): number
 
 ---@class LuaCurveObject
 ---@field SetType fun(self:LuaCurveObject, type:Enum.LuaCurveType)
@@ -86,8 +100,6 @@ end
 ---@field GetStartTime fun(self:LuaDurationObject): number
 ---@field GetTotalDuration fun(self:LuaDurationObject): number
 ---@field GetRemainingDuration fun(self:LuaDurationObject): number
-
-ERA_TALENTS_DO_PRINT_N = 0
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")

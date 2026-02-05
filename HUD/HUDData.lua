@@ -1,6 +1,5 @@
 ----------------------------------------------------------------
 --#region GENERIC DATA -----------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDDataItem
 ---@field private __index HUDDataItem
@@ -39,7 +38,6 @@ end
 
 ----------------------------------------------------------------
 --#region HEALTH -----------------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDHealth : HUDDataItem
 ---@field private __index HUDHealth
@@ -49,6 +47,7 @@ end
 ---@field healthPercent100 number
 ---@field goodAbsorb number
 ---@field badAbsorb number
+---@field private calc UnitHealPredictionCalculator
 HUDHealth = {}
 HUDHealth.__index = HUDHealth
 setmetatable(HUDHealth, { __index = HUDDataItem })
@@ -68,6 +67,9 @@ function HUDHealth:Create(hud, unit)
     x.healthPercent100 = 50
     x.goodAbsorb = 0
     x.badAbsorb = 0
+    x.calc = CreateUnitHealPredictionCalculator()
+    x.calc:SetHealAbsorbClampMode(Enum.UnitHealAbsorbClampMode.MaximumHealth)
+    x.calc:SetDamageAbsorbClampMode(Enum.UnitDamageAbsorbClampMode.MaximumHealth)
     return x
 end
 
@@ -75,8 +77,11 @@ function HUDHealth:Update()
     self.health = UnitHealth(self.unit)
     self.maxHealth = UnitHealthMax(self.unit)
     self.healthPercent100 = UnitHealthPercent(self.unit, true, CurveConstants.ScaleTo100)
-    self.goodAbsorb = UnitGetTotalAbsorbs(self.unit)
-    self.badAbsorb = UnitGetTotalHealAbsorbs(self.unit)
+    UnitGetDetailedHealPrediction(self.unit, nil, self.calc)
+    --self.goodAbsorb = UnitGetTotalAbsorbs(self.unit)
+    --self.badAbsorb = UnitGetTotalHealAbsorbs(self.unit)
+    self.goodAbsorb = self.calc:GetDamageAbsorbs()
+    self.badAbsorb = self.calc:GetHealAbsorbs()
 end
 
 --#endregion
@@ -84,7 +89,6 @@ end
 
 ----------------------------------------------------------------
 --#region POWER ------------------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDPower : HUDDataItem
 ---@field private __index HUDPower
@@ -223,7 +227,6 @@ end
 
 ----------------------------------------------------------------
 --#region GENERIC TIMER ----------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDTimer : HUDDataItem
 ---@field private __index HUDTimer
@@ -247,12 +250,11 @@ end
 
 ----------------------------------------------------------------
 --#region COOLDOWN ---------------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDCooldown : HUDTimer
 ---@field private __index HUDCooldown
 ---@field spellID number
----@field cdData SpellCooldownInfo
+---@field private cdData SpellCooldownInfo|nil
 ---@field cooldownDuration LuaDurationObject
 ---@field swipeDuration LuaDurationObject
 ---@field maxCharges number
@@ -286,19 +288,25 @@ function HUDCooldown:updateTimerDuration(t)
         self.maxCharges = charges.maxCharges
         self.currentCharges = charges.currentCharges
         self.swipeDuration = C_Spell.GetSpellChargeDuration(self.spellID)
-        if (self.cdData.isOnGCD == true) then
+        if ((not self.cdData) or self.cdData.isOnGCD == true) then
             self.cooldownDuration = self.hud.duration0
         else
             self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+            if (not self.cooldownDuration) then
+                self.cooldownDuration = self.hud.duration0
+            end
         end
         return self.cooldownDuration
     else
         self.hasCharges = false
         self.maxCharges = 1
-        if (self.cdData.isOnGCD == true) then
+        if ((not self.cdData) or self.cdData.isOnGCD == true) then
             self.swipeDuration = self.hud.duration0
         else
             self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+            if (not self.swipeDuration) then
+                self.swipeDuration = self.hud.duration0
+            end
         end
         self.cooldownDuration = self.swipeDuration
         return self.swipeDuration
@@ -310,7 +318,6 @@ end
 
 ----------------------------------------------------------------
 --#region AURA -------------------------------------------------
-----------------------------------------------------------------
 
 ---@class (exact) HUDAura : HUDTimer
 ---@field private __index HUDAura

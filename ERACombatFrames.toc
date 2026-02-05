@@ -14,12 +14,16 @@ Frames/ERAIcons.xml
 Frames/ERAIcons.lua
 Frames/ERABars.lua
 
-HUD/HUDData.lua
-HUD/HUDDisplay.lua
+HUD/HUDPowerPoints.xml
+HUD/HUDContent.lua
 HUD/HUDModule.lua
+HUD/HUDData.lua
+HUD/HUDResources.lua
+HUD/HUDIcons.lua
 
 Classes/DemonHunter.lua
 Classes/DemonHunter_Havoc.lua
+Classes/DemonHunter_Vengeance.lua
 Classes/Priest.lua
 Classes/Priest_Shadow.lua
 

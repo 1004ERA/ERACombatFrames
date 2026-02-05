@@ -1,0 +1,122 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\..\FrameXML\UI.xsd">
+
+    <Frame name="ECFHUDModulePointsFrame" virtual="true">
+        <Layers>
+
+            <Layer level="BACKGROUND">
+                <Texture setAllPoints="true" file="Interface/Addons/ERACombatFrames/textures/disk_256.tga">
+                    <Color r="0.0" g="0.0" b="0.0" a="0.6"/>
+                </Texture>
+            </Layer>
+
+            <Layer level="BORDER">
+                <Texture parentKey="Border" setAllPoints="true" file="Interface/Addons/ERACombatFrames/textures/circle_256_16_blur_b8_8_4.tga"/>
+            </Layer>
+
+            <Layer level="ARTWORK">
+                <Texture parentKey="Point" setAllPoints="true" file="Interface/Addons/ERACombatFrames/textures/disk_256_padding_16_blur_128.tga"/>
+            </Layer>
+
+        </Layers>
+    </Frame>
+
+    <Frame name="ECFHUDModulePointsPartialFrame" virtual="true">
+
+        <Layers>
+
+            <Layer level="ARTWORK">
+
+                <Texture parentKey="TRT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_br.tga">
+                    <Anchors>
+                        <Anchor point="BOTTOMLEFT" relativePoint="CENTER"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="TRR">
+                    <Anchors>
+                        <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT"/>
+                        <Anchor point="BOTTOMRIGHT" relativePoint="RIGHT"/>
+                    </Anchors>
+                </Texture>
+
+                <Texture parentKey="BRT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_bl.tga">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="CENTER"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="BRR">
+                    <Anchors>
+                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOM"/>
+                        <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                    </Anchors>
+                </Texture>
+
+                <Texture parentKey="BLT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_tl.tga">
+                    <Anchors>
+                        <Anchor point="TOPRIGHT" relativePoint="CENTER"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="BLR">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="LEFT"/>
+                        <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMLEFT"/>
+                    </Anchors>
+                </Texture>
+
+                <Texture parentKey="TLT" file="Interface/Addons/ERACombatFrames/textures/triangle_mask_tr.tga">
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT" relativePoint="CENTER"/>
+                    </Anchors>
+                </Texture>
+                <Texture parentKey="TLR">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                        <Anchor point="TOPRIGHT" relativePoint="TOP"/>
+                    </Anchors>
+                </Texture>
+
+                <MaskTexture file="Interface/Addons/ERACombatFrames/textures/disk_256.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                        <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                    </Anchors>
+                    <MaskedTextures>
+                        <MaskedTexture childKey="TRT"/>
+                        <MaskedTexture childKey="TRR"/>
+                        <MaskedTexture childKey="BRT"/>
+                        <MaskedTexture childKey="BRR"/>
+                        <MaskedTexture childKey="BLT"/>
+                        <MaskedTexture childKey="BLR"/>
+                        <MaskedTexture childKey="TLT"/>
+                        <MaskedTexture childKey="TLR"/>
+                    </MaskedTextures>
+                </MaskTexture>
+
+            </Layer>
+
+            <Layer level="BORDER">
+                <Texture parentKey="AROUND" file="Interface/Addons/ERACombatFrames/textures/circle_256_16_blur_b8_8_4.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+                </Texture>
+                <Texture parentKey="FULL_POINT" setAllPoints="true" file="Interface/Addons/ERACombatFrames/textures/disk_256_padding_16_blur_128.tga">
+                </Texture>
+                <MaskTexture file="Interface/Addons/ERACombatFrames/textures/disk_256_padding_16.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                        <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                    </Anchors>
+                    <MaskedTextures>
+                        <MaskedTexture childKey="FULL_POINT"/>
+                    </MaskedTextures>
+                </MaskTexture>
+            </Layer>
+
+            <Layer level="BACKGROUND">
+                <Texture file="Interface/Addons/ERACombatFrames/textures/disk_256.tga" hWrapMode="CLAMPTOBLACKADDITIVE" vWrapMode="CLAMPTOBLACKADDITIVE">
+                    <Color r="0.0" g="0.0" b="0.0" a="0.4"/>
+                </Texture>
+            </Layer>
+
+        </Layers>
+    </Frame>
+
+</Ui>

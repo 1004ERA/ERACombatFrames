@@ -1,8 +1,7 @@
-ERA_HUDModule_TimerHeight = 1024
+ERA_HUDModule_TimerHeight = 1004
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region CSTR -----------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@class (exact) HUDModule : ERACombatModule
 ---@field private __index HUDModule
@@ -11,18 +10,27 @@ ERA_HUDModule_TimerHeight = 1024
 ---@field private data HUDDataItem[]
 ---@field private dataActive HUDDataItem[]
 ---@field private displayActive HUDDisplay[]
----@field essentialsFrame Frame
----@field timerFrameBack Frame
----@field timerFrameFront Frame
----@field private essentialsIcons HUDEssentialsPlacement[]
----@field private essentialsIconsActive HUDEssentialsPlacement[]
+---@field private essentialsFrame Frame
+---@field private timerFrameBack Frame
+---@field private timerFrameFront Frame
+---@field private resourceFrame Frame
+---@field private defensiveFrame Frame
+---@field private controlFrame Frame
+---@field private powerboostFrame Frame
+---@field private controlIcons HUDIcon[]
+---@field private powerboostIcons HUDIcon[]
+---@field private defensiveIcons HUDIcon[]
+---@field private defensiveIconsActiveCount number
+---@field private essentialsIconsActiveCount number
+---@field private essentialsIcons HUDEssentialsSlot[]
+---@field private essentialsLeftSideIcons HUDIcon[]
+---@field private essentialsRightSideIcons HUDIcon[]
 ---@field private timerBars HUDTimerBar[]
 ---@field private timerBarsActive HUDTimerBar[]
 ---@field private healthBar ERAStatusBar
 ---@field private healthData HUDHealth
----@field private resourceBeforeHealth HUDResourceDisplay[]
----@field private resourceAfterHealth HUDResourceDisplay[]
----@field private resourceActive HUDResourceDisplay[]
+---@field private resourceBeforeHealth HUDResourceSlot[]
+---@field private resourceAfterHealth HUDResourceSlot[]
 ---@field private baseGCD number
 ---@field private totalGCD number
 ---@field private gcdBar StatusBar
@@ -47,6 +55,7 @@ ERA_HUDModule_TimerHeight = 1024
 ---@field curveHideNoDuration LuaCurveObject
 ---@field curveTimer LuaCurveObject
 ---@field curveAlphaSoon0 LuaCurveObject
+---@field curveHideLessThanOnePointFive LuaCurveObject
 ---@field curveTrue0 LuaCurveObject
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
@@ -84,6 +93,12 @@ HUDModule.curveAlphaSoon0:AddPoint(0.3, 0.7)
 HUDModule.curveAlphaSoon0:AddPoint(0.5, 0)
 HUDModule.curveAlphaSoon0:AddPoint(1, 0)
 
+HUDModule.curveHideLessThanOnePointFive = C_CurveUtil:CreateCurve()
+HUDModule.curveHideLessThanOnePointFive:SetType(Enum.LuaCurveType.Step)
+HUDModule.curveHideLessThanOnePointFive:AddPoint(0, 0)
+HUDModule.curveHideLessThanOnePointFive:AddPoint(1.49, 0)
+HUDModule.curveHideLessThanOnePointFive:AddPoint(1.5, 1)
+
 HUDModule.curveTrue0 = C_CurveUtil:CreateCurve()
 HUDModule.curveTrue0:SetType(Enum.LuaCurveType.Step)
 HUDModule.curveTrue0:AddPoint(0, 1)
@@ -119,7 +134,9 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.data = {}
     x.essentialsFrame = CreateFrame("Frame", nil, UIParent)
     x.essentialsIcons = {}
-    x.essentialsIconsActive = {}
+    x.essentialsIconsActiveCount = 0
+    x.essentialsLeftSideIcons = {}
+    x.essentialsRightSideIcons = {}
     x.timerBars = {}
     x.timerBarsActive = {}
 
@@ -132,9 +149,9 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.baseLine = x:createGCDLine()
     x.baseLine:SetStartPoint("BOTTOMLEFT", x.timerFrameFront, 0, 1)
     x.baseLine:SetEndPoint("BOTTOMRIGHT", x.timerFrameFront, 0, 1)
-    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.77)
+    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.64)
     x:setupMiddleGCCBar(x.gcdBar)
-    x.castBarTransparent = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.33)
+    x.castBarTransparent = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32)
     x:setupMiddleGCCBar(x.castBarTransparent)
     x.castBarStrong = x:createGCCBar(1, 0.2, 0.7, 0.2, 1.0)
     x.castBarStrong:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
@@ -158,18 +175,29 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.allAuraFetcher = {}
     x.cdmParsed = false
 
+    x.resourceFrame = CreateFrame("Frame", nil, UIParent)
     x.resourceBeforeHealth = {}
     x.resourceAfterHealth = {}
-    x.resourceActive = {}
     x.healthData = HUDHealth:Create(x, "player")
-    x.healthBar = HUDHealthDisplay:Create(x, x.healthData, false)
+
+    local healthSlot = HUDResourceSlot:create(x)
+    table.insert(x.resourceAfterHealth, healthSlot)
+    x.healthBar = healthSlot:AddHealth(x.healthData, false)
+
+    x.controlFrame = CreateFrame("Frame", nil, UIParent)
+    x.powerboostFrame = CreateFrame("Frame", nil, UIParent)
+    x.defensiveFrame = CreateFrame("Frame", nil, UIParent)
+    x.controlIcons = {}
+    x.powerboostIcons = {}
+    x.defensiveIcons = {}
+    x.defensiveIconsActiveCount = 0
 
     x.duration0 = C_DurationUtil.CreateDuration()
 
     x.curveTimer = C_CurveUtil:CreateCurve()
     x.curveTimer:SetType(Enum.LuaCurveType.Linear)
 
-    x.rootFrames = { x.essentialsFrame }
+    x.rootFrames = { x.essentialsFrame, x.resourceFrame, x.defensiveFrame, x.controlFrame, x.powerboostFrame }
 
     return x
 end
@@ -200,7 +228,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region ACTIVATION & LAYOUT --------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 function HUDModule:SpecInactive()
     for _, f in ipairs(self.rootFrames) do
@@ -249,26 +276,24 @@ function HUDModule:CheckTalents()
 
     self.displayActive = {}
 
-    self.essentialsIconsActive = {}
+    self.essentialsIconsActiveCount = 0
     for _, x in ipairs(self.essentialsIcons) do
         if (x.icon:computeActive()) then
-            table.insert(self.essentialsIconsActive, x)
             table.insert(self.displayActive, x.icon)
+            self.essentialsIconsActiveCount = self.essentialsIconsActiveCount + 1
         end
     end
+    self:checkTalentsIconsList(self.essentialsLeftSideIcons)
+    self:checkTalentsIconsList(self.essentialsRightSideIcons)
+    self.defensiveIconsActiveCount = self:checkTalentsIconsList(self.defensiveIcons)
+    self:checkTalentsIconsList(self.controlIcons)
+    self:checkTalentsIconsList(self.powerboostIcons)
 
-    self.resourceActive = {}
     for _, x in ipairs(self.resourceBeforeHealth) do
-        if (x:computeActive()) then
-            table.insert(self.resourceActive, x)
-            table.insert(self.displayActive, x)
-        end
+        x:computeTalents()
     end
     for _, x in ipairs(self.resourceAfterHealth) do
-        if (x:computeActive()) then
-            table.insert(self.resourceActive, x)
-            table.insert(self.displayActive, x)
-        end
+        x:computeTalents()
     end
 
     self.timerBarsActive = {}
@@ -280,6 +305,20 @@ function HUDModule:CheckTalents()
     end
 
     self:updateLayout()
+end
+
+---@private
+---@param list HUDIcon[]
+---@return number
+function HUDModule:checkTalentsIconsList(list)
+    local cpt = 0
+    for _, icon in ipairs(list) do
+        if (icon:computeActive()) then
+            table.insert(self.displayActive, icon)
+            cpt = cpt + 1
+        end
+    end
+    return cpt
 end
 
 function HUDModule:EnterVehicle()
@@ -295,21 +334,21 @@ end
 
 ---@private
 function HUDModule:updateLayout()
+    local iCount = 0
+
+    -- essentials & timer
     local iconSize = self.options.essentialsIconSize
-
     self.essentialsFrame:SetPoint("CENTER", UIParent, "CENTER", self.options.essentialsX, self.options.essentialsY)
-    self.essentialsFrame:SetSize(iconSize * #self.essentialsIconsActive, 2 * ERA_HUDModule_TimerHeight)
-    for i, x in ipairs(self.essentialsIconsActive) do
-        x:setPlacement(iconSize * (i - (#self.essentialsIconsActive) / 2 - 0.5), iconSize)
-    end
-    local resourceWidth = iconSize * self.options.essentialsIconCount
-    local y = -iconSize - self.options.resourcePadding
-    for _, x in ipairs(self.resourceActive) do
-        y = y - x:updateLayout_returnHeight(y, resourceWidth) - self.options.resourcePadding
+    self.essentialsFrame:SetSize(iconSize * self.essentialsIconsActiveCount, 2 * ERA_HUDModule_TimerHeight)
+    for _, x in ipairs(self.essentialsIcons) do
+        if (x.icon.talentActive) then
+            iCount = iCount + 1
+            x:setPosition(iconSize * (iCount - self.essentialsIconsActiveCount / 2 - 0.5), iconSize, self.timerFrameBack)
+        end
     end
 
-    self.timerFrameBack:SetSize(iconSize * #self.essentialsIconsActive + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
-    self.timerFrameFront:SetSize(iconSize * #self.essentialsIconsActive + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
+    self.timerFrameBack:SetSize(iconSize * self.essentialsIconsActiveCount + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
+    self.timerFrameFront:SetSize(iconSize * self.essentialsIconsActiveCount + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
     if (self.options.gcdCount < #self.gcdLines) then
         repeat
             local removedLine = table.remove(self.gcdLines)
@@ -322,17 +361,133 @@ function HUDModule:updateLayout()
         end
     end
     for i, l in ipairs(self.gcdLines) do
-        y = i * self.options.gcdHeight
-        l:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, y)
-        l:SetEndPoint("BOTTOMRIGHT", self.timerFrameFront, 0, y)
+        local yGCD = i * self.options.gcdHeight
+        l:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yGCD)
+        l:SetEndPoint("BOTTOMRIGHT", self.timerFrameFront, 0, yGCD)
     end
     self.curveTimer:ClearPoints()
     self.curveTimer:AddPoint(0, 0)
     self.curveTimer:AddPoint(self.options.gcdCount * self.baseGCD, self.options.gcdCount * self.baseGCD)
     self.curveTimer:AddPoint(self.options.gcdCount * self.baseGCD + 0.1, 0)
     self.curveTimer:AddPoint(self.options.gcdCount * self.baseGCD + 1, 0)
+
+    -- resource
+    local topResource = self.options.essentialsY - iconSize - self.options.resourcePadding
+    local resourceWidth = iconSize * max(self.options.essentialsMinColumns, self.essentialsIconsActiveCount)
+    self.resourceFrame:SetSize(iconSize * self.options.essentialsMinColumns - 2, 4 * (self.options.healthHeight + self.options.powerHeight))
+    self.resourceFrame:SetPoint("TOP", UIParent, "CENTER", self.options.essentialsX, topResource)
+    local yResource = 0
+    for _, x in ipairs(self.resourceBeforeHealth) do
+        local rh = x:updateLayout_returnHeight(yResource, resourceWidth, self.resourceFrame)
+        if (rh > 0) then
+            yResource = yResource - x:updateLayout_returnHeight(yResource, resourceWidth, self.resourceFrame) - self.options.resourcePadding
+        end
+    end
+
+    -- side of essentials
+    local sideColumns
+    if (self.options.essentialsMinColumns == self.essentialsIconsActiveCount) then
+        sideColumns = 1
+    else
+        sideColumns = 1 + math.ceil(((resourceWidth - iconSize * self.essentialsIconsActiveCount) / iconSize) / 2)
+    end
+    local xSide = (-self.essentialsIconsActiveCount / 2 + 0.5) * iconSize
+    local ySide = 0
+    iCount = 0
+    for _, s in ipairs(self.essentialsLeftSideIcons) do
+        if (s.talentActive) then
+            iCount = iCount + 1
+            if (iCount > sideColumns) then
+                ySide = ySide - iconSize
+            else
+                xSide = xSide - iconSize
+            end
+        end
+        s:setPosition(xSide, ySide)
+    end
+    xSide = (self.essentialsIconsActiveCount / 2 - 0.5) * iconSize
+    ySide = 0
+    iCount = 0
+    for _, s in ipairs(self.essentialsRightSideIcons) do
+        if (s.talentActive) then
+            iCount = iCount + 1
+            if (iCount > sideColumns) then
+                ySide = ySide + iconSize
+            else
+                xSide = xSide + iconSize
+            end
+        end
+        s:setPosition(xSide, ySide)
+    end
+
+    -- defensive
+    iconSize = self.options.defensiveIconSize + self.options.utilityIconPadding
+    self.defensiveFrame:SetPoint("TOP", UIParent, "CENTER", self.options.essentialsX, topResource + yResource - self.options.defensivePadding)
+    iCount = 0
+    for _, icon in ipairs(self.defensiveIcons) do
+        if (icon.talentActive) then
+            iCount = iCount + 1
+            icon:setPosition(iconSize * (iCount - self.defensiveIconsActiveCount / 2 - 0.5), -self.options.utilityIconPadding)
+        end
+    end
+    self.defensiveFrame:SetSize(iCount * iconSize + self.options.utilityIconPadding, iconSize + self.options.utilityIconPadding)
+
+    -- utility
+    self:utilityLayout(self.controlIcons, 1, self.options.controlIconSize, self.options.utilityIconPadding, self.controlFrame)
+    self.controlFrame:SetPoint("TOPLEFT", UIParent, "CENTER", self.options.controlX, self.options.controlY)
+    self:utilityLayout(self.powerboostIcons, -1, self.options.powerboostIconSize, self.options.utilityIconPadding, self.powerboostFrame)
+    self.powerboostFrame:SetPoint("TOPRIGHT", UIParent, "CENTER", self.options.powerboostX, self.options.powerboostY)
 end
+
 ---@private
+---@param list HUDIcon[]
+---@param direction number
+---@param iconSize number
+---@param padding number
+---@param frame Frame
+function HUDModule:utilityLayout(list, direction, iconSize, padding, frame)
+    local x = direction * padding
+    local yTop = -padding
+    local yBot = -padding - (iconSize + padding) * math.sqrt(3) / 2
+    local dX = direction * (iconSize + padding) / 2
+    local first_row = true
+    local first_row_count = 0
+    local has_second_row = false
+    local last_is_second_row = false
+
+    for _, icon in ipairs(list) do
+        if (icon.talentActive) then
+            local y
+            if (first_row) then
+                first_row_count = first_row_count + 1
+                y = yTop
+                first_row = false
+            else
+                last_is_second_row = true
+                y = yBot
+                first_row = true
+            end
+            icon:setPosition(x, y)
+            x = x + dX
+        end
+    end
+
+    local fWidth, fHeight
+    if (last_is_second_row) then
+        fWidth = padding + (first_row_count + 0.5) * (iconSize + padding)
+    else
+        fWidth = padding + first_row_count * (iconSize + padding)
+    end
+    if (has_second_row) then
+        fHeight = padding + (iconSize + padding) * (1 + math.sqrt(3) / 2)
+    else
+        fHeight = iconSize + 2 * padding
+    end
+    frame:SetSize(fWidth, fHeight)
+end
+
+---@private
+---@return Line
 function HUDModule:createGCDLine()
     local l = self.timerFrameFront:CreateLine(nil, "BORDER", nil, 1)
     l:SetColorTexture(1.0, 1.0, 1.0, 1.0)
@@ -345,7 +500,15 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region CONTENT --------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
+
+---@return Frame
+function HUDModule:getTimerBarFrame()
+    return self.timerFrameBack
+end
+---@return Frame
+function HUDModule:getResourceFrame()
+    return self.resourceFrame
+end
 
 ---@param a HUDAura
 ---@param isTarget boolean
@@ -356,6 +519,11 @@ function HUDModule:addActiveAura(a, isTarget)
         self.playerAuraFetcher[a.spellID] = a
     end
     self.allAuraFetcher[a.spellID] = a
+end
+
+---@param r HUDResourceDisplay
+function HUDModule:addActiveResource(r)
+    table.insert(self.displayActive, r)
 end
 
 ---@param d HUDDataItem
@@ -383,7 +551,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region UPDATE ---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@private
 function HUDModule:createTickLine()
@@ -605,7 +772,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region CONSTRUCTORS ---------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ChannelTickInfo
 ---@field tickCount number
@@ -646,25 +812,103 @@ end
 ---@param r number
 ---@param g number
 ---@param b number
----@return HUDCooldownIcon, HUDEssentialsPlacement
+---@return HUDCooldownIcon, HUDEssentialsSlot
 function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b)
     local icon = HUDCooldownIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
     icon:SetBorderColor(r, g, b)
-    local placement = HUDEssentialsPlacement:Create(icon, self)
+    local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
-    local bar = HUDTimerBar:Create(placement, 0.5, data, talent, r, g, b)
+    local bar = HUDTimerBar:Create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
     return icon, placement
 end
 
 ---@param data HUDAura
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
----@return HUDAuraIcon, HUDEssentialsPlacement
+---@return HUDAuraIcon, HUDEssentialsSlot
 function HUDModule:AddEssentialsAura(data, iconID, talent)
     local icon = HUDAuraIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
-    local placement = HUDEssentialsPlacement:Create(icon, self)
+    local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     return icon, placement
+end
+
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDModule:AddEssentialsLeftCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.essentialsLeftSideIcons, icon)
+    return icon
+end
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDModule:AddEssentialsRightCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.essentialsRightSideIcons, icon)
+    return icon
+end
+
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDAuraIcon
+function HUDModule:AddEssentialsLeftAura(data, iconID, talent)
+    local icon = HUDAuraIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.essentialsLeftSideIcons, icon)
+    return icon
+end
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDAuraIcon
+function HUDModule:AddEssentialsRightAura(data, iconID, talent)
+    local icon = HUDAuraIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.essentialsRightSideIcons, icon)
+    return icon
+end
+
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDModule:AddDefensiveCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:Create(self.defensiveFrame, "TOP", "TOP", self.options.defensiveIconSize, data, iconID, talent)
+    table.insert(self.defensiveIcons, icon)
+    return icon
+end
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDModule:AddControlCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:Create(self.controlFrame, "TOPLEFT", "TOPLEFT", self.options.controlIconSize, data, iconID, talent)
+    table.insert(self.controlIcons, icon)
+    return icon
+end
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDModule:AddPowerboostCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:Create(self.powerboostFrame, "TOPRIGHT", "TOPRIGHT", self.options.powerboostIconSize, data, iconID, talent)
+    table.insert(self.powerboostIcons, icon)
+    return icon
+end
+
+---@param afterHealth boolean
+---@return HUDResourceSlot
+function HUDModule:AddResourceSlot(afterHealth)
+    local slot = HUDResourceSlot:create(self)
+    if (afterHealth) then
+        table.insert(self.resourceAfterHealth, slot)
+    else
+        table.insert(self.resourceBeforeHealth, slot)
+    end
+    return slot
 end
 
 ---@param powerType Enum.PowerType
@@ -685,15 +929,6 @@ end
 ---@return HUDPowerTargetIdle
 function HUDModule:AddPowerTargetIdle(powerType, talent, targetPercent)
     return HUDPowerTargetIdle:Create(self, powerType, talent, targetPercent)
-end
----@param data HUDPower
----@param r number
----@param g number
----@param b number
----@param talent ERALIBTalent|nil
----@return HUDPowerBarValueDisplay
-function HUDModule:AddPowerBarValueDisplay(data, r, g, b, talent)
-    return HUDPowerBarValueDisplay:Create(self, data, r, g, b, talent)
 end
 
 --#endregion

@@ -8,15 +8,24 @@ end
 ---@field private __index ERACombatSpecOptions
 ---@field essentialsX number
 ---@field essentialsY number
----@field essentialsIconCount number
+---@field essentialsMinColumns number
 ---@field essentialsIconSize number
----@field essentialsBarSize number
+---@field essentialsTimerBarSize number
 ---@field resourcePadding number
 ---@field healthHeight number
 ---@field powerHeight number
 ---@field gcdHeight number
 ---@field gcdCount number
 ---@field castBarWidth number
+---@field defensivePadding number
+---@field defensiveIconSize number
+---@field powerboostX number
+---@field powerboostY number
+---@field powerboostIconSize number
+---@field controlX number
+---@field controlY number
+---@field controlIconSize number
+---@field utilityIconPadding number
 ERACombatSpecOptions = {}
 ERACombatSpecOptions.__index = ERACombatSpecOptions
 
@@ -29,15 +38,24 @@ function ERACombatSpecOptions:Create()
 
     x.essentialsX = 0
     x.essentialsY = -128
-    x.essentialsIconCount = 7
-    x.essentialsIconSize = 44
-    x.essentialsBarSize = 8
+    x.essentialsMinColumns = 7
+    x.essentialsIconSize = 42
+    x.essentialsTimerBarSize = 8
     x.resourcePadding = 2
     x.healthHeight = 31
     x.powerHeight = 31
     x.gcdHeight = 44
     x.gcdCount = 4
     x.castBarWidth = 16
+    x.defensivePadding = 4
+    x.defensiveIconSize = 55
+    x.powerboostX = -200
+    x.powerboostY = -32
+    x.powerboostIconSize = 55
+    x.controlX = 200
+    x.controlY = 64
+    x.controlIconSize = 55
+    x.utilityIconPadding = 4
 
     return x
 end

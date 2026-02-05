@@ -1,6 +1,5 @@
 --------------------------------------------------------------------------------------------------------------------------------
 --#region CSTR  ----------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@class (exact) ERAStatusBar
 ---@field private __index ERAStatusBar
@@ -10,6 +9,7 @@
 ---@field private mainFrame Frame
 ---@field private background Texture
 ---@field private bar StatusBar
+---@field private textFrame Frame
 ---@field private left FontString|nil
 ---@field private middle FontString|nil
 ---@field private right FontString|nil
@@ -18,15 +18,16 @@
 ---@field private rightTxt string|nil
 ---@field private alpha number
 ---@field private visible boolean
+---@field private width number
 ---@field private barR number
 ---@field private barG number
 ---@field private barB number
----@field private minR number
----@field private minG number
----@field private minB number
----@field private maxR number
----@field private maxG number
----@field private maxB number
+---@field private addR number
+---@field private addG number
+---@field private addB number
+---@field private subR number
+---@field private subG number
+---@field private subB number
 ---@field private leftBorder Line
 ---@field private topBorder Line
 ---@field private rightBorder Line
@@ -35,11 +36,8 @@
 ---@field private borderG number
 ---@field private borderB number
 ---@field private borderThickness number
----@field private setupBarBorderThickness fun(self:ERAStatusBar, bar:StatusBar)
----@field private createText fun(self:ERAStatusBar, point:"LEFT"|"CENTER"|"RIGHT", offX:number): FontString
----@field private ensureMin fun(self:ERAStatusBar)
----@field private excessMin StatusBar|nil
----@field private excessMax StatusBar|nil
+---@field private modifAdditive StatusBar|nil
+---@field private modifSubtractive StatusBar|nil
 ERAStatusBar = {}
 ERAStatusBar.__index = ERAStatusBar
 
@@ -47,8 +45,9 @@ ERAStatusBar.__index = ERAStatusBar
 ---@param parentFrame Frame
 ---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"
 ---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param frameLevel number|nil
 ---@return ERAStatusBar
-function ERAStatusBar:Create(parentFrame, point, relativePoint)
+function ERAStatusBar:Create(parentFrame, point, relativePoint, frameLevel)
     local x = {}
     setmetatable(x, ERAStatusBar)
     ---@cast x ERAStatusBar
@@ -56,8 +55,12 @@ function ERAStatusBar:Create(parentFrame, point, relativePoint)
     x.parentFrame = parentFrame
     x.point = point
     x.relativePoint = relativePoint
+    x.width = 0
 
     x.mainFrame = CreateFrame("Frame", nil, parentFrame)
+    if (frameLevel) then
+        x.mainFrame:SetFrameLevel(frameLevel)
+    end
 
     x.background = x.mainFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
     x.background:SetColorTexture(0.0, 0.0, 0.0, 0.8)
@@ -72,6 +75,10 @@ function ERAStatusBar:Create(parentFrame, point, relativePoint)
     x.topBorder = x.mainFrame:CreateLine()
     x.rightBorder = x.mainFrame:CreateLine()
     x.bottomBorder = x.mainFrame:CreateLine()
+
+    x.textFrame = CreateFrame("Frame", nil, x.bar)
+    x.textFrame:SetFrameLevel(4)
+    x.textFrame:SetAllPoints()
 
     x:SetBorderThickness(4)
     x:SetBorderColor(1.0, 1.0, 1.0, false)
@@ -97,7 +104,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region LAYOUT & VISIBILITY  -------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---comment
 ---@param x number
@@ -105,8 +111,15 @@ end
 ---@param width number
 ---@param height number
 function ERAStatusBar:UpdateLayout(x, y, width, height)
+    self.width = width
     self.mainFrame:SetPoint(self.point, self.parentFrame, self.relativePoint, x, y)
     self.mainFrame:SetSize(width, height)
+    if (self.modifAdditive) then
+        self:setupModifierWidth(self.modifAdditive)
+    end
+    if (self.modifSubtractive) then
+        self:setupModifierWidth(self.modifSubtractive)
+    end
     if (self.left) then ERALIB_SetFont(self.left, height / 2) end
     if (self.middle) then ERALIB_SetFont(self.middle, height / 2) end
     if (self.right) then ERALIB_SetFont(self.right, height / 2) end
@@ -148,18 +161,18 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region BORDER  --------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---comment
 ---@param thick number
 function ERAStatusBar:SetBorderThickness(thick)
     self.borderThickness = thick
-    self:setupBarBorderThickness(self.bar)
-    if (self.excessMin) then
-        self:setupBarBorderThickness(self.excessMin)
+    self.bar:SetPoint("TOPLEFT", self.mainFrame, "TOPLEFT", thick, -thick)
+    self.bar:SetPoint("BOTTOMRIGHT", self.mainFrame, "BOTTOMRIGHT", -thick, thick)
+    if (self.modifAdditive) then
+        self:setupModifierWidth(self.modifAdditive)
     end
-    if (self.excessMax) then
-        self:setupBarBorderThickness(self.excessMax)
+    if (self.modifSubtractive) then
+        self:setupModifierWidth(self.modifSubtractive)
     end
     self.leftBorder:SetThickness(thick / 2)
     self.topBorder:SetThickness(thick / 2)
@@ -173,12 +186,6 @@ function ERAStatusBar:SetBorderThickness(thick)
     self.rightBorder:SetEndPoint("BOTTOMRIGHT", self.mainFrame, -thick / 2, thick / 4)
     self.bottomBorder:SetStartPoint("BOTTOMRIGHT", self.mainFrame, -thick / 4, thick / 2)
     self.bottomBorder:SetEndPoint("BOTTOMLEFT", self.mainFrame, thick / 4, thick / 2)
-end
-function ERAStatusBar:setupBarBorderThickness(bar)
-    bar:SetPoint("TOPLEFT", self.mainFrame, "TOPLEFT", self.borderThickness, -self.borderThickness)
-    --bar:SetPoint("TOPRIGHT", self.mainFrame, "TOPLEFT", -self.borderThickness, -self.borderThickness)
-    bar:SetPoint("BOTTOMRIGHT", self.mainFrame, "BOTTOMRIGHT", -self.borderThickness, self.borderThickness)
-    --bar:SetPoint("BOTTOMLEFT", self.mainFrame, "BOTTOMLEFT", self.borderThickness, self.borderThickness)
 end
 
 ---comment
@@ -234,18 +241,17 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region VALUE  ---------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---comment
 ---@param min number
 ---@param max number
 function ERAStatusBar:SetMinMax(min, max)
     self.bar:SetMinMaxValues(min, max)
-    if (self.excessMin) then
-        self.excessMin:SetMinMaxValues(min, max)
+    if (self.modifAdditive) then
+        self.modifAdditive:SetMinMaxValues(min, max)
     end
-    if (self.excessMax) then
-        self.excessMax:SetMinMaxValues(min, max)
+    if (self.modifSubtractive) then
+        self.modifSubtractive:SetMinMaxValues(min, max)
     end
 end
 ---comment
@@ -258,31 +264,44 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------------------------------------
---#region EXCESS  --------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
+--#region MODIFIERS  -----------------------------------------------------------------------------------------------------------
 
-function ERAStatusBar:ensureMin()
-    if (not self.excessMin) then
-        self.excessMin = CreateFrame("StatusBar", nil, self.mainFrame)
-        self.excessMin:SetFrameLevel(3)
-        self.excessMin:SetStatusBarTexture("Interface/TargetingFrame/UI-StatusBar")
+---@private
+---@param bar StatusBar
+function ERAStatusBar:setupModifierWidth(bar)
+    bar:SetWidth(self.width)
+end
+
+---@private
+function ERAStatusBar:ensureAdditive()
+    if (not self.modifAdditive) then
+        self.modifAdditive = CreateFrame("StatusBar", nil, self.mainFrame)
+        self.modifAdditive:SetFrameLevel(3)
+        self.modifAdditive:SetStatusBarTexture("Interface/TargetingFrame/UI-StatusBar")
         local min, max = self.bar:GetMinMaxValues()
-        self.excessMin:SetMinMaxValues(min, max)
-        self:setupBarBorderThickness(self.excessMin)
-        self:SetExcessMinColor(0.0, 0.0, 1.0, false)
+        self.modifAdditive:SetMinMaxValues(min, max)
+        self:setupModifierWidth(self.modifAdditive)
+        self:SetModifierAdditiveColor(0.5, 0.5, 1.0, false)
+        local anchor = self.bar:GetStatusBarTexture()
+        self.modifAdditive:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 0, 0)
+        self.modifAdditive:SetPoint("BOTTOMLEFT", anchor, "BOTTOMRIGHT", 0, 0)
     end
 end
 
-function ERAStatusBar:ensureMax()
-    if (not self.excessMax) then
-        self.excessMax = CreateFrame("StatusBar", nil, self.mainFrame)
-        self.excessMax:SetFrameLevel(4)
-        self.excessMax:SetStatusBarTexture("Interface/TargetingFrame/UI-StatusBar")
-        self.excessMax:SetReverseFill(true)
+---@private
+function ERAStatusBar:ensureSubtractive()
+    if (not self.modifSubtractive) then
+        self.modifSubtractive = CreateFrame("StatusBar", nil, self.mainFrame)
+        self.modifSubtractive:SetFrameLevel(3)
+        self.modifSubtractive:SetStatusBarTexture("Interface/TargetingFrame/UI-StatusBar")
+        self.modifSubtractive:SetReverseFill(true)
         local min, max = self.bar:GetMinMaxValues()
-        self.excessMax:SetMinMaxValues(min, max)
-        self:setupBarBorderThickness(self.excessMax)
-        self:SetExcessMaxColor(1.0, 0.0, 0.0, false)
+        self.modifSubtractive:SetMinMaxValues(min, max)
+        self:setupModifierWidth(self.modifSubtractive)
+        self:SetModifierSubtractiveColor(1.0, 0.0, 0.0, false)
+        local anchor = self.bar:GetStatusBarTexture()
+        self.modifSubtractive:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
+        self.modifSubtractive:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", 0, 0)
     end
 end
 
@@ -291,28 +310,28 @@ end
 ---@param g number
 ---@param b number
 ---@param maybeSecret boolean
-function ERAStatusBar:SetExcessMinColor(r, g, b, maybeSecret)
-    self:ensureMin()
+function ERAStatusBar:SetModifierAdditiveColor(r, g, b, maybeSecret)
+    self:ensureAdditive()
     if (maybeSecret) then
-        self.minR = nil
-        self.minG = nil
-        self.minB = nil
-        self.excessMin:SetStatusBarColor(r, g, b, 0.666)
+        self.addR = nil
+        self.addG = nil
+        self.addB = nil
+        self.modifAdditive:SetStatusBarColor(r, g, b, 1.0)
     else
-        if (r ~= self.minR or g ~= self.minG or b ~= self.minB) then
-            self.minR = r
-            self.minG = g
-            self.minB = b
-            self.excessMin:SetStatusBarColor(r, g, b, 0.666)
+        if (r ~= self.addR or g ~= self.addG or b ~= self.addB) then
+            self.addR = r
+            self.addG = g
+            self.addB = b
+            self.modifAdditive:SetStatusBarColor(r, g, b, 1.0)
         end
     end
 end
 
 ---comment
 ---@param val number
-function ERAStatusBar:SetExcessMin(val)
-    self:ensureMin()
-    self.excessMin:SetValue(val)
+function ERAStatusBar:SetModifierAdditive(val)
+    self:ensureAdditive()
+    self.modifAdditive:SetValue(val)
 end
 
 ---comment
@@ -320,28 +339,28 @@ end
 ---@param g number
 ---@param b number
 ---@param maybeSecret boolean
-function ERAStatusBar:SetExcessMaxColor(r, g, b, maybeSecret)
-    self:ensureMax()
+function ERAStatusBar:SetModifierSubtractiveColor(r, g, b, maybeSecret)
+    self:ensureSubtractive()
     if (maybeSecret) then
-        self.maxR = nil
-        self.maxG = nil
-        self.maxB = nil
-        self.excessMax:SetStatusBarColor(r, g, b, 0.666)
+        self.subR = nil
+        self.subG = nil
+        self.subB = nil
+        self.modifSubtractive:SetStatusBarColor(r, g, b, 0.666)
     else
-        if (r ~= self.maxR or g ~= self.maxG or b ~= self.maxB) then
-            self.maxR = r
-            self.maxG = g
-            self.maxB = b
-            self.excessMax:SetStatusBarColor(r, g, b, 0.666)
+        if (r ~= self.subR or g ~= self.subG or b ~= self.subB) then
+            self.subR = r
+            self.subG = g
+            self.subB = b
+            self.modifSubtractive:SetStatusBarColor(r, g, b, 0.666)
         end
     end
 end
 
 ---comment
 ---@param val number
-function ERAStatusBar:SetExcessMax(val)
-    self:ensureMax()
-    self.excessMax:SetValue(val)
+function ERAStatusBar:SetModifierSubtractive(val)
+    self:ensureSubtractive()
+    self.modifSubtractive:SetValue(val)
 end
 
 --#endregion
@@ -349,10 +368,9 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region TEXT  ----------------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 function ERAStatusBar:createText(point, offX)
-    local txt = self.bar:CreateFontString(nil, "ARTWORK")
+    local txt = self.textFrame:CreateFontString(nil, "OVERLAY")
     txt:SetPoint(point, self.bar, point, offX, 0)
     ERALIB_SetFont(txt, self.mainFrame:GetHeight() / 2)
     return txt

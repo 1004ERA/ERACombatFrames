@@ -4,7 +4,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region MAIN COMBAT FRAME ----------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERACombatMainFrame
 ---@field frame unknown
@@ -216,13 +215,6 @@ function ERACombatMainFrame_updateComputeTalents()
     if not ERA_TALENTS_PRINTED then
         ERA_TALENTS_PRINTED = true
         table.sort(ERA_TALENTS_TO_PRINT, ERAPrintTalents_sort)
-        if ERA_TALENTS_DO_PRINT_N > 0 then
-            for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
-                if (i < ERA_TALENTS_DO_PRINT_N) then
-                    print(t.talentId, t.name)
-                end
-            end
-        end
     end
 
     for _, t in ipairs(ERALIBTalent_all_talents) do
@@ -247,7 +239,7 @@ end
 ---@param startIndexInclusive integer|nil
 ---@param endIndexInclusive integer|nil
 ---@param firstLetter string|nil
-function ECF_print_talents(startIndexInclusive, endIndexInclusive, firstLetter)
+function ECF_PRINT_TALENTS(startIndexInclusive, endIndexInclusive, firstLetter)
     for i, t in ipairs(ERA_TALENTS_TO_PRINT) do
         if ((not startIndexInclusive) or i >= startIndexInclusive) and ((not endIndexInclusive) or i <= endIndexInclusive) and (((not firstLetter) or firstLetter == '') or string.lower(string.sub(t.name, 1, 1)) == string.lower(firstLetter)) then
             --if t.talentId ==  then
@@ -372,7 +364,6 @@ end
 
 --------------------------------------------------------------------------------------------------------------------------------
 --#region COMBAT MODULE ----------------------------------------------------------------------------------------------------------
---------------------------------------------------------------------------------------------------------------------------------
 
 ---@class ERACombatModule
 ---@field cFrame ERACombatMainFrame
