@@ -326,6 +326,7 @@ end
 ---@field private unit string
 ---@field stacks number
 ---@field stacksDisplay string|nil
+---@field auraIsPresent boolean
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
 HUDAura.__index = HUDAura
@@ -345,6 +346,7 @@ function HUDAura:createAura(spellID, hud, talent, isTarget)
     x.spellID = spellID
     x.isTarget = isTarget
     x.stacks = 0
+    x.auraIsPresent = false
     if (isTarget) then
         x.unit = "target"
     else
@@ -395,13 +397,15 @@ function HUDAura:updateTimerDuration(t)
         local cdmData
         cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(self.unit, self.cdmFrame.auraInstanceID)
         if (cdmData) then
-            self.stacks = cdmData.charges
+            self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
+            self.auraIsPresent = true
             return C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
         end
     end
     self.stacks = 0
     self.stacksDisplay = nil
+    self.auraIsPresent = false
     return self.hud.duration0
 end
 

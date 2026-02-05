@@ -61,6 +61,9 @@ function ECF_TEST()
         print("PUBLIC", count)
     end
     ]]
+    print(C_SpellActivationOverlay.IsSpellOverlayed(204157))
+    print(C_Spell.GetSpellInfo("reaver's glaive").spellID)
+    print(C_SpellActivationOverlay.IsSpellOverlayed(442294))
 end
 
 function ECF_PRINT_CDM()

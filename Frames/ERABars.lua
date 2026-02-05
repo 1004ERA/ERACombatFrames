@@ -281,7 +281,7 @@ function ERAStatusBar:ensureAdditive()
         local min, max = self.bar:GetMinMaxValues()
         self.modifAdditive:SetMinMaxValues(min, max)
         self:setupModifierWidth(self.modifAdditive)
-        self:SetModifierAdditiveColor(0.5, 0.5, 1.0, false)
+        self:SetModifierAdditiveColor(0.1, 0.4, 1.0, false)
         local anchor = self.bar:GetStatusBarTexture()
         self.modifAdditive:SetPoint("TOPLEFT", anchor, "TOPRIGHT", 0, 0)
         self.modifAdditive:SetPoint("BOTTOMLEFT", anchor, "BOTTOMRIGHT", 0, 0)
@@ -345,13 +345,13 @@ function ERAStatusBar:SetModifierSubtractiveColor(r, g, b, maybeSecret)
         self.subR = nil
         self.subG = nil
         self.subB = nil
-        self.modifSubtractive:SetStatusBarColor(r, g, b, 0.666)
+        self.modifSubtractive:SetStatusBarColor(r, g, b, 1.0)
     else
         if (r ~= self.subR or g ~= self.subG or b ~= self.subB) then
             self.subR = r
             self.subG = g
             self.subB = b
-            self.modifSubtractive:SetStatusBarColor(r, g, b, 0.666)
+            self.modifSubtractive:SetStatusBarColor(r, g, b, 1.0)
         end
     end
 end

@@ -1,7 +1,6 @@
 ---@class (exact) HUDResourceDisplay : HUDDisplay
 ---@field private __index HUDResourceDisplay
 ---@field protected constructResource fun(self:HUDResourceDisplay, hud:HUDModule, beforeHealth:boolean, talent:ERALIBTalent|nil)
----@field height number
 ---@field measure_returnHeight fun(self:HUDResourceDisplay, y:number, width:number, resourceFrame:Frame): number
 ---@field arrange fun(self:HUDResourceDisplay, y:number, width:number, height:number, resourceFrame:Frame): number
 HUDResourceDisplay = {}
@@ -14,7 +13,6 @@ setmetatable(HUDResourceDisplay, { __index = HUDDisplay })
 ---@param talent ERALIBTalent|nil
 function HUDResourceDisplay:constructResource(hud, beforeHealth, talent)
     self:constructDisplay(hud, talent)
-    hud:addResource(self, beforeHealth)
 end
 
 ------------------------
@@ -24,6 +22,7 @@ end
 ---@field private __index HUDHealthDisplay
 ---@field private data HUDHealth
 ---@field private bar ERAStatusBar
+---@field private desiredHeight number
 HUDHealthDisplay = {}
 HUDHealthDisplay.__index = HUDHealthDisplay
 setmetatable(HUDHealthDisplay, { __index = HUDResourceDisplay })
@@ -44,11 +43,11 @@ function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel)
     x.data = data
     x.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
     if (isPet) then
-        x.height = 2 * hud.options.healthHeight / 3
+        x.desiredHeight = 2 * hud.options.healthHeight / 3
         x.bar:SetBarColor(0.0, 0.8, 0.0, false)
         x.bar:SetBorderColor(0.0, 0.8, 0.0, false)
     else
-        x.height = hud.options.healthHeight
+        x.desiredHeight = hud.options.healthHeight
         x.bar:SetBarColor(0.0, 1.0, 0.0, false)
         x.bar:SetBorderColor(0.0, 1.0, 0.0, false)
     end
@@ -68,7 +67,7 @@ end
 ---@param resourceFrame Frame
 ---@return number
 function HUDHealthDisplay:measure_returnHeight(y, width, resourceFrame)
-    return self.height
+    return self.desiredHeight
 end
 ---@param y number
 ---@param width number
@@ -100,15 +99,13 @@ end
 ------------------------
 --#region RESOURCE BAR -
 
---------
+----------------
 --#region BAR
 
 ---@class (exact) HUDPowerBarDisplay : HUDResourceDisplay
 ---@field private __index HUDPowerBarDisplay
 ---@field protected bar ERAStatusBar
----@field private height number -- inherited
 ---@field private max number
----@field private dKind HUDPowerBarDisplayKind
 ---@field protected getMax fun(self:HUDPowerBarDisplay)
 ---@field protected getCurrentAndUpdate fun(self:HUDPowerBarDisplay, t:number, combat:boolean)
 ---@field isCurvePercent fun(self:HUDPowerBarDisplay): boolean
@@ -127,14 +124,11 @@ setmetatable(HUDPowerBarDisplay, { __index = HUDResourceDisplay })
 ---@param talent ERALIBTalent|nil
 ---@param resourceFrame Frame
 ---@param frameLevel number
----@param dKind HUDPowerBarDisplayKind
-function HUDPowerBarDisplay:constructPower(hud, r, g, b, talent, resourceFrame, frameLevel, dKind)
+function HUDPowerBarDisplay:constructPower(hud, r, g, b, talent, resourceFrame, frameLevel)
     self:constructResource(hud, true, talent)
-    self.dKind = dKind
     self.ticks = {}
     self.ticksActive = {}
     self.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
-    self.height = hud.options.powerHeight
     self.bar:SetBarColor(r, g, b, false)
     self.bar:SetBorderColor(r, g, b, false)
 end
@@ -156,14 +150,14 @@ end
 ---@param resourceFrame Frame
 ---@return number
 function HUDPowerBarDisplay:measure_returnHeight(y, width, resourceFrame)
-    return self.height
+    return self.hud.options.powerHeight
 end
 
 ---@param y number
 ---@param width number
 ---@param height number
 ---@param resourceFrame Frame
-function HUDPowerBarDisplay:arrange_returnHeight(y, width, height, resourceFrame)
+function HUDPowerBarDisplay:arrange(y, width, height, resourceFrame)
     self.bar:UpdateLayout(0, y, width, height)
     self.ticksActive = {}
     local bThick = self.bar:GetBorderThickness()
@@ -189,20 +183,23 @@ end
 function HUDPowerBarDisplay:Update(t, combat)
     local current = self:getCurrentAndUpdate(t, combat)
     self.bar:SetValue(current)
-    self.dKind:updateDisplay(combat, self, self.bar, current, self.max)
     for _, tk in ipairs(self.ticksActive) do
         tk:update(t, combat)
     end
 end
 
 --#endregion
---------
+----------------
+
+----------------
+--#region BAR KINDS
 
 --------
---#region BAR KINDS
+--#region POWER
 
 ---@class (exact) HUDPowerBarPowerDisplay : HUDPowerBarDisplay
 ---@field private __index HUDPowerBarPowerDisplay
+---@field private dKind HUDPowerBarDisplayKind
 ---@field data HUDPower
 HUDPowerBarPowerDisplay = {}
 HUDPowerBarPowerDisplay.__index = HUDPowerBarPowerDisplay
@@ -223,8 +220,9 @@ function HUDPowerBarPowerDisplay:create(hud, data, r, g, b, talent, resourceFram
     local x = {}
     setmetatable(x, HUDPowerBarPowerDisplay)
     ---@cast x HUDPowerBarPowerDisplay
-    x:constructPower(hud, r, g, b, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel, dKind)
+    x:constructPower(hud, r, g, b, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel)
     x.data = data
+    x.dKind = dKind
     return x
 end
 
@@ -235,7 +233,9 @@ end
 ---@param combat boolean
 ---@return number
 function HUDPowerBarPowerDisplay:getCurrentAndUpdate(t, combat)
-    return self.data.current
+    local current = self.data.current
+    self.dKind:updateDisplay(combat, self, self.bar, current, self.data.maxNotSecret)
+    return current
 end
 function HUDPowerBarPowerDisplay:isCurvePercent()
     return true
@@ -247,15 +247,12 @@ function HUDPowerBarPowerDisplay:getTickColor(curve)
     return UnitPowerPercent("player", self.data.powerType, false, curve)
 end
 
---#endregion
---------
-
---------
+----
 --#region DISPLAY KINDS
 
 ---@class (exact) HUDPowerBarDisplayKind
 ---@field private __index HUDPowerBarDisplayKind
----@field updateDisplay fun(self:HUDPowerBarDisplayKind, combat:boolean, owner:HUDPowerBarDisplay, bar:ERAStatusBar, current:number, max:number)
+---@field updateDisplay fun(self:HUDPowerBarDisplayKind, combat:boolean, owner:HUDPowerBarPowerDisplay, bar:ERAStatusBar, current:number, max:number)
 HUDPowerBarDisplayKind = {}
 HUDPowerBarDisplayKind.__index = HUDPowerBarDisplayKind
 function HUDPowerBarDisplayKind:constructKind()
@@ -271,7 +268,7 @@ function HUDPowerBarDisplayKindPower:constructPower()
     self:constructKind()
 end
 ---@param combat boolean
----@param owner HUDPowerBarDisplay
+---@param owner HUDPowerBarPowerDisplay
 ---@param bar ERAStatusBar
 ---@param current number
 ---@param max number
@@ -325,9 +322,79 @@ function HUDPowerBarDisplayKindPowerValue:setTexts(bar, owner)
 end
 
 --#endregion
+----
+
+--#endregion
 --------
 
 --------
+--#region STACKS
+
+---@class (exact) HUDPowerBarStacksDisplay : HUDPowerBarDisplay
+---@field private __index HUDPowerBarPowerDisplay
+---@field private data HUDAura
+---@field private maxStacksGetter fun(): number
+---@field private maxStacks number
+---@field private constantColor ColorMixin
+HUDPowerBarStacksDisplay = {}
+HUDPowerBarStacksDisplay.__index = HUDPowerBarStacksDisplay
+setmetatable(HUDPowerBarStacksDisplay, { __index = HUDPowerBarDisplay })
+
+---comment
+---@param hud HUDModule
+---@param data HUDPower
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@param resourceFrame Frame
+---@param frameLevel number
+---@param maxStacksGetter fun(): number
+---@return HUDPowerBarStacksDisplay
+function HUDPowerBarStacksDisplay:create(hud, data, r, g, b, talent, resourceFrame, frameLevel, maxStacksGetter)
+    local x = {}
+    setmetatable(x, HUDPowerBarStacksDisplay)
+    ---@cast x HUDPowerBarStacksDisplay
+    x:constructPower(hud, r, g, b, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel)
+    x.data = data
+    x.maxStacks = 1
+    x.maxStacksGetter = maxStacksGetter
+    x.constantColor = CreateColor(1.0, 1.0, 1.0, 1.0)
+    return x
+end
+
+function HUDPowerBarStacksDisplay:getMax()
+    self.maxStacks = self.maxStacksGetter()
+    return self.maxStacks
+end
+---@param t number
+---@param combat boolean
+---@return number
+function HUDPowerBarStacksDisplay:getCurrentAndUpdate(t, combat)
+    if (self.data.auraIsPresent) then
+        self.bar:SetVisibilityAlpha(1.0, false)
+        self.bar:SetMiddleText(tostring(self.data.stacksDisplay), true)
+    else
+        self.bar:SetVisibilityAlpha(0.0, false)
+    end
+    return self.data.stacks
+end
+function HUDPowerBarStacksDisplay:isCurvePercent()
+    return false
+end
+---@param curve LuaColorCurveObject
+---@return ColorMixin
+function HUDPowerBarStacksDisplay:getTickColor(curve)
+    return self.constantColor
+end
+
+--#endregion
+--------
+
+--#endregion
+----------------
+
+----------------
 --#region TICKS
 
 ---@class (exact) HUDPowerBarTick
@@ -433,7 +500,7 @@ function HUDPowerBarTick:update(t, combat)
 end
 
 --#endregion
---------
+----------------
 
 ---
 --#endregion
@@ -442,22 +509,29 @@ end
 ------------------------
 --#region POWER POINTS -
 
----@class (exact) HUDPowerPointsDisplay : HUDResourceDisplay
----@field private __index HUDPowerPointsDisplay
----@field private height number -- inherited
----@field private frame Frame
+----
+--#region BASE
+
+---@class (exact) HUDResourcePoints : HUDResourceDisplay
+---@field private __index HUDResourcePoints
+---@field private bar StatusBar
+---@field private barTexture Texture
+---@field private mask MaskTexture
 ---@field private rBorder number
 ---@field private gBorder number
 ---@field private bBorder number
 ---@field private rPoint number
 ---@field private gPoint number
 ---@field private bPoint number
+---@field pointSize number
 ---@field private points HUDPowerPointItem[]
 ---@field private maxPoints number
----@field protected getMaxPoints fun(self:HUDPowerPointsDisplay): number
-HUDPowerPointsDisplay = {}
-HUDPowerPointsDisplay.__index = HUDPowerPointsDisplay
-setmetatable(HUDPowerPointsDisplay, { __index = HUDResourceDisplay })
+---@field protected getCurrentPoints fun(self:HUDResourcePoints): number
+---@field protected getMaxPointsOnTalentCheck fun(self:HUDResourcePoints): number
+---@field protected getVisibilityAlphaOOC fun(self:HUDResourcePoints): number
+HUDResourcePoints = {}
+HUDResourcePoints.__index = HUDResourcePoints
+setmetatable(HUDResourcePoints, { __index = HUDResourceDisplay })
 
 ---comment
 ---@param hud HUDModule
@@ -469,10 +543,18 @@ setmetatable(HUDPowerPointsDisplay, { __index = HUDResourceDisplay })
 ---@param bPoint number
 ---@param talent ERALIBTalent|nil
 ---@param resourceFrame Frame
-function HUDPowerPointsDisplay:constructPoints(hud, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, resourceFrame)
+---@param frameLevel number
+function HUDResourcePoints:constructPoints(hud, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, resourceFrame, frameLevel)
     self:constructResource(hud, true, talent)
-    self.height = hud.options.powerHeight
-    self.frame = CreateFrame("Frame", nil, resourceFrame)
+    self.bar = CreateFrame("StatusBar", nil, resourceFrame)
+    self.bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+    self.bar:SetStatusBarColor(rPoint, gPoint, bPoint)
+    self.bar:SetFrameLevel(frameLevel)
+    self.bar:SetMinMaxValues(0, 1)
+    self.barTexture = self.bar:GetStatusBarTexture()
+    self.mask = self.bar:CreateMaskTexture(nil, "ARTWORK", nil, 1)
+    self.mask:SetAllPoints()
+    self.barTexture:AddMaskTexture(self.mask)
     self.rBorder = rBorder
     self.gBorder = gBorder
     self.bBorder = bBorder
@@ -480,59 +562,65 @@ function HUDPowerPointsDisplay:constructPoints(hud, rBorder, gBorder, bBorder, r
     self.gPoint = gPoint
     self.bPoint = bPoint
     self.maxPoints = 0
+    self.points = {}
 end
 
-function HUDPowerPointsDisplay:Activate()
-    self.frame:Show()
+function HUDResourcePoints:Activate()
+    self.bar:Show()
 end
-function HUDPowerPointsDisplay:Deactivate()
-    self.frame:Hide()
+function HUDResourcePoints:Deactivate()
+    self.bar:Hide()
 end
 
-function HUDPowerPointsDisplay:talentIsActive()
-    local max = self:getMaxPoints()
+function HUDResourcePoints:talentIsActive()
+    local max = self:getMaxPointsOnTalentCheck()
     if (max > self.maxPoints) then
         for i = self.maxPoints + 1, max do
             if (i > #self.points) then
-                local newPoint = HUDPowerPointItem:create(i, self.frame, self.rBorder, self.gBorder, self.bBorder, self.rPoint, self.gPoint, self.bPoint)
+                local newPoint = HUDPowerPointItem:create(self.bar, self.barTexture, self.rBorder, self.gBorder, self.bBorder)
                 table.insert(self.points, newPoint)
             else
-                self.points[i].frame:Show()
+                self.points[i]:show(self.barTexture)
             end
         end
     elseif (max < self.maxPoints) then
         for i = max + 1, self.maxPoints do
-            self.points[i].frame:Hide()
+            self.points[i]:hide(self.barTexture)
         end
     end
     self.maxPoints = max
+    self.bar:SetMinMaxValues(0, max)
+    self.mask:SetTexture("Interface/Addons/ERACombatFrames/textures/powerpoints_" .. max .. ".tga")
+end
+
+---@param y number
+---@param width number
+---@param resourceFrame Frame
+---@return number
+function HUDResourcePoints:measure_returnHeight(y, width, resourceFrame)
+    self.pointSize = math.min(self.hud.options.powerHeight, width / self.maxPoints)
+    return self.pointSize
 end
 
 ---comment
 ---@param y number
 ---@param width number
+---@param height number
 ---@param resourceFrame Frame
----@return number
-function HUDPowerPointsDisplay:updateLayout_returnHeight(y, width, resourceFrame)
-    self.frame:SetPoint("TOP", resourceFrame, "TOP", y, 0)
-    local size = math.min(self.hud.options.powerHeight, width / self.maxPoints)
-    self.height = size
-    self.frame:SetSize(width, size)
-
+function HUDResourcePoints:arrange(y, width, height, resourceFrame)
+    local pointsWidth = self.pointSize * self.maxPoints
+    self.bar:SetPoint("CENTER", resourceFrame, "TOP", 0, y - height / 2)
+    self.bar:SetSize(pointsWidth, self.pointSize)
     for i = 1, self.maxPoints do
-        local point = self.points[i]
-        point.frame:SetPoint("CENTER", self.frame, "CENTER", size * (i - self.maxPoints / 2 - 0.5), 0)
-        point.frame:SetSize(size, size)
+        self.points[i]:updateLayout(self.pointSize * (i - self.maxPoints / 2 - 0.5), self.pointSize, self.bar)
     end
-
-    return size
 end
 
 ---@param r number
 ---@param g number
 ---@param b number
 ---@param maybeSecret boolean
-function HUDPowerPointsDisplay:SetBorderColor(r, g, b, maybeSecret)
+function HUDResourcePoints:SetBorderColor(r, g, b, maybeSecret)
     if (
         ---@diagnostic disable-next-line: param-type-mismatch
             (maybeSecret or issecretvalue(self.rBorder) or issecretvalue(self.gBorder) or issecretvalue(self.bBorder))
@@ -552,18 +640,18 @@ end
 ---@param g number
 ---@param b number
 ---@param maybeSecret boolean
-function HUDPowerPointsDisplay:SetPointColor(r, g, b, maybeSecret)
-    if (
-        ---@diagnostic disable-next-line: param-type-mismatch
-            (maybeSecret or issecretvalue(self.rPoint) or issecretvalue(self.gPoint) or issecretvalue(self.bPoint))
-            or
-            (self.rPoint ~= r or self.gPoint ~= g or self.bPoint ~= b)
-        ) then
-        self.rPoint = r
-        self.gPoint = g
-        self.bPoint = b
-        for _, p in ipairs(self.points) do
-            p:setPointColor(r, g, b)
+function HUDResourcePoints:SetPointColor(r, g, b, maybeSecret)
+    if (maybeSecret) then
+        self.rPoint = nil
+        self.gPoint = nil
+        self.bPoint = nil
+        self.bar:SetStatusBarColor(r, g, b)
+    else
+        if (self.rPoint ~= r or self.gPoint ~= g or self.bPoint ~= b) then
+            self.rPoint = r
+            self.gPoint = g
+            self.bPoint = b
+            self.bar:SetStatusBarColor(r, g, b)
         end
     end
 end
@@ -571,76 +659,95 @@ end
 ---comment
 ---@param t number
 ---@param combat boolean
-function HUDPowerPointsDisplay:Update(t, combat)
-
-end
-
-----
---#region POINT ITEM
-
----@class (exact) HUDPowerPointItem
----@field private __index HUDPowerPointItem
----@field frame Frame
----@field private border Texture
----@field private point Texture
-HUDPowerPointItem = {}
-HUDPowerPointItem.__index = HUDPowerPointItem
-
----@param index number
----@param parentFrame Frame
----@param rBorder number
----@param gBorder number
----@param bBorder number
----@param rPoint number
----@param gPoint number
----@param bPoint number
----@return HUDPowerPointItem
-function HUDPowerPointItem:create(index, parentFrame, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint)
-    local x = {}
-    setmetatable(x, HUDPowerPointItem)
-    ---@cast x HUDPowerPointItem
-    local frame = CreateFrame("Frame", nil, parentFrame, "ECFHUDModulePointsFrame")
-    ---@cast frame unknown
-    x.border = frame.Border
-    x.point = frame.Point
-    ---@cast frame Frame
-    x.frame = frame
-    x:setBorderColor(rBorder, gBorder, bBorder)
-    x:setPointColor(rPoint, gPoint, bPoint)
-    return x
-end
----@param r number
----@param g number
----@param b number
-function HUDPowerPointItem:setBorderColor(r, g, b)
-    self.border:SetVertexColor(r, g, b, 1.0)
-end
----@param r number
----@param g number
----@param b number
-function HUDPowerPointItem:setPointColor(r, g, b)
-    self.point:SetVertexColor(r, g, b)
-end
-function HUDPowerPointItem:updateCount(value)
-
+function HUDResourcePoints:Update(t, combat)
+    self.bar:SetValue(self:getCurrentPoints())
+    if (combat) then
+        self.bar:SetAlpha(1.0)
+    else
+        self.bar:SetAlpha(self:getVisibilityAlphaOOC())
+    end
 end
 
 --#endregion
 ----
 
 ----
---#region KINDS
+--#region POINT ITEM
 
----@class (exact) HUDPowerPointsPowerDisplay : HUDPowerPointsDisplay
----@field private __index HUDPowerPointsDisplay
----@field private data HUDPower
-HUDPowerPointsPowerDisplay = {}
-HUDPowerPointsPowerDisplay.__index = HUDPowerPointsPowerDisplay
-setmetatable(HUDPowerPointsPowerDisplay, { __index = HUDPowerPointsDisplay })
+---@class (exact) HUDPowerPointItem
+---@field private __index HUDPowerPointItem
+---@field private border Texture
+---@field private background Texture
+HUDPowerPointItem = {}
+HUDPowerPointItem.__index = HUDPowerPointItem
+
+---@param parentFrame Frame
+---@param parentBarTexture Texture
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@return HUDPowerPointItem
+function HUDPowerPointItem:create(parentFrame, parentBarTexture, rBorder, gBorder, bBorder)
+    local x = {}
+    setmetatable(x, HUDPowerPointItem)
+    ---@cast x HUDPowerPointItem
+    x.border = parentFrame:CreateTexture(nil, "OVERLAY", nil, 6)
+    x.border:SetTexture("Interface/Addons/ERACombatFrames/textures/circle_256_16_blur_b8_8_4.tga")
+    x:setBorderColor(rBorder, gBorder, bBorder)
+    x.background = parentFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
+    x.background:SetTexture("Interface/Addons/ERACombatFrames/textures/disk_256.tga")
+    x.background:SetVertexColor(0.0, 0.0, 0.0, 0.66)
+    x:show(parentBarTexture)
+    return x
+end
+
+---@param x number
+---@param size number
+---@param parentFrame StatusBar
+function HUDPowerPointItem:updateLayout(x, size, parentFrame)
+    self.border:SetPoint("CENTER", parentFrame, "CENTER", x, 0)
+    self.border:SetSize(size, size)
+    self.background:SetPoint("CENTER", parentFrame, "CENTER", x, 0)
+    self.background:SetSize(size, size)
+end
+
+---@param parentBarTexture Texture
+function HUDPowerPointItem:show(parentBarTexture)
+    self.border:Show()
+    self.background:Show()
+end
+---@param parentBarTexture Texture
+function HUDPowerPointItem:hide(parentBarTexture)
+    self.border:Hide()
+    self.background:Hide()
+end
+
+---@param r number
+---@param g number
+---@param b number
+function HUDPowerPointItem:setBorderColor(r, g, b)
+    self.border:SetVertexColor(r, g, b, 1.0)
+end
+
+--#endregion
+----
+
+----
+--#region AURA STACKS
+
+---@class (exact) HUDStacksPoints : HUDResourcePoints
+---@field private __index HUDResourcePoints
+---@field private data HUDAura
+---@field private maxValueGetter fun(): number
+---@field private idleValueGetter fun(): number
+---@field private idleValue number
+HUDStacksPoints = {}
+HUDStacksPoints.__index = HUDStacksPoints
+setmetatable(HUDStacksPoints, { __index = HUDResourcePoints })
 
 ---comment
 ---@param hud HUDModule
----@param data HUDPower
+---@param data HUDAura
 ---@param rBorder number
 ---@param gBorder number
 ---@param bBorder number
@@ -649,13 +756,41 @@ setmetatable(HUDPowerPointsPowerDisplay, { __index = HUDPowerPointsDisplay })
 ---@param bPoint number
 ---@param talent ERALIBTalent|nil
 ---@param resourceFrame Frame
-function HUDPowerPointsPowerDisplay:create(hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, resourceFrame)
+---@param frameLevel number
+---@param idleValueGetter fun(): number
+---@param maxValueGetter fun(): number
+function HUDStacksPoints:create(hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, resourceFrame, frameLevel, idleValueGetter, maxValueGetter)
     local x = {}
-    setmetatable(x, HUDPowerPointsPowerDisplay)
-    ---@cast x HUDPowerPointsPowerDisplay
-    x:constructPoints(hud, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame)
+    setmetatable(x, HUDStacksPoints)
+    ---@cast x HUDStacksPoints
+    x:constructPoints(hud, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel)
     x.data = data
+    x.idleValueGetter = idleValueGetter
+    x.maxValueGetter = maxValueGetter
+    x.idleValue = 0
     return x
+end
+
+function HUDStacksPoints:getMaxPointsOnTalentCheck()
+    self.idleValue = self.idleValueGetter()
+    return self.maxValueGetter()
+end
+
+function HUDStacksPoints:getCurrentPoints()
+    return self.data.stacks
+end
+
+function HUDStacksPoints:getVisibilityAlphaOOC()
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (issecretvalue(self.data.stacks)) then
+        return 1.0
+    else
+        if (self.data.stacks == self.idleValue) then
+            return 0.0
+        else
+            return 1.0
+        end
+    end
 end
 
 --#endregion

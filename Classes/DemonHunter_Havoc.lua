@@ -73,7 +73,8 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     end
     reaverMarkPlacement:AddTimerBar(0.25, reaverGlaive, nil, 0.6, 0.3, 0.7)
 
-    local _, glaivePlacement = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
+    local glaiveIcon, glaivePlacement = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
+    glaiveIcon.watchAdditionalOverlay = 442294
 
     hud:AddEssentialsCooldown(eyeBeam, nil, nil, 0.1, 0.9, 0.2)
 

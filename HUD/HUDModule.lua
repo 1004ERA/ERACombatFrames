@@ -380,7 +380,13 @@ function HUDModule:updateLayout()
     for _, x in ipairs(self.resourceBeforeHealth) do
         local rh = x:updateLayout_returnHeight(yResource, resourceWidth, self.resourceFrame)
         if (rh > 0) then
-            yResource = yResource - x:updateLayout_returnHeight(yResource, resourceWidth, self.resourceFrame) - self.options.resourcePadding
+            yResource = yResource - rh - self.options.resourcePadding
+        end
+    end
+    for _, x in ipairs(self.resourceAfterHealth) do
+        local rh = x:updateLayout_returnHeight(yResource, resourceWidth, self.resourceFrame)
+        if (rh > 0) then
+            yResource = yResource - rh - self.options.resourcePadding
         end
     end
 
@@ -529,16 +535,6 @@ end
 ---@param d HUDDataItem
 function HUDModule:addData(d)
     table.insert(self.data, d)
-end
-
----@param d HUDResourceDisplay
----@param beforeHealth boolean
-function HUDModule:addResource(d, beforeHealth)
-    if (beforeHealth) then
-        table.insert(self.resourceBeforeHealth, d)
-    else
-        table.insert(self.resourceAfterHealth, d)
-    end
 end
 
 ---@param tb HUDTimerBar

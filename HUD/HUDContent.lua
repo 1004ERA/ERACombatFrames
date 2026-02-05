@@ -184,6 +184,23 @@ function HUDResourceSlot:AddPowerValue(data, r, g, b, talent)
     return res
 end
 
+---@param data HUDAura
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@param rPoint number
+---@param gPoint number
+---@param bPoint number
+---@param talent ERALIBTalent|nil
+---@param idleValueGetter fun(): number
+---@param maxValueGetter fun(): number
+---@return HUDStacksPoints
+function HUDResourceSlot:AddStacksPoints(data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, idleValueGetter, maxValueGetter)
+    local res = HUDStacksPoints:create(self.hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, self.hud:getResourceFrame(), 1 + #self.resources, idleValueGetter, maxValueGetter)
+    table.insert(self.resources, res)
+    return res
+end
+
 --#endregion
 ----------------------------------------------------------------
 
