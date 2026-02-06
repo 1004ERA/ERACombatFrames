@@ -76,6 +76,11 @@ function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, 
     --self:Hide()
 end
 
+---@param size number
+function ERAIcon:SetSize(size)
+    self.icon:SetSize(size, size)
+end
+
 function ERAIcon:SetIconTexture(iconID, force)
     if (force) then
         self.iconID = iconID
@@ -255,6 +260,7 @@ end
 ---@field private highlighted boolean
 ---@field private highlightAnim1 AnimationGroup
 ---@field private highlightAnim2 AnimationGroup
+---@field private countdownVisible boolean
 ERAPieIcon = {}
 ERAPieIcon.__index = ERAPieIcon
 setmetatable(ERAPieIcon, { __index = ERAIcon })
@@ -290,6 +296,7 @@ function ERAPieIcon:create(parentFrame, point, relativePoint, size, iconID)
     x.swipe:SetSwipeColor(0.0, 0.0, 0.0, 0.88)
     x.swipe:SetUseCircularEdge(true)
     --x.swipe:SetHideCountdownNumbers(true)
+    x.countdownVisible = true
 
     return x
 end
@@ -300,7 +307,16 @@ function ERAPieIcon:SetupAura()
 end
 
 function ERAPieIcon:HideDefaultCountdown()
-    self.swipe:SetHideCountdownNumbers(true)
+    if (self.countdownVisible) then
+        self.countdownVisible = false
+        self.swipe:SetHideCountdownNumbers(true)
+    end
+end
+function ERAPieIcon:ShowDefaultCountdown()
+    if (not self.countdownVisible) then
+        self.countdownVisible = true
+        self.swipe:SetHideCountdownNumbers(false)
+    end
 end
 
 ---comment

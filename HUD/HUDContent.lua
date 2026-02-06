@@ -234,6 +234,14 @@ function HUDResourceSlot:AddStacksBar(data, r, g, b, talent, maxStacksGetter, ta
     return res
 end
 
+---@param data HUDRunesData
+---@return HUDRunesResource
+function HUDResourceSlot:AddRunes(data)
+    local res = HUDRunesResource:create(self.hud, data, self.hud:getResourceFrame(), 1 + #self.resources)
+    table.insert(self.resources, res)
+    return res
+end
+
 --#endregion
 ----------------------------------------------------------------
 

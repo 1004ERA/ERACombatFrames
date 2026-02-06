@@ -37,8 +37,14 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private gcdLines Line[]
 ---@field private baseLine Line
 ---@field private createGCDLine fun(self:HUDModule): Line
----@field private castBarStrong StatusBar
----@field private castBarTransparent StatusBar
+---@field private castBar StatusBar
+---@field private castBarSecret StatusBar
+---@field private castBarSecretVisible boolean
+---@field private castBackground Texture
+---@field private castBackgroundVisible boolean
+---@field private castLine Line
+---@field private castLineVisible boolean
+---@field private empowers HUDEmpowerLevel[]
 ---@field private channelTicks Line[]
 ---@field private channelInfo { [number]: ChannelTickInfo }
 ---@field private isCasting boolean
@@ -64,6 +70,9 @@ ERA_HUDModule_TimerHeight = 1004
 HUDModule = {}
 HUDModule.__index = HUDModule
 setmetatable(HUDModule, { __index = ERACombatModule })
+
+--------
+--#region CURVES
 
 HUDModule.curveHide96pctFull = C_CurveUtil:CreateCurve()
 HUDModule.curveHide96pctFull:SetType(Enum.LuaCurveType.Step)
@@ -132,6 +141,9 @@ HUDModule.curveRedIf0:SetType(Enum.LuaCurveType.Step)
 HUDModule.curveRedIf0:AddPoint(0, CreateColor(1.0, 0.0, 0.0, 1.0))
 HUDModule.curveRedIf0:AddPoint(0.01, CreateColor(1.0, 1.0, 1.0, 1.0))
 
+--#endregion
+--------
+
 ---comment
 ---@param cFrame ERACombatMainFrame
 ---@param baseGCD number
@@ -165,19 +177,31 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.baseLine:SetEndPoint("BOTTOMRIGHT", x.timerFrameFront, 0, 1)
     x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.64, "Interface\\Buttons\\WHITE8x8")
     x:setupMiddleGCCBar(x.gcdBar)
-    x.castBarTransparent = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32, "Interface\\Buttons\\WHITE8x8")
-    x:setupMiddleGCCBar(x.castBarTransparent)
+    x.castBarSecret = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32, "Interface\\Buttons\\WHITE8x8")
+    x:setupMiddleGCCBar(x.castBarSecret)
+    x.castBarSecret:Hide()
+    x.castBarSecretVisible = false
     --x.castBarStrong = x:createGCCBar(1, 0.2, 0.7, 0.5, 1.0, "Interface\\Buttons\\WHITE8x8")
     -- ChallengeMode-TimerFill
     -- Capacitance-Blacksmithing-TimerFill
-    x.castBarStrong = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "Capacitance-Blacksmithing-TimerFill")
-    x.castBarStrong:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
-    x.castBarStrong:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
+    x.castBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 1.0, "Capacitance-Blacksmithing-TimerFill")
+    x.castBar:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
+    x.castBar:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
+    x.castBackground = x.timerFrameBack:CreateTexture(nil, "BACKGROUND", nil, 0)
+    x.castBackground:SetColorTexture(0.0, 0.0, 0.0, 0.66)
+    x.castBackground:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
+    x.castBackground:Hide()
+    x.castBackgroundVisible = false
     x.isCasting = false
-    x.castBarTransparent:Hide()
-    x.castBarStrong:Hide()
+    x.castBarSecret:Hide()
     x.channelInfo = {}
     x.channelTicks = {}
+    x.empowers = {}
+    x.castLine = x.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 1)
+    x.castLine:SetColorTexture(0.6, 0.6, 1.0, 1.0)
+    x.castLine:SetThickness(2)
+    x.castLine:Hide()
+    x.castLineVisible = false
     x.kicks = {}
     x.targetCasBar = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion")
     x.targetCasBar:SetRotatesTexture(true)
@@ -395,6 +419,13 @@ function HUDModule:updateLayout()
     self.curveTimer:AddPoint(self.options.gcdCount * self.baseGCD + 0.1, 0)
     self.curveTimer:AddPoint(self.options.gcdCount * self.baseGCD + 1, 0)
 
+    self.targetCasBar:SetWidth(self.options.castBarWidth)
+    self.castBar:SetWidth(self.options.castBarWidth)
+    self.castBackground:SetWidth(self.options.castBarWidth)
+    for _, emp in ipairs(self.empowers) do
+        emp:updateSize(self)
+    end
+
     -- resource
     local topResource = self.options.essentialsY - iconSize - self.options.resourcePadding
     local resourceWidth = iconSize * max(self.options.essentialsMinColumns, self.essentialsIconsActiveCount)
@@ -521,7 +552,7 @@ end
 ---@private
 ---@return Line
 function HUDModule:createGCDLine()
-    local l = self.timerFrameFront:CreateLine(nil, "BORDER", nil, 1)
+    local l = self.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 2)
     l:SetColorTexture(1.0, 1.0, 1.0, 1.0)
     l:SetThickness(1)
     return l
@@ -580,14 +611,6 @@ end
 --------------------------------------------------------------------------------------------------------------------------------
 --#region UPDATE ---------------------------------------------------------------------------------------------------------------
 
----@private
-function HUDModule:createTickLine()
-    local l = self.timerFrameFront:CreateLine(nil, "BORDER", nil, 2)
-    l:SetColorTexture(1.0, 0.0, 0.0, 1.0)
-    l:SetThickness(1)
-    return l
-end
-
 ---@param t number
 function HUDModule:UpdateCombat(t)
     self:updateData(t, true)
@@ -606,8 +629,8 @@ function HUDModule:UpdateCombat(t)
         self.totalGCD = gcdDuration
         local maxTimer = ERA_HUDModule_TimerHeight / pixelPerSecond
         self.gcdBar:SetMinMaxValues(0, maxTimer)
-        self.castBarStrong:SetMinMaxValues(0, maxTimer)
-        self.castBarTransparent:SetMinMaxValues(0, maxTimer)
+        self.castBar:SetMinMaxValues(0, maxTimer)
+        self.castBarSecret:SetMinMaxValues(0, maxTimer)
         self.targetCasBar:SetMinMaxValues(0, maxTimer)
         for _, tb in ipairs(self.timerBarsActive) do
             tb:updateMaxDuration(maxTimer)
@@ -619,64 +642,138 @@ function HUDModule:UpdateCombat(t)
 
     --#region CASTING
 
-    local _, _, _, _, _, _, _, channelID, isEmpowered, numEmpowerStages = UnitChannelInfo("player")
+    local remainingCast = 0
+    local totalTimeForCastBackground = 0
+    ---@type LuaDurationObject
+    local durationCastIfRemainingSecret = nil
+    local _, _, _, startTimeMS, endTimeMS, _, _, channelID, isEmpowered, numEmpowerStages = UnitChannelInfo("player")
     if (channelID) then
-        local dur = UnitChannelDuration("player")
-        self.castBarStrong:SetValue(dur:GetRemainingDuration())
         ---@diagnostic disable-next-line: param-type-mismatch
-        self.castBarTransparent:SetValue(dur:EvaluateRemainingDuration(self.curveTimer))
-        if (not self.isCasting) then
-            self.isCasting = true
-            self.castBarStrong:Show()
-            self.castBarTransparent:Show()
-        end
-        local ci = self.channelInfo[channelID]
-        if (ci) then
-            for i = 1, ci.tickCount - 1 do
-                local line
-                if (i > #self.channelTicks) then
-                    line = self:createTickLine()
-                    table.insert(self.channelTicks, line)
+        local secret = issecretvalue(startTimeMS) or issecretvalue(endTimeMS)
+        if (numEmpowerStages and numEmpowerStages > 0 and not secret) then
+            if (self.isCasting) then
+                self:hideChannelTicks(1)
+            end
+            local castProgress = t - (startTimeMS / 1000)
+            local maxHold = GetUnitEmpowerHoldAtMaxTime("player") / 1000
+            local acc = 0
+            local yTop = pixelPerSecond * (maxHold + (endTimeMS - startTimeMS) / 1000)
+            for i = 1, numEmpowerStages do
+                local emp
+                if (i > #self.empowers) then
+                    emp = HUDEmpowerLevel:create(self, i, self.timerFrameFront)
+                    table.insert(self.empowers, emp)
                 else
-                    line = self.channelTicks[i]
-                    line:Show()
+                    emp = self.empowers[i]
                 end
-                local yTick = i * ci.tickDelta * pixelPerSecondWithoutHaste
-                line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
-                line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
+                local stageDuration
+                if (i == numEmpowerStages) then
+                    stageDuration = maxHold
+                else
+                    stageDuration = GetUnitEmpowerStageDuration("player", i) / 1000
+                end
+                acc = acc + stageDuration
+                emp:draw(self.options.castBarWidth, yTop - acc * pixelPerSecond, castProgress > acc, self.timerFrameFront)
             end
-            for i = ci.tickCount, #self.channelTicks do
-                self.channelTicks[i]:Hide()
+            for i = numEmpowerStages + 1, #self.empowers do
+                self.empowers[i]:hide()
             end
+            remainingCast = maxHold + endTimeMS / 1000 - t
+            totalTimeForCastBackground = maxHold + (endTimeMS - startTimeMS) / 1000
         else
-            for _, ct in ipairs(self.channelTicks) do
-                ct:Hide()
+            if (secret) then
+                durationCastIfRemainingSecret = UnitChannelDuration("player")
+            else
+                remainingCast = endTimeMS / 1000 - t
+            end
+            if (self.isCasting) then
+                self:hideEmpowers()
+            end
+            local ci = self.channelInfo[channelID]
+            if (ci) then
+                for i = 1, ci.tickCount - 1 do
+                    local line
+                    if (i > #self.channelTicks) then
+                        line = self:createTickLine()
+                        table.insert(self.channelTicks, line)
+                    else
+                        line = self.channelTicks[i]
+                        line:Show()
+                    end
+                    local yTick = i * ci.tickDelta * pixelPerSecondWithoutHaste
+                    line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
+                    line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
+                end
+                self:hideChannelTicks(ci.tickCount)
+            else
+                self:hideChannelTicks(1)
             end
         end
     else
-        local _, _, _, _, _, _, _, _, castID = UnitCastingInfo("player")
+        local _, _, _, startTimeMS, endTimeMS, _, _, _, castID = UnitCastingInfo("player")
         if (castID) then
-            local dur = UnitCastingDuration("player")
-            self.castBarStrong:SetValue(dur:GetRemainingDuration())
             ---@diagnostic disable-next-line: param-type-mismatch
-            self.castBarTransparent:SetValue(dur:EvaluateRemainingDuration(self.curveTimer))
-            if (self.isCasting) then
-                for _, ct in ipairs(self.channelTicks) do
-                    ct:Hide()
-                end
+            if (issecretvalue(endTimeMS)) then
+                durationCastIfRemainingSecret = UnitCastingDuration("player")
             else
-                self.isCasting = true
-                self.castBarStrong:Show()
-                self.castBarTransparent:Show()
+                remainingCast = endTimeMS / 1000 - t
+            end
+        end
+        if (self.isCasting) then
+            self:hideChannelTicks(1)
+            self:hideEmpowers()
+        end
+    end
+    if (durationCastIfRemainingSecret) then
+        self.castBar:SetValue(durationCastIfRemainingSecret:GetRemainingDuration())
+        ---@diagnostic disable-next-line: param-type-mismatch
+        self.castBarSecret:SetValue(durationCastIfRemainingSecret:EvaluateRemainingDuration(self.curveTimer))
+        if (not self.castBarSecretVisible) then
+            self.castBarSecretVisible = true
+            self.castBarSecret:Show()
+        end
+        if (self.castBackgroundVisible) then
+            self.castBackgroundVisible = false
+            self.castBackground:Hide()
+        end
+        if (self.castLineVisible) then
+            self.castLineVisible = false
+            self.castLine:Hide()
+        end
+        self.isCasting = true
+    else
+        if (self.castBarSecretVisible) then
+            self.castBarSecretVisible = false
+            self.castBarSecret:Hide()
+        end
+        if (remainingCast > 0) then
+            self.castBar:SetValue(remainingCast)
+            local yCast = remainingCast * pixelPerSecond
+            self.castLine:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yCast)
+            self.castLine:SetEndPoint("BOTTOMRIGHT", self.timerFrameFront, 0, yCast)
+            if (not self.castLineVisible) then
+                self.castLineVisible = true
+                self.castLine:Show()
+            end
+            self.isCasting = true
+        else
+            self.castBar:SetValue(0)
+            if (self.castLineVisible) then
+                self.castLineVisible = false
+                self.castLine:Hide()
+            end
+            self.isCasting = false
+        end
+        if (totalTimeForCastBackground > 0) then
+            self.castBackground:SetHeight(totalTimeForCastBackground * pixelPerSecond)
+            if (not self.castBackgroundVisible) then
+                self.castBackgroundVisible = true
+                self.castBackground:Show()
             end
         else
-            if (self.isCasting) then
-                self.isCasting = false
-                self.castBarStrong:Hide()
-                self.castBarTransparent:Hide()
-                for _, ct in ipairs(self.channelTicks) do
-                    ct:Hide()
-                end
+            if (self.castBackgroundVisible) then
+                self.castBackgroundVisible = false
+                self.castBackground:Hide()
             end
         end
     end
@@ -757,7 +854,7 @@ function HUDModule:updateData(t, combat)
         local auraData = C_UnitAuras.GetBuffDataByIndex("player", i, "PLAYER")
         if (auraData) then
             if (issecretvalue(auraData.spellId)) then
-                --that hack doesnt work anymore
+                -- ce hack ne marche plus
                 local hackID = 0
                 for j = 1, auraData.spellId do
                     hackID = hackID + 1
@@ -795,6 +892,141 @@ end
 
 ---@class CDMAuraFrame
 ---@field auraInstanceID number|nil
+
+--------
+--#region CHANNEL TICKS
+
+---@private
+function HUDModule:createTickLine()
+    local l = self.timerFrameFront:CreateLine(nil, "BORDER", nil, 2)
+    l:SetColorTexture(1.0, 0.0, 0.0, 1.0)
+    l:SetThickness(1)
+    return l
+end
+
+---@private
+---@param startIndex number
+function HUDModule:hideChannelTicks(startIndex)
+    for i = startIndex, #self.channelTicks do
+        self.channelTicks[i]:Hide()
+    end
+end
+
+--#endregion
+--------
+
+--------
+--#region EMPOWER
+
+---@private
+function HUDModule:hideEmpowers()
+    for _, emp in ipairs(self.empowers) do
+        emp:hide()
+    end
+end
+
+---@class (exact) HUDEmpowerLevel
+---@field private __index HUDEmpowerLevel
+---@field private frame Frame
+---@field private line Line
+---@field private text FontString
+---@field private isVisible boolean
+---@field private isActive boolean
+HUDEmpowerLevel = {}
+HUDEmpowerLevel.__index = HUDEmpowerLevel
+
+---@param hud HUDModule
+---@param level number
+---@param parentFrame Frame
+---@return HUDEmpowerLevel
+function HUDEmpowerLevel:create(hud, level, parentFrame)
+    local x = {}
+    setmetatable(x, HUDEmpowerLevel)
+    ---@cast x HUDEmpowerLevel
+
+    x.line = parentFrame:CreateLine(nil, "OVERLAY", nil, 1)
+    x.line:SetThickness(2)
+    x.line:SetColorTexture(1.0, 1.0, 1.0, 1.0)
+    x.line:Hide()
+
+    x.frame = CreateFrame("Frame", nil, parentFrame)
+    x.frame:Hide()
+    local background = x.frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+    background:SetAllPoints()
+    background:SetColorTexture(0.0, 0.0, 0.0, 0.5)
+
+    x.text = x.frame:CreateFontString(nil, "ARTWORK", nil)
+    x.text:SetPoint("CENTER", x.frame, "CENTER", 0, 0)
+    x.text:SetAllPoints()
+    x.text:SetJustifyH("CENTER")
+    x.text:SetJustifyV("MIDDLE")
+
+    x:updateSize(hud)
+    x.isVisible = false
+    x.isActive = false
+
+    if (level == 1) then
+        x.text:SetText("I")
+    elseif (level == 2) then
+        x.text:SetText("II")
+    elseif (level == 3) then
+        x.text:SetText("III")
+    elseif (level == 4) then
+        x.text:SetText("IV")
+    elseif (level == 5) then
+        x.text:SetText("V")
+    else
+        x.text:SetText(tostring(level))
+    end
+
+    return x
+end
+
+---@param hud HUDModule
+function HUDEmpowerLevel:updateSize(hud)
+    local labelSize = 1.1 * hud.options.castBarWidth
+    self.frame:SetSize(labelSize, labelSize)
+    ERALIB_SetFont(self.text, labelSize * 0.7)
+end
+
+function HUDEmpowerLevel:hide()
+    if (self.isVisible) then
+        self.isVisible = false
+        self.frame:Hide()
+        self.line:Hide()
+    end
+end
+
+---@param x number
+---@param y number
+---@param isActive boolean
+---@param parentFrame Frame
+function HUDEmpowerLevel:draw(x, y, isActive, parentFrame)
+    self.frame:SetPoint("RIGHT", parentFrame, "BOTTOMLEFT", 0, y)
+    self.line:SetStartPoint("BOTTOMLEFT", parentFrame, 0, y)
+    self.line:SetEndPoint("BOTTOMLEFT", parentFrame, x, y)
+    if (isActive) then
+        if (not self.isActive) then
+            self.isActive = true
+            self.text:SetTextColor(0.0, 1.0, 0.0, 1.0)
+            self.line:SetColorTexture(0.0, 1.0, 0.0, 1.0)
+        end
+    else
+        if (self.isActive) then
+            self.isActive = false
+            self.text:SetTextColor(0.5, 0.5, 0.5, 1.0)
+            self.line:SetColorTexture(1.0, 1.0, 1.0, 1.0)
+        end
+    end
+    if (not self.isVisible) then
+        self.isVisible = true
+        self.frame:Show()
+        self.line:Show()
+    end
+end
+
+--#endregion
+--------
 
 --#endregion
 --------------------------------------------------------------------------------------------------------------------------------

@@ -139,7 +139,7 @@ function ERACombatFrames_event(event, ...)
         elseif (classID == 5) then
             ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
-            --ERACombatFrames_DeathKnightSetup(cFrame)
+            ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then
             --ERACombatFrames_MageSetup(cFrame)
         elseif (classID == 9) then
