@@ -6,6 +6,7 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     --------------------------------
     --#region TALENTS
 
+    local talent_felblade = ERALIBTalent:Create(112928)
     local talent_initiative = ERALIBTalent:Create(1129450)
     local talent_exergy = ERALIBTalent:Create(112943)
     local talent_inertia = ERALIBTalent:Create(117744)
@@ -33,12 +34,12 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     local hunt = hud:AddCooldown(370965, talent_hunt)
     local ebreak = hud:AddCooldown(258860, talent_ebreak)
     local retreat = hud:AddCooldown(198793)
-    local felblade = hud:AddCooldown(232893, talents.felblade)
+    local felblade = hud:AddCooldown(232893, talent_felblade)
     local misery = hud:AddCooldown(207684, talents.misery)
     local imprison = hud:AddCooldown(217832, talents.imprison)
     local nova = hud:AddCooldown(179057, talents.nova)
     local dispelloff = hud:AddCooldown(278326, talents.dispelloff)
-    local darnkess = hud:AddCooldown(196718, talents.darkness)
+    local darkness = hud:AddCooldown(196718, talents.darkness)
     local kick = hud:AddCooldown(183752)
     local meta = hud:AddCooldown(191427)
     local blur = hud:AddCooldown(198589)
@@ -63,34 +64,34 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
 
     hud:AddEssentialsCooldown(felblade, nil, nil, 0.8, 1.0, 0.5)
 
-    local _, bladeDancePlacement = hud:AddEssentialsCooldown(bladeDance, nil, nil, 1.0, 0.0, 0.0)
+    local _, bladeDanceSlot = hud:AddEssentialsCooldown(bladeDance, nil, nil, 1.0, 0.0, 0.0)
 
-    local reverMarkIcon, reaverMarkPlacement = hud:AddEssentialsAura(reaverMark)
+    local reverMarkIcon, reaverMarkSlot = hud:AddEssentialsAura(reaverMark)
     reverMarkIcon.showRedIfMissingInCombat = true
     reverMarkIcon:HideCountdown()
     function reverMarkIcon:GetMainText()
         return reaverGlaive.stacksDisplay
     end
-    reaverMarkPlacement:AddTimerBar(0.25, reaverGlaive, nil, 0.6, 0.3, 0.7)
+    reaverMarkSlot:AddTimerBar(0.25, reaverGlaive, nil, 0.6, 0.3, 0.7)
 
-    local glaiveIcon, glaivePlacement = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
+    local glaiveIcon, glaiveSlot = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
     glaiveIcon.watchAdditionalOverlay = 442294
 
     hud:AddEssentialsCooldown(eyeBeam, nil, nil, 0.1, 0.9, 0.2)
 
-    hud:AddEssentialsCooldown(immo, nil, nil, 0.8, 1.0, 0.0)
+    hud:AddEssentialsCooldown(immo, nil, nil, 0.8, 0.6, 0.0)
 
     hud:AddEssentialsRightCooldown(ebreak)
     hud:AddEssentialsRightCooldown(hunt)
 
-    local metaBar = bladeDancePlacement:AddTimerBar(0.75, metaBuff, nil, 0.9, 0.5, 1.0)
+    local metaBar = bladeDanceSlot:AddTimerBar(0.75, metaBuff, nil, 0.9, 0.5, 1.0)
     metaBar.doNotCutLongDuration = true
-    local initiativeBar = glaivePlacement:AddTimerBar(0.25, initiative, nil, 0.7, 0.8, 0.0)
+    local initiativeBar = glaiveSlot:AddTimerBar(0.25, initiative, nil, 0.7, 0.8, 0.0)
     initiativeBar.doNotCutLongDuration = true
 
     -- defensive
     hud:AddDefensiveCooldown(blur)
-    hud:AddDefensiveCooldown(darnkess)
+    hud:AddDefensiveCooldown(darkness)
 
     -- control
     hud:AddControlCooldown(kick)
@@ -115,12 +116,12 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     local eyeTick = powerBar:AddTick(1305156, nil, function() return 30 end)
     function eyeTick:OverrideAlpha()
         ---@diagnostic disable-next-line: return-type-mismatch
-        return eyeBeam.cooldownDuration:EvaluateRemainingPercent(hud.curveAlphaSoon0)
+        return eyeBeam.cooldownDuration:EvaluateRemainingPercent(hud.curveShowSoonAvailable)
     end
     local tempestTick = powerBar:AddTick(1455916, talent_tempest, function() return 60 end)
     function tempestTick:OverrideAlpha()
         ---@diagnostic disable-next-line: return-type-mismatch
-        return bladeDance.cooldownDuration:EvaluateRemainingPercent(hud.curveAlphaSoon0)
+        return bladeDance.cooldownDuration:EvaluateRemainingPercent(hud.curveShowSoonAvailable)
     end
 
     --#endregion

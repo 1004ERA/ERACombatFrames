@@ -47,12 +47,18 @@ function HUDPieIcon:constructPie(hud, frame, point, relativePoint, size, iconID,
     self:constructIcon(hud, self.icon, talent)
 end
 
----comment
 ---@param r number
 ---@param g number
 ---@param b number
 function HUDPieIcon:SetBorderColor(r, g, b)
     self.icon:SetBorderColor(r, g, b)
+end
+
+---@param r number
+---@param g number
+---@param b number
+function HUDPieIcon:SetMainTextColor(r, g, b)
+    self.icon:SetMainTextColor(r, g, b, 1.0)
 end
 
 --#endregion
@@ -64,8 +70,10 @@ end
 ---@class (exact) HUDCooldownIcon : HUDPieIcon
 ---@field private __index HUDCooldownIcon
 ---@field private data HUDCooldown
+---@field OverrideCombatVisibilityAlpha nil|fun(self:HUDCooldownIcon): number
 ---@field OverrideSecondaryText nil|fun(self:HUDCooldownIcon): string
 ---@field OverrideDesaturation nil|fun(self:HUDCooldownIcon): number
+---@field GetMainText nil|fun(self:HUDCooldownIcon): string|nil
 ---@field watchIconChange boolean
 ---@field watchAdditionalOverlay number
 HUDCooldownIcon = {}
@@ -95,12 +103,20 @@ function HUDCooldownIcon:Create(frame, point, relativePoint, size, data, iconID,
     return x
 end
 
+function HUDCooldownIcon:HideCountdown()
+    self.icon:HideDefaultCountdown()
+end
+
 ---comment
 ---@param t number
 ---@param combat boolean
 function HUDCooldownIcon:Update(t, combat)
     if (combat) then
-        self.icon:SetVisibilityAlpha(1.0, false)
+        if (self.OverrideCombatVisibilityAlpha) then
+            self.icon:SetVisibilityAlpha(self:OverrideCombatVisibilityAlpha(), true)
+        else
+            self.icon:SetVisibilityAlpha(1.0, false)
+        end
     else
         ---@diagnostic disable-next-line: param-type-mismatch
         self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
@@ -114,6 +130,9 @@ function HUDCooldownIcon:Update(t, combat)
     end
 
     --self.icon:SetMainText(string.format("%i", self.data.swipeDuration:GetRemainingDuration()), true)
+    if (self.GetMainText) then
+        self.icon:SetMainText(self:GetMainText(), true)
+    end
 
     if (self.OverrideSecondaryText) then
         self.icon:SetSecondaryText(self.OverrideSecondaryText(self), false)
@@ -131,7 +150,8 @@ function HUDCooldownIcon:Update(t, combat)
             ---@diagnostic disable-next-line: param-type-mismatch
             self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveFalse0), true)
         else
-            self.icon:SetDesaturated(false)
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanTen), true)
         end
     end
 
@@ -152,6 +172,7 @@ end
 ---@field private data HUDAura
 ---@field private stackMode boolean
 ---@field showRedIfMissingInCombat boolean
+---@field alwaysHideOutOfCombat boolean
 ---@field GetMainText nil|fun(self:HUDAuraIcon): string|nil
 HUDAuraIcon = {}
 HUDAuraIcon.__index = HUDAuraIcon
@@ -193,16 +214,24 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDAuraIcon:Update(t, combat)
-    if (self.showRedIfMissingInCombat and combat) then
-        local color = self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveRedIf0)
-        ---@diagnostic disable-next-line: undefined-field
-        self.icon:SetTint(color.r, color.g, color.b, true)
+    if (self.alwaysHideOutOfCombat and not combat) then
+        self.icon:SetVisibilityAlpha(0.0, false)
+        return
+    end
+    if (self.data.auraIsPresent) then
         self.icon:SetVisibilityAlpha(1.0, false)
-    else
         self.icon:SetTint(1.0, 1.0, 1.0, false)
-        local alpha = self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveFalse0)
-        ---@cast alpha number
-        self.icon:SetVisibilityAlpha(alpha, true)
+    else
+        if (combat) then
+            if (self.showRedIfMissingInCombat) then
+                self.icon:SetTint(1.0, 0.0, 0.0, false)
+                self.icon:SetVisibilityAlpha(1.0, false)
+            else
+                self.icon:SetVisibilityAlpha(0.0, false)
+            end
+        else
+            self.icon:SetVisibilityAlpha(0.0, false)
+        end
     end
     if (self.stackMode) then
         self.icon:SetMainText(self.data.stacksDisplay, true)

@@ -54,8 +54,10 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field curveHide4pctEmpty LuaCurveObject
 ---@field curveHideNoDuration LuaCurveObject
 ---@field curveTimer LuaCurveObject
----@field curveAlphaSoon0 LuaCurveObject
+---@field curveShowSoonAvailable LuaCurveObject
 ---@field curveHideLessThanOnePointFive LuaCurveObject
+---@field curveHideLessThanTwo LuaCurveObject
+---@field curveHideLessThanTen LuaCurveObject
 ---@field curveTrue0 LuaCurveObject
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
@@ -84,20 +86,32 @@ HUDModule.curveHideNoDuration:AddPoint(0.01, 0)
 HUDModule.curveHideNoDuration:AddPoint(0.011, 1)
 HUDModule.curveHideNoDuration:AddPoint(1, 1)
 
-HUDModule.curveAlphaSoon0 = C_CurveUtil:CreateCurve()
-HUDModule.curveAlphaSoon0:SetType(Enum.LuaCurveType.Linear)
-HUDModule.curveAlphaSoon0:AddPoint(0, 1)
-HUDModule.curveAlphaSoon0:AddPoint(0.1618, 1)
-HUDModule.curveAlphaSoon0:AddPoint(0.24, 0.8)
-HUDModule.curveAlphaSoon0:AddPoint(0.3, 0.7)
-HUDModule.curveAlphaSoon0:AddPoint(0.5, 0)
-HUDModule.curveAlphaSoon0:AddPoint(1, 0)
+HUDModule.curveShowSoonAvailable = C_CurveUtil:CreateCurve()
+HUDModule.curveShowSoonAvailable:SetType(Enum.LuaCurveType.Linear)
+HUDModule.curveShowSoonAvailable:AddPoint(0, 1)
+HUDModule.curveShowSoonAvailable:AddPoint(0.1618, 1)
+HUDModule.curveShowSoonAvailable:AddPoint(0.24, 0.8)
+HUDModule.curveShowSoonAvailable:AddPoint(0.3, 0.7)
+HUDModule.curveShowSoonAvailable:AddPoint(0.5, 0)
+HUDModule.curveShowSoonAvailable:AddPoint(1, 0)
 
 HUDModule.curveHideLessThanOnePointFive = C_CurveUtil:CreateCurve()
 HUDModule.curveHideLessThanOnePointFive:SetType(Enum.LuaCurveType.Step)
 HUDModule.curveHideLessThanOnePointFive:AddPoint(0, 0)
 HUDModule.curveHideLessThanOnePointFive:AddPoint(1.49, 0)
 HUDModule.curveHideLessThanOnePointFive:AddPoint(1.5, 1)
+
+HUDModule.curveHideLessThanTwo = C_CurveUtil:CreateCurve()
+HUDModule.curveHideLessThanTwo:SetType(Enum.LuaCurveType.Step)
+HUDModule.curveHideLessThanTwo:AddPoint(0, 0)
+HUDModule.curveHideLessThanTwo:AddPoint(1.99, 0)
+HUDModule.curveHideLessThanTwo:AddPoint(2.0, 1)
+
+HUDModule.curveHideLessThanTen = C_CurveUtil:CreateCurve()
+HUDModule.curveHideLessThanTen:SetType(Enum.LuaCurveType.Step)
+HUDModule.curveHideLessThanTen:AddPoint(0, 0)
+HUDModule.curveHideLessThanTen:AddPoint(9.99, 0)
+HUDModule.curveHideLessThanTen:AddPoint(10, 1)
 
 HUDModule.curveTrue0 = C_CurveUtil:CreateCurve()
 HUDModule.curveTrue0:SetType(Enum.LuaCurveType.Step)
@@ -149,11 +163,14 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.baseLine = x:createGCDLine()
     x.baseLine:SetStartPoint("BOTTOMLEFT", x.timerFrameFront, 0, 1)
     x.baseLine:SetEndPoint("BOTTOMRIGHT", x.timerFrameFront, 0, 1)
-    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.64)
+    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.64, "Interface\\Buttons\\WHITE8x8")
     x:setupMiddleGCCBar(x.gcdBar)
-    x.castBarTransparent = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32)
+    x.castBarTransparent = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32, "Interface\\Buttons\\WHITE8x8")
     x:setupMiddleGCCBar(x.castBarTransparent)
-    x.castBarStrong = x:createGCCBar(1, 0.2, 0.7, 0.2, 1.0)
+    --x.castBarStrong = x:createGCCBar(1, 0.2, 0.7, 0.5, 1.0, "Interface\\Buttons\\WHITE8x8")
+    -- ChallengeMode-TimerFill
+    -- Capacitance-Blacksmithing-TimerFill
+    x.castBarStrong = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "Capacitance-Blacksmithing-TimerFill")
     x.castBarStrong:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
     x.castBarStrong:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
     x.isCasting = false
@@ -162,8 +179,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.channelInfo = {}
     x.channelTicks = {}
     x.kicks = {}
-    x.targetCasBar = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0)
-    x.targetCasBar:SetStatusBarTexture("Interface\\FontStyles\\FontStyleLegion")
+    x.targetCasBar = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion")
     x.targetCasBar:SetRotatesTexture(true)
     x.targetCasBar:SetPoint("BOTTOMRIGHT", x.timerFrameBack, "BOTTOMRIGHT", 0, 0)
     x.targetCasBar:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
@@ -203,10 +219,17 @@ function HUDModule:Create(cFrame, baseGCD, spec)
 end
 
 ---@private
+---@param frameLevel number
+---@param r number
+---@param g number
+---@param b number
+---@param a number
+---@param texture string
 ---@return StatusBar
-function HUDModule:createGCCBar(frameLevel, r, g, b, a)
+function HUDModule:createGCCBar(frameLevel, r, g, b, a, texture)
     local bar = CreateFrame("StatusBar", nil, self.timerFrameBack)
-    bar:SetStatusBarTexture("Interface\\Buttons\\WHITE8x8")
+    bar:SetStatusBarTexture(texture)
+    bar:SetRotatesTexture(true)
     bar:SetStatusBarColor(r, g, b, a)
     bar:SetFrameLevel(frameLevel)
     bar:SetOrientation("VERTICAL")
@@ -276,10 +299,12 @@ function HUDModule:CheckTalents()
 
     self.displayActive = {}
 
+    self.timerBarsActive = {}
     self.essentialsIconsActiveCount = 0
     for _, x in ipairs(self.essentialsIcons) do
-        if (x.icon:computeActive()) then
-            table.insert(self.displayActive, x.icon)
+        local icon = x:computeTalents_return_icon_if_active()
+        if (icon) then
+            table.insert(self.displayActive, icon)
             self.essentialsIconsActiveCount = self.essentialsIconsActiveCount + 1
         end
     end
@@ -296,7 +321,6 @@ function HUDModule:CheckTalents()
         x:computeTalents()
     end
 
-    self.timerBarsActive = {}
     for _, tb in ipairs(self.timerBars) do
         if (tb:computeActive()) then
             table.insert(self.timerBarsActive, tb)
@@ -341,7 +365,7 @@ function HUDModule:updateLayout()
     self.essentialsFrame:SetPoint("CENTER", UIParent, "CENTER", self.options.essentialsX, self.options.essentialsY)
     self.essentialsFrame:SetSize(iconSize * self.essentialsIconsActiveCount, 2 * ERA_HUDModule_TimerHeight)
     for _, x in ipairs(self.essentialsIcons) do
-        if (x.icon.talentActive) then
+        if (x.talentActive) then
             iCount = iCount + 1
             x:setPosition(iconSize * (iCount - self.essentialsIconsActiveCount / 2 - 0.5), iconSize, self.timerFrameBack)
         end
@@ -391,19 +415,21 @@ function HUDModule:updateLayout()
     end
 
     -- side of essentials
-    local sideColumns
+    local sideLeftColumns, sideRightColumns
     if (self.options.essentialsMinColumns == self.essentialsIconsActiveCount) then
-        sideColumns = 1
+        sideLeftColumns = 1
     else
-        sideColumns = 1 + math.ceil(((resourceWidth - iconSize * self.essentialsIconsActiveCount) / iconSize) / 2)
+        sideLeftColumns = 1 + math.ceil(((resourceWidth - iconSize * self.essentialsIconsActiveCount) / iconSize) / 2)
     end
+    sideRightColumns = 2
     local xSide = (-self.essentialsIconsActiveCount / 2 + 0.5) * iconSize
     local ySide = 0
     iCount = 0
-    for _, s in ipairs(self.essentialsLeftSideIcons) do
+    for i = #self.essentialsLeftSideIcons, 1, -1 do
+        local s = self.essentialsLeftSideIcons[i]
         if (s.talentActive) then
             iCount = iCount + 1
-            if (iCount > sideColumns) then
+            if (iCount > sideLeftColumns) then
                 ySide = ySide - iconSize
             else
                 xSide = xSide - iconSize
@@ -417,7 +443,7 @@ function HUDModule:updateLayout()
     for _, s in ipairs(self.essentialsRightSideIcons) do
         if (s.talentActive) then
             iCount = iCount + 1
-            if (iCount > sideColumns) then
+            if (iCount > sideRightColumns) then
                 ySide = ySide + iconSize
             else
                 xSide = xSide + iconSize
@@ -527,6 +553,12 @@ function HUDModule:addActiveAura(a, isTarget)
     self.allAuraFetcher[a.spellID] = a
 end
 
+---@param tb HUDTimerBar
+function HUDModule:addActiveTimerBar(tb)
+    table.insert(self.timerBarsActive, tb)
+    table.insert(self.displayActive, tb)
+end
+
 ---@param r HUDResourceDisplay
 function HUDModule:addActiveResource(r)
     table.insert(self.displayActive, r)
@@ -576,6 +608,7 @@ function HUDModule:UpdateCombat(t)
         self.gcdBar:SetMinMaxValues(0, maxTimer)
         self.castBarStrong:SetMinMaxValues(0, maxTimer)
         self.castBarTransparent:SetMinMaxValues(0, maxTimer)
+        self.targetCasBar:SetMinMaxValues(0, maxTimer)
         for _, tb in ipairs(self.timerBarsActive) do
             tb:updateMaxDuration(maxTimer)
         end

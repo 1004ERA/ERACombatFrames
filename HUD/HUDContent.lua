@@ -63,8 +63,9 @@ end
 
 ---@class (exact) HUDEssentialsSlot
 ---@field private __index HUDEssentialsSlot
----@field icon HUDIcon
+---@field private icon HUDIcon
 ---@field hud HUDModule
+---@field talentActive boolean
 ---@field private bars HUDTimerBar[]
 HUDEssentialsSlot = {}
 HUDEssentialsSlot.__index = HUDEssentialsSlot
@@ -80,6 +81,24 @@ function HUDEssentialsSlot:create(icon, hud)
     x.hud = hud
     x.bars = {}
     return x
+end
+
+function HUDEssentialsSlot:computeTalents_return_icon_if_active()
+    if (self.icon:computeActive()) then
+        self.talentActive = true
+        for _, t in ipairs(self.bars) do
+            if (t:computeActive()) then
+                self.hud:addActiveTimerBar(t)
+            end
+        end
+        return self.icon
+    else
+        for _, t in ipairs(self.bars) do
+            t:Deactivate()
+        end
+        self.talentActive = false
+        return nil
+    end
 end
 
 ---@param xMid number
@@ -201,6 +220,20 @@ function HUDResourceSlot:AddStacksPoints(data, rBorder, gBorder, bBorder, rPoint
     return res
 end
 
+---@param data HUDAura
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@param maxStacksGetter fun(): number
+---@param targetIdleGetter fun(): number
+---@return HUDPowerBarStacksDisplay
+function HUDResourceSlot:AddStacksBar(data, r, g, b, talent, maxStacksGetter, targetIdleGetter)
+    local res = HUDPowerBarStacksDisplay:create(self.hud, data, r, g, b, talent, self.hud:getResourceFrame(), 1 + #self.resources, maxStacksGetter, targetIdleGetter)
+    table.insert(self.resources, res)
+    return res
+end
+
 --#endregion
 ----------------------------------------------------------------
 
@@ -230,7 +263,7 @@ function HUDTimerBar:Create(placement, position, timer, talent, r, g, b, timerFr
     local x = {}
     setmetatable(x, HUDTimerBar)
     ---@cast x HUDTimerBar
-    x:constructDisplay(placement.hud, talent)
+    x:constructDisplay(placement.hud, ERALIBTalent_CombineMakeAnd(timer.talent, talent))
     x.timer = timer
     x.position = position
     placement.hud:addTimerBar(x)

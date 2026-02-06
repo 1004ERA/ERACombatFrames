@@ -260,6 +260,7 @@ end
 ---@field maxCharges number
 ---@field currentCharges number
 ---@field hasCharges boolean
+---@field private must_update_max_charges boolean
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
 setmetatable(HUDCooldown, { __index = HUDTimer })
@@ -276,41 +277,82 @@ function HUDCooldown:Create(spellID, hud, talent)
     x:constructTimer(hud, talent)
 
     x.spellID = spellID
+    x.must_update_max_charges = true
 
     return x
 end
 
+function HUDCooldown:talentIsActive()
+    local charges = C_Spell.GetSpellCharges(self.spellID)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (charges and issecretvalue(charges.maxCharges)) then
+        self.must_update_max_charges = true
+    else
+        self.must_update_max_charges = false
+        if (charges and charges.maxCharges > 1) then
+            self.hasCharges = true
+            self.maxCharges = charges.maxCharges
+        else
+            self.hasCharges = false
+            self.maxCharges = 1
+        end
+    end
+end
+
 function HUDCooldown:updateTimerDuration(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
-    local charges = C_Spell.GetSpellCharges(self.spellID)
-    if (charges) then
-        self.hasCharges = true
-        self.maxCharges = charges.maxCharges
-        self.currentCharges = charges.currentCharges
-        self.swipeDuration = C_Spell.GetSpellChargeDuration(self.spellID)
-        if ((not self.cdData) or self.cdData.isOnGCD == true) then
-            self.cooldownDuration = self.hud.duration0
-        else
-            self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
-            if (not self.cooldownDuration) then
-                self.cooldownDuration = self.hud.duration0
+
+    local charges
+
+    if (self.must_update_max_charges) then
+        charges = C_Spell.GetSpellCharges(self.spellID)
+        if (charges) then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            if (issecretvalue(charges.maxCharges)) then
+                -- on suppose qu'il y a des charges > 1
+                self.hasCharges = true
+                self.maxCharges = charges.maxCharges
+            else
+                self.hasCharges = charges.maxCharges > 1
+                self.maxCharges = charges.maxCharges
+                self.must_update_max_charges = false
             end
-        end
-        return self.cooldownDuration
-    else
-        self.hasCharges = false
-        self.maxCharges = 1
-        if ((not self.cdData) or self.cdData.isOnGCD == true) then
-            self.swipeDuration = self.hud.duration0
         else
-            self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
-            if (not self.swipeDuration) then
-                self.swipeDuration = self.hud.duration0
-            end
+            self.hasCharges = false
         end
-        self.cooldownDuration = self.swipeDuration
-        return self.swipeDuration
     end
+
+    if (self.hasCharges) then
+        if (not charges) then
+            charges = C_Spell.GetSpellCharges(self.spellID)
+        end
+        if (charges) then
+            self.hasCharges = true
+            self.maxCharges = charges.maxCharges
+            self.currentCharges = charges.currentCharges
+            self.swipeDuration = C_Spell.GetSpellChargeDuration(self.spellID)
+            if ((not self.cdData) or self.cdData.isOnGCD == true) then
+                self.cooldownDuration = self.hud.duration0
+            else
+                self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+                if (not self.cooldownDuration) then
+                    self.cooldownDuration = self.hud.duration0
+                end
+            end
+            return self.cooldownDuration
+        end
+    end
+    self.maxCharges = 1
+    if ((not self.cdData) or self.cdData.isOnGCD == true) then
+        self.swipeDuration = self.hud.duration0
+    else
+        self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+        if (not self.swipeDuration) then
+            self.swipeDuration = self.hud.duration0
+        end
+    end
+    self.cooldownDuration = self.swipeDuration
+    return self.swipeDuration
 end
 
 --#endregion
@@ -400,7 +442,10 @@ function HUDAura:updateTimerDuration(t)
             self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
             self.auraIsPresent = true
-            return C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
+            local result = C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
+            if (result) then
+                return result
+            end
         end
     end
     self.stacks = 0

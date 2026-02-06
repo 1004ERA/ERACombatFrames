@@ -61,9 +61,26 @@ function ECF_TEST()
         print("PUBLIC", count)
     end
     ]]
-    print(C_SpellActivationOverlay.IsSpellOverlayed(204157))
-    print(C_Spell.GetSpellInfo("reaver's glaive").spellID)
-    print(C_SpellActivationOverlay.IsSpellOverlayed(442294))
+    local vmet = 1217605
+    local coll = 1221150 --1221167
+    local vmetinfo = C_Spell.GetSpellInfo(vmet)
+    local collinfo = C_Spell.GetSpellInfo(coll)
+    local infoString = C_Spell.GetSpellInfo("Collapsing star")
+    if (infoString) then
+        if (infoString.spellID == coll) then
+            print("found ID", infoString.spellID, "same")
+        else
+            print("found ID", infoString.spellID, "DIFFERENT")
+        end
+    else
+        print("no info from string")
+    end
+    print(vmetinfo and vmetinfo.name or "??", C_SpellActivationOverlay.IsSpellOverlayed(vmet))
+    print(collinfo and collinfo.name or "??", C_SpellActivationOverlay.IsSpellOverlayed(coll))
+    local metUsable = C_Spell.IsSpellUsable(vmet)
+    local colUsable = C_Spell.IsSpellUsable(coll)
+    print("useable ?", metUsable, colUsable)
+    print("cast count", C_Spell.GetSpellCastCount(vmet), C_Spell.GetSpellCastCount(coll))
 end
 
 function ECF_PRINT_CDM()
@@ -71,7 +88,7 @@ function ECF_PRINT_CDM()
         local auraFrames = { frame:GetChildren() }
         for _, c in ipairs(auraFrames) do
             if (c.cooldownInfo) then
-                print(c.cooldownInfo.spellID, C_Spell.GetSpellInfo(c.cooldownInfo.spellID).name)
+                print(c.cooldownInfo.spellID, C_Spell.GetSpellInfo(c.cooldownInfo.spellID).name, c.auraInstanceID)
             end
         end
     end

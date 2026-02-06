@@ -377,7 +377,7 @@ function ERAStatusBar:createText(point, offX)
 end
 
 ---comment
----@param txt string
+---@param txt string|nil
 ---@param maybeSecret boolean
 function ERAStatusBar:SetLeftText(txt, maybeSecret)
     if (not self.left) then
@@ -395,7 +395,7 @@ function ERAStatusBar:SetLeftText(txt, maybeSecret)
 end
 
 ---comment
----@param txt string
+---@param txt string|nil
 ---@param maybeSecret boolean
 function ERAStatusBar:SetRightText(txt, maybeSecret)
     if (not self.right) then
@@ -413,7 +413,7 @@ function ERAStatusBar:SetRightText(txt, maybeSecret)
 end
 
 ---comment
----@param txt string
+---@param txt string|nil
 ---@param maybeSecret boolean
 function ERAStatusBar:SetMiddleText(txt, maybeSecret)
     if (not self.middle) then

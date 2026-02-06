@@ -24,6 +24,7 @@ HUD/HUDIcons.lua
 Classes/DemonHunter.lua
 Classes/DemonHunter_Havoc.lua
 Classes/DemonHunter_Vengeance.lua
+Classes/DemonHunter_Devourer.lua
 Classes/Priest.lua
 Classes/Priest_Shadow.lua
 

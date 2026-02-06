@@ -186,6 +186,13 @@ function HUDPowerBarDisplay:Update(t, combat)
     for _, tk in ipairs(self.ticksActive) do
         tk:update(t, combat)
     end
+    self:AdditionalUpdate(t, combat, self.bar, current)
+end
+---@param t number
+---@param combat boolean
+---@param bar ERAStatusBar
+---@param current number
+function HUDPowerBarDisplay:AdditionalUpdate(t, combat, bar, current)
 end
 
 --#endregion
@@ -274,7 +281,6 @@ end
 ---@param max number
 function HUDPowerBarDisplayKindPower:updateDisplay(combat, owner, bar, current, max)
     ---@cast owner HUDPowerBarPowerDisplay
-    bar:SetRightText(string.format("%i", owner.data.percent100), true)
     if (combat) then
         bar:SetVisibilityAlpha(1.0, false)
     else
@@ -333,16 +339,19 @@ end
 ---@class (exact) HUDPowerBarStacksDisplay : HUDPowerBarDisplay
 ---@field private __index HUDPowerBarPowerDisplay
 ---@field private data HUDAura
+---@field private targetIdleGetter fun(): number
+---@field private targetIdle number
 ---@field private maxStacksGetter fun(): number
 ---@field private maxStacks number
----@field private constantColor ColorMixin
+---@field constantTickColor ColorMixin
+---@field OverrideVisibilityAlpha fun(self:HUDPowerBarStacksDisplay, aura:HUDAura, t:number, combat:boolean): number
 HUDPowerBarStacksDisplay = {}
 HUDPowerBarStacksDisplay.__index = HUDPowerBarStacksDisplay
 setmetatable(HUDPowerBarStacksDisplay, { __index = HUDPowerBarDisplay })
 
 ---comment
 ---@param hud HUDModule
----@param data HUDPower
+---@param data HUDAura
 ---@param r number
 ---@param g number
 ---@param b number
@@ -350,32 +359,53 @@ setmetatable(HUDPowerBarStacksDisplay, { __index = HUDPowerBarDisplay })
 ---@param resourceFrame Frame
 ---@param frameLevel number
 ---@param maxStacksGetter fun(): number
+---@param targetIdleGetter fun(): number
 ---@return HUDPowerBarStacksDisplay
-function HUDPowerBarStacksDisplay:create(hud, data, r, g, b, talent, resourceFrame, frameLevel, maxStacksGetter)
+function HUDPowerBarStacksDisplay:create(hud, data, r, g, b, talent, resourceFrame, frameLevel, maxStacksGetter, targetIdleGetter)
     local x = {}
     setmetatable(x, HUDPowerBarStacksDisplay)
     ---@cast x HUDPowerBarStacksDisplay
     x:constructPower(hud, r, g, b, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel)
     x.data = data
     x.maxStacks = 1
+    x.targetIdle = 0
     x.maxStacksGetter = maxStacksGetter
-    x.constantColor = CreateColor(1.0, 1.0, 1.0, 1.0)
+    x.targetIdleGetter = targetIdleGetter
+    x.constantTickColor = CreateColor(1.0, 1.0, 1.0, 1.0)
     return x
 end
 
 function HUDPowerBarStacksDisplay:getMax()
     self.maxStacks = self.maxStacksGetter()
+    self.targetIdle = self.targetIdleGetter()
     return self.maxStacks
 end
 ---@param t number
 ---@param combat boolean
 ---@return number
 function HUDPowerBarStacksDisplay:getCurrentAndUpdate(t, combat)
+    if (self.OverrideVisibilityAlpha) then
+        self.bar:SetVisibilityAlpha(self:OverrideVisibilityAlpha(self.data, t, combat), true)
+    else
+        if (self.data.auraIsPresent) then
+            if (combat) then
+                self.bar:SetVisibilityAlpha(1.0, false)
+            else
+                ---@diagnostic disable-next-line: param-type-mismatch
+                if (issecretvalue(self.data.stacks) or self.data.stacks == self.targetIdle) then
+                    self.bar:SetVisibilityAlpha(0.0, false)
+                else
+                    self.bar:SetVisibilityAlpha(1.0, false)
+                end
+            end
+        else
+            self.bar:SetVisibilityAlpha(0.0, false)
+        end
+    end
     if (self.data.auraIsPresent) then
-        self.bar:SetVisibilityAlpha(1.0, false)
         self.bar:SetMiddleText(tostring(self.data.stacksDisplay), true)
     else
-        self.bar:SetVisibilityAlpha(0.0, false)
+        self.bar:SetMiddleText("", false)
     end
     return self.data.stacks
 end
@@ -385,7 +415,7 @@ end
 ---@param curve LuaColorCurveObject
 ---@return ColorMixin
 function HUDPowerBarStacksDisplay:getTickColor(curve)
-    return self.constantColor
+    return self.constantTickColor
 end
 
 --#endregion

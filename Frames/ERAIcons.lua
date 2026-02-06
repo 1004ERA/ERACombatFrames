@@ -105,6 +105,10 @@ function ERAIcon:SetMainText(txt, maybeSecret)
     end
     ]]
 end
+---@param r number
+---@param g number
+---@param b number
+---@param a number
 function ERAIcon:SetMainTextColor(r, g, b, a)
     if (self.mainTextR ~= r or self.mainTextG ~= g or self.mainTextB ~= b or self.mainTextA ~= a) then
         self.mainTextR = r
@@ -131,6 +135,10 @@ function ERAIcon:SetSecondaryText(txt, maybeSecret)
     end
     ]]
 end
+---@param r number
+---@param g number
+---@param b number
+---@param a number
 function ERAIcon:SetSecondaryTextColor(r, g, b, a)
     self.secondaryText:SetTextColor(r, g, b, a)
 end

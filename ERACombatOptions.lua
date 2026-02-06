@@ -44,7 +44,7 @@ function ERACombatSpecOptions:Create()
     x.resourcePadding = 2
     x.healthHeight = 31
     x.powerHeight = 31
-    x.gcdHeight = 44
+    x.gcdHeight = 51
     x.gcdCount = 4
     x.castBarWidth = 16
     x.defensivePadding = 4
