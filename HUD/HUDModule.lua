@@ -270,6 +270,212 @@ function HUDModule:setupMiddleGCCBar(bar)
     bar:SetPoint("BOTTOMLEFT", self.timerFrameBack, "BOTTOMLEFT", self.options.castBarWidth, 0)
 end
 
+function HUDModule:Pack()
+    ----------------
+    --#region EQUIPMENT
+    self:addPowerboostEquipment(INVSLOT_TRINKET1, 2000859)
+    self:addPowerboostEquipment(INVSLOT_TRINKET2, 2000857)
+
+    --#endregion
+    ----------------
+
+    ----------------
+    --#region racial
+
+    local _, _, r = UnitRace("player")
+    local racialSpellID = nil
+    ---@type "powerboost"|"defensive"|"control"|nil
+    local racialGroup = nil
+    if (r == 1 or r == 33) then
+        -- human
+        racialSpellID = 59752
+        racialGroup = "control"
+    elseif (r == 2) then
+        -- orc
+        racialGroup = "powerboost"
+        --#region by class
+        if ERACombatFrames_classID == 1 or ERACombatFrames_classID == 3 or ERACombatFrames_classID == 4 or ERACombatFrames_classID == 6 then
+            -- warrior, hunter, rogue, dk
+            racialSpellID = 20572
+        elseif ERACombatFrames_classID == 7 or ERACombatFrames_classID == 10 then
+            -- shaman, monk
+            racialSpellID = 33697
+        elseif ERACombatFrames_classID == 5 or ERACombatFrames_classID == 8 or ERACombatFrames_classID == 9 then
+            -- priest, mage, warlock
+            racialSpellID = 33702
+        end
+        --#endregion
+    elseif (r == 3) then
+        -- dwarf
+        racialSpellID = 20594
+        racialGroup = "defensive"
+    elseif (r == 4) then
+        -- night elf
+        racialSpellID = 58984
+        racialGroup = "defensive"
+    elseif (r == 5) then
+        -- undead
+        racialSpellID = 7744
+        racialGroup = "defensive"
+    elseif (r == 6) then
+        -- tauren
+        racialSpellID = 20549
+        racialGroup = "control"
+    elseif (r == 7) then
+        -- gnome
+        racialSpellID = 20589
+        racialGroup = "control"
+    elseif (r == 8) then
+        -- troll
+        racialSpellID = 26297
+        racialGroup = "powerboost"
+    elseif (r == 9) then
+        -- goblin
+        racialSpellID = 69070
+        racialGroup = "control"
+    elseif (r == 10) then
+        -- blood elf
+        racialGroup = "powerboost"
+        --#region by class
+        if ERACombatFrames_classID == 1 then
+            -- warrior
+            racialSpellID = 69179
+        elseif ERACombatFrames_classID == 2 then
+            -- paladin
+            racialSpellID = 155145
+        elseif ERACombatFrames_classID == 3 then
+            -- hunter
+            racialSpellID = 80483
+        elseif ERACombatFrames_classID == 4 then
+            -- rogue
+            racialSpellID = 25046
+        elseif ERACombatFrames_classID == 5 then
+            -- priest
+            racialSpellID = 232633
+        elseif ERACombatFrames_classID == 6 then
+            -- dk
+            racialSpellID = 50613
+        elseif ERACombatFrames_classID == 8 or ERACombatFrames_classID == 9 then
+            -- mage, warlock
+            racialSpellID = 28730
+        elseif ERACombatFrames_classID == 10 then
+            -- monk
+            racialSpellID = 129597
+        elseif ERACombatFrames_classID == 12 then
+            -- dh
+            racialSpellID = 202719
+        end
+        --#endregion
+    elseif (r == 11) then
+        -- draenei
+        racialGroup = "defensive"
+        --#region by class
+        if ERACombatFrames_classID == 1 then
+            -- warrior
+            racialSpellID = 28880
+        elseif ERACombatFrames_classID == 2 then
+            -- paladin
+            racialSpellID = 59542
+        elseif ERACombatFrames_classID == 3 then
+            -- hunter
+            racialSpellID = 59543
+        elseif ERACombatFrames_classID == 4 then
+            -- rogue
+            racialSpellID = 370626
+        elseif ERACombatFrames_classID == 5 then
+            -- priest
+            racialSpellID = 59544
+        elseif ERACombatFrames_classID == 6 then
+            -- dk
+            racialSpellID = 59545
+        elseif ERACombatFrames_classID == 7 then
+            -- shaman
+            racialSpellID = 59547
+        elseif ERACombatFrames_classID == 8 then
+            -- mage
+            racialSpellID = 59548
+        elseif ERACombatFrames_classID == 9 then
+            -- warlock
+            racialSpellID = 416250
+        elseif ERACombatFrames_classID == 10 then
+            -- monk
+            racialSpellID = 121093
+        end
+        --#endregion
+    elseif (r == 22) then
+        -- worgen
+        racialSpellID = 68992
+        racialGroup = "control"
+    elseif (r == 24 or r == 25 or r == 26) then
+        -- pandaren
+        racialSpellID = 107079
+        racialGroup = "control"
+    elseif (r == 27) then
+        -- nightborne
+        racialSpellID = 260364
+        racialGroup = "defensive"
+    elseif (r == 28) then
+        -- highmountain
+        racialSpellID = 255654
+        racialGroup = "control"
+    elseif (r == 29) then
+        -- void elf
+        racialSpellID = 256948
+        racialGroup = "control"
+    elseif (r == 30) then
+        -- lightforged
+        racialSpellID = 255647
+        racialGroup = "powerboost"
+    elseif (r == 31) then
+        -- zandalari
+        racialSpellID = 291944
+        racialGroup = "defensive"
+    elseif (r == 32) then
+        -- kul tiran
+        racialSpellID = 287712
+        racialGroup = "control"
+    elseif (r == 34) then
+        -- dark iron dwarf
+        racialSpellID = 265221
+        racialGroup = "defensive"
+    elseif (r == 35) then
+        -- vulpera
+        racialSpellID = 312411
+        racialGroup = "powerboost"
+    elseif (r == 36) then
+        -- mag'har
+        racialSpellID = 274738
+        racialGroup = "powerboost"
+    elseif (r == 37) then
+        -- mechagnome
+        racialSpellID = 312924
+        racialGroup = "defensive"
+    elseif (r == 52 or r == 70) then
+        -- dracthyr
+        if ERACombatFrames_classID ~= 13 then
+            -- tail swipe 368970
+            racialSpellID = 357214
+            racialGroup = "control"
+        end
+    elseif (r == 84 or r == 85) then
+        -- earthen
+        racialSpellID = 436344
+        racialGroup = "powerboost"
+    end
+    if (racialSpellID and racialGroup) then
+        if (racialGroup == "powerboost") then
+            self:AddPowerboostCooldown(self:AddCooldown(racialSpellID))
+        elseif (racialGroup == "defensive") then
+            self:AddDefensiveCooldown(self:AddCooldown(racialSpellID))
+        elseif (racialGroup == "control") then
+            self:AddControlCooldown(self:AddCooldown(racialSpellID))
+        end
+    end
+
+    --#endregion
+    ----------------
+end
+
 --#endregion
 --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1156,6 +1362,16 @@ end
 ---@return HUDCooldownIcon
 function HUDModule:AddPowerboostCooldown(data, iconID, talent)
     local icon = HUDCooldownIcon:Create(self.powerboostFrame, "TOPRIGHT", "TOPRIGHT", self.options.powerboostIconSize, data, iconID, talent)
+    table.insert(self.powerboostIcons, icon)
+    return icon
+end
+
+---@private
+---@param slot unknown
+---@param initIconID number
+function HUDModule:addPowerboostEquipment(slot, initIconID)
+    local data = HUDEquipmentCooldown:create(slot, self)
+    local icon = HUDEquipmentIcon:Create(self.powerboostFrame, "TOPRIGHT", "TOPRIGHT", self.options.powerboostIconSize, data, initIconID)
     table.insert(self.powerboostIcons, icon)
     return icon
 end

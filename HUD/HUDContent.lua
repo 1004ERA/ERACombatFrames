@@ -54,6 +54,10 @@ function HUDDisplay:computeActive()
 end
 function HUDDisplay:talentIsActive()
 end
+function HUDDisplay:actuallyDeactivate()
+    self.talentActive = false
+    self:Deactivate()
+end
 
 --#endregion
 ----------------------------------------------------------------

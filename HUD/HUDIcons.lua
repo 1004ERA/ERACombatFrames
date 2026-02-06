@@ -165,6 +165,75 @@ end
 ----------------------------------------------------------------
 
 ----------------------------------------------------------------
+--#region EQUIPMENT COOLDOWN ICON ------------------------------
+
+---@class (exact) HUDEquipmentIcon : HUDPieIcon
+---@field private __index HUDEquipmentIcon
+---@field private data HUDEquipmentCooldown
+HUDEquipmentIcon = {}
+HUDEquipmentIcon.__index = HUDEquipmentIcon
+setmetatable(HUDEquipmentIcon, { __index = HUDPieIcon })
+
+---comment
+---@param frame Frame
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param size number
+---@param data HUDEquipmentCooldown
+---@param initIconID number
+---@return HUDEquipmentIcon
+function HUDEquipmentIcon:Create(frame, point, relativePoint, size, data, initIconID)
+    local x = {}
+    setmetatable(x, HUDEquipmentIcon)
+    ---@cast x HUDEquipmentIcon
+    x:constructPie(data.hud, frame, point, relativePoint, size, initIconID, data.talent)
+    x.data = data
+    return x
+end
+
+function HUDEquipmentIcon:talentIsActive()
+    --[[
+    local itemID = GetInventoryItemID("player", self.data.slot)
+    if (itemID) then
+    end
+    self:actuallyDeactivate()
+    ]]
+    local location = ItemLocation:CreateFromEquipmentSlot(self.data.slot)
+    if (location) then
+        local success, icon = pcall(function() return C_Item.GetItemIcon(location) end)
+        if (success and icon) then
+            self.icon:SetIconTexture(icon)
+        end
+    end
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDEquipmentIcon:Update(t, combat)
+    self.icon:SetValue(self.data.start, self.data.duration)
+    local alpha
+    if (combat) then
+        alpha = 1.0
+    else
+        ---@diagnostic disable-next-line: param-type-mismatch
+        if (issecretvalue(self.data.start) or issecretvalue(self.data.duration)) then
+            alpha = 1.0
+        else
+            if (self.data.start and self.data.start > 0) then
+                alpha = 1.0
+            else
+                alpha = 0.0
+            end
+        end
+    end
+    self.icon:SetVisibilityAlpha(alpha, false)
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
 --#region AURA ICON --------------------------------------------
 
 ---@class (exact) HUDAuraIcon : HUDPieIcon

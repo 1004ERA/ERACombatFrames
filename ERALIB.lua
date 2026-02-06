@@ -69,6 +69,13 @@ function ERALIBTalent:CreateLevel(lvl)
 end
 
 ---comment
+---@param slot Enum.InventoryType
+---@return ERALIBTalent
+function ERALIBTalent:CreateEquipmentCD(slot)
+    return ERALIBTalentEquipmentCD:create(slot)
+end
+
+---comment
 ---@param iid number
 ---@return ERALIBTalent
 function ERALIBTalent:CreateInstance(iid)
@@ -177,6 +184,23 @@ end
 
 function ERALIBTalentLevel:computeHasTalent(selectedTalentsById)
     return self.lvl <= UnitLevel("player")
+end
+
+ERALIBTalentEquipmentCD = {}
+ERALIBTalentEquipmentCD.__index = ERALIBTalentEquipmentCD
+setmetatable(ERALIBTalentEquipmentCD, { __index = ERALIBTalent })
+---@param slot Enum.InventoryType
+function ERALIBTalentEquipmentCD:create(slot)
+    local t = {}
+    setmetatable(t, ERALIBTalentEquipmentCD)
+    t.slot = slot
+    t:construct()
+    return t
+end
+
+function ERALIBTalentEquipmentCD:computeHasTalent(selectedTalentsById)
+    local _, _, enable = GetInventoryItemCooldown("player", self.slot)
+    return enable and enable > 0
 end
 
 ERALIBTalentInstance = {}

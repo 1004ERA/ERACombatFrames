@@ -109,6 +109,9 @@ function ERACombatMainFrame:Create()
     function events:PLAYER_LEVEL_UP()
         c:updateTalents()
     end
+    function events:PLAYER_EQUIPMENT_CHANGED()
+        c:updateTalents()
+    end
 
     function events:PLAYER_ENTERING_WORLD(arg)
         c:resetToIdle(true)

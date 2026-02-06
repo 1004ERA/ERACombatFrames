@@ -358,6 +358,48 @@ end
 --#endregion
 ----------------------------------------------------------------
 
+---------------------------------------------------------------
+--#region EQUIPMENT COOLDOWN ----------------------------------
+
+---@class (exact) HUDEquipmentCooldown : HUDTimer
+---@field private __index HUDCooldown
+---@field slot unknown
+---@field start number
+---@field duration number
+HUDEquipmentCooldown = {}
+HUDEquipmentCooldown.__index = HUDEquipmentCooldown
+setmetatable(HUDEquipmentCooldown, { __index = HUDTimer })
+
+---comment
+---@param slot unknown
+---@param hud HUDModule
+---@return HUDEquipmentCooldown
+function HUDEquipmentCooldown:create(slot, hud)
+    local x = {}
+    setmetatable(x, HUDEquipmentCooldown)
+    ---@cast x HUDEquipmentCooldown
+    x:constructTimer(hud, ERALIBTalent:CreateEquipmentCD(slot))
+
+    x.slot = slot
+
+    return x
+end
+
+function HUDEquipmentCooldown:updateTimerDuration(t)
+    local s, d, enabled = GetInventoryItemCooldown("player", self.slot)
+    if (enabled) then
+        self.start = s
+        self.duration = d
+    else
+        self.start = 0
+        self.duration = 1
+    end
+end
+
+--#endregion
+----------------------------------------------------------------
+
+
 ----------------------------------------------------------------
 --#region AURA -------------------------------------------------
 
