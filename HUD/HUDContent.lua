@@ -278,7 +278,6 @@ function HUDTimerBar:Create(placement, position, timer, talent, r, g, b, timerFr
     x:constructDisplay(placement.hud, ERALIBTalent_CombineMakeAnd(timer.talent, talent))
     x.timer = timer
     x.position = position
-    placement.hud:addTimerBar(x)
     placement:addBar(x)
 
     x.bar = CreateFrame("StatusBar", nil, timerFrame)

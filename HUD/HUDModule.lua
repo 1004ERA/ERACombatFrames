@@ -25,8 +25,9 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private essentialsIcons HUDEssentialsSlot[]
 ---@field private essentialsLeftSideIcons HUDIcon[]
 ---@field private essentialsRightSideIcons HUDIcon[]
----@field private timerBars HUDTimerBar[]
 ---@field private timerBarsActive HUDTimerBar[]
+---@field private alerts HUDAlert[]
+---@field private alertsActive HUDAlert[]
 ---@field private healthBar ERAStatusBar
 ---@field private healthData HUDHealth
 ---@field private resourceBeforeHealth HUDResourceSlot[]
@@ -163,8 +164,9 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.essentialsIconsActiveCount = 0
     x.essentialsLeftSideIcons = {}
     x.essentialsRightSideIcons = {}
-    x.timerBars = {}
     x.timerBarsActive = {}
+    x.alerts = {}
+    x.alertsActive = {}
 
     x.timerFrameBack = CreateFrame("Frame", nil, x.essentialsFrame)
     x.timerFrameBack:SetPoint("BOTTOM", x.essentialsFrame, "CENTER", 0, 0)
@@ -543,6 +545,13 @@ function HUDModule:CheckTalents()
     self.defensiveIconsActiveCount = self:checkTalentsIconsList(self.defensiveIcons)
     self:checkTalentsIconsList(self.controlIcons)
     self:checkTalentsIconsList(self.powerboostIcons)
+    self.alertsActive = {}
+    for _, a in ipairs(self.alerts) do
+        if (a:computeActive()) then
+            table.insert(self.alertsActive, a)
+            table.insert(self.displayActive, a)
+        end
+    end
 
     for _, x in ipairs(self.resourceBeforeHealth) do
         x:computeTalents()
@@ -551,12 +560,14 @@ function HUDModule:CheckTalents()
         x:computeTalents()
     end
 
+    --[[
     for _, tb in ipairs(self.timerBars) do
         if (tb:computeActive()) then
             table.insert(self.timerBarsActive, tb)
             table.insert(self.displayActive, tb)
         end
     end
+    ]]
 
     self:updateLayout()
 end
@@ -706,6 +717,11 @@ function HUDModule:updateLayout()
     self.controlFrame:SetPoint("TOPLEFT", UIParent, "CENTER", self.options.controlX, self.options.controlY)
     self:utilityLayout(self.powerboostIcons, -1, self.options.powerboostIconSize, self.options.utilityIconPadding, self.powerboostFrame)
     self.powerboostFrame:SetPoint("TOPRIGHT", UIParent, "CENTER", self.options.powerboostX, self.options.powerboostY)
+
+    -- alerts
+    for _, a in ipairs(self.alertsActive) do
+        a:updateLayout(self.options)
+    end
 end
 
 ---@private
@@ -806,9 +822,9 @@ function HUDModule:addData(d)
     table.insert(self.data, d)
 end
 
----@param tb HUDTimerBar
-function HUDModule:addTimerBar(tb)
-    table.insert(self.timerBars, tb)
+---@param tb HUDAlert
+function HUDModule:addAlert(tb)
+    table.insert(self.alerts, tb)
 end
 
 --#endregion
@@ -1279,13 +1295,16 @@ end
 ---@param r number
 ---@param g number
 ---@param b number
+---@param addTimerBar nil|boolean
 ---@return HUDCooldownIcon, HUDEssentialsSlot
-function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b)
+function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b, addTimerBar)
     local icon = HUDCooldownIcon:Create(self.essentialsFrame, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
     icon:SetBorderColor(r, g, b)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
-    local bar = HUDTimerBar:Create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
+    if (addTimerBar == true or not (addTimerBar == false)) then
+        HUDTimerBar:Create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
+    end
     return icon, placement
 end
 
@@ -1406,6 +1425,44 @@ end
 ---@return HUDPowerTargetIdle
 function HUDModule:AddPowerTargetIdle(powerType, talent, targetPercent)
     return HUDPowerTargetIdle:Create(self, powerType, talent, targetPercent)
+end
+
+---@param data HUDAura
+---@param talent ERALIBTalent|nil
+---@param texture string|number
+---@param isAtlas boolean
+---@return HUDSAOAlertAura
+function HUDModule:AddAuraOverlayAlert(data, talent, texture, isAtlas)
+    return HUDSAOAlertAura:create(self, data, talent, texture, isAtlas)
+end
+
+---@param talent ERALIBTalent|nil
+---@param texture string|number
+---@param isAtlas boolean
+---@param spellID number
+---@param iconID number
+---@return HUDSAOAlertSpellIcon
+function HUDModule:AddSpellIconAlert(spellID, iconID, talent, texture, isAtlas)
+    return HUDSAOAlertSpellIcon:create(self, talent, texture, isAtlas, spellID, iconID)
+end
+
+---@param data HUDAura
+---@param talent ERALIBTalent|nil
+---@param texture string|number
+---@param isAtlas boolean
+---@param showOutOfCombat boolean
+---@return HUDSAOAlertMissingAura
+function HUDModule:AddMissingAuraOverlayAlert(data, talent, texture, isAtlas, showOutOfCombat)
+    return HUDSAOAlertMissingAura:create(self, data, talent, texture, isAtlas, showOutOfCombat)
+end
+
+---@param talent ERALIBTalent|nil
+---@param texture string|number
+---@param isAtlas boolean
+---@param mainSpellID number
+---@return HUDSAOAlertSpellOverlay
+function HUDModule:AddSpellOverlayAlert(talent, texture, isAtlas, mainSpellID)
+    return HUDSAOAlertSpellOverlay:create(self, talent, texture, isAtlas, mainSpellID)
 end
 
 --#endregion

@@ -2,12 +2,15 @@
 function ERACombatFrames_DeathKnightSetup(cFrame)
     ---@class DeathKnightTalents
     local talents = {
-        retreat = ERALIBTalent:Create(112853),
-        imprison = ERALIBTalent:Create(112927),
-        misery = ERALIBTalent:Create(112859),
-        nova = ERALIBTalent:Create(112911),
-        dispelloff = ERALIBTalent:Create(112926),
-        darkness = ERALIBTalent:Create(112921),
+        fortitude = ERALIBTalent:Create(96210),
+        ghoul = ERALIBTalent:Create(96201),
+        kick = ERALIBTalent:Create(96213),
+        blind = ERALIBTalent:Create(96172),
+        walk = ERALIBTalent:Create(133518),
+        pact = ERALIBTalent:Create(96204),
+        amz = ERALIBTalent:Create(96194),
+        vader = ERALIBTalent:Create(96193),
+        icePrison = ERALIBTalent:Create(96215),
     }
 
     ERACombatFrames_DeathKnight_Blood(cFrame, talents)

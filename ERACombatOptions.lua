@@ -26,6 +26,10 @@ end
 ---@field controlY number
 ---@field controlIconSize number
 ---@field utilityIconPadding number
+---@field alertX number
+---@field alertY number
+---@field alertWidth number
+---@field alertHeight number
 ERACombatSpecOptions = {}
 ERACombatSpecOptions.__index = ERACombatSpecOptions
 
@@ -56,6 +60,10 @@ function ERACombatSpecOptions:Create()
     x.controlY = 64
     x.controlIconSize = 55
     x.utilityIconPadding = 4
+    x.alertX = 0
+    x.alertY = 88
+    x.alertWidth = 128
+    x.alertHeight = 64
 
     return x
 end

@@ -92,6 +92,7 @@ function ECF_PRINT_CDM()
             end
         end
     end
+    printFrame(EssentialCooldownViewer)
     printFrame(BuffIconCooldownViewer)
     printFrame(BuffBarCooldownViewer)
 end

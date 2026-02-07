@@ -19,6 +19,7 @@ HUD/HUDContent.lua
 HUD/HUDModule.lua
 HUD/HUDData.lua
 HUD/HUDResources.lua
+HUD/HUDAlerts.lua
 HUD/HUDIcons.lua
 
 Classes/DeathKnight.lua
