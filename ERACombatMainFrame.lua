@@ -275,7 +275,9 @@ function ERACombatMainFrame:resetToIdle(fullReset)
     ]]
     for _, m in ipairs(self.modules) do
         m:updateSpec(specID, fullReset)
-        if (m.specActive) then
+    end
+    for _, m in ipairs(self.modules) do
+        if (m:activateSpec()) then
             table.insert(self.activeModules, m)
         end
     end
@@ -370,6 +372,7 @@ end
 
 ---@class ERACombatModule
 ---@field cFrame ERACombatMainFrame
+---@field private oldActive boolean
 ---@field protected construct fun(this:ERACombatModule, cFrame:ERACombatMainFrame, idleUpdate:number, combatUpdate:number, ...:number)
 ---@field protected UpdateIdle fun(this:ERACombatModule, t:number, elapsed:number): nil
 ---@field protected UpdateCombat fun(this:ERACombatModule, t:number, elapsed:number): nil
@@ -399,7 +402,7 @@ function ERACombatModule:constructModule(cFrame, idleUpdate, combatUpdate, ...)
 end
 
 function ERACombatModule:updateSpec(specID, fullReset)
-    local old = fullReset or self.specActive
+    self.oldActive = fullReset or self.specActive
     self.specActive = false
     for i, s in ipairs(self.specs) do
         if (s == specID) then
@@ -407,11 +410,17 @@ function ERACombatModule:updateSpec(specID, fullReset)
             break
         end
     end
+    if (not self.specActive) then
+        self:SpecInactive(self.oldActive)
+    end
+end
+function ERACombatModule:activateSpec()
     if (self.specActive) then
-        self:SpecActive(old)
+        self:SpecActive(self.oldActive)
         self:CheckTalents()
+        return true
     else
-        self:SpecInactive(old)
+        return false
     end
 end
 

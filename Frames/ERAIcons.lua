@@ -3,7 +3,7 @@
 
 ---@class (exact) ERAIcon
 ---@field private __index ERAIcon
----@field protected constructIcon fun(self:ERAIcon, parentFrame:Frame, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", size:number, iconID:number, mainFrame:Frame, overlayFrame:Frame)
+---@field protected constructIcon fun(self:ERAIcon, parentFrame:Frame, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", size:number, iconID:number, mainFrame:Frame, overlayFrame:Frame)
 ---@field protected additionalSetDesaturation nil|fun(self:ERAIcon, desat:number)
 ---@field private frame Frame
 ---@field private icon Texture
@@ -12,8 +12,8 @@
 ---@field private mainTextValue string|nil
 ---@field private secondaryText FontString
 ---@field private secondaryTextValue string|nil
----@field private point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
----@field private relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@field private point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@field private relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
 ---@field private parentFrame Frame
 ---@field private x number
 ---@field private y number
@@ -92,6 +92,12 @@ function ERAIcon:SetIconTexture(iconID, force)
             self.icon:SetTexture(self.iconID)
         end
     end
+end
+
+
+---@param level number
+function ERAIcon:SetFrameLevel(level)
+    self.frame:SetFrameLevel(level)
 end
 
 ---@param txt any|nil
@@ -267,8 +273,8 @@ setmetatable(ERAPieIcon, { __index = ERAIcon })
 
 ---comment
 ---@param parentFrame Frame
----@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
----@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
 ---@param size number
 ---@param iconID number
 ---@return ERAPieIcon

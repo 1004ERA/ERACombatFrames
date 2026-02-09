@@ -11,6 +11,8 @@ function ERACombatFrames_DeathKnightSetup(cFrame)
         amz = ERALIBTalent:Create(96194),
         vader = ERALIBTalent:Create(96193),
         icePrison = ERALIBTalent:Create(96215),
+        chill = ERALIBTalent:Create(96179),
+        draw = ERALIBTalent:Create(96184),
     }
 
     ERACombatFrames_DeathKnight_Blood(cFrame, talents)

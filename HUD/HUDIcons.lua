@@ -36,14 +36,15 @@ end
 
 ---@class (exact) HUDPieIcon : HUDIcon
 ---@field private __index HUDPieIcon
----@field protected constructPie fun(self:HUDPieIcon, hud:HUDModule, frame:Frame, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER", size:number, iconID:number, talent:ERALIBTalent|nil)
+---@field protected constructPie fun(self:HUDPieIcon, hud:HUDModule, frame:Frame, frameLevel:number, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", size:number, iconID:number, talent:ERALIBTalent|nil)
 ---@field protected icon ERAPieIcon
 HUDPieIcon = {}
 HUDPieIcon.__index = HUDPieIcon
 setmetatable(HUDPieIcon, { __index = HUDIcon })
 
-function HUDPieIcon:constructPie(hud, frame, point, relativePoint, size, iconID, talent)
+function HUDPieIcon:constructPie(hud, frame, frameLevel, point, relativePoint, size, iconID, talent)
     self.icon = ERAPieIcon:create(frame, point, relativePoint, size, iconID)
+    self.icon:SetFrameLevel(frameLevel)
     self:constructIcon(hud, self.icon, talent)
 end
 
@@ -82,14 +83,15 @@ setmetatable(HUDCooldownIcon, { __index = HUDPieIcon })
 
 ---comment
 ---@param frame Frame
----@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
----@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param frameLevel number
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
 ---@param size number
 ---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldownIcon
-function HUDCooldownIcon:Create(frame, point, relativePoint, size, data, iconID, talent)
+function HUDCooldownIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent)
     local x = {}
     setmetatable(x, HUDCooldownIcon)
     ---@cast x HUDCooldownIcon
@@ -97,7 +99,7 @@ function HUDCooldownIcon:Create(frame, point, relativePoint, size, data, iconID,
         local info = C_Spell.GetSpellInfo(data.spellID)
         iconID = info.originalIconID
     end
-    x:constructPie(data.hud, frame, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
     x.data = data
 
     return x
@@ -105,6 +107,13 @@ end
 
 function HUDCooldownIcon:HideCountdown()
     self.icon:HideDefaultCountdown()
+end
+
+function HUDCooldownIcon:talentIsActive()
+    local info = C_Spell.GetSpellInfo(self.data.spellID)
+    if (info) then
+        self.icon:SetIconTexture(info.iconID)
+    end
 end
 
 ---comment
@@ -176,17 +185,18 @@ setmetatable(HUDEquipmentIcon, { __index = HUDPieIcon })
 
 ---comment
 ---@param frame Frame
----@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
----@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param frameLevel number
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
 ---@param size number
 ---@param data HUDEquipmentCooldown
 ---@param initIconID number
 ---@return HUDEquipmentIcon
-function HUDEquipmentIcon:Create(frame, point, relativePoint, size, data, initIconID)
+function HUDEquipmentIcon:Create(frame, frameLevel, point, relativePoint, size, data, initIconID)
     local x = {}
     setmetatable(x, HUDEquipmentIcon)
     ---@cast x HUDEquipmentIcon
-    x:constructPie(data.hud, frame, point, relativePoint, size, initIconID, data.talent)
+    x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, initIconID, data.talent)
     x.data = data
     return x
 end
@@ -249,22 +259,27 @@ setmetatable(HUDAuraIcon, { __index = HUDPieIcon })
 
 ---comment
 ---@param frame Frame
----@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
----@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"CENTER"
+---@param frameLevel number
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
 ---@param size number
 ---@param data HUDAura
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraIcon
-function HUDAuraIcon:Create(frame, point, relativePoint, size, data, iconID, talent)
+function HUDAuraIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent)
     local x = {}
     setmetatable(x, HUDAuraIcon)
     ---@cast x HUDAuraIcon
     if (not iconID) then
         local info = C_Spell.GetSpellInfo(data.spellID)
-        iconID = info.originalIconID
+        if (info) then
+            iconID = info.originalIconID
+        else
+            iconID = 134400 -- queston mark
+        end
     end
-    x:constructPie(data.hud, frame, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
     x.data = data
     x.icon:SetupAura()
 

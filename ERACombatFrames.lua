@@ -86,13 +86,43 @@ end
 function ECF_PRINT_CDM()
     local printFrame = function(frame)
         local auraFrames = { frame:GetChildren() }
+        local sort = function(a1, a2)
+            if (a1 and a1.cooldownInfo) then
+                if (a2 and a2.cooldownInfo) then
+                    return C_Spell.GetSpellInfo(a1.cooldownInfo.spellID).name < C_Spell.GetSpellInfo(a2.cooldownInfo.spellID).name
+                else
+                    return false
+                end
+            else
+                if (a2 and a2.cooldownInfo) then
+                    return true
+                else
+                    return tostring(a1) < tostring(a2)
+                end
+            end
+        end
+        table.sort(auraFrames, sort)
         for _, c in ipairs(auraFrames) do
-            if (c.cooldownInfo) then
-                print(c.cooldownInfo.spellID, C_Spell.GetSpellInfo(c.cooldownInfo.spellID).name, c.auraInstanceID)
+            local info = c.cooldownInfo
+            if (info) then
+                local linked = ""
+                ---@cast info CooldownViewerCooldown
+                if (info.overrideSpellID and info.overrideSpellID ~= info.spellID) then
+                    linked = "OV" .. info.overrideSpellID
+                end
+                if (info.linkedSpellIDs and #info.linkedSpellIDs > 0) then
+                    for _, x in ipairs(info.linkedSpellIDs) do
+                        if (linked) then
+                            linked = linked .. "|"
+                        end
+                        linked = linked .. x
+                    end
+                end
+                print(info.spellID, C_Spell.GetSpellInfo(info.spellID).name, c.auraInstanceID, linked)
             end
         end
     end
-    printFrame(EssentialCooldownViewer)
+    --printFrame(EssentialCooldownViewer)
     printFrame(BuffIconCooldownViewer)
     printFrame(BuffBarCooldownViewer)
 end

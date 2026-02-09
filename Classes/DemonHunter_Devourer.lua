@@ -89,16 +89,16 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     voidfallIcon.alwaysHideOutOfCombat = true
 
     -- defensive
-    hud:AddDefensiveCooldown(blur)
-    hud:AddDefensiveCooldown(darkness)
+    hud.defensiveGroup:AddCooldown(blur)
+    hud.defensiveGroup:AddCooldown(darkness)
 
     -- control
-    hud:AddControlCooldown(kick)
+    hud.controlGroup:AddCooldown(kick)
     hud:AddKickInfo(kick)
-    hud:AddControlCooldown(nova)
-    hud:AddControlCooldown(dispelloff)
-    hud:AddControlCooldown(misery)
-    hud:AddControlCooldown(imprison)
+    hud.controlGroup:AddCooldown(nova)
+    hud.controlGroup:AddCooldown(dispelloff)
+    hud.controlGroup:AddCooldown(misery)
+    hud.controlGroup:AddCooldown(imprison)
 
     -- powerboost
 

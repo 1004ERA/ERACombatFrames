@@ -67,7 +67,7 @@ end
 
 ---@class (exact) HUDEssentialsSlot
 ---@field private __index HUDEssentialsSlot
----@field private icon HUDIcon
+---@field private icons HUDIcon[]
 ---@field hud HUDModule
 ---@field talentActive boolean
 ---@field private bars HUDTimerBar[]
@@ -81,27 +81,32 @@ function HUDEssentialsSlot:create(icon, hud)
     local x = {}
     setmetatable(x, HUDEssentialsSlot)
     ---@cast x HUDEssentialsSlot
-    x.icon = icon
+    x.icons = { icon }
     x.hud = hud
     x.bars = {}
     return x
 end
 
-function HUDEssentialsSlot:computeTalents_return_icon_if_active()
-    if (self.icon:computeActive()) then
-        self.talentActive = true
+function HUDEssentialsSlot:computeTalents()
+    local something_active = false
+    for _, icon in ipairs(self.icons) do
+        if (icon:computeActive()) then
+            self.talentActive = true
+            self.hud:addActiveEssentialIcon(icon, not something_active)
+            something_active = true
+        end
+    end
+    if (something_active) then
         for _, t in ipairs(self.bars) do
             if (t:computeActive()) then
                 self.hud:addActiveTimerBar(t)
             end
         end
-        return self.icon
     else
         for _, t in ipairs(self.bars) do
             t:Deactivate()
         end
         self.talentActive = false
-        return nil
     end
 end
 
@@ -109,7 +114,11 @@ end
 ---@param iconSize number
 ---@param timerBarFrame Frame
 function HUDEssentialsSlot:setPosition(xMid, iconSize, timerBarFrame)
-    self.icon:setPosition(xMid, 0)
+    for _, icon in ipairs(self.icons) do
+        if (icon.talentActive) then
+            icon:setPosition(xMid, 0)
+        end
+    end
     for _, tb in ipairs(self.bars) do
         if (tb.talentActive) then
             tb:updateLayout(xMid, iconSize, timerBarFrame)
@@ -131,6 +140,16 @@ end
 ---@return HUDTimerBar
 function HUDEssentialsSlot:AddTimerBar(position, timer, talent, r, g, b)
     return HUDTimerBar:Create(self, position, timer, talent, r, g, b, self.hud:getTimerBarFrame())
+end
+
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDAuraIcon
+function HUDEssentialsSlot:AddOverlapingAura(data, iconID, talent)
+    local icon = HUDAuraIcon:create(self.hud:getEssentialFrame(), 8 + #self.icons, "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.icons, icon)
+    return icon
 end
 
 --#endregion
@@ -258,6 +277,7 @@ end
 ---@field private timer HUDTimer
 ---@field private bar StatusBar
 ---@field doNotCutLongDuration boolean
+---@field showPandemic boolean
 HUDTimerBar = {}
 HUDTimerBar.__index = HUDTimerBar
 setmetatable(HUDTimerBar, { __index = HUDDisplay })
@@ -322,8 +342,13 @@ function HUDTimerBar:Update(t, combat)
         if (self.doNotCutLongDuration) then
             self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
         else
-            ---@diagnostic disable-next-line: param-type-mismatch
-            self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+            if (self.showPandemic) then
+                ---@diagnostic disable-next-line: param-type-mismatch
+                self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+            else
+                ---@diagnostic disable-next-line: param-type-mismatch
+                self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+            end
         end
     end
 end

@@ -103,21 +103,21 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     voidfallIcon.alwaysHideOutOfCombat = true
 
     -- defensive
-    hud:AddDefensiveCooldown(darkness)
+    hud.defensiveGroup:AddCooldown(darkness)
 
     -- control
-    hud:AddControlCooldown(kick)
+    hud.controlGroup:AddCooldown(kick)
     hud:AddKickInfo(kick)
-    hud:AddControlCooldown(nova)
-    hud:AddControlCooldown(sigSilence)
-    hud:AddControlCooldown(sigMisery)
-    hud:AddControlCooldown(sigChains)
-    hud:AddControlCooldown(dispelloff)
-    hud:AddControlCooldown(imprison)
+    hud.controlGroup:AddCooldown(nova)
+    hud.controlGroup:AddCooldown(sigSilence)
+    hud.controlGroup:AddCooldown(sigMisery)
+    hud.controlGroup:AddCooldown(sigChains)
+    hud.controlGroup:AddCooldown(dispelloff)
+    hud.controlGroup:AddCooldown(imprison)
 
     -- powerboost
-    hud:AddPowerboostCooldown(brand)
-    hud:AddPowerboostCooldown(meta)
+    hud.powerboostGroup:AddCooldown(brand)
+    hud.powerboostGroup:AddCooldown(meta)
 
     --#endregion
     --------------------------------

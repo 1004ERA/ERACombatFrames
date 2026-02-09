@@ -112,6 +112,7 @@ end
 ---@field getTickColor fun(self:HUDPowerBarDisplay, curve:LuaColorCurveObject): ColorMixin
 ---@field private ticks HUDPowerBarTick[]
 ---@field private ticksActive HUDPowerBarTick[]
+---@field heightMultiplier number
 HUDPowerBarDisplay = {}
 HUDPowerBarDisplay.__index = HUDPowerBarDisplay
 setmetatable(HUDPowerBarDisplay, { __index = HUDResourceDisplay })
@@ -131,6 +132,7 @@ function HUDPowerBarDisplay:constructPower(hud, r, g, b, talent, resourceFrame, 
     self.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
     self.bar:SetBarColor(r, g, b, false)
     self.bar:SetBorderColor(r, g, b, false)
+    self.heightMultiplier = 1
 end
 
 function HUDPowerBarDisplay:Activate()
@@ -150,7 +152,7 @@ end
 ---@param resourceFrame Frame
 ---@return number
 function HUDPowerBarDisplay:measure_returnHeight(y, width, resourceFrame)
-    return self.hud.options.powerHeight
+    return self.heightMultiplier * self.hud.options.powerHeight
 end
 
 ---@param y number
@@ -343,6 +345,7 @@ end
 ---@field private targetIdle number
 ---@field private maxStacksGetter fun(): number
 ---@field private maxStacks number
+---@field showEmptyInCombat boolean
 ---@field constantTickColor ColorMixin
 ---@field OverrideVisibilityAlpha fun(self:HUDPowerBarStacksDisplay, aura:HUDAura, t:number, combat:boolean): number
 HUDPowerBarStacksDisplay = {}
@@ -399,7 +402,11 @@ function HUDPowerBarStacksDisplay:getCurrentAndUpdate(t, combat)
                 end
             end
         else
-            self.bar:SetVisibilityAlpha(0.0, false)
+            if (combat and self.showEmptyInCombat) then
+                self.bar:SetVisibilityAlpha(1.0, false)
+            else
+                self.bar:SetVisibilityAlpha(0.0, false)
+            end
         end
     end
     if (self.data.auraIsPresent) then
@@ -437,6 +444,11 @@ end
 ---@field private tickValueGetter fun(): number
 ---@field private tickValue number
 ---@field private curve LuaColorCurveObject
+---@field continuouslyCheckValue boolean
+---@field private barMax number
+---@field private barWidth number
+---@field private barHeight number
+---@field private barBorderThickness number
 ---@field OverrideAlpha nil|fun(self:HUDPowerBarTick): number
 ---@field OverrideDesaturated nil|fun(self:HUDPowerBarTick): number
 HUDPowerBarTick = {}
@@ -478,39 +490,54 @@ end
 ---@param max number
 ---@return boolean
 function HUDPowerBarTick:checkTalentAndHideOrLayout(barWidth, height, borderThickness, max)
+    self.tickValue = -1004
     if (self.talent and not self.talent:PlayerHasTalent()) then
         self.tick:Hide()
         self.icon:Hide()
         return false
     else
-        self.tickValue = self.tickValueGetter()
-        local pct1 = self.tickValue / max
+        self.barWidth = barWidth
+        self.barHeight = height
+        self.barBorderThickness = borderThickness
+        self.barMax = max
+        self:updateValue()
+        self.tick:Show()
+        self.icon:Show()
+        return true
+    end
+end
+
+---@private
+function HUDPowerBarTick:updateValue()
+    local val = self.tickValueGetter()
+    if (self.tickValue ~= val) then
+        self.tickValue = val
+        local pct1 = val / self.barMax
         self.curve:ClearPoints()
         if (self.owner:isCurvePercent()) then
             self.curve:AddPoint(0, CreateColor(0.8, 0.1, 0.1, 1.0))
             self.curve:AddPoint(pct1, CreateColor(0.0, 1.0, 0.0, 1.0))
         else
             self.curve:AddPoint(0, CreateColor(0.8, 0.1, 0.1, 1.0))
-            self.curve:AddPoint(self.tickValue, CreateColor(0.0, 1.0, 0.0, 1.0))
+            self.curve:AddPoint(val, CreateColor(0.0, 1.0, 0.0, 1.0))
         end
 
-        local x = (barWidth - 2 * borderThickness) * pct1
-        local y = -height * 0.5
+        local x = (self.barWidth - 2 * self.barBorderThickness) * pct1
+        local y = -self.barHeight * 0.5
         self.tick:SetStartPoint("TOPLEFT", self.parentFrame, x, 0)
         self.tick:SetEndPoint("TOPLEFT", self.parentFrame, x, y)
-        self.icon:SetSize(height / 2, height / 2)
+        self.icon:SetSize(self.barHeight / 2, self.barHeight / 2)
         self.icon:SetPoint("TOP", self.parentFrame, "TOPLEFT", x, y)
-
-        self.tick:Show()
-        self.icon:Show()
-
-        return true
     end
 end
 
 ---@param t number
 ---@param combat boolean
 function HUDPowerBarTick:update(t, combat)
+    if (self.continuouslyCheckValue) then
+        self:updateValue()
+    end
+
     local alpha
     if (self.OverrideAlpha) then
         alpha = self.OverrideAlpha(self)

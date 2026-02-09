@@ -23,6 +23,7 @@ end
 function HUDDataItem:computeTalentActive()
     if (self.talent and not self.talent:PlayerHasTalent()) then
         self.talentActive = false
+        self:talentIsNotActive()
         return false
     else
         self.talentActive = true
@@ -31,6 +32,8 @@ function HUDDataItem:computeTalentActive()
     end
 end
 function HUDDataItem:talentIsActive()
+end
+function HUDDataItem:talentIsNotActive()
 end
 
 --#endregion
@@ -441,6 +444,11 @@ end
 
 function HUDAura:talentIsActive()
     self.hud:addActiveAura(self, self.isTarget)
+end
+function HUDAura:talentIsNotActive()
+    self.stacks = 0
+    self.stacksDisplay = nil
+    self.auraIsPresent = false
 end
 
 function HUDAura:prepareParseCDM()
