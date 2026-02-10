@@ -50,6 +50,7 @@ end
 ---@field healthPercent100 number
 ---@field goodAbsorb number
 ---@field badAbsorb number
+---@field unitExists boolean
 ---@field private calc UnitHealPredictionCalculator
 HUDHealth = {}
 HUDHealth.__index = HUDHealth
@@ -77,14 +78,24 @@ function HUDHealth:Create(hud, unit)
 end
 
 function HUDHealth:Update()
-    self.health = UnitHealth(self.unit)
-    self.maxHealth = UnitHealthMax(self.unit)
-    self.healthPercent100 = UnitHealthPercent(self.unit, true, CurveConstants.ScaleTo100)
-    UnitGetDetailedHealPrediction(self.unit, nil, self.calc)
-    --self.goodAbsorb = UnitGetTotalAbsorbs(self.unit)
-    --self.badAbsorb = UnitGetTotalHealAbsorbs(self.unit)
-    self.goodAbsorb = self.calc:GetDamageAbsorbs()
-    self.badAbsorb = self.calc:GetHealAbsorbs()
+    if (UnitExists(self.unit)) then
+        self.unitExists = true
+        self.health = UnitHealth(self.unit)
+        self.maxHealth = UnitHealthMax(self.unit)
+        self.healthPercent100 = UnitHealthPercent(self.unit, true, CurveConstants.ScaleTo100)
+        UnitGetDetailedHealPrediction(self.unit, nil, self.calc)
+        --self.goodAbsorb = UnitGetTotalAbsorbs(self.unit)
+        --self.badAbsorb = UnitGetTotalHealAbsorbs(self.unit)
+        self.goodAbsorb = self.calc:GetDamageAbsorbs()
+        self.badAbsorb = self.calc:GetHealAbsorbs()
+    else
+        self.unitExists = false
+        self.health = 0
+        self.maxHealth = 1
+        self.healthPercent100 = 0
+        self.goodAbsorb = 0
+        self.badAbsorb = 0
+    end
 end
 
 --#endregion

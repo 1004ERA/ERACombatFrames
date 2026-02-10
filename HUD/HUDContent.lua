@@ -139,7 +139,7 @@ end
 ---@param b number
 ---@return HUDTimerBar
 function HUDEssentialsSlot:AddTimerBar(position, timer, talent, r, g, b)
-    return HUDTimerBar:Create(self, position, timer, talent, r, g, b, self.hud:getTimerBarFrame())
+    return HUDTimerBar:create(self, position, timer, talent, r, g, b, self.hud:getTimerBarFrame())
 end
 
 ---@param data HUDAura
@@ -207,9 +207,10 @@ end
 
 ---@param data HUDHealth
 ---@param isPet boolean
+---@param talent ERALIBTalent|nil
 ---@return HUDHealthDisplay
-function HUDResourceSlot:AddHealth(data, isPet)
-    local r = HUDHealthDisplay:create(self.hud, data, isPet, self.hud:getResourceFrame(), 1 + #self.resources)
+function HUDResourceSlot:AddHealth(data, isPet, talent)
+    local r = HUDHealthDisplay:create(self.hud, data, isPet, self.hud:getResourceFrame(), 1 + #self.resources, talent)
     table.insert(self.resources, r)
     return r
 end
@@ -265,6 +266,13 @@ function HUDResourceSlot:AddRunes(data)
     return res
 end
 
+---@return HUDWarlockEmbers
+function HUDResourceSlot:AddDestroShards()
+    local res = HUDWarlockEmbers:create(self.hud, self.hud:getResourceFrame(), 1 + #self.resources)
+    table.insert(self.resources, res)
+    return res
+end
+
 --#endregion
 ----------------------------------------------------------------
 
@@ -291,7 +299,7 @@ setmetatable(HUDTimerBar, { __index = HUDDisplay })
 ---@param b number
 ---@param timerFrame Frame
 ---@return HUDTimerBar
-function HUDTimerBar:Create(placement, position, timer, talent, r, g, b, timerFrame)
+function HUDTimerBar:create(placement, position, timer, talent, r, g, b, timerFrame)
     local x = {}
     setmetatable(x, HUDTimerBar)
     ---@cast x HUDTimerBar

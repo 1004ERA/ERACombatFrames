@@ -77,6 +77,7 @@ end
 ---@field GetMainText nil|fun(self:HUDCooldownIcon): string|nil
 ---@field watchIconChange boolean
 ---@field watchAdditionalOverlay number
+---@field showOnlyWhenUsableOrOverlay boolean
 HUDCooldownIcon = {}
 HUDCooldownIcon.__index = HUDCooldownIcon
 setmetatable(HUDCooldownIcon, { __index = HUDPieIcon })
@@ -120,11 +121,27 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDCooldownIcon:Update(t, combat)
+    local overlay
+    if (self.watchAdditionalOverlay) then
+        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
+    else
+        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
+    end
+    self.icon:SetHighlight(overlay)
+
     if (combat) then
         if (self.OverrideCombatVisibilityAlpha) then
             self.icon:SetVisibilityAlpha(self:OverrideCombatVisibilityAlpha(), true)
         else
-            self.icon:SetVisibilityAlpha(1.0, false)
+            if (self.showOnlyWhenUsableOrOverlay) then
+                if (overlay or C_Spell.IsSpellUsable(self.data.spellID)) then
+                    self.icon:SetVisibilityAlpha(1.0, false)
+                else
+                    self.icon:SetVisibilityAlpha(0.0, false)
+                end
+            else
+                self.icon:SetVisibilityAlpha(1.0, false)
+            end
         end
     else
         ---@diagnostic disable-next-line: param-type-mismatch

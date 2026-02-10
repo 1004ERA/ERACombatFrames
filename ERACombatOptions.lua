@@ -25,9 +25,15 @@ end
 ---@field powerboostX number
 ---@field powerboostY number
 ---@field powerboostIconSize number
+---@field buffX number
+---@field buffY number -- the vampire slayer
+---@field buffIconSize number
 ---@field movementX number
 ---@field movementY number
 ---@field movementIconSize number
+---@field specialX number
+---@field specialY number
+---@field specialIconSize number
 ---@field controlX number
 ---@field controlY number
 ---@field controlIconSize number
@@ -66,11 +72,17 @@ function ERACombatSpecOptions:Create()
     x.assistY = -32
     x.assistIconSize = 55
     x.powerboostX = -200
-    x.powerboostY = -32
+    x.powerboostY = -88
     x.powerboostIconSize = 55
+    x.buffX = -200
+    x.buffY = 42
+    x.buffIconSize = 55
     x.movementX = 200
     x.movementY = 32
     x.movementIconSize = 55
+    x.specialX = 200
+    x.specialY = -88
+    x.specialIconSize = 55
     x.alertGroupX = 0
     x.alertGroupY = 64
     x.alertGroupIconSize = 64

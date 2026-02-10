@@ -174,7 +174,7 @@ function ERACombatFrames_event(event, ...)
         elseif (classID == 8) then
             --ERACombatFrames_MageSetup(cFrame)
         elseif (classID == 9) then
-            --ERACombatFrames_WarlockSetup(cFrame)
+            ERACombatFrames_WarlockSetup(cFrame)
         elseif (classID == 10) then
             --ERACombatFrames_MonkSetup(cFrame)
         elseif (classID == 11) then

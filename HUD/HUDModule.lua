@@ -19,6 +19,8 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field powerboostGroup HUDUtilityGroup
 ---@field assistGroup HUDUtilityGroup
 ---@field defensiveGroup HUDUtilityGroup
+---@field specialGroup HUDUtilityGroup
+---@field buffGroup HUDUtilityGroup
 ---@field alertGroup HUDUtilityGroup
 ---@field private utilityGroups HUDUtilityGroup[]
 ---@field private essentialsIconsActiveCount number
@@ -191,10 +193,8 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x:setupMiddleGCCBar(x.castBarSecret)
     x.castBarSecret:Hide()
     x.castBarSecretVisible = false
-    --x.castBarStrong = x:createGCCBar(1, 0.2, 0.7, 0.5, 1.0, "Interface\\Buttons\\WHITE8x8")
-    -- ChallengeMode-TimerFill
-    -- Capacitance-Blacksmithing-TimerFill
     x.castBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 1.0, "Capacitance-Blacksmithing-TimerFill")
+    --x.castBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 1.0, "ChallengeMode-TimerFill")
     x.castBar:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
     x.castBar:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
     x.castBackground = x.timerFrameBack:CreateTexture(nil, "BACKGROUND", nil, 0)
@@ -208,7 +208,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.channelTicks = {}
     x.empowers = {}
     x.castLine = x.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 1)
-    x.castLine:SetColorTexture(0.6, 0.6, 1.0, 1.0)
+    x.castLine:SetColorTexture(0.8, 0.6, 0.0, 1.0)
     x.castLine:SetThickness(2)
     x.castLine:Hide()
     x.castLineVisible = false
@@ -234,13 +234,15 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     table.insert(x.resourceAfterHealth, healthSlot)
     x.healthBar = healthSlot:AddHealth(x.healthData, false)
 
+    x.specialGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false)
     x.movementGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false)
     x.controlGroup = HUDUtilityGroup:Create(x, "BOTTOMLEFT", false)
     x.powerboostGroup = HUDUtilityGroup:Create(x, "TOPRIGHT", false)
+    x.buffGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", false)
     x.assistGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", true)
     x.defensiveGroup = HUDUtilityGroup:Create(x, "TOP", false)
     x.alertGroup = HUDUtilityGroup:Create(x, "BOTTOM", false)
-    x.utilityGroups = { x.movementGroup, x.controlGroup, x.powerboostGroup, x.assistGroup, x.defensiveGroup, x.alertGroup }
+    x.utilityGroups = { x.specialGroup, x.movementGroup, x.controlGroup, x.powerboostGroup, x.buffGroup, x.assistGroup, x.defensiveGroup, x.alertGroup }
 
     x.duration0 = C_DurationUtil.CreateDuration()
 
@@ -322,7 +324,7 @@ function HUDModule:Pack()
     elseif (r == 4) then
         -- night elf
         racialSpellID = 58984
-        racialGroup = self.movementGroup
+        racialGroup = self.specialGroup
     elseif (r == 5) then
         -- undead
         racialSpellID = 7744
@@ -723,8 +725,10 @@ function HUDModule:updateLayout()
     self.alertGroup:updateLayout(self.options.alertGroupX, self.options.alertGroupY, self.options.alertGroupIconSize, self.options.utilityIconPadding)
     self.assistGroup:updateLayout(self.options.assistX, self.options.assistY, self.options.assistIconSize, self.options.utilityIconPadding)
     self.powerboostGroup:updateLayout(self.options.powerboostX, self.options.powerboostY, self.options.powerboostIconSize, self.options.utilityIconPadding)
+    self.buffGroup:updateLayout(self.options.buffX, self.options.buffY --[[the vampire slayer]], self.options.buffIconSize, self.options.utilityIconPadding)
     self.controlGroup:updateLayout(self.options.controlX, self.options.controlY, self.options.controlIconSize, self.options.utilityIconPadding)
     self.movementGroup:updateLayout(self.options.movementX, self.options.movementY, self.options.movementIconSize, self.options.utilityIconPadding)
+    self.specialGroup:updateLayout(self.options.specialX, self.options.specialY, self.options.specialIconSize, self.options.utilityIconPadding)
 
     -- alerts
     for _, a in ipairs(self.alertsActive) do
@@ -1106,8 +1110,8 @@ end
 
 ---@private
 function HUDModule:createTickLine()
-    local l = self.timerFrameFront:CreateLine(nil, "BORDER", nil, 2)
-    l:SetColorTexture(1.0, 0.0, 0.0, 1.0)
+    local l = self.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 7)
+    l:SetColorTexture(0.4, 0.1, 1.0, 1.0)
     l:SetThickness(1)
     return l
 end
@@ -1446,6 +1450,16 @@ function HUDUtilityGroup:AddCooldown(data, iconID, talent)
     return icon
 end
 
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDAuraIcon
+function HUDUtilityGroup:AddAura(data, iconID, talent)
+    local icon = HUDAuraIcon:create(self.frame, 1, self.anchor, self.anchor, self.hud.options.buffIconSize, data, iconID, talent)
+    table.insert(self.icons, icon)
+    return icon
+end
+
 ---@param slot unknown
 ---@param initIconID number
 function HUDUtilityGroup:AddEquipment(slot, initIconID)
@@ -1513,7 +1527,7 @@ function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b, addTimer
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     if (addTimerBar == true or not (addTimerBar == false)) then
-        HUDTimerBar:Create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
+        HUDTimerBar:create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
     end
     return icon, placement
 end
@@ -1530,7 +1544,7 @@ function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     if (rBar and gBar and bBar) then
-        local bar = HUDTimerBar:Create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
+        local bar = HUDTimerBar:create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
         return icon, placement, bar
     else
         return icon, placement, nil

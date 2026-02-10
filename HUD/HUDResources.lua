@@ -33,12 +33,13 @@ setmetatable(HUDHealthDisplay, { __index = HUDResourceDisplay })
 ---@param isPet boolean
 ---@param resourceFrame Frame
 ---@param frameLevel number
+---@param talent ERALIBTalent|nil
 ---@return HUDHealthDisplay
-function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel)
+function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel, talent)
     local x = {}
     setmetatable(x, HUDHealthDisplay)
     ---@cast x HUDHealthDisplay
-    x:constructResource(hud, false)
+    x:constructResource(hud, false, talent)
 
     x.data = data
     x.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
@@ -80,6 +81,10 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDHealthDisplay:Update(t, combat)
+    if ((not self.data.unitExists) and not self:ShowIfNoUnit(t, combat)) then
+        self.bar:SetVisibilityAlpha(0.0, false)
+        return
+    end
     if (combat) then
         self.bar:SetVisibilityAlpha(1.0, false)
     else
@@ -91,6 +96,9 @@ function HUDHealthDisplay:Update(t, combat)
     self.bar:SetModifierSubtractive(self.data.badAbsorb)
     self.bar:SetModifierAdditive(self.data.goodAbsorb)
     self.bar:SetRightText(string.format("%i", self.data.healthPercent100), true)
+end
+function HUDHealthDisplay:ShowIfNoUnit(t, combat)
+    return true
 end
 
 --#endregion
@@ -847,6 +855,269 @@ function HUDStacksPoints:getVisibilityAlphaOOC()
         else
             return 1.0
         end
+    end
+end
+
+--#endregion
+----
+
+--#endregion
+------------------------
+
+------------------------
+--#region POWER PARTIAL POINTS
+
+----
+--#region BASE
+
+---@class (exact) HUDResourcePartialPoints : HUDResourceDisplay
+---@field private __index HUDResourcePartialPoints
+---@field private rBorder number
+---@field private gBorder number
+---@field private bBorder number
+---@field private rPointFull number
+---@field private gPointFull number
+---@field private bPointFull number
+---@field private rPointPartial number
+---@field private gPointPartial number
+---@field private bPointPartial number
+---@field private frame Frame
+---@field pointSize number
+---@field private points HUDPartialPointItem[]
+---@field private maxPoints number
+---@field protected getCurrentValue fun(self:HUDResourcePartialPoints, t:number): number
+---@field protected getMaxPointsOnTalentCheck fun(self:HUDResourcePartialPoints): integer
+---@field protected getVisibilityAlphaOOC fun(self:HUDResourcePartialPoints, t:number, currentValue:number): number
+---@field protected constructPoints fun(self:HUDResourcePartialPoints, hud:HUDModule, rBorder:number, gBorder:number, bBorder:number, rPointFull:number, gPointFull:number, bPointFull:number, rPointPartial:number, gPointPartial:number, bPointPartial:number, talent:ERALIBTalent|nil, resourceFrame:Frame, frameLevel:number)
+HUDResourcePartialPoints = {}
+HUDResourcePartialPoints.__index = HUDResourcePartialPoints
+setmetatable(HUDResourcePartialPoints, { __index = HUDResourceDisplay })
+
+---comment
+---@param hud HUDModule
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@param rPointFull number
+---@param gPointFull number
+---@param bPointFull number
+---@param rPointPartial number
+---@param gPointPartial number
+---@param bPointPartial number
+---@param talent ERALIBTalent|nil
+---@param resourceFrame Frame
+---@param frameLevel number
+function HUDResourcePartialPoints:constructPoints(hud, rBorder, gBorder, bBorder, rPointFull, gPointFull, bPointFull, rPointPartial, gPointPartial, bPointPartial, talent, resourceFrame, frameLevel)
+    self:constructResource(hud, true, talent)
+    self.frame = CreateFrame("Frame", nil, resourceFrame)
+    self.frame:SetFrameLevel(frameLevel)
+    self.rBorder = rBorder
+    self.gBorder = gBorder
+    self.bBorder = bBorder
+    self.rPointFull = rPointFull
+    self.gPointFull = gPointFull
+    self.bPointFull = bPointFull
+    self.rPointPartial = rPointPartial
+    self.gPointPartial = gPointPartial
+    self.bPointPartial = bPointPartial
+    self.maxPoints = 0
+    self.points = {}
+end
+
+function HUDResourcePartialPoints:Activate()
+    self.frame:Show()
+end
+function HUDResourcePartialPoints:Deactivate()
+    self.frame:Hide()
+end
+
+function HUDResourcePartialPoints:talentIsActive()
+    local max = self:getMaxPointsOnTalentCheck()
+    if (max > self.maxPoints) then
+        for i = self.maxPoints + 1, max do
+            if (i > #self.points) then
+                local newPoint = HUDPartialPointItem:create(self.frame, self.rBorder, self.gBorder, self.bBorder)
+                table.insert(self.points, newPoint)
+            else
+                self.points[i]:show()
+            end
+        end
+    elseif (max < self.maxPoints) then
+        for i = max + 1, self.maxPoints do
+            self.points[i]:hide()
+        end
+    end
+    self.maxPoints = max
+end
+
+---@param y number
+---@param width number
+---@param resourceFrame Frame
+---@return number
+function HUDResourcePartialPoints:measure_returnHeight(y, width, resourceFrame)
+    self.pointSize = math.min(self.hud.options.powerHeight, width / self.maxPoints)
+    return self.pointSize
+end
+
+---comment
+---@param y number
+---@param width number
+---@param height number
+---@param resourceFrame Frame
+function HUDResourcePartialPoints:arrange(y, width, height, resourceFrame)
+    local pointsWidth = self.pointSize * self.maxPoints
+    self.frame:SetPoint("CENTER", resourceFrame, "TOP", 0, y - height / 2)
+    self.frame:SetSize(pointsWidth, self.pointSize)
+    for i = 1, self.maxPoints do
+        self.points[i]:updateLayout(self.pointSize * (i - self.maxPoints / 2 - 0.5), self.pointSize, self.frame)
+    end
+end
+
+---@param r number
+---@param g number
+---@param b number
+---@param maybeSecret boolean
+function HUDResourcePartialPoints:SetBorderColor(r, g, b, maybeSecret)
+    if (
+        ---@diagnostic disable-next-line: param-type-mismatch
+            (maybeSecret or issecretvalue(self.rBorder) or issecretvalue(self.gBorder) or issecretvalue(self.bBorder))
+            or
+            (self.rBorder ~= r or self.gBorder ~= g or self.bBorder ~= b)
+        ) then
+        self.rBorder = r
+        self.gBorder = g
+        self.bBorder = b
+        for _, p in ipairs(self.points) do
+            p:setBorderColor(r, g, b)
+        end
+    end
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDResourcePartialPoints:Update(t, combat)
+    local current = self:getCurrentValue(t)
+    if (combat) then
+        self.frame:SetAlpha(1.0)
+    else
+        self.frame:SetAlpha(self:getVisibilityAlphaOOC(t, current))
+    end
+    for _, p in ipairs(self.points) do
+        p:update(t, current, self.rPointPartial, self.gPointPartial, self.bPointPartial, self.rPointFull, self.gPointFull, self.bPointFull)
+        current = current - 1
+    end
+end
+
+--#endregion
+----
+
+----
+--#region POINT ITEM
+
+---@class (exact) HUDPartialPointItem
+---@field private __index HUDPartialPointItem
+---@field private border Texture
+---@field private point Texture
+---@field private background Texture
+---@field private frame Frame
+---@field private swipe Cooldown
+---@field private is_full boolean
+---@field private is_empty boolean
+HUDPartialPointItem = {}
+HUDPartialPointItem.__index = HUDPartialPointItem
+
+---@param parentFrame Frame
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@return HUDPartialPointItem
+function HUDPartialPointItem:create(parentFrame, rBorder, gBorder, bBorder)
+    local x = {}
+    setmetatable(x, HUDPartialPointItem)
+    ---@cast x HUDPartialPointItem
+
+    x.frame = CreateFrame("Frame", nil, parentFrame)
+
+    x.border = x.frame:CreateTexture(nil, "OVERLAY", nil, 0)
+    x.border:SetTexture("Interface/Addons/ERACombatFrames/textures/circle_256_16_blur_b8_8_4.tga")
+    x:setBorderColor(rBorder, gBorder, bBorder)
+    x.border:SetAllPoints()
+
+    x.point = x.frame:CreateTexture(nil, "ARTWORK", nil, 0)
+    x.point:SetTexture("Interface/Addons/ERACombatFrames/textures/disk_256_padding_16_blur_128.tga")
+    x.point:SetAllPoints()
+
+    x.background = x.frame:CreateTexture(nil, "BACKGROUND", nil, 0)
+    x.background:SetTexture("Interface/Addons/ERACombatFrames/textures/disk_256.tga")
+    x.background:SetVertexColor(0.0, 0.0, 0.0, 0.66)
+    x.background:SetAllPoints()
+
+    x.swipe = CreateFrame("Cooldown", nil, x.frame)
+    x.swipe:SetSwipeTexture("Interface/Addons/ERACombatFrames/textures/disk_256.tga", 0.0, 0.0, 0.0, 0.88)
+    x.swipe:SetSwipeColor(0.0, 0.0, 0.0, 0.88)
+    x.swipe:SetFrameLevel(10)
+    x.swipe:SetHideCountdownNumbers(true)
+    x.swipe:SetAllPoints()
+
+    x.is_full = nil
+
+    return x
+end
+
+---@param x number
+---@param size number
+---@param parentFrame Frame
+function HUDPartialPointItem:updateLayout(x, size, parentFrame)
+    self.frame:SetPoint("CENTER", parentFrame, "CENTER", x, 0)
+    self.frame:SetSize(size, size)
+end
+
+function HUDPartialPointItem:show()
+    self.frame:Show()
+end
+function HUDPartialPointItem:hide()
+    self.frame:Hide()
+end
+
+---@param r number
+---@param g number
+---@param b number
+function HUDPartialPointItem:setBorderColor(r, g, b)
+    self.border:SetVertexColor(r, g, b, 1.0)
+end
+
+---@param t number
+---@param value number
+---@param rPartial number
+---@param gPartial number
+---@param bPartial number
+---@param rFull number
+---@param gFull number
+---@param bFull number
+function HUDPartialPointItem:update(t, value, rPartial, gPartial, bPartial, rFull, gFull, bFull)
+    if (value >= 1) then
+        if (self.is_full ~= true) then
+            self.is_full = true
+            self.point:SetVertexColor(rFull, gFull, bFull, 1.0)
+            self.point:Show()
+            self.swipe:Hide()
+        end
+    elseif (value <= 0) then
+        if (self.is_empty ~= true) then
+            self.is_empty = true
+            self.point:Hide()
+            self.swipe:Hide()
+        end
+    else
+        if (self.is_empty or self.is_full) then
+            self.is_empty = false
+            self.is_full = false
+            self.point:SetVertexColor(rPartial, gPartial, bPartial, 1.0)
+            self.point:Show()
+            self.swipe:Show()
+        end
+        self.swipe:SetCooldown(t - 10 * value, 10, 0)
     end
 end
 
