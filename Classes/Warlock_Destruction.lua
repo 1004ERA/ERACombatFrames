@@ -6,6 +6,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --------------------------------
     --#region TALENTS
 
+    local talent_diabolist = ERALIBTalent:Create(117452)
     local talent_wither = ERALIBTalent:Create(117437)
     local talent_malevolence = ERALIBTalent:Create(117439)
     local talent_immo = ERALIBTalent:CreateNot(talent_wither)
@@ -30,6 +31,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --#region DATA
 
     local commonSpells = ERACombatFrames_WarlockCommonSpells(hud, talents)
+
     local conflag = hud:AddCooldown(17962)
     local demonfire = hud:AddCooldown(196447, talent_demonfire)
     local infernal = hud:AddCooldown(1122, talent_infernal)
@@ -39,7 +41,8 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local havoc = hud:AddCooldown(80240, talent_havoc)
     local shadowburn = hud:AddCooldown(17877, talent_shadowburn)
 
-    local immo_wither = hud:AddAuraByPlayer(157736, true)
+    local immo = hud:AddAuraByPlayer(157736, true, talent_immo)
+    local wither = hud:AddAuraByPlayer(445474, true, talent_wither)
     --local inferno = hud:AddAuraByPlayer(?, false,talent_inferno)
     --local instarof = hud:AddAuraByPlayer(?, false,talent_instarof)
     local backdraft = hud:AddAuraByPlayer(117828, false, talent_backdraft)
@@ -50,6 +53,12 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local mayhem = hud:AddAuraByPlayer(394087, true, talent_mayhem)
     local infernalBuff = hud:AddAuraByPlayer(1122, false, talent_infernal)
     local malevolenceBuff = hud:AddAuraByPlayer(442726, false, talent_malevolence)
+    local diabo_overlord = hud:AddAuraByPlayer(431944, false, talent_diabolist)
+    local diabo_mother = hud:AddAuraByPlayer(432815, false, talent_diabolist)
+    local diabo_pitlord = hud:AddAuraByPlayer(432816, false, talent_diabolist)
+
+    local motherIncinerate = hud:AddIconBoolean(29722, 841220, talent_diabolist)
+    local pitBolt = hud:AddIconBoolean(116858, 135800, talent_diabolist)
 
     --#endregion
     --------------------------------
@@ -59,13 +68,15 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     -- essentials
 
+    local _, diaboSlot = hud:AddEssentialsAura(diabo_overlord)
+    diaboSlot:AddOverlapingAura(diabo_mother)
+    diaboSlot:AddOverlapingAura(diabo_pitlord)
 
     local _, malevoSlot = hud:AddEssentialsCooldown(malevolence, nil, nil, 0.7, 0.1, 0.8)
     malevoSlot:AddTimerBar(0.75, malevolenceBuff, nil, 1.0, 1.0, 1.0)
 
-    local immoIcon, _, immoBar = hud:AddEssentialsAura(immo_wither, nil, nil, 0.8, 0.6, 0.0)
-    immoIcon.showRedIfMissingInCombat = true
-    immoBar.showPandemic = true
+    hud:AddDOT(immo, nil, nil, 0.8, 0.6, 0.0)
+    hud:AddDOT(wither, nil, nil, 0.8, 0.6, 0.0)
 
     hud:AddEssentialsCooldown(cata, nil, nil, 0.7, 0.1, 0.0)
 
@@ -86,6 +97,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     hud:AddEssentialsRightCooldown(shadowburn).showOnlyWhenUsableOrOverlay = true
 
     -- defensive
+    hud.defensiveGroup:AddCooldown(commonSpells.resolve)
     hud.defensiveGroup:AddCooldown(commonSpells.pact)
 
     -- movement
@@ -97,6 +109,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --hud.specialGroup:AddCooldown(commonSpells.soulburn)
 
     -- control
+    hud.controlGroup:AddCooldown(commonSpells.commandDemonKick).showOnlyIf = commonSpells.commandDemonIsKick
     hud.controlGroup:AddCooldown(commonSpells.coil)
     hud.controlGroup:AddCooldown(commonSpells.shadowfury)
     hud.controlGroup:AddCooldown(commonSpells.howl)
@@ -108,6 +121,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     -- buff
     hud.buffGroup:AddAura(crashing):ShowStacksRatherThanDuration()
+    hud.buffGroup:AddAura(malevolenceBuff)
 
     --#endregion
     --------------------------------
@@ -123,7 +137,16 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
-    hud:AddResourceSlot(false):AddDestroShards()
+    local embers = hud:AddResourceSlot(false):AddDestroShards()
+    function embers:DisplayUpdated()
+        if (motherIncinerate.value) then
+            self:SetBorderColor(0.0, 1.0, 0.0, false)
+        elseif (pitBolt.value) then
+            self:SetBorderColor(0.0, 1.0, 1.0, false)
+        else
+            self:SetBorderColor(1.0, 1.0, 0.0, false)
+        end
+    end
 
     local petHealth = hud:AddPetHealth()
     local petBar = hud:AddResourceSlot(true):AddHealth(petHealth, true)

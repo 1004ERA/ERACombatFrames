@@ -64,6 +64,8 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local vBloodBuff = hud:AddAuraByPlayer(55233, false)
     local deathStrikeHealing = hud:AddAuraByPlayer(49998, false)
 
+    local vampStrike = hud:AddIconBoolean(206930, 5927645, talent_sanlayn)
+
     --#endregion
     --------------------------------
     ---/run
@@ -118,13 +120,18 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     -- powerboost
     hud.powerboostGroup:AddCooldown(drw)
 
+    -- buffs
+    hud.buffGroup:AddAura(hemostasis):ShowStacksRatherThanDuration()
+    hud.buffGroup:AddAura(vBloodBuff)
+    hud.buffGroup:AddAura(fortitudeBuff)
+
     --#endregion
     --------------------------------
 
     --------------------------------
     --#region ALERTS
 
-    hud:AddSpellIconAlert(206930, 5927645, talent_sanlayn, "CovenantChoice-Celebration-Venthyr-DetailLine", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

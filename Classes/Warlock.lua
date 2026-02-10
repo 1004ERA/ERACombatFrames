@@ -23,6 +23,9 @@ function ERACombatFrames_WarlockSetup(cFrame)
 end
 
 ---@class (exact) WarlockCommonSpells
+---@field commandDemonIsKick HUDPublicBooleanSpellIcon
+---@field commandDemonKick HUDCooldown
+---@field resolve HUDCooldown
 ---@field instapet HUDCooldown
 ---@field pact HUDCooldown
 ---@field bweakness HUDCooldown
@@ -41,7 +44,10 @@ end
 function ERACombatFrames_WarlockCommonSpells(hud, talents)
     hud:AddChannelInfo(234153, 5, 0.5)
 
-    return {
+    local commonSpells = {
+        commandDemonIsKick = hud:AddIconBoolean(119898, 136174),
+        commandDemonKick = hud:AddCooldown(132409),
+        resolve = hud:AddCooldown(104773),
         instapet = hud:AddCooldown(333889, talents.instapet),
         pact = hud:AddCooldown(108416, talents.pact),
         bweakness = hud:AddCooldown(1271748, talents.bweakness),
@@ -54,4 +60,8 @@ function ERACombatFrames_WarlockCommonSpells(hud, talents)
         gateway = hud:AddCooldown(111771, talents.gateway),
         soulburn = hud:AddCooldown(385899, talents.soulburn),
     }
+    commonSpells.commandDemonKick.isSpecialIf = commonSpells.commandDemonIsKick
+    hud:AddKickInfo(commonSpells.commandDemonKick)
+
+    return commonSpells
 end

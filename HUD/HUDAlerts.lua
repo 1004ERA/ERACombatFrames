@@ -72,28 +72,28 @@ function HUDSAOAlert:updateLayout(options)
     self.frame:SetSize(options.alertWidth, options.alertHeight)
 end
 
----@class (exact) HUDSAOAlertPublicBoolean : HUDSAOAlert
----@field private __index HUDSAOAlertPublicBoolean
----@field protected constructBooleanSAO fun(self:HUDSAOAlertPublicBoolean, hud:HUDModule, talent:ERALIBTalent|nil, texture:number|string, isAtlas:boolean)
+---@class (exact) HUDSAOAlertBasicBoolean : HUDSAOAlert
+---@field private __index HUDSAOAlertBasicBoolean
+---@field protected constructBooleanSAO fun(self:HUDSAOAlertBasicBoolean, hud:HUDModule, talent:ERALIBTalent|nil, texture:number|string, isAtlas:boolean)
 ---@field private visible boolean
----@field protected getIsVisible fun(self:HUDSAOAlertPublicBoolean, t:number, combat:boolean): boolean
----@field protected appears nil|fun(self:HUDSAOAlertPublicBoolean, t:number, combat:boolean)
----@field protected disappears nil|fun(self:HUDSAOAlertPublicBoolean, t:number, combat:boolean)
+---@field protected getIsVisible fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean): boolean
+---@field protected appears nil|fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean)
+---@field protected disappears nil|fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean)
 ---@field playSoundWhenApperars nil|number
-HUDSAOAlertPublicBoolean = {}
-HUDSAOAlertPublicBoolean.__index = HUDSAOAlertPublicBoolean
-setmetatable(HUDSAOAlertPublicBoolean, { __index = HUDSAOAlert })
+HUDSAOAlertBasicBoolean = {}
+HUDSAOAlertBasicBoolean.__index = HUDSAOAlertBasicBoolean
+setmetatable(HUDSAOAlertBasicBoolean, { __index = HUDSAOAlert })
 
-function HUDSAOAlertPublicBoolean:constructBooleanSAO(hud, talent, texture, isAtlas)
+function HUDSAOAlertBasicBoolean:constructBooleanSAO(hud, talent, texture, isAtlas)
     self:constructSAO(hud, talent, texture, isAtlas)
     self.visible = false
     self.frame:Hide()
 end
 
-function HUDSAOAlertPublicBoolean:deactivated()
+function HUDSAOAlertBasicBoolean:deactivated()
     self.visible = false
 end
-function HUDSAOAlertPublicBoolean:Activate()
+function HUDSAOAlertBasicBoolean:Activate()
     if (self.visible) then
         self.visible = false
         self.frame:Hide()
@@ -102,7 +102,7 @@ end
 
 ---@param t number
 ---@param combat boolean
-function HUDSAOAlertPublicBoolean:Update(t, combat)
+function HUDSAOAlertBasicBoolean:Update(t, combat)
     local visible = self:getIsVisible(t, combat)
     if (visible) then
         if (not self.visible) then
@@ -128,12 +128,12 @@ function HUDSAOAlertPublicBoolean:Update(t, combat)
     end
 end
 
----@class (exact) HUDSAOAlertAura : HUDSAOAlertPublicBoolean
+---@class (exact) HUDSAOAlertAura : HUDSAOAlertBasicBoolean
 ---@field private __index HUDSAOAlertAura
 ---@field private data HUDAura
 HUDSAOAlertAura = {}
 HUDSAOAlertAura.__index = HUDSAOAlertAura
-setmetatable(HUDSAOAlertAura, { __index = HUDSAOAlertPublicBoolean })
+setmetatable(HUDSAOAlertAura, { __index = HUDSAOAlertBasicBoolean })
 
 ---@param hud HUDModule
 ---@param data HUDAura
@@ -156,13 +156,13 @@ function HUDSAOAlertAura:getIsVisible(t, combat)
     return self.data.auraIsPresent
 end
 
----@class (exact) HUDSAOAlertMissingAura : HUDSAOAlertPublicBoolean
+---@class (exact) HUDSAOAlertMissingAura : HUDSAOAlertBasicBoolean
 ---@field private __index HUDSAOAlertMissingAura
 ---@field private data HUDAura
 ---@field showOutOfCombat boolean
 HUDSAOAlertMissingAura = {}
 HUDSAOAlertMissingAura.__index = HUDSAOAlertMissingAura
-setmetatable(HUDSAOAlertMissingAura, { __index = HUDSAOAlertPublicBoolean })
+setmetatable(HUDSAOAlertMissingAura, { __index = HUDSAOAlertBasicBoolean })
 
 ---@param hud HUDModule
 ---@param data HUDAura
@@ -191,66 +191,30 @@ function HUDSAOAlertMissingAura:getIsVisible(t, combat)
     end
 end
 
----@class (exact) HUDSAOAlertSpellOverlay : HUDSAOAlertPublicBoolean
----@field private __index HUDSAOAlertSpellOverlay
----@field private mainSpellID number
-HUDSAOAlertSpellOverlay = {}
-HUDSAOAlertSpellOverlay.__index = HUDSAOAlertSpellOverlay
-setmetatable(HUDSAOAlertSpellOverlay, { __index = HUDSAOAlertPublicBoolean })
+---@class (exact) HUDSAOAlertPublicBoolean : HUDSAOAlertBasicBoolean
+---@field private __index HUDSAOAlertPublicBoolean
+---@field private data HUDPublicBoolean
+HUDSAOAlertPublicBoolean = {}
+HUDSAOAlertPublicBoolean.__index = HUDSAOAlertPublicBoolean
+setmetatable(HUDSAOAlertPublicBoolean, { __index = HUDSAOAlertBasicBoolean })
 
 ---@param hud HUDModule
 ---@param talent ERALIBTalent|nil
 ---@param texture string|number
 ---@param isAtlas boolean
----@param mainSpellID number
----@return HUDSAOAlertSpellOverlay
-function HUDSAOAlertSpellOverlay:create(hud, talent, texture, isAtlas, mainSpellID)
+---@param data HUDPublicBoolean
+---@return HUDSAOAlertPublicBoolean
+function HUDSAOAlertPublicBoolean:create(hud, talent, texture, isAtlas, data)
     local x = {}
-    setmetatable(x, HUDSAOAlertSpellOverlay)
-    ---@cast x HUDSAOAlertSpellOverlay
+    setmetatable(x, HUDSAOAlertPublicBoolean)
+    ---@cast x HUDSAOAlertPublicBoolean
     x:constructBooleanSAO(hud, talent, texture, isAtlas)
-    x.mainSpellID = mainSpellID
+    x.data = data
     return x
 end
 
 ---@param t number
 ---@param combat boolean
-function HUDSAOAlertSpellOverlay:getIsVisible(t, combat)
-    return C_SpellActivationOverlay.IsSpellOverlayed(self.mainSpellID)
-end
-
----@class (exact) HUDSAOAlertSpellIcon : HUDSAOAlertPublicBoolean
----@field private __index HUDSAOAlertSpellIcon
----@field private spellID number
----@field private iconID number
-HUDSAOAlertSpellIcon = {}
-HUDSAOAlertSpellIcon.__index = HUDSAOAlertSpellIcon
-setmetatable(HUDSAOAlertSpellIcon, { __index = HUDSAOAlertPublicBoolean })
-
----@param hud HUDModule
----@param talent ERALIBTalent|nil
----@param texture string|number
----@param isAtlas boolean
----@param spellID number
----@param iconID number
----@return HUDSAOAlertSpellIcon
-function HUDSAOAlertSpellIcon:create(hud, talent, texture, isAtlas, spellID, iconID)
-    local x = {}
-    setmetatable(x, HUDSAOAlertSpellIcon)
-    ---@cast x HUDSAOAlertSpellIcon
-    x:constructBooleanSAO(hud, talent, texture, isAtlas)
-    x.spellID = spellID
-    x.iconID = iconID
-    return x
-end
-
----@param t number
----@param combat boolean
-function HUDSAOAlertSpellIcon:getIsVisible(t, combat)
-    local info = C_Spell.GetSpellInfo(self.spellID)
-    if (info) then
-        return info.iconID == self.iconID
-    else
-        return false
-    end
+function HUDSAOAlertPublicBoolean:getIsVisible(t, combat)
+    return self.data.value
 end

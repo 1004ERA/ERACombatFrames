@@ -986,7 +986,7 @@ function HUDModule:UpdateCombat(t)
     ---@type HUDCooldown
     local foundKick = nil
     for _, k in ipairs(self.kicks) do
-        if (k.talentActive) then
+        if (k.talentActive and ((not k.isSpecialIf) or k.isSpecialIf.value)) then
             foundKick = k
             break
         end
@@ -1020,7 +1020,7 @@ function HUDModule:UpdateCombat(t)
     --#endregion
 
     for _, d in ipairs(self.displayActive) do
-        d:Update(t, true)
+        d:updateDisplay(t, true)
     end
 end
 
@@ -1029,7 +1029,7 @@ end
 function HUDModule:UpdateIdle(t)
     self:updateData(t, false)
     for _, d in ipairs(self.displayActive) do
-        d:Update(t, false)
+        d:updateDisplay(t, false)
     end
 end
 
@@ -1513,6 +1513,21 @@ function HUDModule:AddPetHealth()
     return HUDHealth:Create(self, "pet")
 end
 
+---@param spellID number
+---@param talent ERALIBTalent|nil
+---@return HUDPublicBooleanSpellOverlay
+function HUDModule:AddSpellOverlayBoolean(spellID, talent)
+    return HUDPublicBooleanSpellOverlay:create(self, talent, spellID)
+end
+
+---@param spellID number
+---@param iconID number
+---@param talent ERALIBTalent|nil
+---@return HUDPublicBooleanSpellIcon
+function HUDModule:AddIconBoolean(spellID, iconID, talent)
+    return HUDPublicBooleanSpellIcon:create(self, talent, spellID, iconID)
+end
+
 ---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
@@ -1549,6 +1564,23 @@ function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar)
     else
         return icon, placement, nil
     end
+end
+
+---@param data HUDAura
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@param rBar number
+---@param gBar number
+---@param bBar number
+---@return HUDAuraIcon, HUDEssentialsSlot, HUDTimerBar
+function HUDModule:AddDOT(data, iconID, talent, rBar, gBar, bBar)
+    local icon = HUDAuraIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    local placement = HUDEssentialsSlot:create(icon, self)
+    table.insert(self.essentialsIcons, placement)
+    local bar = HUDTimerBar:create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
+    bar.showPandemic = true
+    icon.showRedIfMissingInCombat = true
+    return icon, placement, bar
 end
 
 ---@param data HUDCooldown
@@ -1630,16 +1662,6 @@ function HUDModule:AddAuraOverlayAlert(data, talent, texture, isAtlas)
     return HUDSAOAlertAura:create(self, data, talent, texture, isAtlas)
 end
 
----@param talent ERALIBTalent|nil
----@param texture string|number
----@param isAtlas boolean
----@param spellID number
----@param iconID number
----@return HUDSAOAlertSpellIcon
-function HUDModule:AddSpellIconAlert(spellID, iconID, talent, texture, isAtlas)
-    return HUDSAOAlertSpellIcon:create(self, talent, texture, isAtlas, spellID, iconID)
-end
-
 ---@param data HUDAura
 ---@param talent ERALIBTalent|nil
 ---@param texture string|number
@@ -1653,10 +1675,10 @@ end
 ---@param talent ERALIBTalent|nil
 ---@param texture string|number
 ---@param isAtlas boolean
----@param mainSpellID number
----@return HUDSAOAlertSpellOverlay
-function HUDModule:AddSpellOverlayAlert(talent, texture, isAtlas, mainSpellID)
-    return HUDSAOAlertSpellOverlay:create(self, talent, texture, isAtlas, mainSpellID)
+---@param data HUDPublicBoolean
+---@return HUDSAOAlertPublicBoolean
+function HUDModule:AddPublicBooleanOverlayAlert(talent, texture, isAtlas, data)
+    return HUDSAOAlertPublicBoolean:create(self, talent, texture, isAtlas, data)
 end
 
 --#endregion

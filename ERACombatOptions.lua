@@ -72,10 +72,10 @@ function ERACombatSpecOptions:Create()
     x.assistY = -32
     x.assistIconSize = 55
     x.powerboostX = -200
-    x.powerboostY = -88
+    x.powerboostY = -128
     x.powerboostIconSize = 55
     x.buffX = -200
-    x.buffY = 42
+    x.buffY = -16
     x.buffIconSize = 55
     x.movementX = 200
     x.movementY = 32

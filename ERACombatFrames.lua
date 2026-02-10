@@ -61,6 +61,7 @@ function ECF_TEST()
         print("PUBLIC", count)
     end
     ]]
+    --[[
     local vmet = 1217605
     local coll = 1221150 --1221167
     local vmetinfo = C_Spell.GetSpellInfo(vmet)
@@ -81,6 +82,14 @@ function ECF_TEST()
     local colUsable = C_Spell.IsSpellUsable(coll)
     print("useable ?", metUsable, colUsable)
     print("cast count", C_Spell.GetSpellCastCount(vmet), C_Spell.GetSpellCastCount(coll))
+    ]]
+    -- 119898
+    --print(C_Spell.GetSpellInfo(119898).iconID)
+    --print(C_Spell.GetSpellInfo(132409).iconID) -- == 136174
+    --print(C_SpellBook.IsSpellKnown(132409, Enum.SpellBookSpellBank.Player))
+    --print(C_SpellBook.IsSpellKnown(19647, Enum.SpellBookSpellBank.Pet))
+    --print(C_Spell.IsSpellUsable(132409))
+    print(C_Spell.GetSpellCooldownDuration(132409):GetRemainingDuration())
 end
 
 function ECF_PRINT_CDM()

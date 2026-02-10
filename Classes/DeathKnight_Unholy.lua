@@ -43,7 +43,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local army = hud:AddCooldown(42650, talent_army)
     local sreaper = hud:AddCooldown(343294, talent_sreaper)
     local pestilence = hud:AddCooldown(1271967, talent_pestilence)
-
+    local raiseGhoul = hud:AddCooldown(46584)
 
     local doom = hud:AddAuraByPlayer(49530, false)
     local commander = hud:AddAuraByPlayer(390259, false)
@@ -59,6 +59,8 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local draw = hud:AddAuraByPlayer(374598, false, talents.draw)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
     local undeath = hud:AddAuraByPlayer(444633, true, talent_rider)
+
+    local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
 
     --#endregion
     --------------------------------
@@ -82,9 +84,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     strikestackIcon:ShowStacksRatherThanDuration()
     strikestackSlot:AddTimerBar(0.5, scythe, nil, 0.4, 0.0, 0.0)
 
-    local dotIcon, _, dotBar = hud:AddEssentialsAura(dot1, 7439189, nil, 1.0, 1.0, 0.0)
-    dotIcon.showRedIfMissingInCombat = true
-    dotBar.showPandemic = true
+    hud:AddDOT(dot1, 7439189, nil, 1.0, 1.0, 0.0)
 
     local _, dndSlot = hud:AddEssentialsCooldown(dnd, nil, nil, 0.7, 0.0, 1.0, false)
     dndSlot:AddTimerBar(0.25, bloodqueen, nil, 1.0, 0.0, 0.0)
@@ -92,7 +92,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     hud:AddEssentialsCooldown(sreaper, nil, nil, 0.0, 0.0, 1.0, false)
 
     local _, transfoSlot = hud:AddEssentialsCooldown(transfo, nil, nil, 0.6, 0.5, 0.7)
-    transfoSlot:AddTimerBar(0.25, transfoBuff, nil, 0.8, 0.5, 0.0)
+    transfoSlot:AddTimerBar(0.25, transfoBuff, nil, 0.8, 0.5, 0.0).doNotCutLongDuration = true
 
     local _, undeathSlot, undeathBar = hud:AddEssentialsAura(undeath, nil, nil, 0.3, 0.8, 0.0):ShowStacksRatherThanDuration()
 
@@ -120,13 +120,16 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     -- powerboost
     hud.powerboostGroup:AddCooldown(army)
 
+    -- special
+    hud.specialGroup:AddCooldown(raiseGhoul)
+
     --#endregion
     --------------------------------
 
     --------------------------------
     --#region ALERTS
 
-    hud:AddSpellIconAlert(55090, 5927645, talent_sanlayn, "CovenantChoice-Celebration-Venthyr-DetailLine", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddMissingAuraOverlayAlert(dot2, nil, "icons_64x64_disease", true, false)
 
     --#endregion
@@ -146,7 +149,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
             return 1.0
         end
     end
-    local tickDoom = powerBar:AddTick(136145, nil, function() return 20 end)
+    local tickDoom = powerBar:AddTick(136145, nil, function() return 15 end)
     function tickDoom:OverrideAlpha()
         if (doom.auraIsPresent) then
             return 1.0

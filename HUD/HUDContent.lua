@@ -10,7 +10,8 @@
 ---@field protected talentIsActive fun(self:HUDDisplay)
 ---@field protected Activate fun(self:HUDDisplay)
 ---@field protected Deactivate fun(self:HUDDisplay)
----@field Update fun(self:HUDDisplay, t:number, combat:boolean)
+---@field protected Update fun(self:HUDDisplay, t:number, combat:boolean)
+---@field DisplayUpdated nil|fun(self:HUDDisplay, t:number, combat:boolean)
 HUDDisplay = {}
 HUDDisplay.__index = HUDDisplay
 
@@ -57,6 +58,15 @@ end
 function HUDDisplay:actuallyDeactivate()
     self.talentActive = false
     self:Deactivate()
+end
+
+---@param t number
+---@param combat boolean
+function HUDDisplay:updateDisplay(t, combat)
+    self:Update(t, combat)
+    if (self.DisplayUpdated) then
+        self:DisplayUpdated(t, combat)
+    end
 end
 
 --#endregion
@@ -240,6 +250,22 @@ end
 ---@return HUDStacksPoints
 function HUDResourceSlot:AddStacksPoints(data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, idleValueGetter, maxValueGetter)
     local res = HUDStacksPoints:create(self.hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, self.hud:getResourceFrame(), 1 + #self.resources, idleValueGetter, maxValueGetter)
+    table.insert(self.resources, res)
+    return res
+end
+
+---@param data HUDPower
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@param rPoint number
+---@param gPoint number
+---@param bPoint number
+---@param talent ERALIBTalent|nil
+---@param idleValueGetter fun(): number
+---@return HUDPowerPoints
+function HUDResourceSlot:AddPowerPoints(data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, idleValueGetter)
+    local res = HUDPowerPoints:create(self.hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, self.hud:getResourceFrame(), 1 + #self.resources, idleValueGetter)
     table.insert(self.resources, res)
     return res
 end

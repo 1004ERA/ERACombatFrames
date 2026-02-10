@@ -861,6 +861,67 @@ end
 --#endregion
 ----
 
+----
+--#region UNIT POWER
+
+---@class (exact) HUDPowerPoints : HUDResourcePoints
+---@field private __index HUDPowerPoints
+---@field private data HUDPower
+---@field private idleValueGetter fun(): number
+---@field private idleValue number
+HUDPowerPoints = {}
+HUDPowerPoints.__index = HUDPowerPoints
+setmetatable(HUDPowerPoints, { __index = HUDResourcePoints })
+
+---comment
+---@param hud HUDModule
+---@param data HUDPower
+---@param rBorder number
+---@param gBorder number
+---@param bBorder number
+---@param rPoint number
+---@param gPoint number
+---@param bPoint number
+---@param talent ERALIBTalent|nil
+---@param resourceFrame Frame
+---@param frameLevel number
+---@param idleValueGetter fun(): number
+function HUDPowerPoints:create(hud, data, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, talent, resourceFrame, frameLevel, idleValueGetter)
+    local x = {}
+    setmetatable(x, HUDPowerPoints)
+    ---@cast x HUDPowerPoints
+    x:constructPoints(hud, rBorder, gBorder, bBorder, rPoint, gPoint, bPoint, ERALIBTalent_CombineMakeAnd(talent, data.talent), resourceFrame, frameLevel)
+    x.data = data
+    x.idleValueGetter = idleValueGetter
+    x.idleValue = 0
+    return x
+end
+
+function HUDPowerPoints:getMaxPointsOnTalentCheck()
+    self.idleValue = self.idleValueGetter()
+    return self.data.maxNotSecret
+end
+
+function HUDPowerPoints:getCurrentPoints()
+    return self.data.current
+end
+
+function HUDPowerPoints:getVisibilityAlphaOOC()
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (issecretvalue(self.data.current)) then
+        return 1.0
+    else
+        if (self.data.current == self.idleValue) then
+            return 0.0
+        else
+            return 1.0
+        end
+    end
+end
+
+--#endregion
+----
+
 --#endregion
 ------------------------
 

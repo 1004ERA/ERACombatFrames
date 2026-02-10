@@ -113,6 +113,7 @@ end
 ---@field percent100 number
 ---@field idleAlphaOOC number
 ---@field protected updateIdleAlpha fun(self:HUDPower): number
+---@field protected powerTalentIsActive nil|fun(self:HUDPower): number
 HUDPower = {}
 HUDPower.__index = HUDPower
 setmetatable(HUDPower, { __index = HUDDataItem })
@@ -133,6 +134,9 @@ function HUDPower:talentIsActive()
     self.maxNotSecret = UnitPowerMax("player", self.powerType)
     if (self.maxNotSecret < 1) then
         self.maxNotSecret = 1
+    end
+    if (self.powerTalentIsActive) then
+        self:powerTalentIsActive()
     end
 end
 
@@ -217,7 +221,7 @@ function HUDPowerTargetIdle:Create(hud, powerType, talent, idleValue)
     x.idleValueGetter = idleValue
     return x
 end
-function HUDPowerTargetIdle:talentIsActive()
+function HUDPowerTargetIdle:powerTalentIsActive()
     self.idleValueResult = self.idleValueGetter()
 end
 function HUDPowerTargetIdle:updateIdleAlpha()
@@ -274,6 +278,7 @@ end
 ---@field maxCharges number
 ---@field currentCharges number
 ---@field hasCharges boolean
+---@field isSpecialIf HUDPublicBoolean|nil
 ---@field private must_update_max_charges boolean
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
@@ -413,7 +418,6 @@ end
 --#endregion
 ----------------------------------------------------------------
 
-
 ----------------------------------------------------------------
 --#region AURA -------------------------------------------------
 
@@ -513,6 +517,96 @@ function HUDAura:updateTimerDuration(t)
     self.stacksDisplay = nil
     self.auraIsPresent = false
     return self.hud.duration0
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region PUBLIC BOOLEAN DATA ----------------------------------
+
+---@class (exact) HUDPublicBoolean : HUDDataItem
+---@field private __index HUDPublicBoolean
+---@field value boolean
+---@field protected getValue fun(self:HUDPublicBoolean, t:number, combat:boolean): boolean
+HUDPublicBoolean = {}
+HUDPublicBoolean.__index = HUDPublicBoolean
+setmetatable(HUDPublicBoolean, { __index = HUDDataItem })
+
+---comment
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+function HUDPublicBoolean:constructBoolean(hud, talent)
+    self:constructItem(hud, talent)
+end
+
+function HUDPublicBoolean:talentIsNotActive()
+    self.value = false
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDPublicBoolean:Update(t, combat)
+    self.value = self:getValue(t, combat)
+end
+
+---@class (exact) HUDPublicBooleanSpellIcon : HUDPublicBoolean
+---@field private __index HUDPublicBooleanSpellIcon
+---@field private spellID number
+---@field private iconID number
+HUDPublicBooleanSpellIcon = {}
+HUDPublicBooleanSpellIcon.__index = HUDPublicBooleanSpellIcon
+setmetatable(HUDPublicBooleanSpellIcon, { __index = HUDPublicBoolean })
+---comment
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param spellID number
+---@param iconID number
+function HUDPublicBooleanSpellIcon:create(hud, talent, spellID, iconID)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanSpellIcon)
+    ---@cast x HUDPublicBooleanSpellIcon
+    x:constructBoolean(hud, talent)
+    x.spellID = spellID
+    x.iconID = iconID
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanSpellIcon:getValue(t, combat)
+    local info = C_Spell.GetSpellInfo(self.spellID)
+    if (info) then
+        return info.iconID == self.iconID
+    else
+        return false
+    end
+end
+
+---@class (exact) HUDPublicBooleanSpellOverlay : HUDPublicBoolean
+---@field private __index HUDPublicBooleanSpellOverlay
+---@field private spellID number
+HUDPublicBooleanSpellOverlay = {}
+HUDPublicBooleanSpellOverlay.__index = HUDPublicBooleanSpellOverlay
+setmetatable(HUDPublicBooleanSpellOverlay, { __index = HUDPublicBoolean })
+---comment
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param spellID number
+function HUDPublicBooleanSpellOverlay:create(hud, talent, spellID)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanSpellOverlay)
+    ---@cast x HUDPublicBooleanSpellOverlay
+    x:constructBoolean(hud, talent)
+    x.spellID = spellID
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanSpellOverlay:getValue(t, combat)
+    return C_SpellActivationOverlay.IsSpellOverlayed(self.spellID)
 end
 
 --#endregion
