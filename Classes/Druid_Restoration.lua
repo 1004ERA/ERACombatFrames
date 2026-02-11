@@ -13,6 +13,12 @@ function ERACombatFrames_Druid_Restoration(cFrame, talents)
     --------------------------------
     --#region DATA
 
+    local mana = hud:AddPowerHighIdle(Enum.PowerType.Mana)
+
+    local starsurge = hud:AddCooldown(197626, talents.starsurge)
+
+    local moonfire = hud:AddAuraByPlayer(8921, true)
+    local sunfire = hud:AddAuraByPlayer(93402, true, talents.sunfire)
 
     --#endregion
     --------------------------------
@@ -22,6 +28,11 @@ function ERACombatFrames_Druid_Restoration(cFrame, talents)
 
     -- essentials
 
+    hud:AddDOT(moonfire, nil, nil, 0.2, 0.2, 0.8)
+
+    hud:AddDOT(sunfire, nil, nil, 0.8, 0.8, 0.2)
+
+    hud:AddEssentialsCooldown(starsurge, nil, nil, 1.0, 0.0, 1.0)
 
     -- defensive
 
@@ -46,6 +57,8 @@ function ERACombatFrames_Druid_Restoration(cFrame, talents)
 
     --------------------------------
     --#region RESOURCE
+
+    local manaBar = hud:AddResourceSlot(false):AddPowerPercent(mana, 0.2, 0.2, 1.0)
 
     --#endregion
     --------------------------------

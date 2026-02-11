@@ -23,6 +23,8 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local talent_crashing = ERALIBTalent:Create(91473)
     local talent_inferno = ERALIBTalent:Create(91583)
     local talent_instarof = ERALIBTalent:Create(91423)
+    local talent_shadowburnImproved = ERALIBTalent:Create(91478)
+    local talent_shadowburnproc = ERALIBTalent:Create(126004)
 
     --#endregion
     --------------------------------
@@ -43,8 +45,8 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local immo = hud:AddAuraByPlayer(157736, true, talent_immo)
     local wither = hud:AddAuraByPlayer(445474, true, talent_wither)
-    --local inferno = hud:AddAuraByPlayer(?, false,talent_inferno)
-    --local instarof = hud:AddAuraByPlayer(?, false,talent_instarof)
+    local inferno = hud:AddAuraByPlayer(1244860, false, talent_inferno)
+    local instarof = hud:AddAuraByPlayer(1244947, false, talent_instarof)
     local backdraft = hud:AddAuraByPlayer(117828, false, talent_backdraft)
     local backlash = hud:AddAuraByPlayer(387384, false, talent_backlash)
     local crashing = hud:AddAuraByPlayer(417282, false, talent_crashing)
@@ -53,12 +55,11 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local mayhem = hud:AddAuraByPlayer(394087, true, talent_mayhem)
     local infernalBuff = hud:AddAuraByPlayer(1122, false, talent_infernal)
     local malevolenceBuff = hud:AddAuraByPlayer(442726, false, talent_malevolence)
-    local diabo_overlord = hud:AddAuraByPlayer(431944, false, talent_diabolist)
-    local diabo_mother = hud:AddAuraByPlayer(432815, false, talent_diabolist)
-    local diabo_pitlord = hud:AddAuraByPlayer(432816, false, talent_diabolist)
+    local shadowburnImproved = hud:AddAuraByPlayer(387110, false, talent_shadowburnImproved)
+    local shadowburnproc = hud:AddAuraByPlayer(1245664, false, talent_shadowburnproc)
 
-    local motherIncinerate = hud:AddIconBoolean(29722, 841220, talent_diabolist)
-    local pitBolt = hud:AddIconBoolean(116858, 135800, talent_diabolist)
+    --local motherIncinerate = hud:AddIconBoolean(29722, 841220, talent_diabolist)
+    --local pitBolt = hud:AddIconBoolean(116858, 135800, talent_diabolist)
 
     --#endregion
     --------------------------------
@@ -68,9 +69,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     -- essentials
 
-    local _, diaboSlot = hud:AddEssentialsAura(diabo_overlord)
-    diaboSlot:AddOverlapingAura(diabo_mother)
-    diaboSlot:AddOverlapingAura(diabo_pitlord)
+    local diabolist = ERACombatFrames_WarlockDiabolist(hud, talent_diabolist)
 
     local _, malevoSlot = hud:AddEssentialsCooldown(malevolence, nil, nil, 0.7, 0.1, 0.8)
     malevoSlot:AddTimerBar(0.75, malevolenceBuff, nil, 1.0, 1.0, 1.0)
@@ -94,7 +93,9 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local _, mayhemSlot = hud:AddEssentialsAura(mayhem, nil, nil, 1.0, 0.5, 0.9)
 
-    hud:AddEssentialsRightCooldown(shadowburn).showOnlyWhenUsableOrOverlay = true
+    local shadowburnIcon, shadowburnSlot = hud:AddEssentialsCooldown(shadowburn, nil, nil, 1.0, 1.0, 1.0, false)
+    shadowburnIcon.showOnlyWhenUsableOrOverlay = true
+    shadowburnSlot:AddTimerBar(0.5, shadowburnImproved, nil, 0.4, 0.2, 0.3).doNotCutLongDuration = true
 
     -- defensive
     hud.defensiveGroup:AddCooldown(commonSpells.resolve)
@@ -129,7 +130,10 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(backlash, nil, "dreamsurge_fire-portal-icon", true, "NONE", "TOP")
+    hud:AddAuraOverlayAlert(backlash, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(inferno, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(instarof, nil, "dreamsurge_fire-portal-icon", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
+    hud:AddAuraOverlayAlert(shadowburnproc, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Sudden_Doom.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_3
 
     --#endregion
     --------------------------------
@@ -139,12 +143,15 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local embers = hud:AddResourceSlot(false):AddDestroShards()
     function embers:DisplayUpdated()
-        if (motherIncinerate.value) then
-            self:SetBorderColor(0.0, 1.0, 0.0, false)
-        elseif (pitBolt.value) then
+        if (diabolist.ruination.auraIsPresent) then
             self:SetBorderColor(0.0, 1.0, 1.0, false)
         else
             self:SetBorderColor(1.0, 1.0, 0.0, false)
+        end
+        if (diabolist.infernalBolt.auraIsPresent) then
+            self:SetPointFullColor(0.0, 1.0, 0.0, false)
+        else
+            self:SetPointFullColor(1.0, 0.0, 1.0, false)
         end
     end
 
@@ -172,7 +179,7 @@ function HUDWarlockEmbers:create(hud, resourceFrame, frameLevel)
     local x = {}
     setmetatable(x, HUDWarlockEmbers)
     ---@cast x HUDWarlockEmbers
-    x:constructPoints(hud, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, nil, resourceFrame, frameLevel)
+    x:constructPoints(hud, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, nil, resourceFrame, frameLevel)
     return x
 end
 

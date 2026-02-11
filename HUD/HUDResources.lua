@@ -1054,6 +1054,26 @@ function HUDResourcePartialPoints:SetBorderColor(r, g, b, maybeSecret)
     end
 end
 
+---@param r number
+---@param g number
+---@param b number
+---@param maybeSecret boolean
+function HUDResourcePartialPoints:SetPointFullColor(r, g, b, maybeSecret)
+    if (
+        ---@diagnostic disable-next-line: param-type-mismatch
+            (maybeSecret or issecretvalue(self.rPointFull) or issecretvalue(self.gPointFull) or issecretvalue(self.bPointFull))
+            or
+            (self.rPointFull ~= r or self.gPointFull ~= g or self.bPointFull ~= b)
+        ) then
+        self.rPointFull = r
+        self.gPointFull = g
+        self.bPointFull = b
+        for _, p in ipairs(self.points) do
+            p:pointColorChanged()
+        end
+    end
+end
+
 ---comment
 ---@param t number
 ---@param combat boolean
@@ -1085,6 +1105,7 @@ end
 ---@field private swipe Cooldown
 ---@field private is_full boolean
 ---@field private is_empty boolean
+---@field private pcolChanged boolean
 HUDPartialPointItem = {}
 HUDPartialPointItem.__index = HUDPartialPointItem
 
@@ -1148,6 +1169,10 @@ function HUDPartialPointItem:setBorderColor(r, g, b)
     self.border:SetVertexColor(r, g, b, 1.0)
 end
 
+function HUDPartialPointItem:pointColorChanged()
+    self.pcolChanged = true
+end
+
 ---@param t number
 ---@param value number
 ---@param rPartial number
@@ -1160,13 +1185,19 @@ function HUDPartialPointItem:update(t, value, rPartial, gPartial, bPartial, rFul
     if (value >= 1) then
         if (self.is_full ~= true) then
             self.is_full = true
+            self.is_empty = false
             self.point:SetVertexColor(rFull, gFull, bFull, 1.0)
             self.point:Show()
             self.swipe:Hide()
+            self.pcolChanged = false
+        elseif (self.pcolChanged) then
+            self.point:SetVertexColor(rFull, gFull, bFull, 1.0)
+            self.pcolChanged = false
         end
     elseif (value <= 0) then
         if (self.is_empty ~= true) then
             self.is_empty = true
+            self.is_full = false
             self.point:Hide()
             self.swipe:Hide()
         end
@@ -1177,6 +1208,10 @@ function HUDPartialPointItem:update(t, value, rPartial, gPartial, bPartial, rFul
             self.point:SetVertexColor(rPartial, gPartial, bPartial, 1.0)
             self.point:Show()
             self.swipe:Show()
+            self.pcolChanged = false
+        elseif (self.pcolChanged) then
+            self.point:SetVertexColor(rPartial, gPartial, bPartial, 1.0)
+            self.pcolChanged = false
         end
         self.swipe:SetCooldown(t - 10 * value, 10, 0)
     end

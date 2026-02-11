@@ -15,6 +15,8 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local talent_sreaper = ERALIBTalent:Create(96314)
     local talent_pestilence = ERALIBTalent:Create(133513)
     local talent_clawing = ERALIBTalent:Create(133523)
+    local talent_feast = ERALIBTalent:Create(123411)
+    local talent_commander = ERALIBTalent:Create(96283)
 
     --#endregion
     --------------------------------
@@ -42,12 +44,12 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local transfo = hud:AddCooldown(1233448, talent_transfo)
     local army = hud:AddCooldown(42650, talent_army)
     local sreaper = hud:AddCooldown(343294, talent_sreaper)
-    local pestilence = hud:AddCooldown(1271967, talent_pestilence)
     local raiseGhoul = hud:AddCooldown(46584)
 
     local doom = hud:AddAuraByPlayer(49530, false)
-    local commander = hud:AddAuraByPlayer(390259, false)
-    local bloodqueen = hud:AddAuraByPlayer(433901, false, talent_sanlayn)
+    local commander = hud:AddAuraByPlayer(390259, false, talent_commander)
+    local feast = hud:AddAuraByPlayer(390259, false, talent_feast)
+    local bloodqueen = hud:AddAuraByPlayer(433925, false, talent_sanlayn)
     local dot1 = hud:AddAuraByPlayer(1240996, true)
     local dot2 = hud:AddAuraByPlayer(191587, true)
     local frenzy = hud:AddAuraByPlayer(377587, false)
@@ -74,11 +76,9 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     hud:AddEssentialsLeftAura(runeStrength)
 
-    hud:AddEssentialsLeftAura(lesser)
+    hud:AddEssentialsLeftAura(lesser):ShowStacksRatherThanDuration()
 
     hud:AddEssentialsCooldown(putrefy, nil, nil, 0.3, 1.0, 0.1, false)
-
-    hud:AddEssentialsCooldown(pestilence, nil, nil, 1.0, 0.0, 1.0, false)
 
     local strikestackIcon, strikestackSlot = hud:AddEssentialsAura(strikestack, 237530)
     strikestackIcon:ShowStacksRatherThanDuration()
@@ -96,7 +96,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     local _, undeathSlot, undeathBar = hud:AddEssentialsAura(undeath, nil, nil, 0.3, 0.8, 0.0):ShowStacksRatherThanDuration()
 
-    hud:AddEssentialsRightAura(clawing)
+    hud:AddEssentialsRightAura(clawing):ShowStacksRatherThanDuration()
 
     -- defensive
     hud.defensiveGroup:AddCooldown(pact)
@@ -138,7 +138,14 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
-    hud:AddResourceSlot(false):AddRunes(runes)
+    local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
+    function runesDisplay:RunesUpdated()
+        if (feast.auraIsPresent) then
+            self:SetBorderColor(1.0, 0.0, 0.0)
+        else
+            self:SetBorderColor(1.0, 1.0, 1.0)
+        end
+    end
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.2, 0.7, 1.0)
     local tickCoil = powerBar:AddTick(136145, nil, function() return 30 end)

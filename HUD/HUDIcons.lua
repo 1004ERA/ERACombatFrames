@@ -132,7 +132,7 @@ function HUDCooldownIcon:talentIsActive()
     if (not self.forcedIcon) then
         local info = C_Spell.GetSpellInfo(self.data.spellID)
         if (info) then
-            self.icon:SetIconTexture(info.iconID)
+            self.icon:SetIconTexture(info.iconID, false, false)
         end
     end
 end
@@ -206,7 +206,7 @@ function HUDCooldownIcon:Update(t, combat)
 
     if (self.watchIconChange) then
         local info = C_Spell.GetSpellInfo(self.data.spellID)
-        self.icon:SetIconTexture(info.iconID, false)
+        self.icon:SetIconTexture(info.iconID, false, false)
     end
 end
 
@@ -252,7 +252,7 @@ function HUDEquipmentIcon:talentIsActive()
     if (location) then
         local success, icon = pcall(function() return C_Item.GetItemIcon(location) end)
         if (success and icon) then
-            self.icon:SetIconTexture(icon)
+            self.icon:SetIconTexture(icon, false, false)
         end
     end
 end
@@ -293,6 +293,7 @@ end
 ---@field private forcedIcon boolean
 ---@field showRedIfMissingInCombat boolean
 ---@field alwaysHideOutOfCombat boolean
+---@field watchIconChange boolean
 ---@field GetMainText nil|fun(self:HUDAuraIcon): string|nil
 HUDAuraIcon = {}
 HUDAuraIcon.__index = HUDAuraIcon
@@ -356,9 +357,11 @@ function HUDAuraIcon:Update(t, combat)
                 self.icon:SetVisibilityAlpha(1.0, false)
             else
                 self.icon:SetVisibilityAlpha(0.0, false)
+                return
             end
         else
             self.icon:SetVisibilityAlpha(0.0, false)
+            return
         end
     end
     if (self.stackMode) then
@@ -370,6 +373,10 @@ function HUDAuraIcon:Update(t, combat)
         end
     end
     self.icon:SetValue(self.data.timerDuration:GetStartTime(), self.data.timerDuration:GetTotalDuration())
+
+    if (self.watchIconChange and self.data.icon) then
+        self.icon:SetIconTexture(self.data.icon, false, true)
+    end
 end
 
 --#endregion

@@ -149,6 +149,9 @@ end
 ---@field private frame Frame
 ---@field private displays HUDRuneDisplayItem[]
 ---@field private frameVisible boolean
+---@field private rBorder number
+---@field private gBorder number
+---@field private bBorder number
 HUDRunesResource = {}
 HUDRunesResource.__index = HUDRunesResource
 setmetatable(HUDRunesResource, { __index = HUDResourceDisplay })
@@ -174,6 +177,10 @@ function HUDRunesResource:create(hud, data, resourceFrame, frameLevel)
     end
     x.frameVisible = false
     x.frame:Hide()
+
+    x.rBorder = 1.0
+    x.gBorder = 1.0
+    x.bBorder = 1.0
 
     return x
 end
@@ -235,6 +242,23 @@ function HUDRunesResource:Update(t, combat)
     for i = 1, 6 do
         self.displays[i]:updateDisplay(self.data.runesOrdered[i])
     end
+    self:RunesUpdated(t, combat)
+end
+function HUDRunesResource:RunesUpdated(t, combat)
+end
+
+---@param r number
+---@param g number
+---@param b number
+function HUDRunesResource:SetBorderColor(r, g, b)
+    if (r ~= self.rBorder or g ~= self.gBorder or b ~= self.bBorder) then
+        self.rBorder = r
+        self.gBorder = g
+        self.bBorder = b
+        for _, icon in ipairs(self.displays) do
+            icon.icon:SetBorderColor(r, g, b)
+        end
+    end
 end
 
 ---@class (exact) HUDRuneDisplayItem
@@ -255,7 +279,7 @@ function HUDRuneDisplayItem:create(parentFrame, initSize)
     -- rune : 1121021
     -- rune violette forte : 252272
     -- rune violette faible : 1323037
-    x.icon:SetIconTexture(1121021, true)
+    x.icon:SetIconTexture(1121021, true, false)
 
     return x
 end
@@ -286,6 +310,6 @@ function HUDRuneDisplayItem:updateDisplay(data)
                 self.icon:ShowDefaultCountdown()
             end
         end
-        self.icon:SetIconTexture(iconID, false)
+        self.icon:SetIconTexture(iconID, false, false)
     end
 end

@@ -50,7 +50,7 @@ function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, 
     mainFrame:SetSize(size, size)
     ERALIB_SetFont(self.mainText, size * 0.4)
     ERALIB_SetFont(self.secondaryText, size * 0.32)
-    self:SetIconTexture(iconID, true)
+    self:SetIconTexture(iconID, true, false)
 
     -- position
     self.parentFrame = parentFrame
@@ -81,15 +81,23 @@ function ERAIcon:SetSize(size)
     self.icon:SetSize(size, size)
 end
 
-function ERAIcon:SetIconTexture(iconID, force)
-    if (force) then
-        self.iconID = iconID
-        self.icon:SetTexture(136235)
+---@param iconID number
+---@param force boolean
+---@param maybeSecret boolean
+function ERAIcon:SetIconTexture(iconID, force, maybeSecret)
+    if (maybeSecret) then
+        self.iconID = nil
         self.icon:SetTexture(iconID)
     else
-        if (iconID and iconID ~= self.iconID) then
+        if (force) then
             self.iconID = iconID
-            self.icon:SetTexture(self.iconID)
+            --self.icon:SetTexture(136235) -- wow icon
+            self.icon:SetTexture(iconID)
+        else
+            if (iconID and iconID ~= self.iconID) then
+                self.iconID = iconID
+                self.icon:SetTexture(iconID)
+            end
         end
     end
 end

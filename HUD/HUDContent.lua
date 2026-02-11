@@ -236,6 +236,17 @@ function HUDResourceSlot:AddPowerValue(data, r, g, b, talent)
     table.insert(self.resources, res)
     return res
 end
+---@param data HUDPower
+---@param r number
+---@param g number
+---@param b number
+---@param talent ERALIBTalent|nil
+---@return HUDPowerBarPowerDisplay
+function HUDResourceSlot:AddPowerPercent(data, r, g, b, talent)
+    local res = HUDPowerBarPowerDisplay:create(self.hud, data, r, g, b, talent, self.hud:getResourceFrame(), 1 + #self.resources, HUDPowerBarDisplayKindPowerPercent:create())
+    table.insert(self.resources, res)
+    return res
+end
 
 ---@param data HUDAura
 ---@param rBorder number

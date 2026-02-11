@@ -115,8 +115,8 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(apex, nil, "Start-VersusSplash", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_1
-    hud:AddAuraOverlayAlert(ravage, nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(apex, nil, "Start-VersusSplash", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(ravage, nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     --#endregion
     --------------------------------

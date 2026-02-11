@@ -1042,7 +1042,7 @@ function HUDModule:updateData(t, combat)
     --#region AURAS
 
     if (not self.cdmParsed) then
-        self.cdmParsed = true
+        --self.cdmParsed = true
         for _, aura in pairs(self.allAuraFetcher) do
             aura:prepareParseCDM()
         end

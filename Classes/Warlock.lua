@@ -66,3 +66,43 @@ function ERACombatFrames_WarlockCommonSpells(hud, talents)
 
     return commonSpells
 end
+
+---@class (exact) HUDWarlockDiabolist
+---@field clovenSoul HUDAura
+---@field infernalBolt HUDAura
+---@field ruination HUDAura
+---@field buildingDemon HUDAuraIcon
+---@field summoningDemon HUDAuraIcon
+---@field slot HUDEssentialsSlot
+
+---@param hud HUDModule
+---@param talent ERALIBTalent
+---@return HUDWarlockDiabolist
+function ERACombatFrames_WarlockDiabolist(hud, talent)
+    local cloven = hud:AddAuraByPlayer(434424, true, talent)
+    local building = hud:AddAuraByPlayer(432816, false, talent)
+    local summoning = hud:AddAuraByPlayer(432795, false, talent)
+
+    local buildingIcon, slot = hud:AddEssentialsAura(building)
+    local summoningIcon = slot:AddOverlapingAura(summoning)
+    buildingIcon.watchIconChange = true
+    summoningIcon.watchIconChange = true
+
+    local infernalBolt = hud:AddAuraByPlayer(433891, false, talent)
+    local ruination = hud:AddAuraByPlayer(433885, false, talent)
+
+    slot:AddTimerBar(0.5, cloven, nil, 0.6, 0.0, 0.6).doNotCutLongDuration = true
+
+    hud:AddAuraOverlayAlert(infernalBolt, nil, "Interface/Addons/ERACombatFrames/textures/alerts/OLDEclipse_Sun.tga", false, "NONE", "CENTER")
+    hud:AddAuraOverlayAlert(ruination, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fury_of_Stormrage.tga", false, "NONE", "TOP")
+
+    ---@type HUDWarlockDiabolist
+    return {
+        clovenSoul = cloven,
+        infernalBolt = infernalBolt,
+        ruination = ruination,
+        buildingDemon = buildingIcon,
+        summoningDemon = summoningIcon,
+        slot = slot
+    }
+end

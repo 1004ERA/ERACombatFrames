@@ -20,6 +20,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     local talent_frostbane = ERALIBTalent:Create(96223)
     local talent_frostreaper = ERALIBTalent:Create(96228)
     local talent_streak = ERALIBTalent:Create(96254)
+    local talent_feast = ERALIBTalent:Create(123411)
 
     --#endregion
     --------------------------------
@@ -51,6 +52,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     local deathbringer = hud:AddCooldown(439843, talent_deathbringer)
 
     local bonegrinder = hud:AddAuraByPlayer(377098, false, talent_bonegrinder)
+    local feast = hud:AddAuraByPlayer(440861, false, talent_feast)
     local sindraBuff = hud:AddAuraByPlayer(1249658, false, talent_sindragosa)
     local cryogenic = hud:AddAuraByPlayer(456237, false, talent_cryogenic)
     local exterminate = hud:AddAuraByPlayer(441378, false, talent_exterminate)
@@ -142,7 +144,14 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
-    hud:AddResourceSlot(false):AddRunes(runes)
+    local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
+    function runesDisplay:RunesUpdated()
+        if (feast.auraIsPresent) then
+            self:SetBorderColor(1.0, 0.0, 0.0)
+        else
+            self:SetBorderColor(1.0, 1.0, 1.0)
+        end
+    end
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.2, 0.7, 1.0)
     local tick = powerBar:AddTick(237520, nil, function()

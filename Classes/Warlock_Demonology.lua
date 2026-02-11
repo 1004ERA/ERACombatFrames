@@ -42,12 +42,8 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local succulent = hud:AddAuraByPlayer(449793, false, talent_harvester)
     local stalkersDuration = hud:AddAuraByPlayer(104316, false, talent_stalkers)
     local imps = hud:AddAuraByPlayer(296553, false)
-    local diabo_overlord = hud:AddAuraByPlayer(431944, false, talent_diabolist)
-    local diabo_mother = hud:AddAuraByPlayer(432815, false, talent_diabolist)
-    local diabo_pitlord = hud:AddAuraByPlayer(432816, false, talent_diabolist)
-
-    local motherBolt = hud:AddIconBoolean(686, 841220, talent_diabolist)
-    local pitHand = hud:AddIconBoolean(105174, 135800, talent_diabolist)
+    --local motherBolt = hud:AddIconBoolean(686, 841220, talent_diabolist)
+    --local pitHand = hud:AddIconBoolean(105174, 135800, talent_diabolist)
 
     --#endregion
     --------------------------------
@@ -57,9 +53,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     -- essentials
 
-    local _, diaboSlot = hud:AddEssentialsAura(diabo_overlord)
-    diaboSlot:AddOverlapingAura(diabo_mother)
-    diaboSlot:AddOverlapingAura(diabo_pitlord)
+    local diabolist = ERACombatFrames_WarlockDiabolist(hud, talent_diabolist)
 
     hud:AddEssentialsAura(succulent)
 
@@ -113,14 +107,12 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     local shardsDisplay = hud:AddResourceSlot(false):AddPowerPoints(shards, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, nil, function() return 3 end)
     function shardsDisplay:DisplayUpdated(t, combat)
-        if (motherBolt.value) then
-            self:SetBorderColor(0.0, 1.0, 0.0, false)
-        elseif (pitHand.value) then
+        if (diabolist.ruination.auraIsPresent) then
             self:SetBorderColor(0.0, 1.0, 1.0, false)
         else
             self:SetBorderColor(1.0, 1.0, 0.0, false)
         end
-        if (boltInstant.auraIsPresent) then
+        if (diabolist.infernalBolt.auraIsPresent) then
             self:SetPointColor(0.0, 1.0, 0.0, false)
         else
             self:SetPointColor(1.0, 0.0, 1.0, false)

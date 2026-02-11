@@ -430,6 +430,7 @@ end
 ---@field stacksDisplay string|nil
 ---@field auraIsPresent boolean
 ---@field cdmFrameFound boolean
+---@field icon number
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
 HUDAura.__index = HUDAura
@@ -505,11 +506,13 @@ function HUDAura:updateTimerDuration(t)
     ]]
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
         local cdmData
+        ---@diagnostic disable-next-line: param-type-mismatch
         cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(self.unit, self.cdmFrame.auraInstanceID)
         if (cdmData) then
             self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
             self.auraIsPresent = true
+            self.icon = cdmData.icon
             local result = C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
             if (result) then
                 return result
