@@ -133,8 +133,8 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddMissingAuraOverlayAlert(fever, nil, "icons_64x64_disease", true, false)
-    hud:AddAuraOverlayAlert(frostbane, nil, "CovenantChoice-Celebration-Kyrian-DetailLine", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddMissingAuraOverlayAlert(fever, nil, "icons_64x64_disease", true, false, "NONE", "CENTER")
+    hud:AddAuraOverlayAlert(frostbane, nil, "CovenantChoice-Celebration-Kyrian-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

@@ -1046,8 +1046,10 @@ function HUDModule:updateData(t, combat)
         for _, aura in pairs(self.allAuraFetcher) do
             aura:prepareParseCDM()
         end
-        self:parseCDMBuff(BuffBarCooldownViewer)
-        self:parseCDMBuff(BuffIconCooldownViewer)
+        self:parseCDMBuffDirect(BuffBarCooldownViewer)
+        self:parseCDMBuffDirect(BuffIconCooldownViewer)
+        self:parseCDMBuffLinked(BuffBarCooldownViewer)
+        self:parseCDMBuffLinked(BuffIconCooldownViewer)
     end
     --[[
     for i = 1, 1000 do
@@ -1078,7 +1080,7 @@ function HUDModule:updateData(t, combat)
 end
 
 ---@private
-function HUDModule:parseCDMBuff(frame)
+function HUDModule:parseCDMBuffDirect(frame)
     local buffFrames = { frame:GetChildren() }
     for _, c in ipairs(buffFrames) do
         local info = c.cooldownInfo
@@ -1088,13 +1090,23 @@ function HUDModule:parseCDMBuff(frame)
                 local aura = self.allAuraFetcher[info.spellID]
                 if (aura) then
                     aura:setCDM(c)
-                elseif (info.linkedSpellIDs) then
-                    for _, linked in ipairs(info.linkedSpellIDs) do
-                        aura = self.allAuraFetcher[linked]
-                        if (aura) then
-                            aura:setCDM(c)
-                            break
-                        end
+                end
+            end
+        end
+    end
+end
+function HUDModule:parseCDMBuffLinked(frame)
+    local buffFrames = { frame:GetChildren() }
+    for _, c in ipairs(buffFrames) do
+        local info = c.cooldownInfo
+        if (c.cooldownInfo) then
+            ---@cast info CooldownViewerCooldown
+            if (info.linkedSpellIDs) then
+                for _, linked in ipairs(info.linkedSpellIDs) do
+                    local aura = self.allAuraFetcher[linked]
+                    if (aura and not aura.cdmFrameFound) then
+                        aura:setCDM(c)
+                        break
                     end
                 end
             end
@@ -1575,6 +1587,7 @@ end
 ---@return HUDAuraIcon, HUDEssentialsSlot, HUDTimerBar
 function HUDModule:AddDOT(data, iconID, talent, rBar, gBar, bBar)
     local icon = HUDAuraIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+    icon:SetBorderColor(rBar, gBar, bBar)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     local bar = HUDTimerBar:create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
@@ -1647,19 +1660,21 @@ function HUDModule:AddPowerHighIdle(powerType, talent)
 end
 ---@param powerType Enum.PowerType
 ---@param talent ERALIBTalent|nil
----@param targetPercent fun(): number
+---@param targetPercent fun(self:HUDPowerTargetIdle): number
 ---@return HUDPowerTargetIdle
 function HUDModule:AddPowerTargetIdle(powerType, talent, targetPercent)
-    return HUDPowerTargetIdle:Create(self, powerType, talent, targetPercent)
+    return HUDPowerTargetIdle:create(self, powerType, talent, targetPercent)
 end
 
 ---@param data HUDAura
 ---@param talent ERALIBTalent|nil
 ---@param texture string|number
 ---@param isAtlas boolean
+---@param transform SAOTransform
+---@param position SAOPosition
 ---@return HUDSAOAlertAura
-function HUDModule:AddAuraOverlayAlert(data, talent, texture, isAtlas)
-    return HUDSAOAlertAura:create(self, data, talent, texture, isAtlas)
+function HUDModule:AddAuraOverlayAlert(data, talent, texture, isAtlas, transform, position)
+    return HUDSAOAlertAura:create(self, data, talent, texture, isAtlas, transform, position)
 end
 
 ---@param data HUDAura
@@ -1667,18 +1682,22 @@ end
 ---@param texture string|number
 ---@param isAtlas boolean
 ---@param showOutOfCombat boolean
+---@param transform SAOTransform
+---@param position SAOPosition
 ---@return HUDSAOAlertMissingAura
-function HUDModule:AddMissingAuraOverlayAlert(data, talent, texture, isAtlas, showOutOfCombat)
-    return HUDSAOAlertMissingAura:create(self, data, talent, texture, isAtlas, showOutOfCombat)
+function HUDModule:AddMissingAuraOverlayAlert(data, talent, texture, isAtlas, showOutOfCombat, transform, position)
+    return HUDSAOAlertMissingAura:create(self, data, talent, texture, isAtlas, showOutOfCombat, transform, position)
 end
 
 ---@param talent ERALIBTalent|nil
 ---@param texture string|number
 ---@param isAtlas boolean
 ---@param data HUDPublicBoolean
+---@param transform SAOTransform
+---@param position SAOPosition
 ---@return HUDSAOAlertPublicBoolean
-function HUDModule:AddPublicBooleanOverlayAlert(talent, texture, isAtlas, data)
-    return HUDSAOAlertPublicBoolean:create(self, talent, texture, isAtlas, data)
+function HUDModule:AddPublicBooleanOverlayAlert(talent, texture, isAtlas, data, transform, position)
+    return HUDSAOAlertPublicBoolean:create(self, talent, texture, isAtlas, data, transform, position)
 end
 
 --#endregion

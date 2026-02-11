@@ -24,7 +24,7 @@ function ERACombatFrames_Warlock_Affliction(cFrame, talents)
     --------------------------------
     --#region DATA
 
-    local shards = hud:AddPowerTargetIdle(Enum.PowerType.SoulShards, nil, function() return 0.6 end)
+    local shards = hud:AddPowerTargetIdle(Enum.PowerType.SoulShards, nil, function() return 3 end)
 
     local commonSpells = ERACombatFrames_WarlockCommonSpells(hud, talents)
 
@@ -104,11 +104,11 @@ function ERACombatFrames_Warlock_Affliction(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddMissingAuraOverlayAlert(corruption, talent_infinite_corruption, "icons_64x64_disease", true, false)
-    hud:AddMissingAuraOverlayAlert(wither, talent_infinite_corruption, "icons_64x64_disease", true, false)
+    hud:AddMissingAuraOverlayAlert(corruption, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER")
+    hud:AddMissingAuraOverlayAlert(wither, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER")
     --hud:AddAuraOverlayAlert(unstableFree, nil, "Artifacts-PriestShadow-Header", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     --hud:AddAuraOverlayAlert(unstableFree, nil, "oribos-weeklyrewards-orb-dialog", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddAuraOverlayAlert(unstableFree, nil, "Insanity-TopPurpleShadow", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(unstableFree, nil, "Insanity-TopPurpleShadow", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

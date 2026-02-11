@@ -32,6 +32,12 @@ Classes/DemonHunter_Havoc.lua
 Classes/DemonHunter_Vengeance.lua
 Classes/DemonHunter_Devourer.lua
 
+Classes/Druid.lua
+Classes/Druid_Balance.lua
+Classes/Druid_Feral.lua
+Classes/Druid_Guardian.lua
+Classes/Druid_Restoration.lua
+
 Classes/Warlock.lua
 Classes/Warlock_Affliction.lua
 Classes/Warlock_Demonology.lua

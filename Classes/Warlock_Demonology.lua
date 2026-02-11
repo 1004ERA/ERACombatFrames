@@ -23,7 +23,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     --------------------------------
     --#region DATA
 
-    local shards = hud:AddPowerTargetIdle(Enum.PowerType.SoulShards, nil, function() return 0.6 end)
+    local shards = hud:AddPowerTargetIdle(Enum.PowerType.SoulShards, nil, function() return 3 end)
 
     local commonSpells = ERACombatFrames_WarlockCommonSpells(hud, talents)
 

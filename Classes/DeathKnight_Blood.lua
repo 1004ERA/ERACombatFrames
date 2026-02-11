@@ -131,7 +131,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

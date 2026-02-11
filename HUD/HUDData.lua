@@ -211,7 +211,7 @@ setmetatable(HUDPowerTargetIdle, { __index = HUDPower })
 ---@param talent ERALIBTalent|nil
 ---@param idleValue fun(): number
 ---@return HUDPowerTargetIdle
-function HUDPowerTargetIdle:Create(hud, powerType, talent, idleValue)
+function HUDPowerTargetIdle:create(hud, powerType, talent, idleValue)
     local x = {}
     setmetatable(x, HUDPowerTargetIdle)
     ---@cast x HUDPowerTargetIdle
@@ -429,6 +429,7 @@ end
 ---@field stacks number
 ---@field stacksDisplay string|nil
 ---@field auraIsPresent boolean
+---@field cdmFrameFound boolean
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
 HUDAura.__index = HUDAura
@@ -468,10 +469,12 @@ end
 
 function HUDAura:prepareParseCDM()
     self.cdmFrame = nil
+    self.cdmFrameFound = false
 end
 ---@param frame CDMAuraFrame
 function HUDAura:setCDM(frame)
     self.cdmFrame = frame
+    self.cdmFrameFound = true
 end
 
 --[[

@@ -129,7 +129,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(backlash, nil, "dreamsurge_fire-portal-icon", true)
+    hud:AddAuraOverlayAlert(backlash, nil, "dreamsurge_fire-portal-icon", true, "NONE", "TOP")
 
     --#endregion
     --------------------------------

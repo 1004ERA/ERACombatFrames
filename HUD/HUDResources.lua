@@ -180,7 +180,7 @@ end
 
 ---@param iconID number
 ---@param talent ERALIBTalent|nil
----@param tickValue fun(): number
+---@param tickValue fun(self:HUDPowerBarTick): number
 ---@return HUDPowerBarTick
 function HUDPowerBarDisplay:AddTick(iconID, talent, tickValue)
     local t = HUDPowerBarTick:create(self, iconID, talent, tickValue, self.bar)
@@ -449,7 +449,7 @@ end
 ---@field private talent ERALIBTalent|nil
 ---@field private icon Texture
 ---@field private tick Line
----@field private tickValueGetter fun(): number
+---@field private tickValueGetter fun(self:HUDPowerBarTick): number
 ---@field private tickValue number
 ---@field private curve LuaColorCurveObject
 ---@field continuouslyCheckValue boolean
@@ -466,7 +466,7 @@ HUDPowerBarTick.__index = HUDPowerBarTick
 ---@param owner HUDPowerBarDisplay
 ---@param iconID number
 ---@param talent ERALIBTalent|nil
----@param tickValue fun(): number
+---@param tickValue fun(self:HUDPowerBarTick): number
 ---@param sBar ERAStatusBar
 ---@return HUDPowerBarTick
 function HUDPowerBarTick:create(owner, iconID, talent, tickValue, sBar)
@@ -517,7 +517,7 @@ end
 
 ---@private
 function HUDPowerBarTick:updateValue()
-    local val = self.tickValueGetter()
+    local val = self:tickValueGetter()
     if (self.tickValue ~= val) then
         self.tickValue = val
         local pct1 = val / self.barMax

@@ -176,8 +176,10 @@ function ERACombatFrames_event(event, ...)
         local cFrame = ERACombatMainFrame:Create()
         if (classID == 2) then
             --ERACombatFrames_PaladinSetup(cFrame)
+        elseif (classID == 4) then
+            --ERACombatFrames_RogueSetup(cFrame)
         elseif (classID == 5) then
-            ERACombatFrames_PriestSetup(cFrame)
+            --ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
         elseif (classID == 8) then
@@ -187,7 +189,7 @@ function ERACombatFrames_event(event, ...)
         elseif (classID == 10) then
             --ERACombatFrames_MonkSetup(cFrame)
         elseif (classID == 11) then
-            --ERACombatFrames_DruidSetup(cFrame)
+            ERACombatFrames_DruidSetup(cFrame)
         elseif (classID == 12) then
             ERACombatFrames_DemonHunterSetup(cFrame)
         elseif (classID == 13) then

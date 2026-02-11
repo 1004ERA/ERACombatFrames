@@ -44,6 +44,7 @@ end
 function ERACombatFrames_WarlockCommonSpells(hud, talents)
     hud:AddChannelInfo(234153, 5, 0.5)
 
+    ---@type WarlockCommonSpells
     local commonSpells = {
         commandDemonIsKick = hud:AddIconBoolean(119898, 136174),
         commandDemonKick = hud:AddCooldown(132409),

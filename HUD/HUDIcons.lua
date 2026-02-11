@@ -38,6 +38,7 @@ end
 ---@field private __index HUDPieIcon
 ---@field protected constructPie fun(self:HUDPieIcon, hud:HUDModule, frame:Frame, frameLevel:number, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", size:number, iconID:number, talent:ERALIBTalent|nil)
 ---@field protected icon ERAPieIcon
+---@field IconUpdated nil|fun(self:HUDPieIcon, t:number, combat:boolean, icon:ERAPieIcon)
 HUDPieIcon = {}
 HUDPieIcon.__index = HUDPieIcon
 setmetatable(HUDPieIcon, { __index = HUDIcon })
@@ -62,6 +63,12 @@ function HUDPieIcon:SetMainTextColor(r, g, b)
     self.icon:SetMainTextColor(r, g, b, 1.0)
 end
 
+function HUDPieIcon:DisplayUpdated(t, combat)
+    if (self.IconUpdated) then
+        self:IconUpdated(t, combat, self.icon)
+    end
+end
+
 --#endregion
 ----------------------------------------------------------------
 
@@ -71,10 +78,12 @@ end
 ---@class (exact) HUDCooldownIcon : HUDPieIcon
 ---@field private __index HUDCooldownIcon
 ---@field private data HUDCooldown
+---@field private forcedIcon boolean
 ---@field OverrideCombatVisibilityAlpha nil|fun(self:HUDCooldownIcon): number
 ---@field OverrideSecondaryText nil|fun(self:HUDCooldownIcon): string
 ---@field OverrideDesaturation nil|fun(self:HUDCooldownIcon): number
 ---@field GetMainText nil|fun(self:HUDCooldownIcon): string|nil
+---@field highlightWhenUsable boolean
 ---@field watchIconChange boolean
 ---@field watchAdditionalOverlay number
 ---@field showOnlyWhenUsableOrOverlay boolean
@@ -97,9 +106,17 @@ function HUDCooldownIcon:create(frame, frameLevel, point, relativePoint, size, d
     local x = {}
     setmetatable(x, HUDCooldownIcon)
     ---@cast x HUDCooldownIcon
-    if (not iconID) then
+    if (iconID) then
+        x.forcedIcon = true
+    else
+        x.forcedIcon = false
         local info = C_Spell.GetSpellInfo(data.spellID)
-        iconID = info.originalIconID
+        if (info) then
+            iconID = info.originalIconID
+        else
+            --print("unknown icon for " .. data.spellID)
+            iconID = 134400 -- question mark
+        end
     end
     x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
     x.data = data
@@ -112,9 +129,11 @@ function HUDCooldownIcon:HideCountdown()
 end
 
 function HUDCooldownIcon:talentIsActive()
-    local info = C_Spell.GetSpellInfo(self.data.spellID)
-    if (info) then
-        self.icon:SetIconTexture(info.iconID)
+    if (not self.forcedIcon) then
+        local info = C_Spell.GetSpellInfo(self.data.spellID)
+        if (info) then
+            self.icon:SetIconTexture(info.iconID)
+        end
     end
 end
 
@@ -127,15 +146,22 @@ function HUDCooldownIcon:Update(t, combat)
         return
     end
 
+    local usable = C_Spell.IsSpellUsable(self.data.spellID)
+
     local overlay
-    if (self.watchAdditionalOverlay) then
-        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
-    else
-        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
+    if (self.highlightWhenUsable) then
+        overlay = usable
+    end
+    if (not overlay) then
+        if (self.watchAdditionalOverlay) then
+            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
+        else
+            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
+        end
     end
     self.icon:SetHighlight(overlay)
 
-    if (self.showOnlyWhenUsableOrOverlay and not (overlay or C_Spell.IsSpellUsable(self.data.spellID))) then
+    if (self.showOnlyWhenUsableOrOverlay and not (overlay or usable)) then
         self.icon:SetVisibilityAlpha(0.0, false)
         return
     end
@@ -151,12 +177,6 @@ function HUDCooldownIcon:Update(t, combat)
         self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
     end
     self.icon:SetValue(self.data.swipeDuration:GetStartTime(), self.data.swipeDuration:GetTotalDuration())
-
-    if (self.watchAdditionalOverlay) then
-        self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay))
-    else
-        self.icon:SetHighlight(C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID))
-    end
 
     --self.icon:SetMainText(string.format("%i", self.data.swipeDuration:GetRemainingDuration()), true)
     if (self.GetMainText) then
@@ -270,6 +290,7 @@ end
 ---@field private __index HUDAuraIcon
 ---@field private data HUDAura
 ---@field private stackMode boolean
+---@field private forcedIcon boolean
 ---@field showRedIfMissingInCombat boolean
 ---@field alwaysHideOutOfCombat boolean
 ---@field GetMainText nil|fun(self:HUDAuraIcon): string|nil
@@ -291,7 +312,10 @@ function HUDAuraIcon:create(frame, frameLevel, point, relativePoint, size, data,
     local x = {}
     setmetatable(x, HUDAuraIcon)
     ---@cast x HUDAuraIcon
-    if (not iconID) then
+    if (iconID) then
+        x.forcedIcon = true
+    else
+        x.forcedIcon = false
         local info = C_Spell.GetSpellInfo(data.spellID)
         if (info) then
             iconID = info.originalIconID
