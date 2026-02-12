@@ -432,6 +432,7 @@ end
 ---@field cdmFrameFound boolean
 ---@field useUnitCDM boolean
 ---@field icon number
+---@field playSoundWhenApperars nil|number
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
 HUDAura.__index = HUDAura
@@ -496,16 +497,6 @@ end
 
 ECF_TEST_ONCE = false
 function HUDAura:updateTimerDuration(t)
-    --[[
-    if (self.found) then
-        self.found = false
-    else
-        self.auraDuration = self.hud.duration0
-        self.stacks = 0
-        self.stacksDisplay = nil
-    end
-    return self.auraDuration
-    ]]
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
         local unit
         if (self.useUnitCDM) then
@@ -516,11 +507,16 @@ function HUDAura:updateTimerDuration(t)
         ---@cast unit unknown
         local cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, self.cdmFrame.auraInstanceID)
         if (cdmData) then
+            if (not self.auraIsPresent) then
+                self.auraIsPresent = true
+                if (self.playSoundWhenApperars) then
+                    PlaySound(self.playSoundWhenApperars)
+                end
+            end
             self.stacks = cdmData.applications
-            self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
-            self.auraIsPresent = true
+            self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(unit, self.cdmFrame.auraInstanceID)
             self.icon = cdmData.icon
-            local result = C_UnitAuras.GetAuraDuration(self.unit, self.cdmFrame.auraInstanceID)
+            local result = C_UnitAuras.GetAuraDuration(unit, self.cdmFrame.auraInstanceID)
             if (result) then
                 return result
             end

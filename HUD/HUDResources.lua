@@ -144,7 +144,7 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDHealthDisplay:UpdateResource(t, combat)
-    if ((not self.data.unitExists) and not self:ShowIfNoUnit(t, combat)) then
+    if ((not self.data.unitExists) and ((not self:ShowIfNoUnit(t, combat)) or IsMounted())) then
         self.bar:SetVisibilityAlpha(0.0, false)
         return
     end

@@ -52,7 +52,9 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local crashing = hud:AddAuraByPlayer(417282, false, talent_crashing)
     local sacriBuff = hud:AddAuraByPlayer(196099, false, talent_sacrifice)
     local havocBuff = hud:AddAuraByPlayer(80240, true, talent_havoc)
+    havocBuff.useUnitCDM = true
     local mayhem = hud:AddAuraByPlayer(394087, true, talent_mayhem)
+    mayhem.useUnitCDM = true
     local infernalBuff = hud:AddAuraByPlayer(1122, false, talent_infernal)
     local malevolenceBuff = hud:AddAuraByPlayer(442726, false, talent_malevolence)
     local shadowburnImproved = hud:AddAuraByPlayer(387110, false, talent_shadowburnImproved)
@@ -95,7 +97,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local shadowburnIcon, shadowburnSlot = hud:AddEssentialsCooldown(shadowburn, nil, nil, 1.0, 1.0, 1.0, false)
     shadowburnIcon.showOnlyWhenUsableOrOverlay = true
-    shadowburnSlot:AddTimerBar(0.5, shadowburnImproved, nil, 0.4, 0.2, 0.3).doNotCutLongDuration = true
+    shadowburnSlot:AddTimerBar(0.5, shadowburnImproved, nil, 0.4, 0.2, 0.3)
 
     -- defensive
     hud.defensiveGroup:AddCooldown(commonSpells.resolve)
@@ -129,6 +131,8 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     --------------------------------
     --#region ALERTS
+
+    mayhem.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     hud:AddAuraOverlayAlert(backlash, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(inferno, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
