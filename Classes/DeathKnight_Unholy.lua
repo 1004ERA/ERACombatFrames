@@ -29,6 +29,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local runes = HUDRunesData:create(hud)
 
     local grip = hud:AddCooldown(49576)
+    local ghoul = hud:AddCooldown(46584)
     local dnd = hud:AddCooldown(43265, talent_dnd)
     local fortitude = hud:AddCooldown(48792, talents.fortitude)
     local advance = hud:AddCooldown(48265)
@@ -45,7 +46,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local transfo = hud:AddCooldown(1233448, talent_transfo)
     local army = hud:AddCooldown(42650, talent_army)
     local sreaper = hud:AddCooldown(343294, talent_sreaper)
-    local raiseGhoul = hud:AddCooldown(46584)
+    local gnaw = hud:AddCooldown(47481)
 
     local doom = hud:AddAuraByPlayer(49530, false)
     local commander = hud:AddAuraByPlayer(390259, false, talent_commander)
@@ -115,6 +116,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     hud.controlGroup:AddCooldown(kick)
     hud:AddKickInfo(kick)
     hud.controlGroup:AddCooldown(vader)
+    hud.controlGroup:AddCooldown(gnaw)
     hud.controlGroup:AddCooldown(blind)
     hud.controlGroup:AddCooldown(icePrison)
 
@@ -122,7 +124,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     hud.powerboostGroup:AddCooldown(army)
 
     -- special
-    hud.specialGroup:AddCooldown(raiseGhoul)
+    hud.specialGroup:AddCooldown(ghoul)
 
     --#endregion
     --------------------------------

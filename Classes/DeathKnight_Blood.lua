@@ -27,6 +27,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local runes = HUDRunesData:create(hud)
 
     local grip = hud:AddCooldown(49576)
+    local ghoul = hud:AddCooldown(46585, talents.ghoul)
     local caress = hud:AddCooldown(195292)
     local boil = hud:AddCooldown(50842)
     local dnd = hud:AddCooldown(43265)
@@ -119,6 +120,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
 
     -- powerboost
     hud.powerboostGroup:AddCooldown(drw)
+    hud.powerboostGroup:AddCooldown(ghoul)
 
     -- buffs
     hud.buffGroup:AddAura(hemostasis):ShowStacksRatherThanDuration()

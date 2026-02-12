@@ -32,6 +32,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     local runes = HUDRunesData:create(hud)
 
     local grip = hud:AddCooldown(49576)
+    local ghoul = hud:AddCooldown(46585, talents.ghoul)
     local fortitude = hud:AddCooldown(48792, talents.fortitude)
     local advance = hud:AddCooldown(48265)
     local walk = hud:AddCooldown(212552, talents.walk)
@@ -128,6 +129,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     -- powerboost
     hud.powerboostGroup:AddCooldown(frostwyrm)
     hud.powerboostGroup:AddCooldown(sindragosa)
+    hud.powerboostGroup:AddCooldown(ghoul)
 
     --#endregion
     --------------------------------
