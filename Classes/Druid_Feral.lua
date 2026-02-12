@@ -2,6 +2,7 @@
 ---@param talents DruidTalents
 function ERACombatFrames_Druid_Feral(cFrame, talents)
     local hud = HUDModule:Create(cFrame, 1, 2)
+    ---@cast hud HUDModuleDruid
 
     --------------------------------
     --#region TALENTS
@@ -79,18 +80,19 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     function rakeIcon:IconUpdated(t, combat, icon)
         icon:SetHighlight(ambush.auraIsPresent)
     end
-    rakeSlot:AddTimerBar(0.25, sabertooth, nil, 1.0, 1.0, 1.0).doNotCutLongDuration = true
+    --rakeSlot:AddTimerBar(0.25, sabertooth, nil, 1.0, 1.0, 1.0).doNotCutLongDuration = true
     --rakeSlot:AddTimerBar(0.75, vines, nil, 0.0, 1.0, 0.0).doNotCutLongDuration = true
 
-    hud:AddDOT(rip, nil, nil, 1.0, 0.0, 1.0)
+    local _, ripSlot = hud:AddDOT(rip, nil, nil, 1.0, 0.0, 1.0)
 
     hud:AddEssentialsCooldown(feralfrenzy, nil, nil, 0.0, 1.0, 1.0)
     hud:AddEssentialsCooldown(francticfrenzy, nil, nil, 0.0, 1.0, 1.0)
 
     local chompIcon = hud:AddEssentialsCooldown(chomp, nil, nil, 0.6, 0.4, 0.3)
-    chompIcon.highlightWhenUsable = true
+    chompIcon.saturateWhenUsable = true
 
-    hud:AddEssentialsRightAura(hunger)
+    hud:AddEssentialsRightAura(swiftness, 136085)
+    hud:AddEssentialsRightAura(hunger):ShowStacksRatherThanDuration()
 
     -- defensive
     hud.defensiveGroup:AddCooldown(instincts)
@@ -115,6 +117,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
+    hud:AddAuraOverlayAlert(swiftness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Natures_Grace.tga", false, "ROTATE_RIGHT", "TOP")
     hud:AddAuraOverlayAlert(apex, nil, "Start-VersusSplash", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(ravage, nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
@@ -123,6 +126,8 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
 
     --------------------------------
     --#region RESOURCE
+
+    ERACombatFrames_Druid_GuardianOffSpec_step1(hud)
 
     local comboDisplay = hud:AddResourceSlot(false):AddPowerPoints(combo, 0.6, 0.8, 0.0, 1.0, 0.0, 0.0, nil, function() return 0 end)
     function comboDisplay:DisplayUpdated(t, combat)
@@ -149,4 +154,5 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     --------------------------------
 
     local commonSpells = ERACombatFrames_DruidCommonSpells(hud, talents, false, true, false, false)
+    ERACombatFrames_Druid_GuardianOffSpec_step2(hud, talents, commonSpells, rakeSlot, ripSlot)
 end

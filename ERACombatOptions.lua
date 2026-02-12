@@ -64,32 +64,32 @@ function ERACombatSpecOptions:Create()
     x.gcdHeight = 64
     x.gcdCount = 4
     x.castBarWidth = 16
+    x.utilityIconPadding = 2
     x.defensivePadding = 4
     x.defensiveIconSize = 55
-    x.assistX = -200
-    x.assistY = -32
-    x.assistIconSize = 55
-    x.powerboostX = -200
+    x.assistX = -191
+    x.assistY = -4
+    x.assistIconSize = 44
+    x.powerboostX = -212
     x.powerboostY = -128
     x.powerboostIconSize = 55
     x.buffX = -200
-    x.buffY = -16
+    x.buffY = -121
     x.buffIconSize = 55
-    x.movementX = 200
-    x.movementY = 32
+    x.movementX = 222
+    x.movementY = 0
     x.movementIconSize = 55
-    x.specialX = 200
-    x.specialY = -88
-    x.specialIconSize = 55
+    x.specialX = 222
+    x.specialY = -144
+    x.specialIconSize = 44
     x.alertGroupX = 0
     x.alertGroupY = 64
     x.alertGroupIconSize = 64
-    x.controlX = 200
-    x.controlY = 66
+    x.controlX = 222
+    x.controlY = 8
     x.controlIconSize = 55
-    x.utilityIconPadding = 4
     x.alertOffset = 88
-    x.alertSize = 64
+    x.alertSize = 88
 
     return x
 end

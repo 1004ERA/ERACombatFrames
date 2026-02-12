@@ -21,6 +21,12 @@ function HUDIcon:setPosition(x, y)
     self.icon:SetPosition(x, y)
 end
 
+---comment
+---@param size number
+function HUDIcon:setSize(size)
+    self.icon:SetSize(size)
+end
+
 function HUDIcon:Activate()
     self.icon:SetActiveShown(true)
 end
@@ -83,7 +89,7 @@ end
 ---@field OverrideSecondaryText nil|fun(self:HUDCooldownIcon): string
 ---@field OverrideDesaturation nil|fun(self:HUDCooldownIcon): number
 ---@field GetMainText nil|fun(self:HUDCooldownIcon): string|nil
----@field highlightWhenUsable boolean
+---@field saturateWhenUsable boolean
 ---@field watchIconChange boolean
 ---@field watchAdditionalOverlay number
 ---@field showOnlyWhenUsableOrOverlay boolean
@@ -149,15 +155,10 @@ function HUDCooldownIcon:Update(t, combat)
     local usable = C_Spell.IsSpellUsable(self.data.spellID)
 
     local overlay
-    if (self.highlightWhenUsable) then
-        overlay = usable
-    end
-    if (not overlay) then
-        if (self.watchAdditionalOverlay) then
-            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
-        else
-            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
-        end
+    if (self.watchAdditionalOverlay) then
+        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
+    else
+        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
     end
     self.icon:SetHighlight(overlay)
 
@@ -195,12 +196,20 @@ function HUDCooldownIcon:Update(t, combat)
     if (self.OverrideDesaturation) then
         self.icon:SetDesaturation(self:OverrideDesaturation(), true)
     else
-        if (self.data.hasCharges) then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveFalse0), true)
+        if (self.saturateWhenUsable) then
+            if (usable) then
+                self.icon:SetDesaturation(0.0, false)
+            else
+                self.icon:SetDesaturation(1.0, false)
+            end
         else
-            ---@diagnostic disable-next-line: param-type-mismatch
-            self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanTen), true)
+            if (self.data.hasCharges) then
+                ---@diagnostic disable-next-line: param-type-mismatch
+                self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveFalse0), true)
+            else
+                ---@diagnostic disable-next-line: param-type-mismatch
+                self.icon:SetDesaturation(self.data.cooldownDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanTen), true)
+            end
         end
     end
 
@@ -291,6 +300,7 @@ end
 ---@field private data HUDAura
 ---@field private stackMode boolean
 ---@field private forcedIcon boolean
+---@field showOnlyIf HUDPublicBoolean|nil
 ---@field showRedIfMissingInCombat boolean
 ---@field alwaysHideOutOfCombat boolean
 ---@field watchIconChange boolean
@@ -343,6 +353,10 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDAuraIcon:Update(t, combat)
+    if (self.showOnlyIf and not self.showOnlyIf.value) then
+        self.icon:SetVisibilityAlpha(0.0, false)
+        return
+    end
     if (self.alwaysHideOutOfCombat and not combat) then
         self.icon:SetVisibilityAlpha(0.0, false)
         return

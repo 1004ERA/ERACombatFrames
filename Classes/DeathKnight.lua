@@ -185,12 +185,27 @@ function HUDRunesResource:create(hud, data, resourceFrame, frameLevel)
     return x
 end
 
-function HUDRunesResource:Activate()
-    self.frame:Hide()
-    self.frameVisible = false
+function HUDRunesResource:ActivateResource(dynamic)
+    if (dynamic) then
+        if (not self.frameVisible) then
+            self.frameVisible = true
+            self.frame:Show()
+        end
+    else
+        self.frame:Hide()
+        self.frameVisible = false
+    end
 end
-function HUDRunesResource:Deactivate()
-    self.frame:Hide()
+function HUDRunesResource:DeactivateResource(dynamic)
+    if (dynamic) then
+        if (self.frameVisible) then
+            self.frameVisible = false
+            self.frame:Hide()
+        end
+    else
+        self.frame:Hide()
+        self.frameVisible = false
+    end
 end
 
 ---@param y number
@@ -213,9 +228,18 @@ function HUDRunesResource:arrange(y, width, height, resourceFrame)
     end
 end
 
+---@param y number
+---@param width number
+---@param height number
+---@param desiredHeight number
+---@param resourceFrame Frame
+function HUDRunesResource:dynamicLayout(y, width, height, desiredHeight, resourceFrame)
+    self.frame:SetPoint("CENTER", resourceFrame, "TOP", 0, y - height / 2)
+end
+
 ---@param t number
 ---@param combat boolean
-function HUDRunesResource:Update(t, combat)
+function HUDRunesResource:UpdateResource(t, combat)
     local mustShow
     if (combat) then
         mustShow = true

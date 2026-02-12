@@ -157,7 +157,17 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraIcon
 function HUDEssentialsSlot:AddOverlapingAura(data, iconID, talent)
-    local icon = HUDAuraIcon:create(self.hud:getEssentialFrame(), 8 + #self.icons, "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
+    local icon = HUDAuraIcon:create(self.hud:getEssentialFrame(), 8 * (1 + #self.icons), "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
+    table.insert(self.icons, icon)
+    return icon
+end
+
+---@param data HUDCooldown
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@return HUDCooldownIcon
+function HUDEssentialsSlot:AddOverlapingCooldown(data, iconID, talent)
+    local icon = HUDCooldownIcon:create(self.hud:getEssentialFrame(), 8 * (1 + #self.icons), "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
 end
@@ -171,6 +181,7 @@ end
 ---@class (exact) HUDResourceSlot
 ---@field private __index HUDResourceSlot
 ---@field hud HUDModule
+---@field private height number
 ---@field private resources HUDResourceDisplay[]
 HUDResourceSlot = {}
 HUDResourceSlot.__index = HUDResourceSlot
@@ -198,21 +209,38 @@ end
 ---@param width number
 ---@param resourceFrame Frame
 function HUDResourceSlot:updateLayout_returnHeight(y, width, resourceFrame)
-    local height = 0
+    self.height = 0
     for _, res in ipairs(self.resources) do
         if (res.talentActive) then
             local h = res:measure_returnHeight(y, width, resourceFrame)
-            if (h > height) then
-                height = h
+            if (h > self.height) then
+                self.height = h
             end
         end
     end
     for _, res in ipairs(self.resources) do
         if (res.talentActive) then
-            res:arrange(y, width, height, resourceFrame)
+            res:arrange(y, width, self.height, resourceFrame)
         end
     end
-    return height
+    return self.height
+end
+
+---@param y number
+---@param width number
+---@param resourceFrame Frame
+function HUDResourceSlot:dynamicLayout_returnHeight(y, width, resourceFrame)
+    local visible = false
+    for _, res in ipairs(self.resources) do
+        if (res.talentActive and res:dynamicLayout_returnVisible(y, width, self.height, resourceFrame)) then
+            visible = true
+        end
+    end
+    if (visible) then
+        return self.height
+    else
+        return 0
+    end
 end
 
 ---@param data HUDHealth

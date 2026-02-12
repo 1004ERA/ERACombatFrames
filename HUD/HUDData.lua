@@ -430,6 +430,7 @@ end
 ---@field stacksDisplay string|nil
 ---@field auraIsPresent boolean
 ---@field cdmFrameFound boolean
+---@field useUnitCDM boolean
 ---@field icon number
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
@@ -493,6 +494,7 @@ function HUDAura:auraFound(dur, a)
 end
 ]]
 
+ECF_TEST_ONCE = false
 function HUDAura:updateTimerDuration(t)
     --[[
     if (self.found) then
@@ -505,9 +507,14 @@ function HUDAura:updateTimerDuration(t)
     return self.auraDuration
     ]]
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
-        local cdmData
-        ---@diagnostic disable-next-line: param-type-mismatch
-        cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(self.unit, self.cdmFrame.auraInstanceID)
+        local unit
+        if (self.useUnitCDM) then
+            unit = self.cdmFrame.auraDataUnit
+        else
+            unit = self.unit
+        end
+        ---@cast unit unknown
+        local cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, self.cdmFrame.auraInstanceID)
         if (cdmData) then
             self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(self.unit, self.cdmFrame.auraInstanceID)
@@ -596,7 +603,6 @@ end
 HUDPublicBooleanSpellOverlay = {}
 HUDPublicBooleanSpellOverlay.__index = HUDPublicBooleanSpellOverlay
 setmetatable(HUDPublicBooleanSpellOverlay, { __index = HUDPublicBoolean })
----comment
 ---@param hud HUDModule
 ---@param talent ERALIBTalent|nil
 ---@param spellID number
@@ -613,6 +619,56 @@ end
 ---@return boolean
 function HUDPublicBooleanSpellOverlay:getValue(t, combat)
     return C_SpellActivationOverlay.IsSpellOverlayed(self.spellID)
+end
+
+---@class (exact) HUDPublicBooleanShapeshift : HUDPublicBoolean
+---@field private __index HUDPublicBooleanShapeshift
+---@field private shapeshiftIndex number
+HUDPublicBooleanShapeshift = {}
+HUDPublicBooleanShapeshift.__index = HUDPublicBooleanShapeshift
+setmetatable(HUDPublicBooleanShapeshift, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+---@param shapeshiftIndex number
+function HUDPublicBooleanShapeshift:create(hud, shapeshiftIndex)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanShapeshift)
+    ---@cast x HUDPublicBooleanShapeshift
+    x:constructBoolean(hud, nil)
+    x.shapeshiftIndex = shapeshiftIndex
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanShapeshift:getValue(t, combat)
+    return self.shapeshiftIndex == GetShapeshiftForm()
+end
+
+---@class (exact) HUDPublicBooleanAnd : HUDPublicBoolean
+---@field private __index HUDPublicBooleanAnd
+---@field private shapeshiftIndex number
+---@field private b1 HUDPublicBoolean
+---@field private b2 HUDPublicBoolean
+HUDPublicBooleanAnd = {}
+HUDPublicBooleanAnd.__index = HUDPublicBooleanAnd
+setmetatable(HUDPublicBooleanAnd, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+---@param b1 HUDPublicBoolean
+---@param b2 HUDPublicBoolean
+function HUDPublicBooleanAnd:create(hud, b1, b2)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanAnd)
+    ---@cast x HUDPublicBooleanAnd
+    x:constructBoolean(hud, nil)
+    x.b1 = b1
+    x.b2 = b2
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanAnd:getValue(t, combat)
+    return self.b1.value and self.b2.value
 end
 
 --#endregion

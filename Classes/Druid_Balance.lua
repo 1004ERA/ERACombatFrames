@@ -2,6 +2,7 @@
 ---@param talents DruidTalents
 function ERACombatFrames_Druid_Balance(cFrame, talents)
     local hud = HUDModule:Create(cFrame, 1.5, 1)
+    ---@cast hud HUDModuleDruid
 
     --------------------------------
     --#region TALENTS
@@ -75,14 +76,14 @@ function ERACombatFrames_Druid_Balance(cFrame, talents)
     local moonsIcon = hud:AddEssentialsCooldown(moons, nil, nil, 0.0, 1.0, 1.0)
     moonsIcon.watchIconChange = true
 
-    hud:AddDOT(moonfire, nil, nil, 0.2, 0.2, 0.8)
+    local _, moonfireSlot = hud:AddDOT(moonfire, nil, nil, 0.2, 0.2, 0.8)
 
     local eclipseIcon, eclipseSlot = hud:AddEssentialsCooldown(eclipse, nil, nil, 1.0, 1.0, 1.0)
     eclipseIcon.watchIconChange = true
     eclipseSlot:AddTimerBar(0.25, lunarEclipse, nil, 0.3, 0.3, 1.0).doNotCutLongDuration = true
     eclipseSlot:AddTimerBar(0.75, solarEclipse, nil, 1.0, 1.0, 0.3).doNotCutLongDuration = true
 
-    hud:AddDOT(sunfire, nil, nil, 0.8, 0.8, 0.2)
+    local _, sunfireSlot = hud:AddDOT(sunfire, nil, nil, 0.8, 0.8, 0.2)
 
     hud:AddEssentialsCooldown(treants, nil, nil, 0.0, 1.0, 0.0)
 
@@ -128,8 +129,12 @@ function ERACombatFrames_Druid_Balance(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
+    --ERACombatFrames_Druid_FeralOffSpec(hud, talents, moonfireSlot, sunfireSlot)
+    ERACombatFrames_Druid_FeralOffSpec_step1(hud)
+    ERACombatFrames_Druid_GuardianOffSpec_step1(hud)
+
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.5, 0.0, 0.6)
-    function powerBar:AdditionalUpdate(t, combat, bar, current)
+    function powerBar:AdditionalBarUpdate(t, combat, bar, current)
         if (cosmos.auraIsPresent) then
             bar:SetBarColor(1.0, 1.0, 1.0, false)
         else
@@ -180,4 +185,6 @@ function ERACombatFrames_Druid_Balance(cFrame, talents)
     --------------------------------
 
     local commonSpells = ERACombatFrames_DruidCommonSpells(hud, talents, true, false, false, false)
+    ERACombatFrames_Druid_FeralOffSpec_step2(hud, talents, nil, nil)
+    ERACombatFrames_Druid_GuardianOffSpec_step2(hud, talents, commonSpells, moonfireSlot, sunfireSlot)
 end

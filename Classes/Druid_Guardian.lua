@@ -2,6 +2,7 @@
 ---@param talents DruidTalents
 function ERACombatFrames_Druid_Guardian(cFrame, talents)
     local hud = HUDModule:Create(cFrame, 1.5, 3)
+    ---@cast hud HUDModuleDruid
 
     --------------------------------
     --#region TALENTS
@@ -74,7 +75,7 @@ function ERACombatFrames_Druid_Guardian(cFrame, talents)
     local _, mangleSlot = hud:AddEssentialsCooldown(mangle, nil, nil, 1.0, 0.0, 0.0)
     mangleSlot:AddTimerBar(0.75, ironfur, nil, 0.5, 0.4, 0.4)
 
-    local thrashIcon = hud:AddEssentialsCooldown(thrash, nil, nil, 0.8, 0.7, 0.6)
+    local thrashIcon, thrashSlot = hud:AddEssentialsCooldown(thrash, nil, nil, 0.8, 0.7, 0.6)
     thrashIcon:HideCountdown()
     function thrashIcon:IconUpdated(t, combat, icon)
         icon:SetMainText(thrashDuration.stacksDisplay, true)
@@ -125,6 +126,8 @@ function ERACombatFrames_Druid_Guardian(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
+    ERACombatFrames_Druid_FeralOffSpec_step1(hud)
+
     local rageBar = hud:AddResourceSlot(false):AddPowerValue(rage, 1.0, 0.0, 0.0)
     local mainTick = rageBar:AddTick(132276, nil, function() return 40 end)
     local regenTick = rageBar:AddTick(132091, nil, function() return 10 end)
@@ -137,4 +140,5 @@ function ERACombatFrames_Druid_Guardian(cFrame, talents)
     --------------------------------
 
     local commonSpells = ERACombatFrames_DruidCommonSpells(hud, talents, false, false, true, false)
+    ERACombatFrames_Druid_FeralOffSpec_step2(hud, talents, mangleSlot, thrashSlot)
 end

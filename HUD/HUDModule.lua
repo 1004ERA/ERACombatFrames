@@ -34,6 +34,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private healthData HUDHealth
 ---@field private resourceBeforeHealth HUDResourceSlot[]
 ---@field private resourceAfterHealth HUDResourceSlot[]
+---@field private resourceVisibilityChangedDynamic boolean
 ---@field private baseGCD number
 ---@field private totalGCD number
 ---@field private gcdBar StatusBar
@@ -59,6 +60,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field allAuraFetcher { [number]: HUDAura }
 ---@field private cdmParsed boolean
 ---@field duration0 LuaDurationObject
+---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
 ---@field curveHide96pctFull LuaCurveObject
 ---@field curveHide4pctEmpty LuaCurveObject
 ---@field curveHideNoDuration LuaCurveObject
@@ -229,19 +231,20 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.resourceBeforeHealth = {}
     x.resourceAfterHealth = {}
     x.healthData = HUDHealth:Create(x, "player")
+    x.resourceVisibilityChangedDynamic = false
 
     local healthSlot = HUDResourceSlot:create(x)
     table.insert(x.resourceAfterHealth, healthSlot)
     x.healthBar = healthSlot:AddHealth(x.healthData, false)
 
-    x.specialGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false)
-    x.movementGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false)
-    x.controlGroup = HUDUtilityGroup:Create(x, "BOTTOMLEFT", false)
-    x.powerboostGroup = HUDUtilityGroup:Create(x, "TOPRIGHT", false)
-    x.buffGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", false)
-    x.assistGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", true)
-    x.defensiveGroup = HUDUtilityGroup:Create(x, "TOP", false)
-    x.alertGroup = HUDUtilityGroup:Create(x, "BOTTOM", false)
+    x.specialGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false, false, x.options.specialIconSize)
+    x.movementGroup = HUDUtilityGroup:Create(x, "TOPLEFT", false, true, x.options.movementIconSize)
+    x.controlGroup = HUDUtilityGroup:Create(x, "BOTTOMLEFT", false, true, x.options.controlIconSize)
+    x.powerboostGroup = HUDUtilityGroup:Create(x, "TOPRIGHT", false, true, x.options.powerboostIconSize)
+    x.buffGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", false, false, x.options.buffIconSize)
+    x.assistGroup = HUDUtilityGroup:Create(x, "BOTTOMRIGHT", true, true, x.options.assistIconSize)
+    x.defensiveGroup = HUDUtilityGroup:Create(x, "TOP", false, true, x.options.defensiveIconSize)
+    x.alertGroup = HUDUtilityGroup:Create(x, "BOTTOM", false, false, x.options.alertGroupIconSize)
     x.utilityGroups = { x.specialGroup, x.movementGroup, x.controlGroup, x.powerboostGroup, x.buffGroup, x.assistGroup, x.defensiveGroup, x.alertGroup }
 
     x.duration0 = C_DurationUtil.CreateDuration()
@@ -664,8 +667,7 @@ function HUDModule:updateLayout()
     end
 
     -- resource
-    local topResource = self.options.essentialsY - iconSize - self.options.resourcePadding
-    local resourceWidth = iconSize * max(self.options.essentialsMinColumns, self.essentialsIconsActiveCount)
+    local topResource, resourceWidth = self:prepareResourceLayout()
     self.resourceFrame:SetSize(iconSize * self.options.essentialsMinColumns - 2, 4 * (self.options.healthHeight + self.options.powerHeight))
     self.resourceFrame:SetPoint("TOP", UIParent, "CENTER", self.options.essentialsX, topResource)
     local yResource = 0
@@ -743,6 +745,35 @@ function HUDModule:createGCDLine()
     l:SetColorTexture(1.0, 1.0, 1.0, 1.0)
     l:SetThickness(1)
     return l
+end
+
+---@private
+function HUDModule:prepareResourceLayout()
+    local topResource = self.options.essentialsY - self.options.essentialsIconSize - self.options.resourcePadding
+    local resourceWidth = self.options.essentialsIconSize * max(self.options.essentialsMinColumns, self.essentialsIconsActiveCount)
+    return topResource, resourceWidth
+end
+---@private
+function HUDModule:updateResourceLayoutDynamic()
+    self.resourceVisibilityChangedDynamic = false
+    local topResource, resourceWidth = self:prepareResourceLayout()
+    local yResource = 0
+    for _, x in ipairs(self.resourceBeforeHealth) do
+        local rh = x:dynamicLayout_returnHeight(yResource, resourceWidth, self.resourceFrame)
+        if (rh > 0) then
+            yResource = yResource - rh - self.options.resourcePadding
+        end
+    end
+    for _, x in ipairs(self.resourceAfterHealth) do
+        local rh = x:dynamicLayout_returnHeight(yResource, resourceWidth, self.resourceFrame)
+        if (rh > 0) then
+            yResource = yResource - rh - self.options.resourcePadding
+        end
+    end
+    self.defensiveGroup:updateLayout(self.options.essentialsX, topResource + yResource - self.options.defensivePadding, self.options.defensiveIconSize, self.options.utilityIconPadding)
+end
+function HUDModule:dynamicResourceVisibilityChanged()
+    self.resourceVisibilityChangedDynamic = true
 end
 
 --#endregion
@@ -1022,6 +1053,9 @@ function HUDModule:UpdateCombat(t)
     for _, d in ipairs(self.displayActive) do
         d:updateDisplay(t, true)
     end
+    if (self.resourceVisibilityChangedDynamic) then
+        self:updateResourceLayoutDynamic()
+    end
 end
 
 ---comment
@@ -1031,6 +1065,9 @@ function HUDModule:UpdateIdle(t)
     for _, d in ipairs(self.displayActive) do
         d:updateDisplay(t, false)
     end
+    if (self.resourceVisibilityChangedDynamic) then
+        self:updateResourceLayoutDynamic()
+    end
 end
 
 ---@private
@@ -1038,6 +1075,10 @@ end
 ---@param combat boolean
 function HUDModule:updateData(t, combat)
     self.duration0:Reset()
+
+    if (self.PreUpdateData) then
+        self:PreUpdateData(t, combat)
+    end
 
     --#region AURAS
 
@@ -1106,7 +1147,7 @@ function HUDModule:parseCDMBuffLinked(frame)
                     local aura = self.allAuraFetcher[linked]
                     if (aura and not aura.cdmFrameFound) then
                         aura:setCDM(c)
-                        break
+                        -- do not break
                     end
                 end
             end
@@ -1116,6 +1157,7 @@ end
 
 ---@class CDMAuraFrame
 ---@field auraInstanceID number|nil
+---@field auraDataUnit string|nil
 
 --------
 --#region CHANNEL TICKS
@@ -1267,18 +1309,22 @@ end
 ---@field private directX number
 ---@field private directY number
 ---@field private frame Frame
+---@field private background nil|Frame
 ---@field private icons HUDIcon[]
 ---@field private activeCount number
 ---@field private singleLine boolean
 ---@field private vertical boolean
+---@field private iconSize number
 HUDUtilityGroup = {}
 HUDUtilityGroup.__index = HUDUtilityGroup
 
 ---@param hud HUDModule
 ---@param anchor HUDUtilityGroupAnchor
 ---@param vertical boolean
+---@param hasBackground boolean
+---@param iconSize number
 ---@return HUDUtilityGroup
-function HUDUtilityGroup:Create(hud, anchor, vertical)
+function HUDUtilityGroup:Create(hud, anchor, vertical, hasBackground, iconSize)
     local x = {}
     setmetatable(x, HUDUtilityGroup)
     ---@cast x HUDUtilityGroup
@@ -1328,12 +1374,45 @@ function HUDUtilityGroup:Create(hud, anchor, vertical)
         end
     end
 
+    if (hasBackground) then
+        x.background = CreateFrame("Frame", nil, UIParent)
+        local txbg = x.background:CreateTexture(nil, "BACKGROUND", nil, 0)
+        txbg:SetAllPoints()
+        txbg:SetColorTexture(0.0, 0.0, 0.0, 0.44)
+        local thick = 3
+        local lineLeft = self:createBorderLine(x.background, thick)
+        local lineTop = self:createBorderLine(x.background, thick)
+        local lineRight = self:createBorderLine(x.background, thick)
+        local lineBottom = self:createBorderLine(x.background, thick)
+        lineLeft:SetStartPoint("BOTTOMLEFT", x.background, thick / 2, thick / 4)
+        lineLeft:SetEndPoint("TOPLEFT", x.background, thick / 2, -thick / 4)
+        lineTop:SetStartPoint("TOPLEFT", x.background, thick / 4, -thick / 2)
+        lineTop:SetEndPoint("TOPRIGHT", x.background, -thick / 4, -thick / 2)
+        lineRight:SetStartPoint("TOPRIGHT", x.background, -thick / 2, -thick / 4)
+        lineRight:SetEndPoint("BOTTOMRIGHT", x.background, -thick / 2, thick / 4)
+        lineBottom:SetStartPoint("BOTTOMRIGHT", x.background, -thick / 4, thick / 2)
+        lineBottom:SetEndPoint("BOTTOMLEFT", x.background, thick / 4, thick / 2)
+        x.background:Hide()
+    end
+
     x.frame = CreateFrame("Frame", nil, UIParent)
+    x.frame:SetFrameLevel(4)
     x.frame:Hide()
 
     x.icons = {}
+    x.iconSize = iconSize
 
     return x
+end
+---@private
+---@param frame Frame
+---@param thick number
+---@return Line
+function HUDUtilityGroup:createBorderLine(frame, thick)
+    local line = frame:CreateLine(nil, "BORDER", nil, 1)
+    line:SetColorTexture(0.66, 0.66, 0.66, 1.0)
+    line:SetThickness(thick / 2)
+    return line
 end
 
 function HUDUtilityGroup:moduleActive()
@@ -1341,11 +1420,20 @@ function HUDUtilityGroup:moduleActive()
 end
 function HUDUtilityGroup:moduleInactive()
     self.frame:Hide()
+    if (self.background) then
+        self.background:Hide()
+    end
 end
 
 function HUDUtilityGroup:enterCombat()
+    if (self.activeCount > 0 and self.background) then
+        self.background:Show()
+    end
 end
 function HUDUtilityGroup:exitCombat()
+    if (self.background) then
+        self.background:Hide()
+    end
 end
 
 ---@param displayActive HUDDisplay[]
@@ -1364,92 +1452,101 @@ end
 ---@param iconSize number
 ---@param iconPadding number
 function HUDUtilityGroup:updateLayout(offX, offY, iconSize, iconPadding)
+    self.iconSize = iconSize
+    for _, icon in ipairs(self.icons) do
+        icon:setSize(iconSize)
+    end
     local width, height
-    if (self.singleLine) then
-        local iCount = 0
-        for _, icon in ipairs(self.icons) do
-            if (icon.talentActive) then
-                iCount = iCount + 1
-                icon:setPosition(iconSize * (iCount - self.activeCount / 2 - 0.5), self.directY * iconPadding)
-            end
-        end
-        width = self.activeCount * (iconSize + iconPadding)
-        height = iconSize + iconPadding
-    else
-        local x1
-        if (self.directX >= 0) then
-            x1 = iconPadding
-        else
-            x1 = -iconPadding
-        end
-        local y1
-        if (self.directY >= 0) then
-            y1 = iconPadding
-        else
-            y1 = -iconPadding
-        end
-        local x = x1
-        local y = y1
-        local first_line = true
-        local first_line_count = 0
-        local has_second_line = false
-        local last_is_second_line = false
-        for _, icon in ipairs(self.icons) do
-            if (icon.talentActive) then
-                if (first_line) then
-                    if (self.vertical) then
-                        x = x1
-                    else
-                        y = y1
-                    end
-                    last_is_second_line = false
-                    first_line_count = first_line_count + 1
-                    first_line = false
-                else
-                    if (self.vertical) then
-                        x = x1 + self.directX * (iconSize + iconPadding)
-                    else
-                        y = y1 + self.directY * (iconSize + iconPadding)
-                    end
-                    last_is_second_line = true
-                    has_second_line = true
-                    first_line = true
-                end
-                icon:setPosition(x, y)
-                if (self.vertical) then
-                    y = y + self.directY * (iconSize + iconPadding) / 2
-                else
-                    x = x + self.directX * (iconSize + iconPadding) / 2
+    if (self.activeCount > 0) then
+        if (self.singleLine) then
+            local iCount = 0
+            for _, icon in ipairs(self.icons) do
+                if (icon.talentActive) then
+                    iCount = iCount + 1
+                    icon:setPosition(iconSize * (iCount - self.activeCount / 2 - 0.5), self.directY * iconPadding)
                 end
             end
-        end
-        if (self.vertical) then
-            if (has_second_line) then
-                width = iconPadding + (iconSize + iconPadding) * (1 + math.sqrt(3) / 2)
-            else
-                width = iconSize + 2 * iconPadding
-            end
-            if (last_is_second_line) then
-                height = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
-            else
-                height = iconPadding + first_line_count * (iconSize + iconPadding)
-            end
+            width = self.activeCount * (iconSize + iconPadding)
+            height = iconSize + 2 * iconPadding
         else
-            if (last_is_second_line) then
-                width = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
+            local x1
+            if (self.directX >= 0) then
+                x1 = iconPadding
             else
-                width = iconPadding + first_line_count * (iconSize + iconPadding)
+                x1 = -iconPadding
             end
-            if (has_second_line) then
-                height = iconPadding + (iconSize + iconPadding) * (1 + math.sqrt(3) / 2)
+            local y1
+            if (self.directY >= 0) then
+                y1 = iconPadding
             else
-                height = iconSize + 2 * iconPadding
+                y1 = -iconPadding
             end
+            local x = x1
+            local y = y1
+            local first_line = true
+            local first_line_count = 0
+            local has_second_line = false
+            local last_is_second_line = false
+            for _, icon in ipairs(self.icons) do
+                if (icon.talentActive) then
+                    if (first_line) then
+                        if (self.vertical) then
+                            x = x1
+                        else
+                            y = y1
+                        end
+                        last_is_second_line = false
+                        first_line_count = first_line_count + 1
+                        first_line = false
+                    else
+                        if (self.vertical) then
+                            x = x1 + self.directX * (iconSize + iconPadding)
+                        else
+                            y = y1 + self.directY * (iconSize + iconPadding)
+                        end
+                        last_is_second_line = true
+                        has_second_line = true
+                        first_line = true
+                    end
+                    icon:setPosition(x, y)
+                    if (self.vertical) then
+                        y = y + self.directY * (iconSize + iconPadding) / 2
+                    else
+                        x = x + self.directX * (iconSize + iconPadding) / 2
+                    end
+                end
+            end
+            if (self.vertical) then
+                if (has_second_line) then
+                    width = iconPadding + (iconSize + iconPadding) * (1 + math.sqrt(3) / 2)
+                else
+                    width = iconSize + 2 * iconPadding
+                end
+                if (last_is_second_line) then
+                    height = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
+                else
+                    height = iconPadding + first_line_count * (iconSize + iconPadding)
+                end
+            else
+                if (last_is_second_line) then
+                    width = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
+                else
+                    width = iconPadding + first_line_count * (iconSize + iconPadding)
+                end
+                if (has_second_line) then
+                    height = iconPadding + (iconSize + iconPadding) * (1 + math.sqrt(3) / 2)
+                else
+                    height = iconSize + 2 * iconPadding
+                end
+            end
+        end
+        self.frame:SetSize(width, height)
+        self.frame:SetPoint(self.anchor, UIParent, "CENTER", offX, offY)
+        if (self.background) then
+            self.background:SetSize(width, height)
+            self.background:SetPoint(self.anchor, UIParent, "CENTER", offX, offY)
         end
     end
-
-    self.frame:SetSize(width, height)
-    self.frame:SetPoint(self.anchor, UIParent, "CENTER", offX, offY)
 end
 
 ---@param data HUDCooldown
@@ -1457,7 +1554,7 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldownIcon
 function HUDUtilityGroup:AddCooldown(data, iconID, talent)
-    local icon = HUDCooldownIcon:create(self.frame, 1, self.anchor, self.anchor, self.hud.options.powerboostIconSize, data, iconID, talent)
+    local icon = HUDCooldownIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1467,7 +1564,7 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraIcon
 function HUDUtilityGroup:AddAura(data, iconID, talent)
-    local icon = HUDAuraIcon:create(self.frame, 1, self.anchor, self.anchor, self.hud.options.buffIconSize, data, iconID, talent)
+    local icon = HUDAuraIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1476,7 +1573,7 @@ end
 ---@param initIconID number
 function HUDUtilityGroup:AddEquipment(slot, initIconID)
     local data = HUDEquipmentCooldown:create(slot, self.hud)
-    local icon = HUDEquipmentIcon:Create(self.frame, 1, self.anchor, self.anchor, self.hud.options.powerboostIconSize, data, initIconID)
+    local icon = HUDEquipmentIcon:Create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, initIconID)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1531,6 +1628,12 @@ end
 function HUDModule:AddSpellOverlayBoolean(spellID, talent)
     return HUDPublicBooleanSpellOverlay:create(self, talent, spellID)
 end
+---@param b1 HUDPublicBoolean
+---@param b2 HUDPublicBoolean
+---@return HUDPublicBooleanAnd
+function HUDModule:AddPublicBooleanAnd(b1, b2)
+    return HUDPublicBooleanAnd:create(self, b1, b2)
+end
 
 ---@param spellID number
 ---@param iconID number
@@ -1538,6 +1641,12 @@ end
 ---@return HUDPublicBooleanSpellIcon
 function HUDModule:AddIconBoolean(spellID, iconID, talent)
     return HUDPublicBooleanSpellIcon:create(self, talent, spellID, iconID)
+end
+
+---@param shapeshiftIndex number
+---@return HUDPublicBooleanShapeshift
+function HUDModule:AddShapeshiftBoolean(shapeshiftIndex)
+    return HUDPublicBooleanShapeshift:create(self, shapeshiftIndex)
 end
 
 ---@param data HUDCooldown

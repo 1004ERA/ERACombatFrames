@@ -8,7 +8,8 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
 
     local talent_nova = ERALIBTalent:Create(132289)
     local talent_voidfall = ERALIBTalent:Create(135667)
-    local talent_immo_not_spontaneous = ERALIBTalent:CreateAnd(ERALIBTalent:Create(132286), ERALIBTalent:CreateNotTalent(135730))
+    local talent_immo_spontaneous = ERALIBTalent:Create(135730)
+    local talent_immo_not_spontaneous = ERALIBTalent:CreateAnd(ERALIBTalent:Create(132286), ERALIBTalent:CreateNot(talent_immo_spontaneous))
     local talent_meta = ERALIBTalent:Create(132282)
     local talent_collapstar = ERALIBTalent:Create(132281)
     local talent_idle_shards = ERALIBTalent:Create(133511)
@@ -62,12 +63,13 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     local bladeIcon = hud:AddEssentialsCooldown(blade, nil, nil, 0.0, 1.0, 0.5)
     bladeIcon.watchAdditionalOverlay = 1239123
 
-    local reapIcon = hud:AddEssentialsCooldown(reap, nil, nil, 0.7, 0.4, 1.0)
+    local reapIcon, reapSlot = hud:AddEssentialsCooldown(reap, nil, nil, 0.7, 0.4, 1.0)
     reapIcon:HideCountdown()
     reapIcon:SetMainTextColor(1.0, 0.5, 0.0)
     function reapIcon:GetMainText()
         return souls.stacksDisplay
     end
+    reapSlot:AddTimerBar(0.75, immoBuff, talent_immo_spontaneous, 1.0, 1.0, 1.0).doNotCutLongDuration = true
 
     local beamIcon = hud:AddEssentialsCooldown(beam, nil, nil, 1.0, 0.0, 0.0)
     function beamIcon:OverrideCombatVisibilityAlpha()
@@ -79,8 +81,10 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     end
 
     local _, immoSlot = hud:AddEssentialsCooldown(immo, nil, nil, 0.8, 0.6, 0.0)
-    local immoBar = immoSlot:AddTimerBar(0.25, immoBuff, nil, 1.0, 1.0, 1.0)
+    local immoBar = immoSlot:AddTimerBar(0.25, immoBuff, talent_immo_not_spontaneous, 1.0, 1.0, 1.0)
     immoBar.doNotCutLongDuration = true
+
+    hud:AddEssentialsAura(immoBuff, nil, talent_immo_spontaneous)
 
     hud:AddEssentialsRightCooldown(hunt)
     hud:AddEssentialsRightCooldown(glaive)
@@ -127,7 +131,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
             end
         end
     end
-    function metaBuildBar:AdditionalUpdate(t, combat, bar, current)
+    function metaBuildBar:AdditionalBarUpdate(t, combat, bar, current)
         if (C_SpellActivationOverlay.IsSpellOverlayed(1217605)) then
             bar:SetBarColor(1.0, 1.0, 0.0, false)
         else
@@ -138,7 +142,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     local collapstarBuildBar = soulsSlot:AddStacksBar(collapstar, 0.8, 0.7, 1.0, nil, function() return 40 end, function() return 0 end)
     collapstarBuildBar:AddTick(7554199, nil, function() return 30 end)
     collapstarBuildBar.constantTickColor = CreateColor(0.0, 0.0, 1.0, 1.0)
-    function collapstarBuildBar:AdditionalUpdate(t, combat, bar, current)
+    function collapstarBuildBar:AdditionalBarUpdate(t, combat, bar, current)
         if (C_SpellActivationOverlay.IsSpellOverlayed(1221150)) then
             bar:SetBarColor(0.0, 1.0, 0.0, false)
         else
@@ -147,7 +151,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     end
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 1.0, 0.0, 1.0)
-    function powerBar:AdditionalUpdate(t, combat, bar, current)
+    function powerBar:AdditionalBarUpdate(t, combat, bar, current)
         if (collapstar.auraIsPresent) then
             bar:SetBarColor(1.0, 0.0, 0.0, false)
         else

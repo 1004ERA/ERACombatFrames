@@ -2,37 +2,18 @@ ERACombatFrames_initialized = false
 
 --[[
 
-TODO
-- debuffs nerubar & mm+
-- améliorer les charges de brez
-- ? icone trinket ?
-- paladin steed (lightforged)
-- dracthyr racial for 11.0.5
-- ? mage arcane supernova/gravity prio
-- ? mage arcane spark
-
-ERA_Debug = function()
-
-end
-
 /run ECF_print_talents(nil,nil,'')
 
 /run print(C_Spell.GetSpellInfo("").spellID)
--- buff player
-/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
-/run local i=1; while true do local ai=C_UnitAuras.GetBuffDataByIndex("target",i);if ai then print(ai.spellId, ai.name);i=i+1 else break end end
--- debuff target
-/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("target",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
--- debuff player
-/run local i=1; while true do local ai=C_UnitAuras.GetDebuffDataByIndex("player",i,"PLAYER");if ai then print(ai.spellId, ai.name);i=i+1 else break end end
-
-/run PlaySound(SOUNDKIT.UI_CORRUPTED_ITEM_LOOT_TOAST)
-/run PlaySound(SOUNDKIT.)
 
 ]]
 
 function ECF_TEST()
+    --------------------------------
+    --#region ARCHIVE TEST
+
     --[[
+
     for k, v in pairs(CooldownViewerDataProvider) do
         --print(k, v)
     end
@@ -52,16 +33,16 @@ function ECF_TEST()
             --print("NO INFO")
         end
     end
-    ]]
-    --[[
+
+
     local count = C_Spell.GetSpellCastCount(247454)
     if (issecretvalue(count)) then
         print("SECRET", count)
     else
         print("PUBLIC", count)
     end
-    ]]
-    --[[
+
+
     local vmet = 1217605
     local coll = 1221150 --1221167
     local vmetinfo = C_Spell.GetSpellInfo(vmet)
@@ -82,14 +63,26 @@ function ECF_TEST()
     local colUsable = C_Spell.IsSpellUsable(coll)
     print("useable ?", metUsable, colUsable)
     print("cast count", C_Spell.GetSpellCastCount(vmet), C_Spell.GetSpellCastCount(coll))
-    ]]
+
     -- 119898
     --print(C_Spell.GetSpellInfo(119898).iconID)
     --print(C_Spell.GetSpellInfo(132409).iconID) -- == 136174
     --print(C_SpellBook.IsSpellKnown(132409, Enum.SpellBookSpellBank.Player))
     --print(C_SpellBook.IsSpellKnown(19647, Enum.SpellBookSpellBank.Pet))
     --print(C_Spell.IsSpellUsable(132409))
-    print(C_Spell.GetSpellCooldownDuration(132409):GetRemainingDuration())
+    --print(C_Spell.GetSpellCooldownDuration(132409):GetRemainingDuration())
+
+    local shapeshiftIndex = GetShapeshiftForm()
+    if (issecretvalue(shapeshiftIndex)) then
+        print("SECRET", shapeshiftIndex)
+    else
+        print("PUBLIC", shapeshiftIndex)
+    end
+
+    ]]
+
+    --#endregion
+    --------------------------------
 end
 
 function ECF_PRINT_CDM()

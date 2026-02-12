@@ -1,8 +1,15 @@
 ---@class (exact) HUDResourceDisplay : HUDDisplay
 ---@field private __index HUDResourceDisplay
 ---@field protected constructResource fun(self:HUDResourceDisplay, hud:HUDModule, beforeHealth:boolean, talent:ERALIBTalent|nil)
----@field measure_returnHeight fun(self:HUDResourceDisplay, y:number, width:number, resourceFrame:Frame): number
----@field arrange fun(self:HUDResourceDisplay, y:number, width:number, height:number, resourceFrame:Frame): number
+---@field private desiredHeight number
+---@field protected measure_protected_returnHeight fun(self:HUDResourceDisplay, y:number, width:number, resourceFrame:Frame): number
+---@field arrange fun(self:HUDResourceDisplay, y:number, width:number, height:number, resourceFrame:Frame)
+---@field protected ActivateResource fun(self:HUDResourceDisplay, dynamic:boolean)
+---@field protected DeactivateResource fun(self:HUDResourceDisplay, dynamic:boolean)
+---@field protected UpdateResource fun(self:HUDResourceDisplay, t:number, combat:boolean)
+---@field protected dynamicLayout fun(self:HUDResourceDisplay, y:number, width:number, height:number, desiredHeight:number, resourceFrame:Frame)
+---@field DynamicVisibility nil|fun(self:HUDResourceDisplay, t:number, combat:boolean): boolean
+---@field private dynamicVisible boolean
 HUDResourceDisplay = {}
 HUDResourceDisplay.__index = HUDResourceDisplay
 setmetatable(HUDResourceDisplay, { __index = HUDDisplay })
@@ -15,6 +22,54 @@ function HUDResourceDisplay:constructResource(hud, beforeHealth, talent)
     self:constructDisplay(hud, talent)
 end
 
+function HUDResourceDisplay:Activate()
+    self.dynamicVisible = true
+    self:ActivateResource(false)
+end
+function HUDResourceDisplay:Deactivate()
+    self.dynamicVisible = false
+    self:DeactivateResource(false)
+end
+
+---@param y number
+---@param width number
+---@param resourceFrame Frame
+---@return number
+function HUDResourceDisplay:measure_returnHeight(y, width, resourceFrame)
+    self.desiredHeight = self:measure_protected_returnHeight(y, width, resourceFrame)
+    return self.desiredHeight
+end
+
+function HUDResourceDisplay:Update(t, combat)
+    if (self.DynamicVisibility) then
+        local visible = self:DynamicVisibility(t, combat)
+        if (visible) then
+            if (not self.dynamicVisible) then
+                self.dynamicVisible = true
+                self:ActivateResource(true)
+                self.hud:dynamicResourceVisibilityChanged()
+            end
+        else
+            if (self.dynamicVisible) then
+                self.dynamicVisible = false
+                self:DeactivateResource(true)
+                self.hud:dynamicResourceVisibilityChanged()
+            end
+            return
+        end
+    end
+    self:UpdateResource(t, combat)
+end
+
+function HUDResourceDisplay:dynamicLayout_returnVisible(y, width, height, resourceFrame)
+    if (self.dynamicVisible) then
+        self:dynamicLayout(y, width, height, self.desiredHeight, resourceFrame)
+        return true
+    else
+        return false
+    end
+end
+
 ------------------------
 --#region HEALTH -------
 
@@ -22,7 +77,7 @@ end
 ---@field private __index HUDHealthDisplay
 ---@field private data HUDHealth
 ---@field private bar ERAStatusBar
----@field private desiredHeight number
+---@field private healthHeight number
 HUDHealthDisplay = {}
 HUDHealthDisplay.__index = HUDHealthDisplay
 setmetatable(HUDHealthDisplay, { __index = HUDResourceDisplay })
@@ -44,11 +99,11 @@ function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel, ta
     x.data = data
     x.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
     if (isPet) then
-        x.desiredHeight = 2 * hud.options.healthHeight / 3
+        x.healthHeight = 2 * hud.options.healthHeight / 3
         x.bar:SetBarColor(0.0, 0.8, 0.0, false)
         x.bar:SetBorderColor(0.0, 0.8, 0.0, false)
     else
-        x.desiredHeight = hud.options.healthHeight
+        x.healthHeight = hud.options.healthHeight
         x.bar:SetBarColor(0.0, 1.0, 0.0, false)
         x.bar:SetBorderColor(0.0, 1.0, 0.0, false)
     end
@@ -56,10 +111,10 @@ function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel, ta
     return x
 end
 
-function HUDHealthDisplay:Activate()
+function HUDHealthDisplay:ActivateResource(dynamic)
     self.bar:SetActiveShown(true)
 end
-function HUDHealthDisplay:Deactivate()
+function HUDHealthDisplay:DeactivateResource(dynamic)
     self.bar:SetActiveShown(false)
 end
 
@@ -68,7 +123,7 @@ end
 ---@param resourceFrame Frame
 ---@return number
 function HUDHealthDisplay:measure_returnHeight(y, width, resourceFrame)
-    return self.desiredHeight
+    return self.healthHeight
 end
 ---@param y number
 ---@param width number
@@ -77,10 +132,18 @@ end
 function HUDHealthDisplay:arrange(y, width, height, resourceFrame)
     self.bar:UpdateLayout(0, y, width, height)
 end
+---@param y number
+---@param width number
+---@param height number
+---@param desiredHeight number
+---@param resourceFrame Frame
+function HUDHealthDisplay:dynamicLayout(y, width, height, desiredHeight, resourceFrame)
+    self.bar:UpdateLayout(0, y, width, height)
+end
 
 ---@param t number
 ---@param combat boolean
-function HUDHealthDisplay:Update(t, combat)
+function HUDHealthDisplay:UpdateResource(t, combat)
     if ((not self.data.unitExists) and not self:ShowIfNoUnit(t, combat)) then
         self.bar:SetVisibilityAlpha(0.0, false)
         return
@@ -143,10 +206,10 @@ function HUDPowerBarDisplay:constructPower(hud, r, g, b, talent, resourceFrame, 
     self.heightMultiplier = 1
 end
 
-function HUDPowerBarDisplay:Activate()
+function HUDPowerBarDisplay:ActivateResource(dynamic)
     self.bar:SetActiveShown(true)
 end
-function HUDPowerBarDisplay:Deactivate()
+function HUDPowerBarDisplay:DeactivateResource(dynamic)
     self.bar:SetActiveShown(false)
 end
 
@@ -177,6 +240,14 @@ function HUDPowerBarDisplay:arrange(y, width, height, resourceFrame)
         end
     end
 end
+---@param y number
+---@param width number
+---@param height number
+---@param desiredHeight number
+---@param resourceFrame Frame
+function HUDPowerBarDisplay:dynamicLayout(y, width, height, desiredHeight, resourceFrame)
+    self.bar:UpdateLayout(0, y, width, height)
+end
 
 ---@param iconID number
 ---@param talent ERALIBTalent|nil
@@ -190,19 +261,19 @@ end
 
 ---@param t number
 ---@param combat boolean
-function HUDPowerBarDisplay:Update(t, combat)
+function HUDPowerBarDisplay:UpdateResource(t, combat)
     local current = self:getCurrentAndUpdate(t, combat)
     self.bar:SetValue(current)
     for _, tk in ipairs(self.ticksActive) do
         tk:update(t, combat)
     end
-    self:AdditionalUpdate(t, combat, self.bar, current)
+    self:AdditionalBarUpdate(t, combat, self.bar, current)
 end
 ---@param t number
 ---@param combat boolean
 ---@param bar ERAStatusBar
 ---@param current number
-function HUDPowerBarDisplay:AdditionalUpdate(t, combat, bar, current)
+function HUDPowerBarDisplay:AdditionalBarUpdate(t, combat, bar, current)
 end
 
 --#endregion
@@ -630,10 +701,10 @@ function HUDResourcePoints:constructPoints(hud, rBorder, gBorder, bBorder, rPoin
     self.points = {}
 end
 
-function HUDResourcePoints:Activate()
+function HUDResourcePoints:ActivateResource(dynamic)
     self.bar:Show()
 end
-function HUDResourcePoints:Deactivate()
+function HUDResourcePoints:DeactivateResource(dynamic)
     self.bar:Hide()
 end
 
@@ -680,6 +751,14 @@ function HUDResourcePoints:arrange(y, width, height, resourceFrame)
         self.points[i]:updateLayout(self.pointSize * (i - self.maxPoints / 2 - 0.5), self.pointSize, self.bar)
     end
 end
+---@param y number
+---@param width number
+---@param height number
+---@param desiredHeight number
+---@param resourceFrame Frame
+function HUDResourcePoints:dynamicLayout(y, width, height, desiredHeight, resourceFrame)
+    self.bar:SetPoint("CENTER", resourceFrame, "TOP", 0, y - height / 2)
+end
 
 ---@param r number
 ---@param g number
@@ -724,7 +803,7 @@ end
 ---comment
 ---@param t number
 ---@param combat boolean
-function HUDResourcePoints:Update(t, combat)
+function HUDResourcePoints:UpdateResource(t, combat)
     self.bar:SetValue(self:getCurrentPoints())
     if (combat) then
         self.bar:SetAlpha(1.0)
@@ -985,10 +1064,10 @@ function HUDResourcePartialPoints:constructPoints(hud, rBorder, gBorder, bBorder
     self.points = {}
 end
 
-function HUDResourcePartialPoints:Activate()
+function HUDResourcePartialPoints:ActivateResource(dynamic)
     self.frame:Show()
 end
-function HUDResourcePartialPoints:Deactivate()
+function HUDResourcePartialPoints:DeactivateResource(dynamic)
     self.frame:Hide()
 end
 
@@ -1032,6 +1111,14 @@ function HUDResourcePartialPoints:arrange(y, width, height, resourceFrame)
     for i = 1, self.maxPoints do
         self.points[i]:updateLayout(self.pointSize * (i - self.maxPoints / 2 - 0.5), self.pointSize, self.frame)
     end
+end
+---@param y number
+---@param width number
+---@param height number
+---@param desiredHeight number
+---@param resourceFrame Frame
+function HUDResourcePartialPoints:dynamicLayout(y, width, height, desiredHeight, resourceFrame)
+    self.frame:SetPoint("CENTER", resourceFrame, "TOP", 0, y - height / 2)
 end
 
 ---@param r number
@@ -1077,7 +1164,7 @@ end
 ---comment
 ---@param t number
 ---@param combat boolean
-function HUDResourcePartialPoints:Update(t, combat)
+function HUDResourcePartialPoints:UpdateResource(t, combat)
     local current = self:getCurrentValue(t)
     if (combat) then
         self.frame:SetAlpha(1.0)

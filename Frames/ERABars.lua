@@ -83,6 +83,9 @@ function ERAStatusBar:Create(parentFrame, point, relativePoint, frameLevel)
     x:SetBorderThickness(4)
     x:SetBorderColor(1.0, 1.0, 1.0, false)
 
+    x.mainFrame:Hide()
+    x.visible = false
+
     return x
 end
 

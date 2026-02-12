@@ -14,6 +14,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local talent_army = ERALIBTalent:Create(96333)
     local talent_sreaper = ERALIBTalent:Create(96314)
     local talent_pestilence = ERALIBTalent:Create(133513)
+    local talent_dnd = ERALIBTalent:CreateNotTalent(96289)
     local talent_clawing = ERALIBTalent:Create(133523)
     local talent_feast = ERALIBTalent:Create(123411)
     local talent_commander = ERALIBTalent:Create(96283)
@@ -28,7 +29,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local runes = HUDRunesData:create(hud)
 
     local grip = hud:AddCooldown(49576)
-    local dnd = hud:AddCooldown(43265)
+    local dnd = hud:AddCooldown(43265, talent_dnd)
     local fortitude = hud:AddCooldown(48792, talents.fortitude)
     local advance = hud:AddCooldown(48265)
     local walk = hud:AddCooldown(212552, talents.walk)
@@ -89,7 +90,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local _, dndSlot = hud:AddEssentialsCooldown(dnd, nil, nil, 0.7, 0.0, 1.0, false)
     dndSlot:AddTimerBar(0.25, bloodqueen, nil, 1.0, 0.0, 0.0)
 
-    hud:AddEssentialsCooldown(sreaper, nil, nil, 0.0, 0.0, 1.0, false)
+    hud:AddEssentialsCooldown(sreaper, nil, nil, 0.0, 0.0, 1.0, false).saturateWhenUsable = true
 
     local _, transfoSlot = hud:AddEssentialsCooldown(transfo, nil, nil, 0.6, 0.5, 0.7)
     transfoSlot:AddTimerBar(0.25, transfoBuff, nil, 0.8, 0.5, 0.0).doNotCutLongDuration = true
