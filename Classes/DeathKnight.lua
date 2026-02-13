@@ -67,14 +67,21 @@ function HUDRuneItem:updateData_returnSecret(t)
         self.somethingMayBeSecret = true
         return true
     else
-        self.startTime = startTime
-        self.duration = duration
-        self.isReady = isRuneReady
-        if (isRuneReady) then
-            self.remainingTime = 0
+        if (startTime and duration) then
+            self.startTime = startTime
+            self.duration = duration
+            self.isReady = isRuneReady
+            if (isRuneReady) then
+                self.remainingTime = 0
+            else
+                self.remainingTime = duration - (t - startTime)
+                if (self.remainingTime < 0) then self.remainingTime = 0 end
+            end
         else
-            self.remainingTime = duration - (t - startTime)
-            if (self.remainingTime < 0) then self.remainingTime = 0 end
+            self.startTime = 0
+            self.duration = 10
+            self.isReady = true
+            self.remainingTime = 0
         end
         self.somethingMayBeSecret = false
         return false

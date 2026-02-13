@@ -148,6 +148,7 @@ end
 ---@field protected getIsVisible fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean): boolean
 ---@field protected appears nil|fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean)
 ---@field protected disappears nil|fun(self:HUDSAOAlertBasicBoolean, t:number, combat:boolean)
+---@field showOnlyWhenInCombatWithEnemyTarget boolean
 ---@field playSoundWhenApperars nil|number
 HUDSAOAlertBasicBoolean = {}
 HUDSAOAlertBasicBoolean.__index = HUDSAOAlertBasicBoolean
@@ -172,7 +173,12 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDSAOAlertBasicBoolean:Update(t, combat)
-    local visible = self:getIsVisible(t, combat)
+    local visible
+    if (self.showOnlyWhenInCombatWithEnemyTarget and not (combat and self.hud.hasEnemyTarget)) then
+        visible = false
+    else
+        visible = self:getIsVisible(t, combat)
+    end
     if (visible) then
         if (not self.visible) then
             self.visible = true

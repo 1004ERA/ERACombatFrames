@@ -55,12 +55,11 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private targetCasting boolean
 ---@field private targetCasBar StatusBar
 ---@field private kicks HUDCooldown[]
----@field playerAuraFetcher { [number]: HUDAura }
----@field targetAuraFetcher { [number]: HUDAura }
----@field allAuraFetcher { [number]: HUDAura }
+---@field cdmAuraFetcher { [number]: HUDAura }
 ---@field private cdmParsed boolean
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
+---@field hasEnemyTarget boolean
 ---@field curveHide96pctFull LuaCurveObject
 ---@field curveHide4pctEmpty LuaCurveObject
 ---@field curveHideNoDuration LuaCurveObject
@@ -73,6 +72,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field curveTrue0 LuaCurveObject
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
+---@field curveAlphaDuration LuaColorCurveObject
 HUDModule = {}
 HUDModule.__index = HUDModule
 setmetatable(HUDModule, { __index = ERACombatModule })
@@ -154,6 +154,12 @@ HUDModule.curvePandemic:AddPoint(0.29, 1.0)
 HUDModule.curvePandemic:AddPoint(0.3, 0.0)
 HUDModule.curvePandemic:AddPoint(1, 0.0)
 
+HUDModule.curveAlphaDuration = C_CurveUtil:CreateCurve()
+HUDModule.curveAlphaDuration:SetType(Enum.LuaCurveType.Step)
+HUDModule.curveAlphaDuration:AddPoint(0, 1.0)
+HUDModule.curveAlphaDuration:AddPoint(0.01, 1.0)
+HUDModule.curveAlphaDuration:AddPoint(0.1, 0.5)
+
 --#endregion
 --------
 
@@ -222,9 +228,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.targetCasBar:Hide()
     x.targetCasting = false
 
-    x.playerAuraFetcher = {}
-    x.targetAuraFetcher = {}
-    x.allAuraFetcher = {}
+    x.cdmAuraFetcher = {}
     x.cdmParsed = false
 
     x.resourceFrame = CreateFrame("Frame", nil, UIParent)
@@ -544,11 +548,10 @@ end
 
 function HUDModule:CheckTalents()
     self.cdmParsed = false
+    self.totalGCD = nil
 
     self.dataActive = {}
-    self.playerAuraFetcher = {}
-    self.targetAuraFetcher = {}
-    self.allAuraFetcher = {}
+    self.cdmAuraFetcher = {}
     for _, d in ipairs(self.data) do
         if (d:computeTalentActive()) then
             table.insert(self.dataActive, d)
@@ -798,12 +801,7 @@ end
 ---@param a HUDAura
 ---@param isTarget boolean
 function HUDModule:addActiveAura(a, isTarget)
-    if (isTarget) then
-        self.targetAuraFetcher[a.spellID] = a
-    else
-        self.playerAuraFetcher[a.spellID] = a
-    end
-    self.allAuraFetcher[a.spellID] = a
+    self.cdmAuraFetcher[a.spellID] = a
 end
 
 ---@param icon HUDIcon
@@ -844,6 +842,8 @@ end
 
 ---@param t number
 function HUDModule:UpdateCombat(t)
+    self.hasEnemyTarget = UnitExists("target") and UnitCanAttack("player", "target")
+
     self:updateData(t, true)
 
     local gcdDuration
@@ -1083,14 +1083,38 @@ function HUDModule:updateData(t, combat)
     --#region AURAS
 
     if (not self.cdmParsed) then
-        --self.cdmParsed = true
-        for _, aura in pairs(self.allAuraFetcher) do
+        self.cdmParsed = true
+        for _, aura in pairs(self.cdmAuraFetcher) do
             aura:prepareParseCDM()
         end
         self:parseCDMBuffDirect(BuffBarCooldownViewer)
         self:parseCDMBuffDirect(BuffIconCooldownViewer)
         self:parseCDMBuffLinked(BuffBarCooldownViewer)
         self:parseCDMBuffLinked(BuffIconCooldownViewer)
+        local missingCDM = nil
+        for _, aura in pairs(self.cdmAuraFetcher) do
+            if (not aura.cdmFrameFound) then
+                if (missingCDM) then
+                    table.insert(missingCDM, aura)
+                else
+                    missingCDM = { aura }
+                end
+            end
+        end
+        if (missingCDM) then
+            print("ECF WARNING : the following auras are not tracked by the Cooldown Manager :")
+            for _, aura in ipairs(missingCDM) do
+                local description
+                local info = C_Spell.GetSpellInfo(aura.spellID)
+                if (info) then
+                    description = info.name
+                else
+                    description = "?"
+                end
+                print(aura.spellID, description)
+            end
+            print("Please enable these auras in the Cooldown Manager, then reload your UI.")
+        end
     end
     --[[
     for i = 1, 1000 do
@@ -1128,7 +1152,7 @@ function HUDModule:parseCDMBuffDirect(frame)
         if (c.cooldownInfo) then
             ---@cast info CooldownViewerCooldown
             if (info.spellID) then
-                local aura = self.allAuraFetcher[info.spellID]
+                local aura = self.cdmAuraFetcher[info.spellID]
                 if (aura) then
                     aura:setCDM(c)
                 end
@@ -1144,7 +1168,7 @@ function HUDModule:parseCDMBuffLinked(frame)
             ---@cast info CooldownViewerCooldown
             if (info.linkedSpellIDs) then
                 for _, linked in ipairs(info.linkedSpellIDs) do
-                    local aura = self.allAuraFetcher[linked]
+                    local aura = self.cdmAuraFetcher[linked]
                     if (aura and not aura.cdmFrameFound) then
                         aura:setCDM(c)
                         -- do not break
@@ -1628,6 +1652,13 @@ end
 function HUDModule:AddSpellOverlayBoolean(spellID, talent)
     return HUDPublicBooleanSpellOverlay:create(self, talent, spellID)
 end
+
+---@param aura HUDAura
+---@return HUDPublicBooleanAuraActive
+function HUDModule:AddAuraBoolean(aura)
+    return HUDPublicBooleanAuraActive:create(self, aura)
+end
+
 ---@param b1 HUDPublicBoolean
 ---@param b2 HUDPublicBoolean
 ---@return HUDPublicBooleanAnd

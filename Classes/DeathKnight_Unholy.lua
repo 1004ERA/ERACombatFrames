@@ -133,7 +133,11 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     --#region ALERTS
 
     hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddMissingAuraOverlayAlert(dot2, nil, "icons_64x64_disease", true, false, "NONE", "CENTER")
+
+    local notDot2 = hud:AddAuraBoolean(dot2)
+    notDot2.reverse = true
+    local missingVirulent = hud:AddPublicBooleanAnd(hud:AddAuraBoolean(dot1), notDot2)
+    hud:AddPublicBooleanOverlayAlert(nil, "icons_64x64_disease", true, missingVirulent, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
 
     --#endregion
     --------------------------------

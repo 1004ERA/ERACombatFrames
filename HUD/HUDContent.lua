@@ -423,6 +423,12 @@ function HUDTimerBar:Update(t, combat)
                 self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
             end
         end
+        if (self.timer.alphaDuration) then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.bar:SetAlpha(self.timer.alphaDuration:EvaluateRemainingDuration(self.hud.curveAlphaDuration))
+        else
+            self.bar:SetAlpha(1.0)
+        end
     end
 end
 

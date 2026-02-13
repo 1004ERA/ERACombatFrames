@@ -76,12 +76,12 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local _, malevoSlot = hud:AddEssentialsCooldown(malevolence, nil, nil, 0.7, 0.1, 0.8)
     malevoSlot:AddTimerBar(0.75, malevolenceBuff, nil, 1.0, 1.0, 1.0)
 
-    hud:AddDOT(immo, nil, nil, 0.8, 0.6, 0.0)
-    hud:AddDOT(wither, nil, nil, 0.8, 0.6, 0.0)
+    hud:AddDOT(immo, nil, nil, 0.8, 1.0, 0.0)
+    hud:AddDOT(wither, nil, nil, 0.8, 1.0, 0.0)
 
     hud:AddEssentialsCooldown(cata, nil, nil, 0.7, 0.1, 0.0)
 
-    local _, conflagSlot = hud:AddEssentialsCooldown(conflag, nil, nil, 1.0, 0.0, 1.0)
+    local _, conflagSlot = hud:AddEssentialsCooldown(conflag, nil, nil, 1.0, 0.5, 0.0)
     conflagSlot:AddTimerBar(0.75, infernalBuff, nil, 0.5, 1.0, 0.1)
 
     --hud:AddEssentialsAura(backdraft):ShowStacksRatherThanDuration()
@@ -90,10 +90,11 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     hud:AddEssentialsCooldown(demonfire, nil, nil, 0.7, 1.0, 0.1)
 
-    local _, havocSlot = hud:AddEssentialsCooldown(havoc, nil, nil, 0.8, 0.3, 0.7)
-    havocSlot:AddTimerBar(0.25, havocBuff, nil, 1.0, 0.5, 0.9)
+    local _, havocSlot = hud:AddEssentialsCooldown(havoc, nil, nil, 0.6, 0.1, 0.1)
+    havocSlot:AddTimerBar(0.25, havocBuff, nil, 1.0, 0.5, 0.9).doNotCutLongDuration = true
 
-    local _, mayhemSlot = hud:AddEssentialsAura(mayhem, nil, nil, 1.0, 0.5, 0.9)
+    local _, mayhemSlot, mayhemBar = hud:AddEssentialsAura(mayhem, nil, nil, 1.0, 0.5, 0.9)
+    mayhemBar.doNotCutLongDuration = true
 
     local shadowburnIcon, shadowburnSlot = hud:AddEssentialsCooldown(shadowburn, nil, nil, 1.0, 1.0, 1.0, false)
     shadowburnIcon.showOnlyWhenUsableOrOverlay = true
@@ -132,12 +133,12 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    mayhem.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
+    mayhem.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_3
 
     hud:AddAuraOverlayAlert(backlash, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(inferno, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(instarof, nil, "dreamsurge_fire-portal-icon", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
-    hud:AddAuraOverlayAlert(shadowburnproc, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Sudden_Doom.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_3
+    hud:AddAuraOverlayAlert(shadowburnproc, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Sudden_Doom.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     --#endregion
     --------------------------------

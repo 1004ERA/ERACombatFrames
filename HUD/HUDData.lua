@@ -251,6 +251,7 @@ end
 ---@field protected constructTimer fun(self:HUDTimer, hud:HUDModule, talent:ERALIBTalent|nil)
 ---@field protected updateTimerDuration fun(self:HUDTimer, t:number): LuaDurationObject
 ---@field timerDuration LuaDurationObject
+---@field alphaDuration nil|LuaDurationObject
 HUDTimer = {}
 HUDTimer.__index = HUDTimer
 setmetatable(HUDTimer, { __index = HUDDataItem })
@@ -280,6 +281,7 @@ end
 ---@field hasCharges boolean
 ---@field isSpecialIf HUDPublicBoolean|nil
 ---@field private must_update_max_charges boolean
+---@field alphaDuration nil|LuaDurationObject -- inherited
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
 setmetatable(HUDCooldown, { __index = HUDTimer })
@@ -358,9 +360,11 @@ function HUDCooldown:updateTimerDuration(t)
                     self.cooldownDuration = self.hud.duration0
                 end
             end
-            return self.cooldownDuration
+            self.alphaDuration = self.cooldownDuration
+            return self.swipeDuration
         end
     end
+    self.alphaDuration = nil
     self.maxCharges = 1
     if ((not self.cdData) or self.cdData.isOnGCD == true) then
         self.swipeDuration = self.hud.duration0
@@ -537,6 +541,7 @@ end
 ---@class (exact) HUDPublicBoolean : HUDDataItem
 ---@field private __index HUDPublicBoolean
 ---@field value boolean
+---@field reverse boolean
 ---@field protected getValue fun(self:HUDPublicBoolean, t:number, combat:boolean): boolean
 HUDPublicBoolean = {}
 HUDPublicBoolean.__index = HUDPublicBoolean
@@ -558,6 +563,9 @@ end
 ---@param combat boolean
 function HUDPublicBoolean:Update(t, combat)
     self.value = self:getValue(t, combat)
+    if (self.reverse) then
+        self.value = not self.value
+    end
 end
 
 ---@class (exact) HUDPublicBooleanSpellIcon : HUDPublicBoolean
@@ -615,6 +623,29 @@ end
 ---@return boolean
 function HUDPublicBooleanSpellOverlay:getValue(t, combat)
     return C_SpellActivationOverlay.IsSpellOverlayed(self.spellID)
+end
+
+---@class (exact) HUDPublicBooleanAuraActive : HUDPublicBoolean
+---@field private __index HUDPublicBooleanAuraActive
+---@field private aura HUDAura
+HUDPublicBooleanAuraActive = {}
+HUDPublicBooleanAuraActive.__index = HUDPublicBooleanAuraActive
+setmetatable(HUDPublicBooleanAuraActive, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+---@param aura HUDAura
+function HUDPublicBooleanAuraActive:create(hud, aura)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanAuraActive)
+    ---@cast x HUDPublicBooleanAuraActive
+    x:constructBoolean(hud, aura.talent)
+    x.aura = aura
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanAuraActive:getValue(t, combat)
+    return self.aura.auraIsPresent
 end
 
 ---@class (exact) HUDPublicBooleanShapeshift : HUDPublicBoolean

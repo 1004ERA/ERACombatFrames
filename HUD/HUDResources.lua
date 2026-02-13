@@ -100,8 +100,8 @@ function HUDHealthDisplay:create(hud, data, isPet, resourceFrame, frameLevel, ta
     x.bar = ERAStatusBar:Create(resourceFrame, "TOP", "TOP", frameLevel)
     if (isPet) then
         x.healthHeight = 2 * hud.options.healthHeight / 3
-        x.bar:SetBarColor(0.0, 0.8, 0.0, false)
-        x.bar:SetBorderColor(0.0, 0.8, 0.0, false)
+        x.bar:SetBarColor(0.5, 0.7, 0.0, false)
+        x.bar:SetBorderColor(0.5, 0.7, 0.0, false)
     else
         x.healthHeight = hud.options.healthHeight
         x.bar:SetBarColor(0.0, 1.0, 0.0, false)

@@ -104,8 +104,8 @@ function ERACombatFrames_Warlock_Affliction(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddMissingAuraOverlayAlert(corruption, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER")
-    hud:AddMissingAuraOverlayAlert(wither, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER")
+    hud:AddMissingAuraOverlayAlert(corruption, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
+    hud:AddMissingAuraOverlayAlert(wither, talent_infinite_corruption, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
     --hud:AddAuraOverlayAlert(unstableFree, nil, "Artifacts-PriestShadow-Header", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     --hud:AddAuraOverlayAlert(unstableFree, nil, "oribos-weeklyrewards-orb-dialog", true).playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(unstableFree, nil, "Insanity-TopPurpleShadow", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
