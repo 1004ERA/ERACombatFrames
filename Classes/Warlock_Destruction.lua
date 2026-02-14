@@ -101,6 +101,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     shadowburnSlot:AddTimerBar(0.5, shadowburnImproved, nil, 0.4, 0.2, 0.3)
 
     -- defensive
+    hud.defensiveGroup:AddBagItem(commonSpells.demonicHStone):SetTintWhenMissing(0.0, 1.0, 1.0)
     hud.defensiveGroup:AddCooldown(commonSpells.resolve)
     hud.defensiveGroup:AddCooldown(commonSpells.pact)
 

@@ -395,3 +395,86 @@ end
 
 --#endregion
 ----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region BAG ITEM ICON ----------------------------------------
+
+---@class (exact) HUDBagItemIcon : HUDPieIcon
+---@field private __index HUDBagItemIcon
+---@field private data HUDBagItem
+---@field private rTintIfMissing number
+---@field private gTintIfMissing number
+---@field private bTintIfMissing number
+HUDBagItemIcon = {}
+HUDBagItemIcon.__index = HUDBagItemIcon
+setmetatable(HUDBagItemIcon, { __index = HUDPieIcon })
+
+---comment
+---@param frame Frame
+---@param frameLevel number
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param size number
+---@param data HUDBagItem
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return HUDBagItemIcon
+function HUDBagItemIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent)
+    local x = {}
+    setmetatable(x, HUDBagItemIcon)
+    ---@cast x HUDBagItemIcon
+    if (not iconID) then
+        _, _, _, _, _, _, _, _, _, iconID = C_Item.GetItemInfo(data.itemID)
+        if (not iconID) then
+            local asyncItem = Item:CreateFromItemID(data.itemID)
+            asyncItem:ContinueOnItemLoad(function()
+                local asyncIcon = asyncItem:GetItemIcon()
+                if (asyncIcon) then
+                    self.icon:SetIconTexture(asyncIcon, false, false)
+                end
+            end)
+            iconID = 134400 -- queston mark
+        end
+    end
+    x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
+    x.rTintIfMissing = 1.0
+    x.gTintIfMissing = 0.0
+    x.bTintIfMissing = 0.0
+
+    return x
+end
+
+---@param r number
+---@param g number
+---@param b number
+function HUDBagItemIcon:SetTintWhenMissing(r, g, b)
+    self.rTintIfMissing = r
+    self.gTintIfMissing = g
+    self.bTintIfMissing = b
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDBagItemIcon:Update(t, combat)
+    if (self.data.hasItem) then
+        if (combat) then
+            self.icon:SetVisibilityAlpha(1.0, false)
+        else
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.icon:SetVisibilityAlpha(self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
+        end
+        self.icon:SetValue(self.data.timerDuration:GetStartTime(), self.data.timerDuration:GetTotalDuration())
+        self.icon:SetSecondaryText(self.data.stacks, true)
+        self.icon:SetTint(1.0, 1.0, 1.0, false)
+    else
+        self.icon:SetVisibilityAlpha(1.0, false)
+        self.icon:SetSecondaryText(nil, false)
+        self.icon:SetValue(0, 1)
+        self.icon:SetTint(self.rTintIfMissing, self.gTintIfMissing, self.bTintIfMissing, false)
+    end
+end
+
+--#endregion
+----------------------------------------------------------------

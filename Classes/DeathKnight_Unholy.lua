@@ -63,6 +63,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local draw = hud:AddAuraByPlayer(374598, false, talents.draw)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
     local undeath = hud:AddAuraByPlayer(444633, true, talent_rider)
+    local succor = hud:AddAuraByPlayer(178819, false)
 
     local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
 
@@ -100,6 +101,8 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     hud:AddEssentialsRightAura(clawing):ShowStacksRatherThanDuration()
 
+    local succorIcon = hud:AddEssentialsRightAura(succor)
+
     -- defensive
     hud.defensiveGroup:AddCooldown(pact)
     hud.defensiveGroup:AddCooldown(fortitude)
@@ -131,6 +134,9 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     --------------------------------
     --#region ALERTS
+
+    succor.playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
+    draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 

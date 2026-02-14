@@ -148,6 +148,7 @@ end
 ---@class LuaDurationObject
 ---@field Reset fun(self:LuaDurationObject)
 ---@field IsZero fun(self:LuaDurationObject): boolean
+---@field SetTimeFromStart fun(self:LuaDurationObject, start:number, duration:number)
 ---@field EvaluateRemainingDuration fun(self:LuaDurationObject, curve:LuaCurveObject|LuaColorCurveObject): number|ColorMixin
 ---@field EvaluateRemainingPercent fun(self:LuaDurationObject, curve:LuaCurveObject|LuaColorCurveObject): number|ColorMixin
 ---@field GetStartTime fun(self:LuaDurationObject): number

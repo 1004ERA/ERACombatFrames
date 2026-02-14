@@ -499,7 +499,6 @@ function HUDAura:auraFound(dur, a)
 end
 ]]
 
-ECF_TEST_ONCE = false
 function HUDAura:updateTimerDuration(t)
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
         local unit
@@ -530,6 +529,93 @@ function HUDAura:updateTimerDuration(t)
     self.stacksDisplay = nil
     self.auraIsPresent = false
     return self.hud.duration0
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region BAG ITEM ---------------------------------------------
+
+---@class (exact) HUDBagItem : HUDTimer
+---@field private __index HUDBagItem
+---@field itemID integer
+---@field stacks integer
+---@field stacksDisplay string|nil
+---@field hasItem boolean
+---@field private bagID integer
+---@field private slot integer
+---@field private duration LuaDurationObject
+HUDBagItem = {}
+HUDBagItem.__index = HUDBagItem
+setmetatable(HUDBagItem, { __index = HUDTimer })
+
+---comment
+---@param itemID integer
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@return HUDBagItem
+function HUDBagItem:create(itemID, hud, talent)
+    local x = {}
+    setmetatable(x, HUDBagItem)
+    ---@cast x HUDBagItem
+    x:constructTimer(hud, talent)
+    x.itemID = itemID
+    x.stacks = 0
+    x.bagID = -1
+    x.slot = -1
+    x.hasItem = false
+    x.duration = C_DurationUtil.CreateDuration()
+    hud:addBagItem(x)
+    return x
+end
+
+function HUDBagItem:talentIsActive()
+    self:bagUpdate()
+end
+function HUDBagItem:talentIsNotActive()
+    self.stacks = 0
+    self.stacksDisplay = nil
+    self.hasItem = false
+end
+
+function HUDBagItem:bagUpdate()
+    if (self.talentActive) then
+        self.bagID = -1
+        self.slot = -1
+        for i = 0, NUM_BAG_SLOTS do
+            local cpt = C_Container.GetContainerNumSlots(i)
+            for j = 1, cpt do
+                local id = C_Container.GetContainerItemID(i, j)
+                if (id == self.itemID) then
+                    self.bagID = i
+                    self.slot = j
+                    break
+                end
+            end
+            if (self.bagID >= 0) then
+                break
+            end
+        end
+        self.hasItem = self.bagID >= 0
+    end
+end
+
+function HUDBagItem:updateTimerDuration(t)
+    if (self.hasItem) then
+        self.stacks = C_Item.GetItemCount(self.itemID, false, true, false, false)
+        -- voir aussi : C_Container.GetItemCooldown et C_Item.GetItemCooldown
+        local start, duration, enable = C_Container.GetContainerItemCooldown(self.bagID, self.slot)
+        if (start and duration and enable) then
+            self.duration:SetTimeFromStart(start, duration)
+            return self.duration
+        else
+            return self.hud.duration0
+        end
+    else
+        self.stacks = 0
+        return self.hud.duration0
+    end
 end
 
 --#endregion

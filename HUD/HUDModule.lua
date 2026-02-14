@@ -55,8 +55,10 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private targetCasting boolean
 ---@field private targetCasBar StatusBar
 ---@field private kicks HUDCooldown[]
+---@field private bagItems HUDBagItem[]
 ---@field cdmAuraFetcher { [number]: HUDAura }
 ---@field private cdmParsed boolean
+---@field private warnedMissingCDM boolean
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
 ---@field hasEnemyTarget boolean
@@ -69,6 +71,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field curveHideLessThanOnePointFive LuaCurveObject
 ---@field curveHideLessThanTwo LuaCurveObject
 ---@field curveHideLessThanTen LuaCurveObject
+---@field curveShowLessThanThirteen LuaCurveObject
 ---@field curveTrue0 LuaCurveObject
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
@@ -128,6 +131,13 @@ HUDModule.curveHideLessThanTen:AddPoint(0, 0)
 HUDModule.curveHideLessThanTen:AddPoint(9.99, 0)
 HUDModule.curveHideLessThanTen:AddPoint(10, 1)
 
+HUDModule.curveShowLessThanThirteen = C_CurveUtil:CreateCurve()
+HUDModule.curveShowLessThanThirteen:SetType(Enum.LuaCurveType.Linear)
+HUDModule.curveShowLessThanThirteen:AddPoint(0.0, 1.0)
+HUDModule.curveShowLessThanThirteen:AddPoint(12, 1.0)
+HUDModule.curveShowLessThanThirteen:AddPoint(13, 0.13)
+HUDModule.curveShowLessThanThirteen:AddPoint(13.13, 0.0)
+
 HUDModule.curveTrue0 = C_CurveUtil:CreateCurve()
 HUDModule.curveTrue0:SetType(Enum.LuaCurveType.Step)
 HUDModule.curveTrue0:AddPoint(0, 1)
@@ -185,6 +195,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.timerBarsActive = {}
     x.alerts = {}
     x.alertsActive = {}
+    x.bagItems = {}
 
     x.timerFrameBack = CreateFrame("Frame", nil, x.essentialsFrame)
     x.timerFrameBack:SetPoint("BOTTOM", x.essentialsFrame, "CENTER", 0, 0)
@@ -546,6 +557,12 @@ function HUDModule:ExitCombat()
     end
 end
 
+function HUDModule:BagUpdate()
+    for _, i in ipairs(self.bagItems) do
+        i:bagUpdate()
+    end
+end
+
 function HUDModule:CheckTalents()
     self.cdmParsed = false
     self.totalGCD = nil
@@ -829,6 +846,11 @@ function HUDModule:addData(d)
     table.insert(self.data, d)
 end
 
+---@param i HUDBagItem
+function HUDModule:addBagItem(i)
+    table.insert(self.bagItems, i)
+end
+
 ---@param tb HUDAlert
 function HUDModule:addAlert(tb)
     table.insert(self.alerts, tb)
@@ -842,7 +864,7 @@ end
 
 ---@param t number
 function HUDModule:UpdateCombat(t)
-    self.hasEnemyTarget = UnitExists("target") and UnitCanAttack("player", "target")
+    self.hasEnemyTarget = UnitExists("target") and UnitCanAttack("player", "target") and not UnitIsDead("target")
 
     self:updateData(t, true)
 
@@ -1091,29 +1113,32 @@ function HUDModule:updateData(t, combat)
         self:parseCDMBuffDirect(BuffIconCooldownViewer)
         self:parseCDMBuffLinked(BuffBarCooldownViewer)
         self:parseCDMBuffLinked(BuffIconCooldownViewer)
-        local missingCDM = nil
-        for _, aura in pairs(self.cdmAuraFetcher) do
-            if (not aura.cdmFrameFound) then
-                if (missingCDM) then
-                    table.insert(missingCDM, aura)
-                else
-                    missingCDM = { aura }
+        if (not self.warnedMissingCDM) then
+            self.warnedMissingCDM = true
+            local missingCDM = nil
+            for _, aura in pairs(self.cdmAuraFetcher) do
+                if (not aura.cdmFrameFound) then
+                    if (missingCDM) then
+                        table.insert(missingCDM, aura)
+                    else
+                        missingCDM = { aura }
+                    end
                 end
             end
-        end
-        if (missingCDM) then
-            print("ECF WARNING : the following auras are not tracked by the Cooldown Manager :")
-            for _, aura in ipairs(missingCDM) do
-                local description
-                local info = C_Spell.GetSpellInfo(aura.spellID)
-                if (info) then
-                    description = info.name
-                else
-                    description = "?"
+            if (missingCDM) then
+                print("ECF WARNING : the following auras are not tracked by the Cooldown Manager :")
+                for _, aura in ipairs(missingCDM) do
+                    local description
+                    local info = C_Spell.GetSpellInfo(aura.spellID)
+                    if (info) then
+                        description = info.name
+                    else
+                        description = "?"
+                    end
+                    print(aura.spellID, description)
                 end
-                print(aura.spellID, description)
+                print("Please enable these auras in the Cooldown Manager, then reload your UI.")
             end
-            print("Please enable these auras in the Cooldown Manager, then reload your UI.")
         end
     end
     --[[
@@ -1602,6 +1627,15 @@ function HUDUtilityGroup:AddEquipment(slot, initIconID)
     return icon
 end
 
+---@param data HUDBagItem
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+function HUDUtilityGroup:AddBagItem(data, iconID, talent)
+    local icon = HUDBagItemIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
+    table.insert(self.icons, icon)
+    return icon
+end
+
 --#endregion
 --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1639,6 +1673,13 @@ end
 ---@return HUDAura
 function HUDModule:AddAuraByPlayer(spellID, isTarget, talent)
     return HUDAura:createAura(spellID, self, talent, isTarget)
+end
+
+---@param itemID number
+---@param talent ERALIBTalent|nil
+---@return HUDBagItem
+function HUDModule:AddBagItem(itemID, talent)
+    return HUDBagItem:create(itemID, self, talent)
 end
 
 ---@return HUDHealth

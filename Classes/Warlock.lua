@@ -15,6 +15,7 @@ function ERACombatFrames_WarlockSetup(cFrame)
         soulburn = ERALIBTalent:Create(91469),
         bweakness = ERALIBTalent:Create(136108),
         btongues = ERALIBTalent:Create(136738),
+        demonicHStone = ERALIBTalent:Create(91434),
     }
 
     ERACombatFrames_Warlock_Affliction(cFrame, talents)
@@ -37,6 +38,7 @@ end
 ---@field howl HUDCooldown
 ---@field gateway HUDCooldown
 ---@field soulburn HUDCooldown
+---@field demonicHStone HUDBagItem
 
 ---@param hud HUDModule
 ---@param talents WarlockTalents
@@ -60,6 +62,7 @@ function ERACombatFrames_WarlockCommonSpells(hud, talents)
         howl = hud:AddCooldown(5484, talents.howl),
         gateway = hud:AddCooldown(111771, talents.gateway),
         soulburn = hud:AddCooldown(385899, talents.soulburn),
+        demonicHStone = hud:AddBagItem(224464, talents.demonicHStone)
     }
     commonSpells.commandDemonKick.isSpecialIf = commonSpells.commandDemonIsKick
     hud:AddKickInfo(commonSpells.commandDemonKick)

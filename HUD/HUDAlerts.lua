@@ -137,7 +137,7 @@ function HUDSAOAlert:updateLayout(options)
             self.frame:SetSize(2 * options.alertSize, options.alertSize)
         end
     else
-        self.frame:SetSize(options.alertSize, options.alertSize)
+        self.frame:SetSize(0.88 * options.alertSize, 0.88 * options.alertSize)
     end
 end
 
@@ -236,6 +236,7 @@ end
 ---@class (exact) HUDSAOAlertMissingAura : HUDSAOAlertBasicBoolean
 ---@field private __index HUDSAOAlertMissingAura
 ---@field private data HUDAura
+---@field private start_active number
 ---@field showOutOfCombat boolean
 HUDSAOAlertMissingAura = {}
 HUDSAOAlertMissingAura.__index = HUDSAOAlertMissingAura
@@ -257,16 +258,26 @@ function HUDSAOAlertMissingAura:create(hud, data, talent, texture, isAtlas, show
     x:constructBooleanSAO(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position)
     x.data = data
     x.showOutOfCombat = showOutOfCombat
+    x.start_active = -1
     return x
 end
 
 ---@param t number
 ---@param combat boolean
 function HUDSAOAlertMissingAura:getIsVisible(t, combat)
-    if (self.showOutOfCombat or combat) then
-        return not self.data.auraIsPresent
-    else
+    if (self.data.auraIsPresent) then
+        self.start_active = -1
         return false
+    else
+        if ((not combat) and not self.showOutOfCombat) then
+            return false
+        end
+        if (self.start_active < 0) then
+            self.start_active = t
+            return false
+        else
+            return t - self.start_active > 0.13
+        end
     end
 end
 

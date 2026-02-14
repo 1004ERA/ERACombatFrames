@@ -73,6 +73,7 @@ function ERACombatFrames_Warlock_Affliction(cFrame, talents)
     hud:AddEssentialsRightCooldown(harvest)
 
     -- defensive
+    hud.defensiveGroup:AddBagItem(commonSpells.demonicHStone):SetTintWhenMissing(0.0, 1.0, 1.0)
     hud.defensiveGroup:AddCooldown(commonSpells.resolve)
     hud.defensiveGroup:AddCooldown(commonSpells.pact)
 

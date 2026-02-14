@@ -112,6 +112,11 @@ function ERACombatMainFrame:Create()
     function events:PLAYER_EQUIPMENT_CHANGED()
         c:updateTalents()
     end
+    function events:BAG_UPDATE()
+        for _, m in ipairs(c.activeModules) do
+            m:BagUpdate()
+        end
+    end
 
     function events:PLAYER_ENTERING_WORLD(arg)
         c:resetToIdle(true)
@@ -422,6 +427,9 @@ function ERACombatModule:activateSpec()
     else
         return false
     end
+end
+
+function ERACombatModule:BagUpdate()
 end
 
 function ERACombatModule:CheckTalents()

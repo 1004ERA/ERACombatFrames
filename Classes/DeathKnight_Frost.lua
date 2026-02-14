@@ -68,6 +68,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     local fever = hud:AddAuraByPlayer(55095, true)
     local reapermark = hud:AddAuraByPlayer(439843, true, talent_deathbringer)
     local undeath = hud:AddAuraByPlayer(444633, true, talent_rider)
+    local succor = hud:AddAuraByPlayer(178819, false)
 
     --#endregion
     --------------------------------
@@ -107,6 +108,8 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
 
     hud:AddEssentialsRightAura(cryogenic):ShowStacksRatherThanDuration()
 
+    local succorIcon = hud:AddEssentialsRightAura(succor)
+
     -- defensive
     hud.defensiveGroup:AddCooldown(pact)
     hud.defensiveGroup:AddCooldown(fortitude)
@@ -137,6 +140,8 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
+    succor.playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
+    draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
     hud:AddMissingAuraOverlayAlert(fever, nil, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
     hud:AddAuraOverlayAlert(frostbane, nil, "CovenantChoice-Celebration-Kyrian-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
@@ -168,6 +173,11 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
         return 35
     end)
     tick.continuouslyCheckValue = true
+    local tickSindra = powerBar:AddTick(1029007, talent_sindragosa, function() return 60 end)
+    function tickSindra:OverrideAlpha()
+        ---@diagnostic disable-next-line: return-type-mismatch
+        return sindragosa.cooldownDuration:EvaluateRemainingDuration(hud.curveShowSoonAvailable)
+    end
 
     --#endregion
     --------------------------------

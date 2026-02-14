@@ -68,6 +68,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     hud:AddEssentialsCooldown(tyrant, nil, nil, 0.7, 0.5, 1.0)
 
     -- defensive
+    hud.defensiveGroup:AddBagItem(commonSpells.demonicHStone):SetTintWhenMissing(0.0, 1.0, 1.0)
     hud.defensiveGroup:AddCooldown(commonSpells.resolve)
     hud.defensiveGroup:AddCooldown(commonSpells.pact)
 
