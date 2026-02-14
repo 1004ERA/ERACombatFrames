@@ -509,26 +509,34 @@ function HUDAura:updateTimerDuration(t)
         end
         ---@cast unit unknown
         local cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, self.cdmFrame.auraInstanceID)
-        if (cdmData) then
-            if (not self.auraIsPresent) then
-                self.auraIsPresent = true
-                if (self.playSoundWhenApperars) then
-                    PlaySound(self.playSoundWhenApperars)
-                end
+        if (not self.auraIsPresent) then
+            self.auraIsPresent = true
+            if (self.playSoundWhenApperars) then
+                ---@diagnostic disable-next-line: param-type-mismatch
+                C_Sound.PlaySound(self.playSoundWhenApperars, "SFX", true)
             end
+        end
+        if (cdmData) then
             self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(unit, self.cdmFrame.auraInstanceID)
             self.icon = cdmData.icon
             local result = C_UnitAuras.GetAuraDuration(unit, self.cdmFrame.auraInstanceID)
             if (result) then
                 return result
+            else
+                return self.hud.duration0
             end
+        else
+            self.stacks = 0
+            self.stacksDisplay = nil
+            return self.hud.duration0
         end
+    else
+        self.stacks = 0
+        self.stacksDisplay = nil
+        self.auraIsPresent = false
+        return self.hud.duration0
     end
-    self.stacks = 0
-    self.stacksDisplay = nil
-    self.auraIsPresent = false
-    return self.hud.duration0
 end
 
 --#endregion
@@ -782,6 +790,33 @@ end
 ---@return boolean
 function HUDPublicBooleanAnd:getValue(t, combat)
     return self.b1.value and self.b2.value
+end
+
+---@class (exact) HUDPublicBooleanOr : HUDPublicBoolean
+---@field private __index HUDPublicBooleanOr
+---@field private shapeshiftIndex number
+---@field private b1 HUDPublicBoolean
+---@field private b2 HUDPublicBoolean
+HUDPublicBooleanOr = {}
+HUDPublicBooleanOr.__index = HUDPublicBooleanOr
+setmetatable(HUDPublicBooleanOr, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+---@param b1 HUDPublicBoolean
+---@param b2 HUDPublicBoolean
+function HUDPublicBooleanOr:create(hud, b1, b2)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanOr)
+    ---@cast x HUDPublicBooleanOr
+    x:constructBoolean(hud, nil)
+    x.b1 = b1
+    x.b2 = b2
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanOr:getValue(t, combat)
+    return self.b1.value or self.b2.value
 end
 
 --#endregion

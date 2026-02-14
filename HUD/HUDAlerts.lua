@@ -11,6 +11,9 @@ function HUDAlert:constructAlert(hud, talent)
     hud:addAlert(self)
 end
 
+----------------------------------------------------------------
+--#region SAO --------------------------------------------------
+
 ---@alias SAOTransform "NONE"|"ROTATE_LEFT"|"ROTATE_RIGHT"|"MIRROR_H"|"MIRROR_V"
 ---@alias SAOPosition "LEFT"|"TOP"|"RIGHT"|"BOTTOM"|"CENTER"
 ---@alias SAOShape "V"|"H"|"C"
@@ -188,7 +191,8 @@ function HUDSAOAlertBasicBoolean:Update(t, combat)
                 self:appears(t, combat)
             end
             if (self.playSoundWhenApperars) then
-                C_Sound.PlaySound(self.playSoundWhenApperars)
+                ---@diagnostic disable-next-line: param-type-mismatch
+                C_Sound.PlaySound(self.playSoundWhenApperars, "SFX", true)
             end
         end
     else
@@ -270,13 +274,14 @@ function HUDSAOAlertMissingAura:getIsVisible(t, combat)
         return false
     else
         if ((not combat) and not self.showOutOfCombat) then
+            self.start_active = -1
             return false
         end
         if (self.start_active < 0) then
             self.start_active = t
             return false
         else
-            return t - self.start_active > 0.13
+            return t - self.start_active > 0.42
         end
     end
 end
@@ -310,3 +315,128 @@ end
 function HUDSAOAlertPublicBoolean:getIsVisible(t, combat)
     return self.data.value
 end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region ICON -------------------------------------------------
+
+---@class (exact) HUDIconAlert : HUDIcon
+---@field private __index HUDIconAlert
+---@field protected icon ERASquareIcon
+---@field protected constructIconAlert fun(self:HUDIconAlert, hud:HUDModule, parentFrame:Frame, frameLevel:number, point:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", relativePoint:"TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER", size:number, iconID:number, talent:ERALIBTalent|nil)
+---@field protected getIsVisible fun(self:HUDIconAlert, t:number, combat:boolean): boolean
+HUDIconAlert = {}
+HUDIconAlert.__index = HUDIconAlert
+setmetatable(HUDIconAlert, { __index = HUDIcon })
+
+function HUDIconAlert:constructIconAlert(hud, parentFrame, frameLevel, point, relativePoint, size, iconID, talent)
+    self.icon = ERASquareIcon:create(parentFrame, point, relativePoint, size, iconID)
+    self.icon:SetFrameLevel(frameLevel)
+    self.icon:SetActiveShown(false)
+    self.icon:Beam()
+    self:constructIcon(hud, self.icon, talent)
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDIconAlert:Update(t, combat)
+    self.icon:SetActiveShown(self:getIsVisible(t, combat))
+end
+
+---@class (exact) HUDIconMissingAuraAlert : HUDIconAlert
+---@field private __index HUDIconMissingAuraAlert
+---@field private data HUDAura
+HUDIconMissingAuraAlert = {}
+HUDIconMissingAuraAlert.__index = HUDIconMissingAuraAlert
+setmetatable(HUDIconMissingAuraAlert, { __index = HUDIconAlert })
+
+---@param parentFrame Frame
+---@param frameLevel integer
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param size number
+---@param talent ERALIBTalent|nil
+---@param iconID integer|nil
+---@param data HUDAura
+---@return HUDIconMissingAuraAlert
+function HUDIconMissingAuraAlert:create(parentFrame, frameLevel, point, relativePoint, size, talent, iconID, data)
+    local x = {}
+    setmetatable(x, HUDIconMissingAuraAlert)
+    ---@cast x HUDIconMissingAuraAlert
+    if (not iconID) then
+        local info = C_Spell.GetSpellInfo(data.spellID)
+        if (info) then
+            iconID = info.originalIconID
+        else
+            iconID = 134400 -- queston mark
+        end
+    end
+    x:constructIconAlert(data.hud, parentFrame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
+    return x
+end
+
+---comment
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDIconMissingAuraAlert:getIsVisible(t, combat)
+    if (self.data.auraIsPresent) then
+        return false
+    else
+        if (combat) then
+            self.icon:Beam()
+        else
+            self.icon:StopBeam()
+        end
+    end
+    return true
+end
+
+---@class (exact) HUDIconBooleanAlert : HUDIconAlert
+---@field private __index HUDIconBooleanAlert
+---@field private data HUDPublicBoolean
+HUDIconBooleanAlert = {}
+HUDIconBooleanAlert.__index = HUDIconBooleanAlert
+setmetatable(HUDIconBooleanAlert, { __index = HUDIconAlert })
+
+---@param parentFrame Frame
+---@param frameLevel integer
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param size number
+---@param talent ERALIBTalent|nil
+---@param iconID integer
+---@param data HUDPublicBoolean
+---@return HUDIconBooleanAlert
+function HUDIconBooleanAlert:create(parentFrame, frameLevel, point, relativePoint, size, talent, iconID, data)
+    local x = {}
+    setmetatable(x, HUDIconBooleanAlert)
+    ---@cast x HUDIconBooleanAlert
+    x:constructIconAlert(data.hud, parentFrame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
+    return x
+end
+
+---comment
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDIconBooleanAlert:getIsVisible(t, combat)
+    if (self.data.value) then
+        if (combat) then
+            self.icon:Beam()
+        else
+            self.icon:StopBeam()
+        end
+    else
+        return false
+    end
+    return true
+end
+
+--#endregion
+----------------------------------------------------------------

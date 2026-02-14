@@ -8,38 +8,54 @@
                 <Translation parentKey="Translation" duration="0.3"/>
             </AnimationGroup>
             <AnimationGroup parentKey="BeamGroup" looping="REPEAT">
-                <Scale parentKey="Beam" duration="0.5" scaleX="2" scaleY="2"/>
+                <Scale duration="0.5" scaleX="2" scaleY="2"/>
             </AnimationGroup>
         </Animations>
 
         <Layers>
-
-            <Layer level="OVERLAY">
-                <FontString parentKey="SecondaryText" justifyH="RIGHT">
-                    <FontHeight>
-                        <AbsValue val="32"/>
-                    </FontHeight>
-                    <Color r="1.0" g="1.0" b="1.0"/>
-                    <Anchors>
-                        <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT"/>
-                    </Anchors>
-                </FontString>
-                <FontString parentKey="MainText" justifyH="CENTER">
-                    <FontHeight>
-                        <AbsValue val="32"/>
-                    </FontHeight>
-                    <Color r="1.0" g="1.0" b="1.0"/>
-                    <Anchors>
-                        <Anchor point="BOTTOM" relativePoint="BOTTOM"/>
-                    </Anchors>
-                </FontString>
-            </Layer>
 
             <Layer level="BACKGROUND">
                 <Texture parentKey="Icon"/>
             </Layer>
 
         </Layers>
+
+        <Frames>
+
+            <Frame parentKey="OVER">
+
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT"/>
+                    <Anchor point="BOTTOMRIGHT" relativePoint="BOTTOMRIGHT"/>
+                </Anchors>
+                <Layers>
+                    <Layer level="OVERLAY">
+
+                        <FontString parentKey="SecondaryText" justifyH="RIGHT">
+                            <FontHeight>
+                                <AbsValue val="32"/>
+                            </FontHeight>
+                            <Color r="1.0" g="1.0" b="1.0"/>
+                            <Anchors>
+                                <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT"/>
+                            </Anchors>
+                        </FontString>
+                        <FontString parentKey="MainText" justifyH="CENTER">
+                            <FontHeight>
+                                <AbsValue val="32"/>
+                            </FontHeight>
+                            <Color r="1.0" g="1.0" b="1.0"/>
+                            <Anchors>
+                                <Anchor point="BOTTOM" relativePoint="BOTTOM"/>
+                            </Anchors>
+                        </FontString>
+
+                    </Layer>
+                </Layers>
+
+            </Frame>
+
+        </Frames>
     </Frame>
 
     <Frame name="ERAPieIconFrame" virtual="true">

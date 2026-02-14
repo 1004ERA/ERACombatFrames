@@ -19,7 +19,6 @@
 ---@field private y number
 ---@field private size number
 ---@field private beamAnim AnimationGroup
----@field private beamScale Scale
 ---@field private beaming boolean
 ---@field private desat number|nil
 ---@field private visible boolean
@@ -42,7 +41,6 @@ function ERAIcon:constructIcon(parentFrame, point, relativePoint, size, iconID, 
     self.icon = mainFrame.Icon
     self.iconID = iconID
     self.beamAnim = mainFrame.BeamGroup
-    self.beamScale = mainFrame.BeamGroup.Beam
     ---@cast mainFrame Frame
     -- affichage
     self.frame = mainFrame
@@ -243,11 +241,17 @@ function ERAIcon:SetActiveShown(visible)
         if (not self.visible) then
             self.visible = true
             self.frame:Show()
+            if (self.beaming) then
+                self.beamAnim:Play()
+            end
         end
     else
         if (self.visible) then
             self.visible = false
             self.frame:Hide()
+            if (self.beaming) then
+                self.beamAnim:Stop()
+            end
         end
     end
 end
@@ -257,6 +261,23 @@ function ERAIcon:SetPosition(x, y)
         self.x = x
         self.y = y
         self.frame:SetPoint(self.point, self.parentFrame, self.relativePoint, x, y)
+    end
+end
+
+function ERAIcon:Beam()
+    if (not self.beaming) then
+        self.beaming = true
+        if (self.visible) then
+            self.beamAnim:Play()
+        end
+    end
+end
+function ERAIcon:StopBeam()
+    if (self.beaming) then
+        self.beaming = false
+        --if (self.visible) then
+        self.beamAnim:Stop()
+        --end
     end
 end
 
@@ -366,6 +387,36 @@ end
 ---@param b number
 function ERAPieIcon:SetBorderColor(r, g, b)
     self.border:SetVertexColor(r, g, b, 1.0)
+end
+
+--#endregion
+--------------------------------------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------------------------------------
+--#region SQUARE ICONS ---------------------------------------------------------------------------------------------------------
+
+---@class (exact) ERASquareIcon : ERAIcon
+---@field private __index ERASquareIcon
+ERASquareIcon = {}
+ERASquareIcon.__index = ERASquareIcon
+setmetatable(ERASquareIcon, { __index = ERAIcon })
+
+---comment
+---@param parentFrame Frame
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param size number
+---@param iconID number
+---@return ERASquareIcon
+function ERASquareIcon:create(parentFrame, point, relativePoint, size, iconID)
+    local x = {}
+    setmetatable(x, ERASquareIcon)
+    ---@cast x ERASquareIcon
+    local frame = CreateFrame("Frame", nil, parentFrame, "ERASquareIconFrame")
+    ---@cast frame unknown
+    x:constructIcon(parentFrame, point, relativePoint, size, iconID, frame, frame.OVER)
+    ---@cast frame Frame
+    return x
 end
 
 --#endregion

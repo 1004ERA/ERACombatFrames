@@ -430,7 +430,8 @@ function HUDBagItemIcon:create(frame, frameLevel, point, relativePoint, size, da
             asyncItem:ContinueOnItemLoad(function()
                 local asyncIcon = asyncItem:GetItemIcon()
                 if (asyncIcon) then
-                    self.icon:SetIconTexture(asyncIcon, false, false)
+                    ---@diagnostic disable-next-line: invisible
+                    x.icon:SetIconTexture(asyncIcon, false, false)
                 end
             end)
             iconID = 134400 -- queston mark

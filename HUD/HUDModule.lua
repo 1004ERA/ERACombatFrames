@@ -1636,6 +1636,26 @@ function HUDUtilityGroup:AddBagItem(data, iconID, talent)
     return icon
 end
 
+---@param data HUDAura
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@return HUDIconMissingAuraAlert
+function HUDUtilityGroup:AddMissingAuraAlert(data, iconID, talent)
+    local icon = HUDIconMissingAuraAlert:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
+    table.insert(self.icons, icon)
+    return icon
+end
+
+---@param data HUDPublicBoolean
+---@param iconID integer
+---@param talent ERALIBTalent|nil
+---@return HUDIconBooleanAlert
+function HUDUtilityGroup:AddBooleanAlert(data, iconID, talent)
+    local icon = HUDIconBooleanAlert:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
+    table.insert(self.icons, icon)
+    return icon
+end
+
 --#endregion
 --------------------------------------------------------------------------------------------------------------------------------
 
@@ -1706,6 +1726,12 @@ end
 function HUDModule:AddPublicBooleanAnd(b1, b2)
     return HUDPublicBooleanAnd:create(self, b1, b2)
 end
+---@param b1 HUDPublicBoolean
+---@param b2 HUDPublicBoolean
+---@return HUDPublicBooleanOr
+function HUDModule:AddPublicBooleanOr(b1, b2)
+    return HUDPublicBooleanOr:create(self, b1, b2)
+end
 
 ---@param spellID number
 ---@param iconID number
@@ -1728,16 +1754,18 @@ end
 ---@param g number
 ---@param b number
 ---@param addTimerBar nil|boolean
----@return HUDCooldownIcon, HUDEssentialsSlot
+---@return HUDCooldownIcon, HUDEssentialsSlot, nil|HUDTimerBar
 function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b, addTimerBar)
     local icon = HUDCooldownIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
     icon:SetBorderColor(r, g, b)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     if (addTimerBar == true or not (addTimerBar == false)) then
-        HUDTimerBar:create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
+        local bar = HUDTimerBar:create(placement, 0.5, data, talent, r, g, b, self.timerFrameBack)
+        return icon, placement, bar
+    else
+        return icon, placement, nil
     end
-    return icon, placement
 end
 
 ---@param data HUDAura
@@ -1753,6 +1781,7 @@ function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar)
     table.insert(self.essentialsIcons, placement)
     if (rBar and gBar and bBar) then
         local bar = HUDTimerBar:create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
+        icon:SetBorderColor(rBar, gBar, bBar)
         return icon, placement, bar
     else
         return icon, placement, nil

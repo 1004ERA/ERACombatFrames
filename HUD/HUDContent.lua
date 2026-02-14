@@ -351,6 +351,7 @@ end
 ---@field private bar StatusBar
 ---@field doNotCutLongDuration boolean
 ---@field showPandemic boolean
+---@field showOnlyIf HUDPublicBoolean|nil
 HUDTimerBar = {}
 HUDTimerBar.__index = HUDTimerBar
 setmetatable(HUDTimerBar, { __index = HUDDisplay })
@@ -412,6 +413,10 @@ end
 ---@param combat boolean
 function HUDTimerBar:Update(t, combat)
     if (combat) then
+        if (self.showOnlyIf and not self.showOnlyIf.value) then
+            self.bar:SetAlpha(0.0)
+            return
+        end
         if (self.doNotCutLongDuration) then
             self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
         else
