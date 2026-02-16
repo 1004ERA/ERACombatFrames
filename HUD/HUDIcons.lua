@@ -93,6 +93,7 @@ end
 ---@field watchIconChange boolean
 ---@field watchAdditionalOverlay number
 ---@field showOnlyWhenUsableOrOverlay boolean
+---@field preventDefaultOverlay boolean
 ---@field showOnlyIf HUDPublicBoolean|nil
 HUDCooldownIcon = {}
 HUDCooldownIcon.__index = HUDCooldownIcon
@@ -155,10 +156,14 @@ function HUDCooldownIcon:Update(t, combat)
     local usable = C_Spell.IsSpellUsable(self.data.spellID)
 
     local overlay
-    if (self.watchAdditionalOverlay) then
-        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
+    if (self.preventDefaultOverlay) then
+        overlay = false
     else
-        overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
+        if (self.watchAdditionalOverlay) then
+            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID) or C_SpellActivationOverlay.IsSpellOverlayed(self.watchAdditionalOverlay)
+        else
+            overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
+        end
     end
     self.icon:SetHighlight(overlay)
 

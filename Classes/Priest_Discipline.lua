@@ -6,15 +6,16 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     --------------------------------
     --#region TALENTS
 
-    local talent_oracle = ERALIBTalent:Create()
-    local talent_voidweaver = ERALIBTalent:Create(117287)
-    local talent_painsup = ERALIBTalent:Create()
-    local talent_pwRadiance = ERALIBTalent:Create()
-    local talent_ulti = ERALIBTalent:Create()
-    local talent_barrier = ERALIBTalent:Create()
-    local talent_harsh = ERALIBTalent:Create()
-    local talent_evangelism = ERALIBTalent:Create()
-    local talent_shadowmend = ERALIBTalent:Create()
+    local talent_oracle = ERALIBTalent:Create(117286)
+    local talent_voidweaver = ERALIBTalent:Create(136498)
+    local talent_painsup = ERALIBTalent:Create(103713)
+    local talent_pwRadiance = ERALIBTalent:Create(103722)
+    local talent_ulti = ERALIBTalent:Create(116182)
+    local talent_pwBarrier = ERALIBTalent:Create(103687)
+    local talent_harsh = ERALIBTalent:Create(103729)
+    local talent_evangelism = ERALIBTalent:Create(103702)
+    local talent_shadowmend = ERALIBTalent:Create(103692)
+    local talent_wealwoe = ERALIBTalent:Create(103698)
 
     --#endregion
     --------------------------------
@@ -25,19 +26,20 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     local mana = hud:AddPowerHighIdle(Enum.PowerType.Mana)
 
     local pws = hud:AddCooldown(17)
-    local penance = hud:AddCooldown(x)
-    local pwRadiance = hud:AddCooldown(x, talent_pwRadiance)
-    local torrent = hud:AddCooldown(263165, talent_voidweaver)
-    local painsup = hud:AddCooldown(x, talent_painsup)
-    local ulti = hud:AddCooldown(x, talent_ulti)
-    local barrier = hud:AddCooldown(x, talent_barrier)
-    local evangelism = hud:AddCooldown(x, talent_evangelism)
+    local penance = hud:AddCooldown(47540)
+    local pwRadiance = hud:AddCooldown(194509, talent_pwRadiance)
+    local painsup = hud:AddCooldown(33206, talent_painsup)
+    local ulti = hud:AddCooldown(421453, talent_ulti)
+    local barrier = hud:AddCooldown(62618, talent_pwBarrier)
+    local evangelism = hud:AddCooldown(472433, talent_evangelism)
+    local dispell = hud:AddCooldown(527)
 
     local swp = hud:AddAuraByPlayer(589, true)
     local rift = hud:AddAuraByPlayer(450193, false, talent_voidweaver)
-    local darkside = hud:AddAuraByPlayer(x, false)
-    local harsh = hud:AddAuraByPlayer(x, false, talent_harsh)
-    local shadowmend = hud:AddAuraByPlayer(x, false, talent_shadowmend)
+    --local darkside = hud:AddAuraByPlayer(198068, false)
+    local harsh = hud:AddAuraByPlayer(373180, false, talent_harsh)
+    local shadowmend = hud:AddAuraByPlayer(186440, false, talent_shadowmend)
+    --local wealwoe = hud:AddAuraByPlayer(390786, false, talent_wealwoe)
 
     --#endregion
     --------------------------------
@@ -56,7 +58,6 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     -- buffs
 
     -- powerboost
-    hud.powerboostGroup:AddCooldown(penance)
     hud.powerboostGroup:AddCooldown(evangelism)
     hud.powerboostGroup:AddCooldown(ulti)
 
@@ -64,7 +65,10 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
 
     -- assist
     hud.assistGroup:AddCooldown(pws)
+    hud.assistGroup:AddCooldown(penance)
     hud.assistGroup:AddCooldown(pwRadiance)
+    hud.assistGroup:AddCooldown(dispell)
+    hud.assistGroup:AddCooldown(commonSpells.nova)
 
     -- essentials
 
@@ -74,18 +78,18 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
 
     hud:AddEssentialsCooldown(penance, nil, nil, 1.0, 1.0, 0.6)
 
-    hud:AddEssentialsCooldown(commonSpells.mBlast, nil, nil, 1.0, 0.0, 0.0)
+    local _, blastSlot = hud:AddEssentialsCooldown(commonSpells.mBlast, nil, nil, 1.0, 0.0, 0.0)
+    blastSlot:AddTimerBar(0.25, rift, nil, 0.2, 0.0, 0.5).doNotCutLongDuration = true
 
     ERACombatFrames_PriestSWDeath(hud, nil, commonSpells)
-
-    local _, torrentSlot = hud:AddEssentialsCooldown(torrent, nil, nil, 0.8, 0.7, 0.7)
-    torrentSlot:AddTimerBar(0.25, rift, nil, 0.2, 0.0, 0.5).doNotCutLongDuration = true
 
     --#endregion
     --------------------------------
 
     --------------------------------
     --#region ALERTS
+
+    hud:AddAuraOverlayAlert(shadowmend, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

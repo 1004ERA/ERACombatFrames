@@ -15,8 +15,8 @@ function ERACombatFrames_PriestSetup(cFrame)
         desperate = ERALIBTalent:Create(134846),
         twist = ERALIBTalent:Create(103833),
     }
-    --ERACombatFrames_Priest_Discipline(cFrame, talents)
-    --ERACombatFrames_Priest_Holy(cFrame, talents)
+    ERACombatFrames_Priest_Discipline(cFrame, talents)
+    ERACombatFrames_Priest_Holy(cFrame, talents)
     ERACombatFrames_Priest_Shadow(cFrame, talents)
 end
 
@@ -31,7 +31,7 @@ function ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, isShadow)
         nova = hud:AddCooldown(132157, talents.novaCD),
         leap = hud:AddCooldown(73325, talents.leap),
         infu = hud:AddCooldown(10060, talents.infu),
-        mBlast = hud:AddCooldown(8092),-- talents.mBlast),
+        mBlast = hud:AddCooldown(8092), -- talents.mBlast),
         scream = hud:AddCooldown(8122, talents.scream),
         feather = hud:AddCooldown(121536, talents.feather),
         mass = hud:AddCooldown(32375, talents.mass),
@@ -69,6 +69,7 @@ end
 ---@param spells PriestCommonSpells
 local function ERACombatFrames_PriestSWDeathIcon(hud, talent, percent, spells)
     local icon, _, bar = hud:AddEssentialsCooldown(spells.swDeath, nil, talent, 0.7, 0.0, 0.4)
+    icon.preventDefaultOverlay = true
     local curve = C_CurveUtil:CreateCurve()
     curve:SetType(Enum.LuaCurveType.Step)
     curve:AddPoint(0.0, 1.0)
@@ -77,10 +78,10 @@ local function ERACombatFrames_PriestSWDeathIcon(hud, talent, percent, spells)
     curve:AddPoint(1.0, 0.0)
     function icon:OverrideCombatVisibilityAlpha()
         if (self.hud.hasEnemyTarget) then
-            return 0.0
-        else
             ---@diagnostic disable-next-line: return-type-mismatch, param-type-mismatch
             return UnitHealthPercent("target", true, curve)
+        else
+            return 0.0
         end
     end
 end

@@ -21,7 +21,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local talent_cheap_madness = ERALIBTalent:Create(103786)
     local talent_expensive_madness = ERALIBTalent:Create(115671)
     local talent_normal_madness = ERALIBTalent:CreateNOR(talent_cheap_madness, talent_expensive_madness)
-    local talent_swDeath35 = ERALIBTalent:Create(todo.todo)
+    local talent_swDeath35 = ERALIBTalent:Create(103681)
 
     --#endregion
     --------------------------------
@@ -119,8 +119,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     --#region ALERTS
 
     hud.alertGroup:AddBooleanAlert(missing_both_forms, 136200, talent_shadowform)
-    hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars =
-        SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddMissingAuraOverlayAlert(swp, talent_auto_swp, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
 
     --#endregion

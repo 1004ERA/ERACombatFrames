@@ -969,8 +969,8 @@ function HUDModule:UpdateCombat(t)
                 remainingCast = endTimeMS / 1000 - t
                 local ci = self.channelInfo[channelID]
                 if (ci) then
-                    local tickTime = remainingCast
                     local tickCount = 0
+                    local tickY = remainingCast * pixelPerSecond
                     repeat
                         tickCount = tickCount + 1
                         local line
@@ -981,11 +981,10 @@ function HUDModule:UpdateCombat(t)
                             line = self.channelTicks[tickCount]
                             line:Show()
                         end
-                        local yTick = tickTime * pixelPerSecondWithoutHaste
-                        line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
-                        line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
-                        tickTime = tickTime - ci.tickDelta
-                    until tickTime <= 0
+                        line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, tickY)
+                        line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, tickY)
+                        tickY = tickY - ci.tickDelta * pixelPerSecondWithoutHaste
+                    until tickY <= 0
                     self:hideChannelTicks(tickCount + 1)
                 else
                     self:hideChannelTicks(1)
@@ -1213,6 +1212,11 @@ function HUDModule:parseCDMBuffDirect(frame)
                 local aura = self.cdmAuraFetcher[info.spellID]
                 if (aura) then
                     aura:setCDM(c)
+                elseif (info.overrideSpellID) then
+                    aura = self.cdmAuraFetcher[info.overrideSpellID]
+                    if (aura) then
+                        aura:setCDM(c)
+                    end
                 end
             end
         end
