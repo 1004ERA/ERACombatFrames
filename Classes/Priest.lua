@@ -5,7 +5,7 @@ function ERACombatFrames_PriestSetup(cFrame)
         novaCD = ERALIBTalent:Create(103871),
         leap = ERALIBTalent:Create(103867),
         infu = ERALIBTalent:Create(103834),
-        mBlast = ERALIBTalent:Create(103865),
+        --mBlast = ERALIBTalent:Create(103865),
         scream = ERALIBTalent:Create(103851),
         feather = ERALIBTalent:Create(103853),
         mass = ERALIBTalent:Create(136157),
@@ -15,6 +15,8 @@ function ERACombatFrames_PriestSetup(cFrame)
         desperate = ERALIBTalent:Create(134846),
         twist = ERALIBTalent:Create(103833),
     }
+    --ERACombatFrames_Priest_Discipline(cFrame, talents)
+    --ERACombatFrames_Priest_Holy(cFrame, talents)
     ERACombatFrames_Priest_Shadow(cFrame, talents)
 end
 
@@ -29,7 +31,7 @@ function ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, isShadow)
         nova = hud:AddCooldown(132157, talents.novaCD),
         leap = hud:AddCooldown(73325, talents.leap),
         infu = hud:AddCooldown(10060, talents.infu),
-        mBlast = hud:AddCooldown(8092, talents.mBlast),
+        mBlast = hud:AddCooldown(8092),-- talents.mBlast),
         scream = hud:AddCooldown(8122, talents.scream),
         feather = hud:AddCooldown(121536, talents.feather),
         mass = hud:AddCooldown(32375, talents.mass),
@@ -59,4 +61,39 @@ function ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, isShadow)
     hud.powerboostGroup:AddCooldown(commonSpells.infu)
 
     return commonSpells
+end
+
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param percent number
+---@param spells PriestCommonSpells
+local function ERACombatFrames_PriestSWDeathIcon(hud, talent, percent, spells)
+    local icon, _, bar = hud:AddEssentialsCooldown(spells.swDeath, nil, talent, 0.7, 0.0, 0.4)
+    local curve = C_CurveUtil:CreateCurve()
+    curve:SetType(Enum.LuaCurveType.Step)
+    curve:AddPoint(0.0, 1.0)
+    curve:AddPoint(percent - 0.001, 1.0)
+    curve:AddPoint(percent, 0.0)
+    curve:AddPoint(1.0, 0.0)
+    function icon:OverrideCombatVisibilityAlpha()
+        if (self.hud.hasEnemyTarget) then
+            return 0.0
+        else
+            ---@diagnostic disable-next-line: return-type-mismatch, param-type-mismatch
+            return UnitHealthPercent("target", true, curve)
+        end
+    end
+end
+
+---@param hud HUDModule
+---@param talent35 ERALIBTalent|nil
+---@param spells PriestCommonSpells
+function ERACombatFrames_PriestSWDeath(hud, talent35, spells)
+    local talent20
+    if (talent35) then
+        ERACombatFrames_PriestSWDeathIcon(hud, ERALIBTalent:CreateNot(talent35), 0.2, spells)
+        ERACombatFrames_PriestSWDeathIcon(hud, talent35, 0.35, spells)
+    else
+        ERACombatFrames_PriestSWDeathIcon(hud, nil, 0.2, spells)
+    end
 end

@@ -129,7 +129,7 @@ function ERACombatFrames_Druid_Restoration(cFrame, talents)
 
     hud:AddResourceSlot(false):AddStacksBar(abundance, 0.1, 0.7, 0.4, talent_abundance, function() return 12 end, function() return 0 end).heightMultiplier = 0.5
 
-    local manaBar = hud:AddResourceSlot(false):AddPowerPercent(mana, 0.2, 0.2, 1.0)
+    local manaBar = hud:AddResourceSlot(false):AddPowerPercent(mana, hud.options.manaR, hud.options.manaG, hud.options.manaB)
 
     --#endregion
     --------------------------------

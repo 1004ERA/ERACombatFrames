@@ -291,6 +291,7 @@ function HUDModule:createGCCBar(frameLevel, r, g, b, a, texture)
     bar:SetValue(0)
     return bar
 end
+
 ---@private
 ---@param bar StatusBar
 function HUDModule:setupMiddleGCCBar(bar)
@@ -519,6 +520,7 @@ function HUDModule:SpecInactive()
     EssentialCooldownViewer:SetAlpha(1.0)
     UtilityCooldownViewer:SetAlpha(1.0)
 end
+
 function HUDModule:SpecActive()
     for _, f in ipairs(self.rootFrames) do
         f:Show()
@@ -528,6 +530,7 @@ function HUDModule:SpecActive()
     end
     self.cdmParsed = false
 end
+
 function HUDModule:ResetToIdle()
     self.timerFrameBack:Hide()
     self.timerFrameFront:Hide()
@@ -542,6 +545,7 @@ function HUDModule:ResetToIdle()
     EssentialCooldownViewer:SetAlpha(0)
     UtilityCooldownViewer:SetAlpha(0)
 end
+
 function HUDModule:EnterCombat()
     self.timerFrameBack:Show()
     self.timerFrameFront:Show()
@@ -549,6 +553,7 @@ function HUDModule:EnterCombat()
         g:enterCombat()
     end
 end
+
 function HUDModule:ExitCombat()
     self.timerFrameBack:Hide()
     self.timerFrameFront:Hide()
@@ -634,6 +639,7 @@ function HUDModule:EnterVehicle()
         f:Hide()
     end
 end
+
 function HUDModule:ExitVehicle()
     for _, f in ipairs(self.rootFrames) do
         f:Show()
@@ -773,6 +779,7 @@ function HUDModule:prepareResourceLayout()
     local resourceWidth = self.options.essentialsIconSize * max(self.options.essentialsMinColumns, self.essentialsIconsActiveCount)
     return topResource, resourceWidth
 end
+
 ---@private
 function HUDModule:updateResourceLayoutDynamic()
     self.resourceVisibilityChangedDynamic = false
@@ -792,6 +799,7 @@ function HUDModule:updateResourceLayoutDynamic()
     end
     self.defensiveGroup:updateLayout(self.options.essentialsX, topResource + yResource - self.options.defensivePadding, self.options.defensiveIconSize, self.options.utilityIconPadding)
 end
+
 function HUDModule:dynamicResourceVisibilityChanged()
     self.resourceVisibilityChangedDynamic = true
 end
@@ -806,10 +814,12 @@ end
 function HUDModule:getTimerBarFrame()
     return self.timerFrameBack
 end
+
 ---@return Frame
 function HUDModule:getResourceFrame()
     return self.resourceFrame
 end
+
 ---@return Frame
 function HUDModule:getEssentialFrame()
     return self.essentialsFrame
@@ -936,30 +946,53 @@ function HUDModule:UpdateCombat(t)
         else
             if (secret) then
                 durationCastIfRemainingSecret = UnitChannelDuration("player")
+                local ci = self.channelInfo[channelID]
+                if (ci) then
+                    for i = 1, ci.tickCount - 1 do
+                        local line
+                        if (i > #self.channelTicks) then
+                            line = self:createTickLine()
+                            table.insert(self.channelTicks, line)
+                        else
+                            line = self.channelTicks[i]
+                            line:Show()
+                        end
+                        local yTick = i * ci.tickDelta * pixelPerSecondWithoutHaste
+                        line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
+                        line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
+                    end
+                    self:hideChannelTicks(ci.tickCount)
+                else
+                    self:hideChannelTicks(1)
+                end
             else
                 remainingCast = endTimeMS / 1000 - t
+                local ci = self.channelInfo[channelID]
+                if (ci) then
+                    local tickTime = remainingCast
+                    local tickCount = 0
+                    repeat
+                        tickCount = tickCount + 1
+                        local line
+                        if (tickCount > #self.channelTicks) then
+                            line = self:createTickLine()
+                            table.insert(self.channelTicks, line)
+                        else
+                            line = self.channelTicks[tickCount]
+                            line:Show()
+                        end
+                        local yTick = tickTime * pixelPerSecondWithoutHaste
+                        line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
+                        line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
+                        tickTime = tickTime - ci.tickDelta
+                    until tickTime <= 0
+                    self:hideChannelTicks(tickCount + 1)
+                else
+                    self:hideChannelTicks(1)
+                end
             end
             if (self.isCasting) then
                 self:hideEmpowers()
-            end
-            local ci = self.channelInfo[channelID]
-            if (ci) then
-                for i = 1, ci.tickCount - 1 do
-                    local line
-                    if (i > #self.channelTicks) then
-                        line = self:createTickLine()
-                        table.insert(self.channelTicks, line)
-                    else
-                        line = self.channelTicks[i]
-                        line:Show()
-                    end
-                    local yTick = i * ci.tickDelta * pixelPerSecondWithoutHaste
-                    line:SetStartPoint("BOTTOMLEFT", self.timerFrameFront, 0, yTick)
-                    line:SetEndPoint("BOTTOMLEFT", self.timerFrameFront, self.options.castBarWidth, yTick)
-                end
-                self:hideChannelTicks(ci.tickCount)
-            else
-                self:hideChannelTicks(1)
             end
         end
     else
@@ -1185,6 +1218,7 @@ function HUDModule:parseCDMBuffDirect(frame)
         end
     end
 end
+
 function HUDModule:parseCDMBuffLinked(frame)
     local buffFrames = { frame:GetChildren() }
     for _, c in ipairs(buffFrames) do
@@ -1453,6 +1487,7 @@ function HUDUtilityGroup:Create(hud, anchor, vertical, hasBackground, iconSize)
 
     return x
 end
+
 ---@private
 ---@param frame Frame
 ---@param thick number
@@ -1467,6 +1502,7 @@ end
 function HUDUtilityGroup:moduleActive()
     self.frame:Show()
 end
+
 function HUDUtilityGroup:moduleInactive()
     self.frame:Hide()
     if (self.background) then
@@ -1479,6 +1515,7 @@ function HUDUtilityGroup:enterCombat()
         self.background:Show()
     end
 end
+
 function HUDUtilityGroup:exitCombat()
     if (self.background) then
         self.background:Hide()
@@ -1726,6 +1763,7 @@ end
 function HUDModule:AddPublicBooleanAnd(b1, b2)
     return HUDPublicBooleanAnd:create(self, b1, b2)
 end
+
 ---@param b1 HUDPublicBoolean
 ---@param b2 HUDPublicBoolean
 ---@return HUDPublicBooleanOr
@@ -1815,6 +1853,7 @@ function HUDModule:AddEssentialsLeftCooldown(data, iconID, talent)
     table.insert(self.essentialsLeftSideIcons, icon)
     return icon
 end
+
 ---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
@@ -1834,6 +1873,7 @@ function HUDModule:AddEssentialsLeftAura(data, iconID, talent)
     table.insert(self.essentialsLeftSideIcons, icon)
     return icon
 end
+
 ---@param data HUDAura
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
@@ -1862,12 +1902,14 @@ end
 function HUDModule:AddPowerLowIdle(powerType, talent)
     return HUDPowerLowIdle:Create(self, powerType, talent)
 end
+
 ---@param powerType Enum.PowerType
 ---@param talent ERALIBTalent|nil
 ---@return HUDPowerHighIdle
 function HUDModule:AddPowerHighIdle(powerType, talent)
     return HUDPowerHighIdle:Create(self, powerType, talent)
 end
+
 ---@param powerType Enum.PowerType
 ---@param talent ERALIBTalent|nil
 ---@param targetPercent fun(self:HUDPowerTargetIdle): number

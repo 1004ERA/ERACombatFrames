@@ -21,6 +21,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local talent_cheap_madness = ERALIBTalent:Create(103786)
     local talent_expensive_madness = ERALIBTalent:Create(115671)
     local talent_normal_madness = ERALIBTalent:CreateNOR(talent_cheap_madness, talent_expensive_madness)
+    local talent_swDeath35 = ERALIBTalent:Create(todo.todo)
 
     --#endregion
     --------------------------------
@@ -33,7 +34,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local silence = hud:AddCooldown(15487)
     local dispersion = hud:AddCooldown(47585)
     local embrace = hud:AddCooldown(15286)
-    local mBlast = hud:AddCooldown(8092)
+    --local mBlast = hud:AddCooldown(8092)
     local pws = hud:AddCooldown(17)
     local slam = hud:AddCooldown(1227280, talent_slam)
     local voidform = hud:AddCooldown(228260, talent_voidform)
@@ -66,31 +67,6 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     --------------------------------
     --#region DISPLAY
 
-    -- essentials
-
-    hud:AddEssentialsLeftCooldown(pws)
-
-    local volleyIcon, volleySlot, volleyBar = hud:AddEssentialsCooldown(volley, 7439213, nil, 0.8, 0.0, 0.8)
-    volleyBar.showOnlyIf = has_voidform_or_crushing
-    volleyIcon.showOnlyIf = has_voidform_or_crushing
-    --volleyIcon.showOnlyWhenUsableOrOverlay = true
-    volleySlot:AddTimerBar(0.25, crushing, nil, 0.5, 0.0, 0.5)
-    volleySlot:AddTimerBar(0.75, voidformDuration, nil, 1.0, 0.0, 1.0).doNotCutLongDuration = true
-
-    hud:AddDOT(swp, nil, talent_independant_swp, 1.0, 0.8, 0.0)
-    hud:AddDOT(vTouch, nil, nil, 0.7, 0.5, 1.0)
-
-    hud:AddEssentialsCooldown(mBlast, nil, nil, 1.0, 0.0, 0.0)
-
-    hud:AddEssentialsAura(madness, nil, nil, 0.0, 1.0, 0.0)
-
-    hud:AddEssentialsCooldown(slam, nil, nil, 0.0, 0.0, 1.0)
-
-    local _, torrentSlot = hud:AddEssentialsCooldown(torrent, nil, nil, 0.8, 0.7, 0.7)
-    torrentSlot:AddTimerBar(0.25, rift, nil, 0.2, 0.0, 0.5).doNotCutLongDuration = true
-
-    hud:AddEssentialsCooldown(halo, nil, nil, 0.8, 0.7, 0.7)
-
     -- defensive
     hud.defensiveGroup:AddCooldown(dispersion)
     hud.defensiveGroup:AddCooldown(embrace)
@@ -107,16 +83,44 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     -- powerboost
     hud.powerboostGroup:AddCooldown(voidform)
 
+    local commonSpells = ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, true)
+
+    -- essentials
+
+    hud:AddEssentialsLeftCooldown(pws)
+
+    local volleyIcon, volleySlot, volleyBar = hud:AddEssentialsCooldown(volley, 7439213, nil, 0.8, 0.0, 0.8)
+    volleyBar.showOnlyIf = has_voidform_or_crushing
+    volleyIcon.showOnlyIf = has_voidform_or_crushing
+    --volleyIcon.showOnlyWhenUsableOrOverlay = true
+    volleySlot:AddTimerBar(0.25, crushing, nil, 0.5, 0.0, 0.5)
+    volleySlot:AddTimerBar(0.75, voidformDuration, nil, 1.0, 0.0, 1.0).doNotCutLongDuration = true
+
+    hud:AddDOT(swp, nil, talent_independant_swp, 1.0, 0.8, 0.0)
+    hud:AddDOT(vTouch, nil, nil, 0.7, 0.5, 1.0)
+
+    hud:AddEssentialsCooldown(commonSpells.mBlast, nil, nil, 1.0, 0.0, 0.0)
+
+    hud:AddEssentialsAura(madness, nil, nil, 0.0, 1.0, 0.0)
+
+    hud:AddEssentialsCooldown(slam, nil, nil, 0.0, 0.0, 1.0)
+
+    ERACombatFrames_PriestSWDeath(hud, talent_swDeath35, commonSpells)
+
+    local _, torrentSlot = hud:AddEssentialsCooldown(torrent, nil, nil, 0.8, 0.7, 0.7)
+    torrentSlot:AddTimerBar(0.25, rift, nil, 0.2, 0.0, 0.5).doNotCutLongDuration = true
+
+    hud:AddEssentialsCooldown(halo, nil, nil, 0.8, 0.7, 0.7)
+
     --#endregion
     --------------------------------
-
-    local commonSpells = ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, true)
 
     --------------------------------
     --#region ALERTS
 
     hud.alertGroup:AddBooleanAlert(missing_both_forms, 136200, talent_shadowform)
-    hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars =
+        SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddMissingAuraOverlayAlert(swp, talent_auto_swp, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
 
     --#endregion

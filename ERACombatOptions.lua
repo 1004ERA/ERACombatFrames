@@ -43,6 +43,9 @@ end
 ---@field alertGroupIconSize number
 ---@field alertOffset number
 ---@field alertSize number
+---@field manaR number
+---@field manaG number
+---@field manaB number
 ERACombatSpecOptions = {}
 ERACombatSpecOptions.__index = ERACombatSpecOptions
 
@@ -63,7 +66,7 @@ function ERACombatSpecOptions:Create()
     x.powerHeight = 31
     x.gcdHeight = 64
     x.gcdCount = 4
-    x.castBarWidth = 16
+    x.castBarWidth = 19
     x.utilityIconPadding = 2
     x.defensivePadding = 4
     x.defensiveIconSize = 55
@@ -91,6 +94,10 @@ function ERACombatSpecOptions:Create()
     x.alertOffset = 88
     x.alertSize = 88
 
+    x.manaR = 0.2
+    x.manaG = 0.2
+    x.manaB = 1.0
+
     return x
 end
 
@@ -110,6 +117,7 @@ end
 function ERACombatOptions_open()
     print("ECF OPTIONS NOT YET IMPLEMENTED")
 end
+
 function ERACombatOptions_close()
     -- TODO
 end

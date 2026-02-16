@@ -46,6 +46,8 @@ Classes/Warlock_Destruction.lua
 Classes/Evoker.lua
 
 Classes/Priest.lua
+Classes/Priest_Discipline.lua
+Classes/Priest_Holy.lua
 Classes/Priest_Shadow.lua
 
 ERACombatFrames.xml
