@@ -12,7 +12,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local talent_free_mblast = ERALIBTalent:Create(103813)
     local talent_free_madness = ERALIBTalent:Create(133550)
     local talent_crit_mblast = ERALIBTalent:Create(133400)
-    local talent_shadowform = ERALIBTalent:CreateLevel(20) -- noramelent 10 mais on sait jamais
+    local talent_shadowform = ERALIBTalent:CreateLevel(13) -- noramelent 10 mais on sait jamais
     local talent_voidform = ERALIBTalent:Create(103674)
     local talent_auto_swp = ERALIBTalent:Create(103809)
     local talent_independant_swp = ERALIBTalent:CreateNot(talent_auto_swp)

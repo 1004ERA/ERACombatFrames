@@ -305,6 +305,7 @@ end
 ---@field private data HUDAura
 ---@field private stackMode boolean
 ---@field private forcedIcon boolean
+---@field private displayAsCooldown boolean
 ---@field showOnlyIf HUDPublicBoolean|nil
 ---@field showRedIfMissingInCombat boolean
 ---@field alwaysHideOutOfCombat boolean
@@ -323,8 +324,9 @@ setmetatable(HUDAuraIcon, { __index = HUDPieIcon })
 ---@param data HUDAura
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
+---@param displayAsCooldown boolean|nil
 ---@return HUDAuraIcon
-function HUDAuraIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent)
+function HUDAuraIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent, displayAsCooldown)
     local x = {}
     setmetatable(x, HUDAuraIcon)
     ---@cast x HUDAuraIcon
@@ -341,8 +343,11 @@ function HUDAuraIcon:create(frame, frameLevel, point, relativePoint, size, data,
     end
     x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
     x.data = data
-    x.icon:SetupAura()
-
+    if (displayAsCooldown) then
+        x.displayAsCooldown = true
+    else
+        x.icon:SetupAura()
+    end
     return x
 end
 
@@ -373,6 +378,8 @@ function HUDAuraIcon:Update(t, combat)
         if (combat) then
             if (self.showRedIfMissingInCombat) then
                 self.icon:SetTint(1.0, 0.0, 0.0, false)
+                self.icon:SetVisibilityAlpha(1.0, false)
+            elseif (self.displayAsCooldown) then
                 self.icon:SetVisibilityAlpha(1.0, false)
             else
                 self.icon:SetVisibilityAlpha(0.0, false)

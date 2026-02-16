@@ -15,6 +15,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local talent_tyrant = ERALIBTalent:Create(125850)
     local talent_big_hunter = ERALIBTalent:Create(136725)
     local talent_big_imp = ERALIBTalent:Create(136726)
+    --local talent_big_summon = ERALIBTalent:CreateOr(talent_big_hunter,talent_big_imp)
     local talent_doom = ERALIBTalent:Create(136729)
 
     --#endregion
@@ -32,8 +33,8 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local siphon = hud:AddCooldown(264130, talent_siphon)
     local doomguard = hud:AddCooldown(1276672, talent_doomguard)
     local tyrant = hud:AddCooldown(265187, talent_tyrant)
-    local bigHunter = hud:AddCooldown(1276467, talent_big_hunter)
-    local bigImp = hud:AddCooldown(1276452, talent_big_imp)
+    --local bigHunter = hud:AddCooldown(1276467, talent_big_hunter)
+    --local bigImp = hud:AddCooldown(1276452, talent_big_imp)
 
     local boltOverlay = hud:AddSpellOverlayBoolean(264178)
 
@@ -41,9 +42,18 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local doom = hud:AddAuraByPlayer(460553, true, talent_doom)
     local succulent = hud:AddAuraByPlayer(449793, false, talent_harvester)
     local stalkersDuration = hud:AddAuraByPlayer(104316, false, talent_stalkers)
+    local bigImpDuration = hud:AddAuraByPlayer(1276452, false, talent_big_imp)
+    local bigHunterDuration = hud:AddAuraByPlayer(1276467, false, talent_big_hunter)
     local imps = hud:AddAuraByPlayer(296553, false)
     --local motherBolt = hud:AddIconBoolean(686, 841220, talent_diabolist)
     --local pitHand = hud:AddIconBoolean(105174, 135800, talent_diabolist)
+
+    local toss = hud:AddCooldown(89766)
+    local commandDemonIsToss = hud:AddIconBoolean(119898, 236316)
+    toss.isSpecialIf = commandDemonIsToss
+    local alternativeSpellLock = hud:AddCooldown(132409, talent_big_hunter)
+    local alternativeSpellLockIsActive = hud:AddAuraBoolean(bigHunterDuration)
+    alternativeSpellLock.isSpecialIf = alternativeSpellLockIsActive
 
     --#endregion
     --------------------------------
@@ -81,7 +91,9 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     --hud.specialGroup:AddCooldown(commonSpells.soulburn)
 
     -- control
-    hud.controlGroup:AddCooldown(commonSpells.commandDemonKick).showOnlyIf = commonSpells.commandDemonIsKick
+    hud.controlGroup:AddCooldown(toss).showOnlyIf = commandDemonIsToss
+    hud.controlGroup:AddCooldown(commonSpells.commandDemonKick, nil, nil, true).showOnlyIf = commonSpells.commandDemonIsKick
+    hud.controlGroup:AddCooldown(alternativeSpellLock).showOnlyIf = alternativeSpellLockIsActive
     hud.controlGroup:AddCooldown(commonSpells.coil)
     hud.controlGroup:AddCooldown(commonSpells.shadowfury)
     hud.controlGroup:AddCooldown(commonSpells.howl)
@@ -90,8 +102,8 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     -- powerboost
     hud.powerboostGroup:AddCooldown(doomguard)
-    hud.powerboostGroup:AddCooldown(bigImp)
-    hud.powerboostGroup:AddCooldown(bigHunter)
+    hud.powerboostGroup:AddAura(bigImpDuration, 5178162, nil, false, true)
+    hud.powerboostGroup:AddAura(bigHunterDuration, 136217, nil, false, true)
 
     --#endregion
     --------------------------------

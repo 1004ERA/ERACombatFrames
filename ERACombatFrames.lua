@@ -79,6 +79,19 @@ function ECF_TEST()
         print("PUBLIC", shapeshiftIndex)
     end
 
+    for i = 1, 1000 do
+        local auraData = C_UnitAuras.GetBuffDataByIndex("player", i)
+        if (auraData) then
+            if (issecretvalue(auraData.spellId)) then
+                print("SECRET", auraData.spellId)
+            else
+                print("PUBLIC", auraData.spellId)
+            end
+        else
+            break
+        end
+    end
+
     ]]
 
     --#endregion

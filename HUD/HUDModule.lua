@@ -1398,10 +1398,12 @@ end
 ---@field private frame Frame
 ---@field private background nil|Frame
 ---@field private icons HUDIcon[]
----@field private activeCount number
+---@field private overlaps boolean[]
+---@field private hasActive boolean
 ---@field private singleLine boolean
 ---@field private vertical boolean
 ---@field private iconSize number
+---@field private currentFrameLevel number
 HUDUtilityGroup = {}
 HUDUtilityGroup.__index = HUDUtilityGroup
 
@@ -1486,8 +1488,10 @@ function HUDUtilityGroup:Create(hud, anchor, vertical, hasBackground, iconSize)
     x.frame:SetFrameLevel(4)
     x.frame:Hide()
 
-    x.icons = {}
     x.iconSize = iconSize
+    x.icons = {}
+    x.overlaps = {}
+    x.currentFrameLevel = 1
 
     return x
 end
@@ -1515,7 +1519,7 @@ function HUDUtilityGroup:moduleInactive()
 end
 
 function HUDUtilityGroup:enterCombat()
-    if (self.activeCount > 0 and self.background) then
+    if (self.hasActive and self.background) then
         self.background:Show()
     end
 end
@@ -1528,11 +1532,11 @@ end
 
 ---@param displayActive HUDDisplay[]
 function HUDUtilityGroup:checkTalents(displayActive)
-    self.activeCount = 0
+    self.hasActive = false
     for _, icon in ipairs(self.icons) do
         if (icon:computeActive()) then
             table.insert(displayActive, icon)
-            self.activeCount = self.activeCount + 1
+            self.hasActive = true
         end
     end
 end
@@ -1547,16 +1551,24 @@ function HUDUtilityGroup:updateLayout(offX, offY, iconSize, iconPadding)
         icon:setSize(iconSize)
     end
     local width, height
-    if (self.activeCount > 0) then
+    if (self.hasActive) then
         if (self.singleLine) then
-            local iCount = 0
-            for _, icon in ipairs(self.icons) do
-                if (icon.talentActive) then
-                    iCount = iCount + 1
-                    icon:setPosition(iconSize * (iCount - self.activeCount / 2 - 0.5), self.directY * iconPadding)
+            local slotCount = 0
+            for i, icon in ipairs(self.icons) do
+                if (icon.talentActive and (slotCount == 0 or not self.overlaps[i])) then
+                    slotCount = slotCount + 1
                 end
             end
-            width = self.activeCount * (iconSize + iconPadding)
+            local iCount = 0
+            for i, icon in ipairs(self.icons) do
+                if (icon.talentActive) then
+                    if (iCount == 0 or not self.overlaps[i]) then
+                        iCount = iCount + 1
+                    end
+                    icon:setPosition(iconSize * (iCount - slotCount / 2 - 0.5), self.directY * iconPadding)
+                end
+            end
+            width = slotCount * (iconSize + iconPadding)
             height = iconSize + 2 * iconPadding
         else
             local x1
@@ -1573,37 +1585,50 @@ function HUDUtilityGroup:updateLayout(offX, offY, iconSize, iconPadding)
             end
             local x = x1
             local y = y1
-            local first_line = true
+            local previous_was_second_line = true
             local first_line_count = 0
             local has_second_line = false
-            local last_is_second_line = false
-            for _, icon in ipairs(self.icons) do
+            for i, icon in ipairs(self.icons) do
                 if (icon.talentActive) then
-                    if (first_line) then
-                        if (self.vertical) then
+                    if (first_line_count == 0 or previous_was_second_line or self.overlaps[i]) then
+                        -- on le met sur la première ligne
+                        if (first_line_count == 0) then
                             x = x1
-                        else
                             y = y1
+                            first_line_count = 1
+                        else
+                            if (self.vertical) then
+                                x = x1
+                                if (not self.overlaps[i]) then
+                                    y = y + self.directY * (iconSize + iconPadding) / 2
+                                    first_line_count = first_line_count + 1
+                                end
+                            else
+                                if (not self.overlaps[i]) then
+                                    x = x + self.directX * (iconSize + iconPadding) / 2
+                                    first_line_count = first_line_count + 1
+                                end
+                                y = y1
+                            end
                         end
-                        last_is_second_line = false
-                        first_line_count = first_line_count + 1
-                        first_line = false
+                        previous_was_second_line = false
                     else
+                        -- on le met sur la seconde ligne
                         if (self.vertical) then
                             x = x1 + self.directX * (iconSize + iconPadding)
+                            if (not self.overlaps[i]) then
+                                y = y + self.directY * (iconSize + iconPadding) / 2
+                            end
                         else
+                            if (not self.overlaps[i]) then
+                                x = x + self.directX * (iconSize + iconPadding) / 2
+                            end
                             y = y1 + self.directY * (iconSize + iconPadding)
                         end
-                        last_is_second_line = true
                         has_second_line = true
-                        first_line = true
+                        previous_was_second_line = true
                     end
                     icon:setPosition(x, y)
-                    if (self.vertical) then
-                        y = y + self.directY * (iconSize + iconPadding) / 2
-                    else
-                        x = x + self.directX * (iconSize + iconPadding) / 2
-                    end
                 end
             end
             if (self.vertical) then
@@ -1612,13 +1637,13 @@ function HUDUtilityGroup:updateLayout(offX, offY, iconSize, iconPadding)
                 else
                     width = iconSize + 2 * iconPadding
                 end
-                if (last_is_second_line) then
+                if (previous_was_second_line) then
                     height = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
                 else
                     height = iconPadding + first_line_count * (iconSize + iconPadding)
                 end
             else
-                if (last_is_second_line) then
+                if (previous_was_second_line) then
                     width = iconPadding + (first_line_count + 0.5) * (iconSize + iconPadding)
                 else
                     width = iconPadding + first_line_count * (iconSize + iconPadding)
@@ -1639,12 +1664,28 @@ function HUDUtilityGroup:updateLayout(offX, offY, iconSize, iconPadding)
     end
 end
 
+---@private
+---@param overlapPrevious boolean|nil
+---@return number
+function HUDUtilityGroup:manageOverlap_returnFrameLevel(overlapPrevious)
+    if (overlapPrevious) then
+        self.currentFrameLevel = self.currentFrameLevel + 1
+        table.insert(self.overlaps, true)
+    else
+        self.currentFrameLevel = 1
+        table.insert(self.overlaps, false)
+    end
+    return self.currentFrameLevel
+end
+
 ---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
+---@param overlapPrevious boolean|nil
 ---@return HUDCooldownIcon
-function HUDUtilityGroup:AddCooldown(data, iconID, talent)
-    local icon = HUDCooldownIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
+function HUDUtilityGroup:AddCooldown(data, iconID, talent, overlapPrevious)
+    local frameLevel = self:manageOverlap_returnFrameLevel(overlapPrevious)
+    local icon = HUDCooldownIcon:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1652,9 +1693,12 @@ end
 ---@param data HUDAura
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
+---@param overlapPrevious boolean|nil
+---@param displayAsCooldown boolean|nil
 ---@return HUDAuraIcon
-function HUDUtilityGroup:AddAura(data, iconID, talent)
-    local icon = HUDAuraIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
+function HUDUtilityGroup:AddAura(data, iconID, talent, overlapPrevious, displayAsCooldown)
+    local frameLevel = self:manageOverlap_returnFrameLevel(overlapPrevious)
+    local icon = HUDAuraIcon:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, data, iconID, talent, displayAsCooldown)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1662,8 +1706,9 @@ end
 ---@param slot unknown
 ---@param initIconID number
 function HUDUtilityGroup:AddEquipment(slot, initIconID)
+    local frameLevel = self:manageOverlap_returnFrameLevel(false)
     local data = HUDEquipmentCooldown:create(slot, self.hud)
-    local icon = HUDEquipmentIcon:Create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, initIconID)
+    local icon = HUDEquipmentIcon:Create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, data, initIconID)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1672,7 +1717,8 @@ end
 ---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 function HUDUtilityGroup:AddBagItem(data, iconID, talent)
-    local icon = HUDBagItemIcon:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
+    local frameLevel = self:manageOverlap_returnFrameLevel(false)
+    local icon = HUDBagItemIcon:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1682,7 +1728,8 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return HUDIconMissingAuraAlert
 function HUDUtilityGroup:AddMissingAuraAlert(data, iconID, talent)
-    local icon = HUDIconMissingAuraAlert:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
+    local frameLevel = self:manageOverlap_returnFrameLevel(false)
+    local icon = HUDIconMissingAuraAlert:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
     table.insert(self.icons, icon)
     return icon
 end
@@ -1692,7 +1739,8 @@ end
 ---@param talent ERALIBTalent|nil
 ---@return HUDIconBooleanAlert
 function HUDUtilityGroup:AddBooleanAlert(data, iconID, talent)
-    local icon = HUDIconBooleanAlert:create(self.frame, 1, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
+    local frameLevel = self:manageOverlap_returnFrameLevel(false)
+    local icon = HUDIconBooleanAlert:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, talent, iconID, data)
     table.insert(self.icons, icon)
     return icon
 end
