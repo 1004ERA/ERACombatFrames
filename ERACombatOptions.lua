@@ -14,6 +14,7 @@ end
 ---@field resourcePadding number
 ---@field healthHeight number
 ---@field powerHeight number
+---@field gcdAlpha number
 ---@field gcdHeight number
 ---@field gcdCount number
 ---@field castBarWidth number
@@ -64,6 +65,7 @@ function ERACombatSpecOptions:Create()
     x.resourcePadding = 2
     x.healthHeight = 31
     x.powerHeight = 31
+    x.gcdAlpha = 0.55
     x.gcdHeight = 64
     x.gcdCount = 4
     x.castBarWidth = 19

@@ -90,11 +90,11 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     hud:AddEssentialsLeftCooldown(commonSpells.nova)
     hud:AddEssentialsLeftCooldown(pws)
 
-    local volleyIcon, volleySlot, volleyBar = hud:AddEssentialsCooldown(volley, 7439213, nil, 0.8, 0.0, 0.8)
+    local volleyIcon, volleySlot, volleyBar = hud:AddEssentialsCooldown(volley, 7439213, nil, 0.5, 0.0, 0.7)
     volleyBar.showOnlyIf = has_voidform_or_crushing
     volleyIcon.showOnlyIf = has_voidform_or_crushing
     --volleyIcon.showOnlyWhenUsableOrOverlay = true
-    volleySlot:AddTimerBar(0.25, crushing, nil, 0.5, 0.0, 0.5)
+    volleySlot:AddTimerBar(0.25, crushing, nil, 0.4, 0.0, 0.4)
     volleySlot:AddTimerBar(0.75, voidformDuration, nil, 1.0, 0.0, 1.0).doNotCutLongDuration = true
 
     hud:AddDOT(swp, nil, talent_independant_swp, 1.0, 0.8, 0.0)
@@ -123,7 +123,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
 
     local notSWP = hud:AddAuraBoolean(swp)
     notSWP.reverse = true
-    local missingSWP = hud:AddPublicBooleanAnd(hud:AddAuraBoolean(vTouch), notSWP)
+    local missingSWP = hud:AddPublicBooleanAnd(hud:AddAuraBoolean(vTouch), notSWP, missing_voidform) -- CDM n'arrive pas à gérer SWP pendant voidform
     hud:AddPublicBooleanOverlayAlert(talent_auto_swp, "icons_64x64_disease", true, missingSWP, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
     hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 

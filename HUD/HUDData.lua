@@ -770,26 +770,48 @@ end
 ---@field private shapeshiftIndex number
 ---@field private b1 HUDPublicBoolean
 ---@field private b2 HUDPublicBoolean
+---@field private additionalB HUDPublicBoolean[]
 HUDPublicBooleanAnd = {}
 HUDPublicBooleanAnd.__index = HUDPublicBooleanAnd
 setmetatable(HUDPublicBooleanAnd, { __index = HUDPublicBoolean })
 ---@param hud HUDModule
 ---@param b1 HUDPublicBoolean
 ---@param b2 HUDPublicBoolean
-function HUDPublicBooleanAnd:create(hud, b1, b2)
+---@param ... HUDPublicBoolean
+function HUDPublicBooleanAnd:create(hud, b1, b2, ...)
     local x = {}
     setmetatable(x, HUDPublicBooleanAnd)
     ---@cast x HUDPublicBooleanAnd
     x:constructBoolean(hud, nil)
     x.b1 = b1
     x.b2 = b2
+    for _, b in ipairs { ... } do
+        if (b) then
+            if (x.additionalB) then
+                table.insert(x.additionalB, b)
+            else
+                x.additionalB = { b }
+            end
+        end
+    end
     return x
 end
 ---@param t number
 ---@param combat boolean
 ---@return boolean
 function HUDPublicBooleanAnd:getValue(t, combat)
-    return self.b1.value and self.b2.value
+    if (self.b1.value and self.b2.value) then
+        if (self.additionalB) then
+            for _, b in ipairs(self.additionalB) do
+                if (not b.value) then
+                    return false
+                end
+            end
+        end
+        return true
+    else
+        return false
+    end
 end
 
 ---@class (exact) HUDPublicBooleanOr : HUDPublicBoolean

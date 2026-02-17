@@ -211,7 +211,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.baseLine = x:createGCDLine()
     x.baseLine:SetStartPoint("BOTTOMLEFT", x.timerFrameFront, 0, 1)
     x.baseLine:SetEndPoint("BOTTOMRIGHT", x.timerFrameFront, 0, 1)
-    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 0.64, "Interface\\Buttons\\WHITE8x8")
+    x.gcdBar = x:createGCCBar(2, 1.0, 1.0, 1.0, x.options.gcdAlpha, "Interface\\Buttons\\WHITE8x8")
     x:setupMiddleGCCBar(x.gcdBar)
     x.castBarSecret = x:createGCCBar(1, 0.2, 0.7, 0.2, 0.32, "Interface\\Buttons\\WHITE8x8")
     x:setupMiddleGCCBar(x.castBarSecret)
@@ -665,6 +665,7 @@ function HUDModule:updateLayout()
         end
     end
 
+    self.gcdBar:SetStatusBarColor(1.0, 1.0, 1.0, self.options.gcdAlpha)
     self.timerFrameBack:SetSize(iconSize * self.essentialsIconsActiveCount + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
     self.timerFrameFront:SetSize(iconSize * self.essentialsIconsActiveCount + 2 * self.options.castBarWidth, ERA_HUDModule_TimerHeight)
     if (self.options.gcdCount < #self.gcdLines) then
@@ -1824,9 +1825,10 @@ end
 
 ---@param b1 HUDPublicBoolean
 ---@param b2 HUDPublicBoolean
+---@param ... HUDPublicBoolean
 ---@return HUDPublicBooleanAnd
-function HUDModule:AddPublicBooleanAnd(b1, b2)
-    return HUDPublicBooleanAnd:create(self, b1, b2)
+function HUDModule:AddPublicBooleanAnd(b1, b2, ...)
+    return HUDPublicBooleanAnd:create(self, b1, b2, ...)
 end
 
 ---@param b1 HUDPublicBoolean
