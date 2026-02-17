@@ -87,6 +87,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
 
     -- essentials
 
+    hud:AddEssentialsLeftCooldown(commonSpells.nova)
     hud:AddEssentialsLeftCooldown(pws)
 
     local volleyIcon, volleySlot, volleyBar = hud:AddEssentialsCooldown(volley, 7439213, nil, 0.8, 0.0, 0.8)
@@ -119,8 +120,12 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     --#region ALERTS
 
     hud.alertGroup:AddBooleanAlert(missing_both_forms, 136200, talent_shadowform)
+
+    local notSWP = hud:AddAuraBoolean(swp)
+    notSWP.reverse = true
+    local missingSWP = hud:AddPublicBooleanAnd(hud:AddAuraBoolean(vTouch), notSWP)
+    hud:AddPublicBooleanOverlayAlert(talent_auto_swp, "icons_64x64_disease", true, missingSWP, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
     hud:AddAuraOverlayAlert(freeMadness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddMissingAuraOverlayAlert(swp, talent_auto_swp, "icons_64x64_disease", true, false, "NONE", "CENTER").showOnlyWhenInCombatWithEnemyTarget = true
 
     --#endregion
     --------------------------------

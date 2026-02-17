@@ -57,7 +57,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private kicks HUDCooldown[]
 ---@field private bagItems HUDBagItem[]
 ---@field cdmAuraFetcher { [number]: HUDAura }
----@field private cdmParsed boolean
+---@field private cdmParsedTime number
 ---@field private warnedMissingCDM boolean
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
@@ -76,6 +76,8 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
 ---@field curveAlphaDuration LuaColorCurveObject
+---@field colorVisible ColorMixin
+---@field colorTransparent ColorMixin
 HUDModule = {}
 HUDModule.__index = HUDModule
 setmetatable(HUDModule, { __index = ERACombatModule })
@@ -170,6 +172,9 @@ HUDModule.curveAlphaDuration:AddPoint(0, 1.0)
 HUDModule.curveAlphaDuration:AddPoint(0.01, 1.0)
 HUDModule.curveAlphaDuration:AddPoint(0.1, 0.5)
 
+HUDModule.colorTransparent = CreateColor(1.0, 1.0, 1.0, 0.0)
+HUDModule.colorVisible = CreateColor(1.0, 1.0, 1.0, 1.0)
+
 --#endregion
 --------
 
@@ -240,7 +245,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.targetCasting = false
 
     x.cdmAuraFetcher = {}
-    x.cdmParsed = false
+    x.cdmParsedTime = -1
 
     x.resourceFrame = CreateFrame("Frame", nil, UIParent)
     x.resourceBeforeHealth = {}
@@ -306,7 +311,6 @@ function HUDModule:Pack()
     --#region EQUIPMENT
     self.powerboostGroup:AddEquipment(INVSLOT_TRINKET1, 2000859)
     self.powerboostGroup:AddEquipment(INVSLOT_TRINKET2, 2000857)
-
     --#endregion
     ----------------
 
@@ -514,7 +518,7 @@ function HUDModule:SpecInactive()
     for _, g in ipairs(self.utilityGroups) do
         g:moduleInactive()
     end
-    self.cdmParsed = false
+    self.cdmParsedTime = -1
     BuffIconCooldownViewer:SetAlpha(1.0)
     BuffBarCooldownViewer:SetAlpha(1.0)
     EssentialCooldownViewer:SetAlpha(1.0)
@@ -528,7 +532,7 @@ function HUDModule:SpecActive()
     for _, g in ipairs(self.utilityGroups) do
         g:moduleActive()
     end
-    self.cdmParsed = false
+    self.cdmParsedTime = -1
 end
 
 function HUDModule:ResetToIdle()
@@ -569,7 +573,7 @@ function HUDModule:BagUpdate()
 end
 
 function HUDModule:CheckTalents()
-    self.cdmParsed = false
+    self.cdmParsedTime = -1
     self.totalGCD = nil
 
     self.dataActive = {}
@@ -1067,7 +1071,6 @@ function HUDModule:UpdateCombat(t)
 
     --#region TARGET CASTING
 
-    local targetCastDuration = nil
     ---@type HUDCooldown
     local foundKick = nil
     for _, k in ipairs(self.kicks) do
@@ -1077,28 +1080,36 @@ function HUDModule:UpdateCombat(t)
         end
     end
     if (foundKick) then
-        _, _, _, _, _, _, _, channelID = UnitChannelInfo("target")
-        if (channelID) then
+        local targetCastDuration = nil
+        ---@type ColorMixin
+        local tarCastColor = nil
+        local _, _, _, _, _, _, notInterruptible, tarCastlID = UnitChannelInfo("target")
+        if (tarCastlID) then
             targetCastDuration = UnitChannelDuration("target")
+            ---@diagnostic disable-next-line: param-type-mismatch
+            tarCastColor = C_CurveUtil.EvaluateColorFromBoolean(notInterruptible, HUDModule.colorTransparent, HUDModule.colorVisible)
         else
-            local _, _, _, _, _, _, _, _, castID = UnitCastingInfo("target")
-            if (castID) then
+            _, _, _, _, _, _, _, notInterruptible, tarCastlID = UnitCastingInfo("target")
+            if (tarCastlID) then
                 targetCastDuration = UnitCastingDuration("target")
+                ---@diagnostic disable-next-line: param-type-mismatch
+                tarCastColor = C_CurveUtil.EvaluateColorFromBoolean(notInterruptible, HUDModule.colorTransparent, HUDModule.colorVisible)
             end
         end
-    end
-    if (targetCastDuration) then
-        self.targetCasBar:SetValue(targetCastDuration:GetRemainingDuration())
-        ---@diagnostic disable-next-line: param-type-mismatch
-        self.targetCasBar:SetAlpha(foundKick.cooldownDuration:EvaluateRemainingDuration(self.curveTrue0))
-        if (not self.targetCasting) then
-            self.targetCasting = true
-            self.targetCasBar:Show()
-        end
-    else
-        if (self.targetCasting) then
-            self.targetCasting = false
-            self.targetCasBar:Hide()
+        if (targetCastDuration) then
+            self.targetCasBar:SetValue(targetCastDuration:GetRemainingDuration())
+            ---@diagnostic disable-next-line: param-type-mismatch
+            self.targetCasBar:SetAlpha(foundKick.cooldownDuration:EvaluateRemainingDuration(self.curveTrue0))
+            self.targetCasBar:SetStatusBarColor(tarCastColor.r, tarCastColor.g, tarCastColor.b, tarCastColor.a)
+            if (not self.targetCasting) then
+                self.targetCasting = true
+                self.targetCasBar:Show()
+            end
+        else
+            if (self.targetCasting) then
+                self.targetCasting = false
+                self.targetCasBar:Hide()
+            end
         end
     end
 
@@ -1136,8 +1147,10 @@ function HUDModule:updateData(t, combat)
 
     --#region AURAS
 
-    if (not self.cdmParsed) then
-        self.cdmParsed = true
+    if (self.cdmParsedTime < 0) then
+        self.cdmParsedTime = t
+    elseif (self.cdmParsedTime > 0 and t - self.cdmParsedTime >= 1.618) then
+        self.cdmParsedTime = 0
         for _, aura in pairs(self.cdmAuraFetcher) do
             aura:prepareParseCDM()
         end

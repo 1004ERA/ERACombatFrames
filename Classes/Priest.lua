@@ -60,6 +60,10 @@ function ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, isShadow)
     -- powerboost
     hud.powerboostGroup:AddCooldown(commonSpells.infu)
 
+    -- alert
+    local missingPWF = hud:AddSpellOverlayBoolean(21562)
+    hud.alertGroup:AddBooleanAlert(missingPWF, 135987)
+
     return commonSpells
 end
 

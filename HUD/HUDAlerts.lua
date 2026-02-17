@@ -237,14 +237,57 @@ function HUDSAOAlertAura:getIsVisible(t, combat)
     return self.data.auraIsPresent
 end
 
----@class (exact) HUDSAOAlertMissingAura : HUDSAOAlertBasicBoolean
+---@class (exact) HUDSAOAlertBasicBooleanDelay : HUDSAOAlertBasicBoolean
+---@field private __index HUDSAOAlertBasicBooleanDelay
+---@field private showOutOfCombat boolean
+---@field private delay number
+---@field private start_active number
+---@field protected getIsVisibleRegardlessOfDelay fun(self:HUDSAOAlertBasicBooleanDelay, t:number, combat:boolean): boolean
+---@field protected constructAlertBooleanDelay fun(self:HUDSAOAlertBasicBooleanDelay, hud:HUDModule, talent:ERALIBTalent|nil, texture:number|string, isAtlas:boolean, transform:SAOTransform, position:SAOPosition, delay:number, showOutOfCombat:boolean)
+HUDSAOAlertBasicBooleanDelay = {}
+HUDSAOAlertBasicBooleanDelay.__index = HUDSAOAlertBasicBooleanDelay
+setmetatable(HUDSAOAlertBasicBooleanDelay, { __index = HUDSAOAlertBasicBoolean })
+
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param texture string|number
+---@param isAtlas boolean
+---@param transform SAOTransform
+---@param position SAOPosition
+---@param delay number
+---@param showOutOfCombat boolean
+function HUDSAOAlertBasicBooleanDelay:constructAlertBooleanDelay(hud, talent, texture, isAtlas, transform, position, delay, showOutOfCombat)
+    self:constructBooleanSAO(hud, talent, texture, isAtlas, transform, position)
+    self.delay = delay
+    self.showOutOfCombat = showOutOfCombat
+end
+
+---@param t number
+---@param combat boolean
+function HUDSAOAlertBasicBooleanDelay:getIsVisible(t, combat)
+    if (self:getIsVisibleRegardlessOfDelay(t, combat)) then
+        if ((not combat) and not self.showOutOfCombat) then
+            self.start_active = -1
+            return false
+        end
+        if (self.start_active < 0) then
+            self.start_active = t
+            return false
+        else
+            return t - self.start_active > self.delay
+        end
+    else
+        self.start_active = -1
+        return false
+    end
+end
+
+---@class (exact) HUDSAOAlertMissingAura : HUDSAOAlertBasicBooleanDelay
 ---@field private __index HUDSAOAlertMissingAura
 ---@field private data HUDAura
----@field private start_active number
----@field showOutOfCombat boolean
 HUDSAOAlertMissingAura = {}
 HUDSAOAlertMissingAura.__index = HUDSAOAlertMissingAura
-setmetatable(HUDSAOAlertMissingAura, { __index = HUDSAOAlertBasicBoolean })
+setmetatable(HUDSAOAlertMissingAura, { __index = HUDSAOAlertBasicBooleanDelay })
 
 ---@param hud HUDModule
 ---@param data HUDAura
@@ -259,39 +302,23 @@ function HUDSAOAlertMissingAura:create(hud, data, talent, texture, isAtlas, show
     local x = {}
     setmetatable(x, HUDSAOAlertMissingAura)
     ---@cast x HUDSAOAlertMissingAura
-    x:constructBooleanSAO(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position)
+    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.42, showOutOfCombat)
     x.data = data
-    x.showOutOfCombat = showOutOfCombat
-    x.start_active = -1
     return x
 end
 
 ---@param t number
 ---@param combat boolean
-function HUDSAOAlertMissingAura:getIsVisible(t, combat)
-    if (self.data.auraIsPresent) then
-        self.start_active = -1
-        return false
-    else
-        if ((not combat) and not self.showOutOfCombat) then
-            self.start_active = -1
-            return false
-        end
-        if (self.start_active < 0) then
-            self.start_active = t
-            return false
-        else
-            return t - self.start_active > 0.42
-        end
-    end
+function HUDSAOAlertMissingAura:getIsVisibleRegardlessOfDelay(t, combat)
+    return not self.data.auraIsPresent
 end
 
----@class (exact) HUDSAOAlertPublicBoolean : HUDSAOAlertBasicBoolean
+---@class (exact) HUDSAOAlertPublicBoolean : HUDSAOAlertBasicBooleanDelay
 ---@field private __index HUDSAOAlertPublicBoolean
 ---@field private data HUDPublicBoolean
 HUDSAOAlertPublicBoolean = {}
 HUDSAOAlertPublicBoolean.__index = HUDSAOAlertPublicBoolean
-setmetatable(HUDSAOAlertPublicBoolean, { __index = HUDSAOAlertBasicBoolean })
+setmetatable(HUDSAOAlertPublicBoolean, { __index = HUDSAOAlertBasicBooleanDelay })
 
 ---@param hud HUDModule
 ---@param talent ERALIBTalent|nil
@@ -305,14 +332,14 @@ function HUDSAOAlertPublicBoolean:create(hud, talent, texture, isAtlas, data, tr
     local x = {}
     setmetatable(x, HUDSAOAlertPublicBoolean)
     ---@cast x HUDSAOAlertPublicBoolean
-    x:constructBooleanSAO(hud, talent, texture, isAtlas, transform, position)
+    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.16, true)
     x.data = data
     return x
 end
 
 ---@param t number
 ---@param combat boolean
-function HUDSAOAlertPublicBoolean:getIsVisible(t, combat)
+function HUDSAOAlertPublicBoolean:getIsVisibleRegardlessOfDelay(t, combat)
     return self.data.value
 end
 
