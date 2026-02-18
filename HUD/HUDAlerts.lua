@@ -234,7 +234,7 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDSAOAlertAura:getIsVisible(t, combat)
-    return self.data.auraIsPresent
+    return self.data.auraIsActive
 end
 
 ---@class (exact) HUDSAOAlertBasicBooleanDelay : HUDSAOAlertBasicBoolean
@@ -310,7 +310,7 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDSAOAlertMissingAura:getIsVisibleRegardlessOfDelay(t, combat)
-    return not self.data.auraIsPresent
+    return not self.data.auraIsActive
 end
 
 ---@class (exact) HUDSAOAlertPublicBoolean : HUDSAOAlertBasicBooleanDelay
@@ -411,7 +411,7 @@ end
 ---@param combat boolean
 ---@return boolean
 function HUDIconMissingAuraAlert:getIsVisible(t, combat)
-    if (self.data.auraIsPresent) then
+    if (self.data.auraIsActive) then
         return false
     else
         if (combat) then

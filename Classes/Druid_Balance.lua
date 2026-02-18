@@ -135,17 +135,17 @@ function ERACombatFrames_Druid_Balance(cFrame, talents)
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.5, 0.0, 0.6)
     function powerBar:AdditionalBarUpdate(t, combat, bar, current)
-        if (cosmos.auraIsPresent) then
+        if (cosmos.auraIsActive) then
             bar:SetBarColor(1.0, 1.0, 1.0, false)
         else
-            if (starweaverStarsurge.auraIsPresent) then
-                if (starweaverStarfall.auraIsPresent) then
+            if (starweaverStarsurge.auraIsActive) then
+                if (starweaverStarfall.auraIsActive) then
                     bar:SetBarColor(1.0, 1.0, 1.0, false)
                 else
                     bar:SetBarColor(1.0, 0.6, 0.2, false)
                 end
             else
-                if (starweaverStarfall.auraIsPresent) then
+                if (starweaverStarfall.auraIsActive) then
                     bar:SetBarColor(0.2, 0.6, 1.0, false)
                 else
                     bar:SetBarColor(0.6, 0.0, 0.7, false)

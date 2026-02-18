@@ -122,7 +122,7 @@ function ERACombatFrames_Warlock_Affliction(cFrame, talents)
     local petHealth = hud:AddPetHealth()
     local petBar = hud:AddResourceSlot(true):AddHealth(petHealth, true)
     function petBar:ShowIfNoUnit(t, combat)
-        return (not talent_sacrifice:PlayerHasTalent()) or not sacriBuff.auraIsPresent
+        return (not talent_sacrifice:PlayerHasTalent()) or not sacriBuff.auraIsActive
     end
 
     --#endregion

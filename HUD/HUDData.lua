@@ -249,8 +249,12 @@ end
 ---@class (exact) HUDTimer : HUDDataItem
 ---@field private __index HUDTimer
 ---@field protected constructTimer fun(self:HUDTimer, hud:HUDModule, talent:ERALIBTalent|nil)
----@field protected updateTimerDuration fun(self:HUDTimer, t:number): LuaDurationObject
----@field timerDuration LuaDurationObject
+---@field protected updateTimerDuration_dstr fun(self:HUDTimer, t:number): LuaDurationObject|nil, number|nil, number|nil, number|nil
+---@field managePandemic fun(self:HUDTimer, bar:StatusBar): boolean
+---@field timerDuration nil|LuaDurationObject
+---@field remainingDuration nil|number
+---@field totalDuration number
+---@field startTime number
 ---@field alphaDuration nil|LuaDurationObject
 HUDTimer = {}
 HUDTimer.__index = HUDTimer
@@ -261,7 +265,26 @@ function HUDTimer:constructTimer(hud, talent)
 end
 
 function HUDTimer:Update(t)
-    self.timerDuration = self:updateTimerDuration(t)
+    local dur, startTime, totDur, remDur = self:updateTimerDuration_dstr(t)
+    self.timerDuration = dur
+    self.remainingDuration = remDur
+    self.startTime = startTime
+    self.totalDuration = totDur
+    if (dur) then
+        if (not remDur) then
+            self.remainingDuration = dur:GetRemainingDuration()
+        end
+        if (not totDur) then
+            self.totalDuration = dur:GetTotalDuration()
+        end
+        if (not startTime) then
+            self.startTime = dur:GetStartTime()
+        end
+    end
+end
+
+function HUDTimer:managePandemic(bar)
+    return false
 end
 
 --#endregion
@@ -320,7 +343,7 @@ function HUDCooldown:talentIsActive()
     end
 end
 
-function HUDCooldown:updateTimerDuration(t)
+function HUDCooldown:updateTimerDuration_dstr(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
 
     local charges
@@ -387,8 +410,6 @@ end
 ---@class (exact) HUDEquipmentCooldown : HUDTimer
 ---@field private __index HUDCooldown
 ---@field slot unknown
----@field start number
----@field duration number
 HUDEquipmentCooldown = {}
 HUDEquipmentCooldown.__index = HUDEquipmentCooldown
 setmetatable(HUDEquipmentCooldown, { __index = HUDTimer })
@@ -402,21 +423,61 @@ function HUDEquipmentCooldown:create(slot, hud)
     setmetatable(x, HUDEquipmentCooldown)
     ---@cast x HUDEquipmentCooldown
     x:constructTimer(hud, ERALIBTalent:CreateEquipmentCD(slot))
-
     x.slot = slot
-
     return x
 end
 
-function HUDEquipmentCooldown:updateTimerDuration(t)
+function HUDEquipmentCooldown:updateTimerDuration_dstr(t)
     local s, d, enabled = GetInventoryItemCooldown("player", self.slot)
-    if (enabled) then
-        self.start = s
-        self.duration = d
-    else
-        self.start = 0
-        self.duration = 1
+    if (not enabled) then
+        s = 0
+        d = 1
     end
+    return nil, s, d, nil
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region AURA LIKE --------------------------------------------
+
+---@class (exact) HUDAuraLike : HUDTimer
+---@field private __index HUDAuraLike
+---@field spellID number
+---@field cdmFrameFound boolean
+---@field auraIsActive boolean
+---@field protected cdmFrame CDMAuraFrame
+---@field protected talentAuraLikeIsNotActive nil|fun(self:HUDAuraLike)
+HUDAuraLike = {}
+HUDAuraLike.__index = HUDAuraLike
+setmetatable(HUDAuraLike, { __index = HUDTimer })
+
+---comment
+---@param spellID number
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+function HUDAuraLike:constructAuraLike(spellID, hud, talent)
+    self:constructTimer(hud, talent)
+    self.spellID = spellID
+    self.auraIsActive = false
+end
+
+function HUDAuraLike:talentIsActive()
+    self.hud:addActiveAura(self)
+end
+function HUDAuraLike:talentIsNotActive()
+    self.auraIsActive = false
+end
+
+function HUDAuraLike:prepareParseCDM()
+    self.cdmFrame = nil
+    self.cdmFrameFound = false
+end
+---@param frame CDMAuraFrame
+function HUDAuraLike:setCDM(frame)
+    self.cdmFrame = frame
+    self.cdmFrameFound = true
 end
 
 --#endregion
@@ -425,22 +486,20 @@ end
 ----------------------------------------------------------------
 --#region AURA -------------------------------------------------
 
----@class (exact) HUDAura : HUDTimer
+---@class (exact) HUDAura : HUDAuraLike
 ---@field private __index HUDAura
----@field spellID number
 ---@field isTarget boolean
 ---@field private unit string
 ---@field stacks number
 ---@field stacksDisplay string|nil
----@field auraIsPresent boolean
----@field cdmFrameFound boolean
 ---@field useUnitCDM boolean
 ---@field icon number
+---@field auraIsActive boolean -- hérité
 ---@field playSoundWhenApperars nil|number
 ---@field private cdmFrame CDMAuraFrame
 HUDAura = {}
 HUDAura.__index = HUDAura
-setmetatable(HUDAura, { __index = HUDTimer })
+setmetatable(HUDAura, { __index = HUDAuraLike })
 
 ---comment
 ---@param spellID number
@@ -452,11 +511,9 @@ function HUDAura:createAura(spellID, hud, talent, isTarget)
     local x = {}
     setmetatable(x, HUDAura)
     ---@cast x HUDAura
-    x:constructTimer(hud, talent)
-    x.spellID = spellID
+    x:constructAuraLike(spellID, hud, talent)
     x.isTarget = isTarget
     x.stacks = 0
-    x.auraIsPresent = false
     if (isTarget) then
         x.unit = "target"
     else
@@ -465,23 +522,9 @@ function HUDAura:createAura(spellID, hud, talent, isTarget)
     return x
 end
 
-function HUDAura:talentIsActive()
-    self.hud:addActiveAura(self, self.isTarget)
-end
-function HUDAura:talentIsNotActive()
+function HUDAura:talentAuraLikeIsNotActive()
     self.stacks = 0
     self.stacksDisplay = nil
-    self.auraIsPresent = false
-end
-
-function HUDAura:prepareParseCDM()
-    self.cdmFrame = nil
-    self.cdmFrameFound = false
-end
----@param frame CDMAuraFrame
-function HUDAura:setCDM(frame)
-    self.cdmFrame = frame
-    self.cdmFrameFound = true
 end
 
 --[[
@@ -499,44 +542,166 @@ function HUDAura:auraFound(dur, a)
 end
 ]]
 
-function HUDAura:updateTimerDuration(t)
+function HUDAura:updateTimerDuration_dstr(t)
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
-        local unit
-        if (self.useUnitCDM) then
-            unit = self.cdmFrame.auraDataUnit
-        else
-            unit = self.unit
-        end
-        ---@cast unit unknown
-        local cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, self.cdmFrame.auraInstanceID)
-        if (not self.auraIsPresent) then
-            self.auraIsPresent = true
+        if (not self.auraIsActive) then
+            self.auraIsActive = true
             if (self.playSoundWhenApperars) then
                 ---@diagnostic disable-next-line: param-type-mismatch
                 C_Sound.PlaySound(self.playSoundWhenApperars, "SFX", true)
             end
         end
+        local unit
+        if (self.useUnitCDM) then
+            --unit = self.cdmFrame.auraDataUnit
+            unit = self.cdmFrame:GetAuraDataUnit()
+        else
+            unit = self.unit
+        end
+        ---@cast unit unknown
+        local cdmData = C_UnitAuras.GetAuraDataByAuraInstanceID(unit, self.cdmFrame.auraInstanceID)
         if (cdmData) then
             self.stacks = cdmData.applications
             self.stacksDisplay = C_UnitAuras.GetAuraApplicationDisplayCount(unit, self.cdmFrame.auraInstanceID)
             self.icon = cdmData.icon
-            local result = C_UnitAuras.GetAuraDuration(unit, self.cdmFrame.auraInstanceID)
+            --local result = C_UnitAuras.GetAuraDuration(unit, self.cdmFrame.auraInstanceID)
+            local result = C_UnitAuras.GetAuraDuration(unit, cdmData.auraInstanceID)
             if (result) then
                 return result
             else
                 return self.hud.duration0
             end
         else
-            self.stacks = 0
+            self.stacks = 1
             self.stacksDisplay = nil
             return self.hud.duration0
         end
-    else
-        self.stacks = 0
-        self.stacksDisplay = nil
-        self.auraIsPresent = false
-        return self.hud.duration0
     end
+    self.stacks = 0
+    self.stacksDisplay = nil
+    self.auraIsActive = false
+    return self.hud.duration0
+end
+
+---@param bar StatusBar
+---@return boolean
+function HUDAura:managePandemic(bar)
+    --[[
+local baseDur = C_UnitAuras.GetAuraBaseDuration(self.cdmFrame.auraDataUnit, self.cdmFrame.auraInstanceID)
+local refreshDur = C_UnitAuras.GetRefreshExtendedDuration(self.cdmFrame.auraDataUnit, self.cdmFrame.auraInstanceID)
+]]
+    if (self.cdmFrame.PandemicIcon) then
+        if (self.timerDuration) then
+            bar:SetValue(self.timerDuration:GetRemainingDuration())
+        elseif (self.remainingDuration) then
+            bar:SetValue(self.remainingDuration)
+        else
+            bar:SetValue(0)
+        end
+        bar:SetAlpha(1.0)
+    else
+        bar:SetAlpha(0.0)
+    end
+    return true
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region AURA TOTEM -------------------------------------------
+
+---@class (exact) HUDAuraTotem : HUDAuraLike
+---@field private __index HUDAuraTotem
+---@field private slot integer
+---@field auraIsActive boolean -- hérité
+HUDAuraTotem = {}
+HUDAuraTotem.__index = HUDAuraTotem
+setmetatable(HUDAuraTotem, { __index = HUDAuraLike })
+
+---comment
+---@param slot integer
+---@param spellID integer
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@return HUDAuraTotem
+function HUDAuraTotem:createTotem(slot, spellID, hud, talent)
+    local x = {}
+    setmetatable(x, HUDAuraTotem)
+    ---@cast x HUDAuraTotem
+    x:constructAuraLike(spellID, hud, talent)
+    x.slot = slot
+    return x
+end
+
+function HUDAuraTotem:updateTimerDuration_dstr(t)
+    local haveTotem, _, startTime, duration, _, _, _ = GetTotemInfo(self.slot)
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (issecretvalue(haveTotem)) then
+        -- self.cdmFrame.totemData.duration et self.cdmFrame.totemData.expirationTime
+        if (self.cdmFrame and self.cdmFrame.totemData) then
+            self.auraIsActive = true
+            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+        else
+            self.auraIsActive = false
+            return nil, startTime, duration, 0
+        end
+    else
+        self.auraIsActive = haveTotem
+        if (haveTotem) then
+            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+        else
+            return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
+        end
+    end
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region TOTEM ------------------------------------------------
+
+---@class (exact) HUDTotem : HUDTimer
+---@field private __index HUDTotem
+---@field private slot integer
+---@field totemIsActive boolean
+HUDTotem = {}
+HUDTotem.__index = HUDTotem
+setmetatable(HUDTotem, { __index = HUDTimer })
+
+---comment
+---@param slot integer
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@return HUDTotem
+function HUDTotem:createTotem(slot, hud, talent)
+    local x = {}
+    setmetatable(x, HUDTotem)
+    ---@cast x HUDTotem
+    x:constructTimer(hud, talent)
+    x.slot = slot
+    x.totemIsActive = false
+    return x
+end
+
+function HUDTotem:updateTimerDuration_dstr(t)
+    local haveTotem, _, startTime, duration, _, _, _ = GetTotemInfo(self.slot)
+    self.totemIsActive = haveTotem
+    ---@diagnostic disable-next-line: param-type-mismatch
+    if (issecretvalue(haveTotem)) then
+        return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+    else
+        if (haveTotem) then
+            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+        else
+            return self.hud.duration0, startTime, duration, 0
+        end
+    end
+end
+
+function HUDTotem:talentIsNotActive()
+    self.totemIsActive = false
 end
 
 --#endregion
@@ -609,7 +774,7 @@ function HUDBagItem:bagUpdate()
     end
 end
 
-function HUDBagItem:updateTimerDuration(t)
+function HUDBagItem:updateTimerDuration_dstr(t)
     if (self.hasItem) then
         self.stacks = C_Item.GetItemCount(self.itemID, false, true, false, false)
         -- voir aussi : C_Container.GetItemCooldown et C_Item.GetItemCooldown
@@ -739,7 +904,7 @@ end
 ---@param combat boolean
 ---@return boolean
 function HUDPublicBooleanAuraActive:getValue(t, combat)
-    return self.aura.auraIsPresent
+    return self.aura.auraIsActive
 end
 
 ---@class (exact) HUDPublicBooleanShapeshift : HUDPublicBoolean

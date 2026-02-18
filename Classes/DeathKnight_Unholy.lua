@@ -153,7 +153,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
     function runesDisplay:RunesUpdated()
-        if (feast.auraIsPresent) then
+        if (feast.auraIsActive) then
             self:SetBorderColor(1.0, 0.0, 0.0)
         else
             self:SetBorderColor(1.0, 1.0, 1.0)
@@ -163,7 +163,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.2, 0.7, 1.0)
     local tickCoil = powerBar:AddTick(136145, nil, function() return 30 end)
     function tickCoil:OverrideAlpha()
-        if (doom.auraIsPresent) then
+        if (doom.auraIsActive) then
             return 0.0
         else
             return 1.0
@@ -171,7 +171,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     end
     local tickDoom = powerBar:AddTick(136145, nil, function() return 15 end)
     function tickDoom:OverrideAlpha()
-        if (doom.auraIsPresent) then
+        if (doom.auraIsActive) then
             return 1.0
         else
             return 0.0

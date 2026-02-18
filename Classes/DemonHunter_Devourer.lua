@@ -116,7 +116,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
 
     local metaBuildBar = soulsSlot:AddStacksBar(metastacks, 0.0, 0.0, 1.0, nil, function() return talent_glutton:PlayerHasTalent() and 35 or 50 end, function() return 0 end)
     function metaBuildBar:OverrideVisibilityAlpha(aura, t, combat)
-        if (collapstar.auraIsPresent) then
+        if (collapstar.auraIsActive) then
             return 0.0
         else
             ---@diagnostic disable-next-line: param-type-mismatch
@@ -152,7 +152,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 1.0, 0.0, 1.0)
     function powerBar:AdditionalBarUpdate(t, combat, bar, current)
-        if (collapstar.auraIsPresent) then
+        if (collapstar.auraIsActive) then
             bar:SetBarColor(1.0, 0.0, 0.0, false)
         else
             bar:SetBarColor(1.0, 0.0, 1.0, false)
@@ -160,7 +160,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     end
     local rayTick = powerBar:AddTick(7554220, nil, function() return 100 end)
     function rayTick:OverrideAlpha()
-        if (collapstar.auraIsPresent) then
+        if (collapstar.auraIsActive) then
             return 0.0
         else
             return 1.0

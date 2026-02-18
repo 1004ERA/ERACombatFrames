@@ -469,7 +469,7 @@ function HUDPowerBarStacksDisplay:getCurrentAndUpdate(t, combat)
     if (self.OverrideVisibilityAlpha) then
         self.bar:SetVisibilityAlpha(self:OverrideVisibilityAlpha(self.data, t, combat), true)
     else
-        if (self.data.auraIsPresent) then
+        if (self.data.auraIsActive) then
             if (combat) then
                 self.bar:SetVisibilityAlpha(1.0, false)
             else
@@ -488,7 +488,7 @@ function HUDPowerBarStacksDisplay:getCurrentAndUpdate(t, combat)
             end
         end
     end
-    if (self.data.auraIsPresent) then
+    if (self.data.auraIsActive) then
         self.bar:SetMiddleText(tostring(self.data.stacksDisplay), true)
     else
         self.bar:SetMiddleText("", false)

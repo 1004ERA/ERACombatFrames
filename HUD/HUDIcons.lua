@@ -275,16 +275,16 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDEquipmentIcon:Update(t, combat)
-    self.icon:SetValue(self.data.start, self.data.duration)
+    self.icon:SetValue(self.data.startTime, self.data.totalDuration)
     local alpha
     if (combat) then
         alpha = 1.0
     else
         ---@diagnostic disable-next-line: param-type-mismatch
-        if (issecretvalue(self.data.start) or issecretvalue(self.data.duration)) then
+        if (issecretvalue(self.data.startTime) or issecretvalue(self.data.totalDuration)) then
             alpha = 1.0
         else
-            if (self.data.start and self.data.start > 0) then
+            if (self.data.startTime and self.data.totalDuration > 0) then
                 alpha = 1.0
             else
                 alpha = 0.0
@@ -292,6 +292,90 @@ function HUDEquipmentIcon:Update(t, combat)
         end
     end
     self.icon:SetVisibilityAlpha(alpha, false)
+end
+
+--#endregion
+----------------------------------------------------------------
+
+----------------------------------------------------------------
+--#region AURALIKE ICON ----------------------------------------
+
+---@class (exact) HUDAuraLikeIcon : HUDPieIcon
+---@field private __index HUDAuraLikeIcon
+---@field private data HUDAuraLike
+---@field private forcedIcon boolean
+---@field private displayAsCooldown boolean
+---@field showRedIfMissingInCombat boolean
+HUDAuraLikeIcon = {}
+HUDAuraLikeIcon.__index = HUDAuraLikeIcon
+setmetatable(HUDAuraLikeIcon, { __index = HUDPieIcon })
+
+---comment
+---@param frame Frame
+---@param frameLevel number
+---@param point "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param relativePoint "TOPLEFT"|"TOP"|"TOPRIGHT"|"RIGHT"|"BOTTOMRIGHT"|"BOTTOM"|"BOTTOMLEFT"|"LEFT"|"CENTER"
+---@param size number
+---@param data HUDAuraLike
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@param displayAsCooldown boolean|nil
+---@return HUDAuraLikeIcon
+function HUDAuraLikeIcon:create(frame, frameLevel, point, relativePoint, size, data, iconID, talent, displayAsCooldown)
+    local x = {}
+    setmetatable(x, HUDAuraLikeIcon)
+    ---@cast x HUDAuraLikeIcon
+    if (iconID) then
+        x.forcedIcon = true
+    else
+        x.forcedIcon = false
+        local info = C_Spell.GetSpellInfo(data.spellID)
+        if (info) then
+            iconID = info.originalIconID
+        else
+            iconID = 134400 -- queston mark
+        end
+    end
+    x:constructPie(data.hud, frame, frameLevel, point, relativePoint, size, iconID, ERALIBTalent_CombineMakeAnd(talent, data.talent))
+    x.data = data
+    if (displayAsCooldown) then
+        x.displayAsCooldown = true
+    else
+        x.showRedIfMissingInCombat = true
+        x.icon:SetupAura()
+    end
+    return x
+end
+
+function HUDAuraLikeIcon:HideCountdown()
+    self.icon:HideDefaultCountdown()
+end
+
+---comment
+---@param t number
+---@param combat boolean
+function HUDAuraLikeIcon:Update(t, combat)
+    if (self.data.auraIsActive) then
+        self.icon:SetVisibilityAlpha(1.0, false)
+        self.icon:SetTint(1.0, 1.0, 1.0, false)
+        self.icon:SetValue(self.data.startTime, self.data.totalDuration)
+    else
+        self.icon:SetValue(0, 0)
+        if (combat) then
+            if (self.showRedIfMissingInCombat) then
+                self.icon:SetTint(1.0, 0.0, 0.0, false)
+                self.icon:SetVisibilityAlpha(1.0, false)
+            elseif (self.displayAsCooldown) then
+                self.icon:SetVisibilityAlpha(1.0, false)
+            else
+                self.icon:SetVisibilityAlpha(0.0, false)
+                return
+            end
+        else
+            self.icon:SetVisibilityAlpha(0.0, false)
+            return
+        end
+    end
 end
 
 --#endregion
@@ -371,7 +455,7 @@ function HUDAuraIcon:Update(t, combat)
         self.icon:SetVisibilityAlpha(0.0, false)
         return
     end
-    if (self.data.auraIsPresent) then
+    if (self.data.auraIsActive) then
         self.icon:SetVisibilityAlpha(1.0, false)
         self.icon:SetTint(1.0, 1.0, 1.0, false)
     else
@@ -398,7 +482,7 @@ function HUDAuraIcon:Update(t, combat)
             self.icon:SetMainText(self:GetMainText(), true)
         end
     end
-    self.icon:SetValue(self.data.timerDuration:GetStartTime(), self.data.timerDuration:GetTotalDuration())
+    self.icon:SetValue(self.data.startTime, self.data.totalDuration)
 
     if (self.watchIconChange and self.data.icon) then
         self.icon:SetIconTexture(self.data.icon, false, true)
@@ -472,13 +556,13 @@ end
 ---@param combat boolean
 function HUDBagItemIcon:Update(t, combat)
     if (self.data.hasItem) then
-        if (combat) then
+        if (combat or not self.data.timerDuration) then
             self.icon:SetVisibilityAlpha(1.0, false)
         else
             ---@diagnostic disable-next-line: param-type-mismatch
             self.icon:SetVisibilityAlpha(self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
         end
-        self.icon:SetValue(self.data.timerDuration:GetStartTime(), self.data.timerDuration:GetTotalDuration())
+        self.icon:SetValue(self.data.startTime, self.data.totalDuration)
         self.icon:SetSecondaryText(self.data.stacks, true)
         self.icon:SetTint(1.0, 1.0, 1.0, false)
     else

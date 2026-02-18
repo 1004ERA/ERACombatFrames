@@ -149,12 +149,12 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local embers = hud:AddResourceSlot(false):AddDestroShards()
     function embers:DisplayUpdated()
-        if (diabolist.ruination.auraIsPresent) then
+        if (diabolist.ruination.auraIsActive) then
             self:SetBorderColor(0.0, 1.0, 1.0, false)
         else
             self:SetBorderColor(1.0, 1.0, 0.0, false)
         end
-        if (diabolist.infernalBolt.auraIsPresent) then
+        if (diabolist.infernalBolt.auraIsActive) then
             self:SetPointFullColor(0.0, 1.0, 0.0, false)
         else
             self:SetPointFullColor(1.0, 0.0, 1.0, false)
@@ -164,7 +164,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local petHealth = hud:AddPetHealth()
     local petBar = hud:AddResourceSlot(true):AddHealth(petHealth, true)
     function petBar:ShowIfNoUnit(t, combat)
-        return (not talent_sacrifice:PlayerHasTalent()) or not sacriBuff.auraIsPresent
+        return (not talent_sacrifice:PlayerHasTalent()) or not sacriBuff.auraIsActive
     end
 
     --#endregion

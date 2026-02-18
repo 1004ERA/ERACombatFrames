@@ -78,12 +78,6 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
 
     -- essentials
 
-    --[[
-    local dotIcon, _, dotBar = hud:AddEssentialsAura(fever, 237522, nil, 0.0, 1.0, 1.0)
-    dotIcon.showRedIfMissingInCombat = true
-    dotBar.showPandemic = true
-    ]]
-
     hud:AddEssentialsLeftAura(draw)
 
     hud:AddEssentialsLeftAura(runeStrength)
@@ -153,7 +147,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
 
     local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
     function runesDisplay:RunesUpdated()
-        if (feast.auraIsPresent) then
+        if (feast.auraIsActive) then
             self:SetBorderColor(1.0, 0.0, 0.0)
         else
             self:SetBorderColor(1.0, 1.0, 1.0)

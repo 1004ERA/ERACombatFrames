@@ -147,7 +147,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.2, 0.7, 1.0)
     local tickOssuaryDraw = powerBar:AddTick(237517, talent_draw_ossuary, function() return 25 end)
     function tickOssuaryDraw:OverrideAlpha()
-        if (draw.auraIsPresent and ossuary.auraIsPresent) then
+        if (draw.auraIsActive and ossuary.auraIsActive) then
             return 1.0
         else
             return 0.0
@@ -155,7 +155,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     end
     local tickDraw = powerBar:AddTick(237517, talents.draw, function() return 30 end)
     function tickDraw:OverrideAlpha()
-        if (draw.auraIsPresent and not ossuary.auraIsPresent) then
+        if (draw.auraIsActive and not ossuary.auraIsActive) then
             return 1.0
         else
             return 0.0
@@ -163,7 +163,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     end
     local tickOssuary = powerBar:AddTick(237517, talent_ossuary, function() return 35 end)
     function tickOssuary:OverrideAlpha()
-        if (ossuary.auraIsPresent and not draw.auraIsPresent) then
+        if (ossuary.auraIsActive and not draw.auraIsActive) then
             return 1.0
         else
             return 0.0
@@ -171,7 +171,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     end
     local tickNothing = powerBar:AddTick(237517, nil, function() return 40 end)
     function tickNothing:OverrideAlpha()
-        if (ossuary.auraIsPresent or draw.auraIsPresent) then
+        if (ossuary.auraIsActive or draw.auraIsActive) then
             return 0.0
         else
             return 1.0

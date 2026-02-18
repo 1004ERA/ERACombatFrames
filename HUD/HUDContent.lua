@@ -349,8 +349,8 @@ end
 ---@field private position number
 ---@field private timer HUDTimer
 ---@field private bar StatusBar
+---@field private showPandemic boolean
 ---@field doNotCutLongDuration boolean
----@field showPandemic boolean
 ---@field showOnlyIf HUDPublicBoolean|nil
 HUDTimerBar = {}
 HUDTimerBar.__index = HUDTimerBar
@@ -393,6 +393,10 @@ function HUDTimerBar:Deactivate()
     self.bar:Hide()
 end
 
+function HUDTimerBar:ShowPandemic()
+    self.showPandemic = true
+end
+
 ---comment
 ---@param xMid number
 ---@param iconWidth number
@@ -417,22 +421,36 @@ function HUDTimerBar:Update(t, combat)
             self.bar:SetAlpha(0.0)
             return
         end
-        if (self.doNotCutLongDuration) then
-            self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
-        else
-            if (self.showPandemic) then
-                ---@diagnostic disable-next-line: param-type-mismatch
-                self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+        local alphaManaged = false
+        if (self.timer.timerDuration) then
+            if (self.doNotCutLongDuration) then
+                self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
             else
-                ---@diagnostic disable-next-line: param-type-mismatch
-                self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+                if (self.showPandemic) then
+                    if (self.timer:managePandemic(self.bar)) then
+                        alphaManaged = true
+                    else
+                        ---@diagnostic disable-next-line: param-type-mismatch
+                        self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curvePandemic))
+                    end
+                else
+                    ---@diagnostic disable-next-line: param-type-mismatch
+                    self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
+                end
             end
-        end
-        if (self.timer.alphaDuration) then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            self.bar:SetAlpha(self.timer.alphaDuration:EvaluateRemainingDuration(self.hud.curveAlphaDuration))
+        elseif (self.timer.remainingDuration) then
+            self.bar:SetValue(self.timer.remainingDuration)
         else
-            self.bar:SetAlpha(1.0)
+            self.bar:SetValue(0)
+            return
+        end
+        if (not alphaManaged) then
+            if (self.timer.alphaDuration) then
+                ---@diagnostic disable-next-line: param-type-mismatch
+                self.bar:SetAlpha(self.timer.alphaDuration:EvaluateRemainingDuration(self.hud.curveAlphaDurationSpellCharges))
+            else
+                self.bar:SetAlpha(1.0)
+            end
         end
     end
 end

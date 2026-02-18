@@ -120,12 +120,12 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     local shardsDisplay = hud:AddResourceSlot(false):AddPowerPoints(shards, 1.0, 1.0, 0.0, 1.0, 0.0, 1.0, nil, function() return 3 end)
     function shardsDisplay:DisplayUpdated(t, combat)
-        if (diabolist.ruination.auraIsPresent) then
+        if (diabolist.ruination.auraIsActive) then
             self:SetBorderColor(0.0, 1.0, 1.0, false)
         else
             self:SetBorderColor(1.0, 1.0, 0.0, false)
         end
-        if (diabolist.infernalBolt.auraIsPresent) then
+        if (diabolist.infernalBolt.auraIsActive) then
             self:SetPointColor(0.0, 1.0, 0.0, false)
         else
             self:SetPointColor(1.0, 0.0, 1.0, false)

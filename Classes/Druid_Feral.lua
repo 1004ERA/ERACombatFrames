@@ -78,7 +78,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
 
     local rakeIcon, rakeSlot = hud:AddDOT(rake, nil, nil, 0.8, 0.7, 0.0)
     function rakeIcon:IconUpdated(t, combat, icon)
-        icon:SetHighlight(ambush.auraIsPresent)
+        icon:SetHighlight(ambush.auraIsActive)
     end
     --rakeSlot:AddTimerBar(0.25, sabertooth, nil, 1.0, 1.0, 1.0).doNotCutLongDuration = true
     --rakeSlot:AddTimerBar(0.75, vines, nil, 0.0, 1.0, 0.0).doNotCutLongDuration = true
@@ -131,7 +131,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
 
     local comboDisplay = hud:AddResourceSlot(false):AddPowerPoints(combo, 0.6, 0.8, 0.0, 1.0, 0.0, 0.0, nil, function() return 0 end)
     function comboDisplay:DisplayUpdated(t, combat)
-        if (apex.auraIsPresent) then
+        if (apex.auraIsActive) then
             self:SetPointColor(0.0, 1.0, 0.0, false)
         else
             self:SetPointColor(1.0, 0.0, 0.0, false)

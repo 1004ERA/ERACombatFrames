@@ -38,6 +38,11 @@ Classes/Druid_Feral.lua
 Classes/Druid_Guardian.lua
 Classes/Druid_Restoration.lua
 
+Classes/Paladin.lua
+Classes/Paladin_Holy.lua
+Classes/Paladin_Protection.lua
+Classes/Paladin_Retribution.lua
+
 Classes/Warlock.lua
 Classes/Warlock_Affliction.lua
 Classes/Warlock_Demonology.lua

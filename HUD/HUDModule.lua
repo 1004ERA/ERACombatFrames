@@ -56,7 +56,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private targetCasBar StatusBar
 ---@field private kicks HUDCooldown[]
 ---@field private bagItems HUDBagItem[]
----@field cdmAuraFetcher { [number]: HUDAura }
+---@field cdmAuraFetcher { [number]: HUDAuraLike }
 ---@field private cdmParsedTime number
 ---@field private warnedMissingCDM boolean
 ---@field duration0 LuaDurationObject
@@ -75,7 +75,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field curveTrue0 LuaCurveObject
 ---@field curveFalse0 LuaCurveObject
 ---@field curveRedIf0 LuaColorCurveObject
----@field curveAlphaDuration LuaColorCurveObject
+---@field curveAlphaDurationSpellCharges LuaColorCurveObject
 ---@field colorVisible ColorMixin
 ---@field colorTransparent ColorMixin
 HUDModule = {}
@@ -166,11 +166,11 @@ HUDModule.curvePandemic:AddPoint(0.29, 1.0)
 HUDModule.curvePandemic:AddPoint(0.3, 0.0)
 HUDModule.curvePandemic:AddPoint(1, 0.0)
 
-HUDModule.curveAlphaDuration = C_CurveUtil:CreateCurve()
-HUDModule.curveAlphaDuration:SetType(Enum.LuaCurveType.Step)
-HUDModule.curveAlphaDuration:AddPoint(0, 1.0)
-HUDModule.curveAlphaDuration:AddPoint(0.01, 1.0)
-HUDModule.curveAlphaDuration:AddPoint(0.1, 0.5)
+HUDModule.curveAlphaDurationSpellCharges = C_CurveUtil:CreateCurve()
+HUDModule.curveAlphaDurationSpellCharges:SetType(Enum.LuaCurveType.Step)
+HUDModule.curveAlphaDurationSpellCharges:AddPoint(0, 1.0)
+HUDModule.curveAlphaDurationSpellCharges:AddPoint(0.01, 1.0)
+HUDModule.curveAlphaDurationSpellCharges:AddPoint(0.1, 0.5)
 
 HUDModule.colorTransparent = CreateColor(1.0, 1.0, 1.0, 0.0)
 HUDModule.colorVisible = CreateColor(1.0, 1.0, 1.0, 1.0)
@@ -472,7 +472,7 @@ function HUDModule:Pack()
     elseif (r == 34) then
         -- dark iron dwarf
         racialSpellID = 265221
-        racialGroup = self.defensiveGroup
+        racialGroup = self.powerboostGroup
     elseif (r == 35) then
         -- vulpera
         racialSpellID = 312411
@@ -830,9 +830,8 @@ function HUDModule:getEssentialFrame()
     return self.essentialsFrame
 end
 
----@param a HUDAura
----@param isTarget boolean
-function HUDModule:addActiveAura(a, isTarget)
+---@param a HUDAuraLike
+function HUDModule:addActiveAura(a)
     self.cdmAuraFetcher[a.spellID] = a
 end
 
@@ -1257,8 +1256,11 @@ function HUDModule:parseCDMBuffLinked(frame)
 end
 
 ---@class CDMAuraFrame
+---@field totemData unknown
 ---@field auraInstanceID number|nil
 ---@field auraDataUnit string|nil
+---@field PandemicIcon nil|Frame
+---@field GetAuraDataUnit fun(self:CDMAuraFrame):string
 
 --------
 --#region CHANNEL TICKS
@@ -1766,10 +1768,10 @@ end
 --#region CONSTRUCTORS ---------------------------------------------------------------------------------------------------------
 
 ---@class ChannelTickInfo
----@field tickCount number
+---@field tickCount integer
 ---@field tickDelta number
 
----@param tickCount number
+---@param tickCount integer
 ---@param tickDelta number
 function HUDModule:AddChannelInfo(spellID, tickCount, tickDelta)
     local info = {}
@@ -1783,14 +1785,14 @@ function HUDModule:AddKickInfo(cd)
     table.insert(self.kicks, cd)
 end
 
----@param spellID number
+---@param spellID integer
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldown
 function HUDModule:AddCooldown(spellID, talent)
     return HUDCooldown:Create(spellID, self, talent)
 end
 
----@param spellID number
+---@param spellID integer
 ---@param isTarget boolean
 ---@param talent ERALIBTalent|nil
 ---@return HUDAura
@@ -1798,7 +1800,21 @@ function HUDModule:AddAuraByPlayer(spellID, isTarget, talent)
     return HUDAura:createAura(spellID, self, talent, isTarget)
 end
 
----@param itemID number
+---@param slot integer
+---@param cmd_spellID integer
+---@param talent ERALIBTalent|nil
+---@return HUDAuraTotem
+function HUDModule:AddAuraTotem(slot, cmd_spellID, talent)
+    return HUDAuraTotem:createTotem(slot, cmd_spellID, self, talent)
+end
+---@param slot integer
+---@param talent ERALIBTalent|nil
+---@return HUDTotem
+function HUDModule:AddTotem(slot, talent)
+    return HUDTotem:createTotem(slot, self, talent)
+end
+
+---@param itemID integer
 ---@param talent ERALIBTalent|nil
 ---@return HUDBagItem
 function HUDModule:AddBagItem(itemID, talent)
@@ -1810,7 +1826,7 @@ function HUDModule:AddPetHealth()
     return HUDHealth:Create(self, "pet")
 end
 
----@param spellID number
+---@param spellID integer
 ---@param talent ERALIBTalent|nil
 ---@return HUDPublicBooleanSpellOverlay
 function HUDModule:AddSpellOverlayBoolean(spellID, talent)
@@ -1838,22 +1854,22 @@ function HUDModule:AddPublicBooleanOr(b1, b2)
     return HUDPublicBooleanOr:create(self, b1, b2)
 end
 
----@param spellID number
----@param iconID number
+---@param spellID integer
+---@param iconID integer
 ---@param talent ERALIBTalent|nil
 ---@return HUDPublicBooleanSpellIcon
 function HUDModule:AddIconBoolean(spellID, iconID, talent)
     return HUDPublicBooleanSpellIcon:create(self, talent, spellID, iconID)
 end
 
----@param shapeshiftIndex number
+---@param shapeshiftIndex integer
 ---@return HUDPublicBooleanShapeshift
 function HUDModule:AddShapeshiftBoolean(shapeshiftIndex)
     return HUDPublicBooleanShapeshift:create(self, shapeshiftIndex)
 end
 
 ---@param data HUDCooldown
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@param r number
 ---@param g number
@@ -1874,14 +1890,15 @@ function HUDModule:AddEssentialsCooldown(data, iconID, talent, r, g, b, addTimer
 end
 
 ---@param data HUDAura
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@param rBar number|nil
 ---@param gBar number|nil
 ---@param bBar number|nil
+---@param displayAsCooldown boolean|nil
 ---@return HUDAuraIcon, HUDEssentialsSlot, nil|HUDTimerBar
-function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar)
-    local icon = HUDAuraIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent)
+function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar, displayAsCooldown)
+    local icon = HUDAuraIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent, displayAsCooldown)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     if (rBar and gBar and bBar) then
@@ -1892,9 +1909,20 @@ function HUDModule:AddEssentialsAura(data, iconID, talent, rBar, gBar, bBar)
         return icon, placement, nil
     end
 end
+---@param data HUDAuraLike
+---@param iconID integer|nil
+---@param talent ERALIBTalent|nil
+---@param displayAsCooldown boolean|nil
+---@return HUDAuraLikeIcon, HUDEssentialsSlot
+function HUDModule:AddEssentialsAuraLike(data, iconID, talent, displayAsCooldown)
+    local icon = HUDAuraLikeIcon:create(self.essentialsFrame, 1, "TOP", "CENTER", self.options.essentialsIconSize, data, iconID, talent, displayAsCooldown)
+    local placement = HUDEssentialsSlot:create(icon, self)
+    table.insert(self.essentialsIcons, placement)
+    return icon, placement
+end
 
 ---@param data HUDAura
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@param rBar number
 ---@param gBar number
@@ -1906,13 +1934,13 @@ function HUDModule:AddDOT(data, iconID, talent, rBar, gBar, bBar)
     local placement = HUDEssentialsSlot:create(icon, self)
     table.insert(self.essentialsIcons, placement)
     local bar = HUDTimerBar:create(placement, 0.5, data, talent, rBar, gBar, bBar, self.timerFrameBack)
-    bar.showPandemic = true
+    bar:ShowPandemic()
     icon.showRedIfMissingInCombat = true
     return icon, placement, bar
 end
 
 ---@param data HUDCooldown
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldownIcon
 function HUDModule:AddEssentialsLeftCooldown(data, iconID, talent)
@@ -1922,7 +1950,7 @@ function HUDModule:AddEssentialsLeftCooldown(data, iconID, talent)
 end
 
 ---@param data HUDCooldown
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDCooldownIcon
 function HUDModule:AddEssentialsRightCooldown(data, iconID, talent)
@@ -1932,7 +1960,7 @@ function HUDModule:AddEssentialsRightCooldown(data, iconID, talent)
 end
 
 ---@param data HUDAura
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraIcon
 function HUDModule:AddEssentialsLeftAura(data, iconID, talent)
@@ -1942,7 +1970,7 @@ function HUDModule:AddEssentialsLeftAura(data, iconID, talent)
 end
 
 ---@param data HUDAura
----@param iconID number|nil
+---@param iconID integer|nil
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraIcon
 function HUDModule:AddEssentialsRightAura(data, iconID, talent)
@@ -1987,7 +2015,7 @@ end
 
 ---@param data HUDAura
 ---@param talent ERALIBTalent|nil
----@param texture string|number
+---@param texture string|integer
 ---@param isAtlas boolean
 ---@param transform SAOTransform
 ---@param position SAOPosition
@@ -1998,7 +2026,7 @@ end
 
 ---@param data HUDAura
 ---@param talent ERALIBTalent|nil
----@param texture string|number
+---@param texture string|integer
 ---@param isAtlas boolean
 ---@param showOutOfCombat boolean
 ---@param transform SAOTransform
@@ -2009,7 +2037,7 @@ function HUDModule:AddMissingAuraOverlayAlert(data, talent, texture, isAtlas, sh
 end
 
 ---@param talent ERALIBTalent|nil
----@param texture string|number
+---@param texture string|integer
 ---@param isAtlas boolean
 ---@param data HUDPublicBoolean
 ---@param transform SAOTransform

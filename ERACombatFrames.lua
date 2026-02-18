@@ -133,7 +133,7 @@ function ECF_PRINT_CDM()
                         linked = linked .. x
                     end
                 end
-                print(info.spellID, C_Spell.GetSpellInfo(info.spellID).name, c.auraInstanceID, linked)
+                print(info.spellID, C_Spell.GetSpellInfo(info.spellID).name, c:GetAuraDataUnit(), c.auraInstanceID, linked)
             end
         end
     end
@@ -182,7 +182,7 @@ function ERACombatFrames_event(event, ...)
         --ERACombatOptions_initialize()
         local cFrame = ERACombatMainFrame:Create()
         if (classID == 2) then
-            --ERACombatFrames_PaladinSetup(cFrame)
+            ERACombatFrames_PaladinSetup(cFrame)
         elseif (classID == 4) then
             --ERACombatFrames_RogueSetup(cFrame)
         elseif (classID == 5) then
