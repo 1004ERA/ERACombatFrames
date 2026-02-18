@@ -260,6 +260,7 @@ function HUDSAOAlertBasicBooleanDelay:constructAlertBooleanDelay(hud, talent, te
     self:constructBooleanSAO(hud, talent, texture, isAtlas, transform, position)
     self.delay = delay
     self.showOutOfCombat = showOutOfCombat
+    self.start_active = -1
 end
 
 ---@param t number
