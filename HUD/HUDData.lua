@@ -82,6 +82,7 @@ function HUDHealth:Update()
         self.unitExists = true
         self.health = UnitHealth(self.unit)
         self.maxHealth = UnitHealthMax(self.unit)
+        ---@diagnostic disable-next-line: assign-type-mismatch
         self.healthPercent100 = UnitHealthPercent(self.unit, true, CurveConstants.ScaleTo100)
         UnitGetDetailedHealPrediction(self.unit, nil, self.calc)
         --self.goodAbsorb = UnitGetTotalAbsorbs(self.unit)
@@ -146,6 +147,7 @@ end
 function HUDPower:Update(t, combat)
     self.current = UnitPower("player", self.powerType)
     self.max = UnitPowerMax("player", self.powerType)
+    ---@diagnostic disable-next-line: assign-type-mismatch
     self.percent100 = UnitPowerPercent("player", self.powerType, false, CurveConstants.ScaleTo100)
     if (not combat) then
         self.idleAlphaOOC = self:updateIdleAlpha()
@@ -268,7 +270,9 @@ function HUDTimer:Update(t)
     local dur, startTime, totDur, remDur = self:updateTimerDuration_dstr(t)
     self.timerDuration = dur
     self.remainingDuration = remDur
+    ---@diagnostic disable-next-line: assign-type-mismatch
     self.startTime = startTime
+    ---@diagnostic disable-next-line: assign-type-mismatch
     self.totalDuration = totDur
     if (dur) then
         if (not remDur) then
@@ -930,6 +934,26 @@ function HUDPublicBooleanShapeshift:getValue(t, combat)
     return self.shapeshiftIndex == GetShapeshiftForm()
 end
 
+---@class (exact) HUDPublicBooleanIsInGroupOrRaid : HUDPublicBoolean
+---@field private __index HUDPublicBooleanIsInGroupOrRaid
+HUDPublicBooleanIsInGroupOrRaid = {}
+HUDPublicBooleanIsInGroupOrRaid.__index = HUDPublicBooleanIsInGroupOrRaid
+setmetatable(HUDPublicBooleanIsInGroupOrRaid, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+function HUDPublicBooleanIsInGroupOrRaid:create(hud)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanIsInGroupOrRaid)
+    ---@cast x HUDPublicBooleanIsInGroupOrRaid
+    x:constructBoolean(hud, nil)
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanIsInGroupOrRaid:getValue(t, combat)
+    return IsInGroup() or IsInRaid()
+end
+
 ---@class (exact) HUDPublicBooleanAnd : HUDPublicBoolean
 ---@field private __index HUDPublicBooleanAnd
 ---@field private shapeshiftIndex number
@@ -968,7 +992,7 @@ function HUDPublicBooleanAnd:getValue(t, combat)
     if (self.b1.value and self.b2.value) then
         if (self.additionalB) then
             for _, b in ipairs(self.additionalB) do
-                if (not b.value) then
+                if (not (b.talentActive and b.value)) then
                     return false
                 end
             end

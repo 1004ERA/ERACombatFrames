@@ -35,7 +35,4 @@
         "UtilityCooldownViewer",
         "NONE"
     ],
-    "Lua.diagnostics.disable": [
-        "assign-type-mismatch"
-    ]
 }

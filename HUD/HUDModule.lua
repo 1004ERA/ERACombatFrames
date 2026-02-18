@@ -30,7 +30,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private timerBarsActive HUDTimerBar[]
 ---@field private alerts HUDAlert[]
 ---@field private alertsActive HUDAlert[]
----@field private healthBar ERAStatusBar
+---@field private healthBar HUDHealthDisplay
 ---@field private healthData HUDHealth
 ---@field private resourceBeforeHealth HUDResourceSlot[]
 ---@field private resourceAfterHealth HUDResourceSlot[]
@@ -62,6 +62,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
 ---@field hasEnemyTarget boolean
+---@field isInGroupOrRaid HUDPublicBooleanIsInGroupOrRaid
 ---@field curveHide96pctFull LuaCurveObject
 ---@field curveHide4pctEmpty LuaCurveObject
 ---@field curveHideNoDuration LuaCurveObject
@@ -267,12 +268,16 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.alertGroup = HUDUtilityGroup:Create(x, "BOTTOM", false, false, x.options.alertGroupIconSize)
     x.utilityGroups = { x.specialGroup, x.movementGroup, x.controlGroup, x.powerboostGroup, x.buffGroup, x.assistGroup, x.defensiveGroup, x.alertGroup }
 
+    x.hasEnemyTarget = false
+
     x.duration0 = C_DurationUtil.CreateDuration()
 
     x.curveTimer = C_CurveUtil:CreateCurve()
     x.curveTimer:SetType(Enum.LuaCurveType.Linear)
 
     x.rootFrames = { x.essentialsFrame, x.resourceFrame }
+
+    x.isInGroupOrRaid = HUDPublicBooleanIsInGroupOrRaid:create(x)
 
     return x
 end

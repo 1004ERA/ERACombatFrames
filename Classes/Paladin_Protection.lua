@@ -35,6 +35,7 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local ardef = hud:AddCooldown(31850, talent_ardef)
     local spellwarding = hud:AddCooldown(204018, talent_spellwarding)
     local guardian = hud:AddCooldown(86659, talent_guardian)
+    local armaments = hud:AddCooldown(432459, talent_lightsmith)
 
     local wrathDuration = hud:AddAuraByPlayer(31884, false, talent_wrath)
     local sentinelDuration = hud:AddAuraByPlayer(389539, false, talent_sentinel)
@@ -43,6 +44,11 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local shining = hud:AddAuraByPlayer(321136, false)
     local bubble = hud:AddAuraByPlayer(642, false)
     local ardefDuration = hud:AddAuraByPlayer(31850, false, talent_ardef)
+    local deliverance = hud:AddAuraByPlayer(425518, false, talent_templar)
+    local armament_sword = hud:AddAuraByPlayer(432502, false, talent_lightsmith)
+    local armament_shield = hud:AddAuraByPlayer(432496, false, talent_lightsmith)
+
+    local hammerOfLight = hud:AddIconBoolean(toll.spellID, 5342121, ERALIBTalent:CreateAnd(talent_toll, talent_templar))
 
     --#endregion
     --------------------------------
@@ -59,18 +65,26 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     -- control
 
     -- buffs
+    hud.buffGroup:AddAura(armament_shield)
+    hud.buffGroup:AddAura(armament_sword, nil, nil, true)
 
     -- powerboost
     hud.powerboostGroup:AddCooldown(wrath)
     hud.powerboostGroup:AddCooldown(sentinel)
 
-    local commonSpells = ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick)
+    local commonSpells = ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick, false)
 
     -- essentials
 
-    hud:AddEssentialsLeftCooldown(ardef)
+    hud:AddEssentialsLeftAura(deliverance):ShowStacksRatherThanDuration()
 
-    hud:AddEssentialsCooldown(toll, nil, nil, 0.5, 0.5, 1.0)
+    local armamentIcon, armamentSlot = hud:AddEssentialsCooldown(armaments, nil, nil, 0.6, 0.4, 0.2)
+    armamentIcon.watchIconChange = true
+    armamentSlot:AddTimerBar(0.25, armament_shield, nil, 0.6, 0.4, 0.5)
+    armamentSlot:AddTimerBar(0.75, armament_sword, nil, 0.9, 0.4, 0.2)
+
+    local tollIcon = hud:AddEssentialsCooldown(toll, nil, nil, 0.5, 0.5, 1.0)
+    tollIcon.watchIconChange = true
 
     ERACombatFrames_PaladinJudgment(hud, talents, commonSpells, 1241413, wrathDuration, sentinelDuration, true)
 
@@ -88,11 +102,19 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local _, consecrSlot = hud:AddEssentialsAuraLike(consecrDuration)
     consecrSlot:AddTimerBar(0.5, consecr, nil, 0.66, 0.0, 0.0)
 
+    local _, ardefSlot = hud:AddEssentialsCooldown(ardef, nil, nil, 1.0, 1.0, 1.0, false)
+    ardefSlot:AddTimerBar(0.5, ardefDuration, nil, 0.5, 0.5, 0.5).doNotCutLongDuration = true
+    ardefSlot:AddTimerBar(0.75, bubble, nil, 0.1, 0.1, 0.1).doNotCutLongDuration = true
+
     --#endregion
     --------------------------------
 
     --------------------------------
     --#region ALERTS
+
+    shining.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(shining, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Denounce.tga", false, "NONE", "CENTER")
+    hud:AddPublicBooleanOverlayAlert(nil, "Interface/Addons/ERACombatFrames/textures/alerts/Surge_of_Light.tga", false, hammerOfLight, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     --#endregion
     --------------------------------
@@ -100,6 +122,13 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
+    function commonSpells.powerPoints:DisplayUpdated(t, combat)
+        if (shining.auraIsActive) then
+            self:SetBorderColor(0.0, 1.0, 0.0, false)
+        else
+            self:SetBorderColor(1.0, 1.0, 1.0, false)
+        end
+    end
 
     --#endregion
     --------------------------------

@@ -23,8 +23,10 @@ end
 ---@param cFrame ERACombatMainFrame
 ---@param hud HUDModule
 ---@param talents PaladinTalents
+---@param talent_kick ERALIBTalent|nil
+---@param isHoly boolean
 ---@return PaladinCommonSpells
-function ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick)
+function ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick, isHoly)
     local holyPower = hud:AddPowerLowIdle(Enum.PowerType.HolyPower)
     ---@class PaladinCommonSpells
     local commonSpells = {
@@ -55,10 +57,15 @@ function ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick)
     hud.movementGroup:AddCooldown(commonSpells.bof)
 
     -- special
+    if (not isHoly) then
+        hud.specialGroup:AddCooldown(hud:AddCooldown(213644, ERALIBTalent:Create(102476)))
+    end
 
     -- control
-    hud.controlGroup:AddCooldown(commonSpells.kick)
-    hud:AddKickInfo(commonSpells.kick)
+    if (not isHoly) then
+        hud.controlGroup:AddCooldown(commonSpells.kick)
+        hud:AddKickInfo(commonSpells.kick)
+    end
     hud.controlGroup:AddCooldown(commonSpells.stun)
     hud.controlGroup:AddCooldown(commonSpells.blind)
     hud.controlGroup:AddCooldown(commonSpells.turn)

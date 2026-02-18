@@ -49,7 +49,7 @@ function ERACombatFrames_Paladin_Retribution(cFrame, talents)
     local dawnlight = hud:AddAuraByPlayer(431377, true, talent_herald)
     local anshe = hud:AddAuraByPlayer(445206, false, talent_anshe)
 
-    local hammerOfLight = hud:AddIconBoolean(255937, 5342121, ERALIBTalent:CreateAnd(talent_wake, talent_templar))
+    local hammerOfLight = hud:AddIconBoolean(wake.spellID, 5342121, ERALIBTalent:CreateAnd(talent_wake, talent_templar))
     local hasWrath = hud:AddAuraBoolean(wrathDuration)
     local hasNotWrath = hud:AddAuraBoolean(wrathDuration)
     hasNotWrath.reverse = true
@@ -73,7 +73,7 @@ function ERACombatFrames_Paladin_Retribution(cFrame, talents)
     -- powerboost
     hud.powerboostGroup:AddCooldown(wrath)
 
-    local commonSpells = ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick)
+    local commonSpells = ERACombatFrames_PaladinCommonSpells(cFrame, hud, talents, talent_kick, false)
 
     -- essentials
 
@@ -120,7 +120,7 @@ function ERACombatFrames_Paladin_Retribution(cFrame, talents)
         if (empyrean.auraIsActive) then
             self:SetBorderColor(1.0, 0.0, 0.0, false)
         else
-            self:SetBorderColor(1.0, 1.0, 0.0, false)
+            self:SetBorderColor(1.0, 1.0, 1.0, false)
         end
         if (jje.auraIsActive) then
             self:SetPointColor(0.0, 1.0, 0.0, false)

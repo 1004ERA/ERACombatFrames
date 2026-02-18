@@ -22,6 +22,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local talent_expensive_madness = ERALIBTalent:Create(115671)
     local talent_normal_madness = ERALIBTalent:CreateNOR(talent_cheap_madness, talent_expensive_madness)
     local talent_swDeath35 = ERALIBTalent:Create(103681)
+    local talent_dispell = ERALIBTalent:Create(103854)
 
     --#endregion
     --------------------------------
@@ -41,6 +42,7 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     local volley = hud:AddCooldown(1242173, talent_voidform)
     local halo = hud:AddCooldown(120644, talent_archon)
     local torrent = hud:AddCooldown(263165, talent_voidweaver)
+    local dispell = hud:AddCooldown(213634, talent_dispell)
 
     local form = hud:AddAuraByPlayer(232698, false, talent_shadowform)
     local vTouch = hud:AddAuraByPlayer(34914, true)
@@ -71,7 +73,8 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     hud.defensiveGroup:AddCooldown(dispersion)
     hud.defensiveGroup:AddCooldown(embrace)
 
-    -- movement
+    -- special
+    hud.specialGroup:AddCooldown(dispell)
 
     -- control
     hud.controlGroup:AddCooldown(silence)

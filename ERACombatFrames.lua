@@ -2,7 +2,6 @@ ERACombatFrames_initialized = false
 
 --[[
 
-/run ECF_print_talents(nil,nil,'')
 
 /run print(C_Spell.GetSpellInfo("").spellID)
 
