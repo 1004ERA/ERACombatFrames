@@ -16,6 +16,7 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     local talent_evangelism = ERALIBTalent:Create(103702)
     local talent_shadowmend = ERALIBTalent:Create(103692)
     local talent_wealwoe = ERALIBTalent:Create(103698)
+    local talent_apex = ERALIBTalent:Create(136996)
 
     --#endregion
     --------------------------------
@@ -39,7 +40,9 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     --local darkside = hud:AddAuraByPlayer(198068, false)
     local harsh = hud:AddAuraByPlayer(373180, false, talent_harsh)
     local shadowmend = hud:AddAuraByPlayer(186440, false, talent_shadowmend)
-    --local wealwoe = hud:AddAuraByPlayer(390786, false, talent_wealwoe)
+    local wealwoe = hud:AddAuraByPlayer(390786, false, talent_wealwoe)
+
+    local apex = hud:AddIconBoolean(pws.spellID, 7514191, talent_apex)
 
     --#endregion
     --------------------------------
@@ -65,9 +68,10 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
 
     -- assist
     hud.assistGroup:AddCooldown(pws)
-    hud.assistGroup:AddCooldown(penance)
     hud.assistGroup:AddCooldown(pwRadiance)
+    hud.assistGroup:AddCooldown(penance)
     hud.assistGroup:AddCooldown(dispell)
+    hud.assistGroup:AddAura(wealwoe):ShowStacksRatherThanDuration()
     hud.assistGroup:AddCooldown(commonSpells.nova)
 
     -- essentials
@@ -89,7 +93,8 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(shadowmend, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(shadowmend, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "ROTATE_RIGHT", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddPublicBooleanOverlayAlert(nil, "Interface/Addons/ERACombatFrames/textures/alerts/GenericTop_01.tga", false, apex, "NONE", "TOP"):SetColor(0.7, 0.2, 1.0)
 
     --#endregion
     --------------------------------

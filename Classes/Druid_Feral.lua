@@ -25,6 +25,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     local talent_moonfire = ERALIBTalent:Create(103170)
     local talent_chomp = ERALIBTalent:Create(134212)
     local talent_hunger = ERALIBTalent:Create(103156)
+    local talent_apex = ERALIBTalent:Create(137045)
 
     --#endregion
     --------------------------------
@@ -60,6 +61,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     local rake = hud:AddAuraByPlayer(1822, true)
     local rip = hud:AddAuraByPlayer(1079, true)
     local vines = hud:AddAuraByPlayer(439528, true, talent_wildstalker)
+    local apex = hud:AddAuraByPlayer(1263658, false, talent_apex)
 
     --#endregion
     --------------------------------
@@ -84,6 +86,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     --rakeSlot:AddTimerBar(0.75, vines, nil, 0.0, 1.0, 0.0).doNotCutLongDuration = true
 
     local _, ripSlot = hud:AddDOT(rip, nil, nil, 1.0, 0.0, 1.0)
+    ripSlot:AddTimerBar(0.25, apex, nil, 0.7, 0.4, 0.4)
 
     hud:AddEssentialsCooldown(feralfrenzy, nil, nil, 0.0, 1.0, 1.0)
     hud:AddEssentialsCooldown(francticfrenzy, nil, nil, 0.0, 1.0, 1.0)

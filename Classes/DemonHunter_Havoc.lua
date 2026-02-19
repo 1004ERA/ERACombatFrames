@@ -15,6 +15,7 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     local talent_tempest = ERALIBTalent:Create(134203)
     local talent_ebreak = ERALIBTalent:Create(112956)
     local talent_aldrachi = ERALIBTalent:Create(117512)
+    local talent_apex = ERALIBTalent:Create(137047)
 
     --#endregion
     --------------------------------
@@ -50,6 +51,7 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     local metaBuff = hud:AddAuraByPlayer(191427, false)                   --162264
     local initiative = hud:AddAuraByPlayer(388108, false)
     --local inertia = hud:AddAuraByPlayer(427640, false)
+    local apex = hud:AddAuraByPlayer(1270898, false, talent_apex)
 
     --#endregion
     --------------------------------
@@ -103,6 +105,14 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
 
     -- powerboost
     hud.powerboostGroup:AddCooldown(meta)
+
+    --#endregion
+    --------------------------------
+
+    --------------------------------
+    --#region ALERTS
+
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fury_of_Stormrage.tga", true, "NONE", "TOP")
 
     --#endregion
     --------------------------------

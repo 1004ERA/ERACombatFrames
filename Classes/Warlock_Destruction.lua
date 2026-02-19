@@ -25,6 +25,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local talent_instarof = ERALIBTalent:Create(91423)
     local talent_shadowburnImproved = ERALIBTalent:Create(91478)
     local talent_shadowburnproc = ERALIBTalent:Create(126004)
+    local talent_apex = ERALIBTalent:Create(136985)
 
     --#endregion
     --------------------------------
@@ -59,6 +60,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local malevolenceBuff = hud:AddAuraByPlayer(442726, false, talent_malevolence)
     local shadowburnImproved = hud:AddAuraByPlayer(387110, false, talent_shadowburnImproved)
     local shadowburnproc = hud:AddAuraByPlayer(1245664, false, talent_shadowburnproc)
+    local apex = hud:AddAuraByPlayer(1265939, false, talent_apex)
 
     --local motherIncinerate = hud:AddIconBoolean(29722, 841220, talent_diabolist)
     --local pitBolt = hud:AddIconBoolean(116858, 135800, talent_diabolist)
@@ -83,6 +85,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
 
     local _, conflagSlot = hud:AddEssentialsCooldown(conflag, nil, nil, 1.0, 0.5, 0.0)
     conflagSlot:AddTimerBar(0.75, infernalBuff, nil, 0.5, 1.0, 0.1)
+    conflagSlot:AddTimerBar(0.25, apex, nil, 1.0, 0.7, 0.9)
 
     --hud:AddEssentialsAura(backdraft):ShowStacksRatherThanDuration()
 

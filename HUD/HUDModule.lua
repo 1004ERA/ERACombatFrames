@@ -58,7 +58,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private bagItems HUDBagItem[]
 ---@field cdmAuraFetcher { [number]: HUDAuraLike }
 ---@field private cdmParsedTime number
----@field private warnedMissingCDM boolean
+---@field private cdmParsedCount integer
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
 ---@field hasEnemyTarget boolean
@@ -247,6 +247,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
 
     x.cdmAuraFetcher = {}
     x.cdmParsedTime = -1
+    x.cdmParsedCount = 0
 
     x.resourceFrame = CreateFrame("Frame", nil, UIParent)
     x.resourceBeforeHealth = {}
@@ -524,6 +525,7 @@ function HUDModule:SpecInactive()
         g:moduleInactive()
     end
     self.cdmParsedTime = -1
+    self.cdmParsedCount = 0
     BuffIconCooldownViewer:SetAlpha(1.0)
     BuffBarCooldownViewer:SetAlpha(1.0)
     EssentialCooldownViewer:SetAlpha(1.0)
@@ -538,6 +540,7 @@ function HUDModule:SpecActive()
         g:moduleActive()
     end
     self.cdmParsedTime = -1
+    self.cdmParsedCount = 0
 end
 
 function HUDModule:ResetToIdle()
@@ -579,6 +582,7 @@ end
 
 function HUDModule:CheckTalents()
     self.cdmParsedTime = -1
+    self.cdmParsedCount = 0
     self.totalGCD = nil
 
     self.dataActive = {}
@@ -779,7 +783,7 @@ end
 function HUDModule:createGCDLine()
     local l = self.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 2)
     l:SetColorTexture(1.0, 1.0, 1.0, 1.0)
-    l:SetThickness(1)
+    l:SetThickness(1.618)
     return l
 end
 
@@ -1152,10 +1156,10 @@ function HUDModule:updateData(t, combat)
 
     --#region AURAS
 
-    if (self.cdmParsedTime < 0) then
+    if (self.cdmParsedCount < 32 and (self.cdmParsedTime < 0 or t - self.cdmParsedTime >= 1.618)) then
+        -- on parse 32 fois avec 1.618 secondes de délai entre chaque parsing
+        self.cdmParsedCount = self.cdmParsedCount + 1
         self.cdmParsedTime = t
-    elseif (self.cdmParsedTime > 0 and t - self.cdmParsedTime >= 1.618) then
-        self.cdmParsedTime = 0
         for _, aura in pairs(self.cdmAuraFetcher) do
             aura:prepareParseCDM()
         end
@@ -1163,8 +1167,7 @@ function HUDModule:updateData(t, combat)
         self:parseCDMBuffDirect(BuffIconCooldownViewer)
         self:parseCDMBuffLinked(BuffBarCooldownViewer)
         self:parseCDMBuffLinked(BuffIconCooldownViewer)
-        if (not self.warnedMissingCDM) then
-            self.warnedMissingCDM = true
+        if (self.cdmParsedCount == 13) then
             local missingCDM = nil
             for _, aura in pairs(self.cdmAuraFetcher) do
                 if (not aura.cdmFrameFound) then
@@ -1274,7 +1277,7 @@ end
 function HUDModule:createTickLine()
     local l = self.timerFrameFront:CreateLine(nil, "ARTWORK", nil, 7)
     l:SetColorTexture(0.4, 0.1, 1.0, 1.0)
-    l:SetThickness(1)
+    l:SetThickness(1.618)
     return l
 end
 

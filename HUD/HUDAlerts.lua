@@ -28,6 +28,7 @@ end
 ---@field private directY number
 ---@field private flipWH boolean
 ---@field protected frame Frame
+---@field protected texture Texture
 ---@field protected constructSAO fun(self:HUDSAOAlert, hud:HUDModule, talent:ERALIBTalent|nil, texture:number|string, isAtlas:boolean, transform:SAOTransform, position:SAOPosition)
 ---@field protected deactivated nil|fun(self:HUDSAOAlert)
 ---@field protected playBeam fun(self:HUDSAOAlert)
@@ -40,13 +41,13 @@ function HUDSAOAlert:constructSAO(hud, talent, texture, isAtlas, transform, posi
     self:constructAlert(hud, talent)
     self.frame = CreateFrame("Frame", nil, UIParent)
     self.frame:Hide()
-    local t = self.frame:CreateTexture(nil, "ARTWORK")
-    t:SetAllPoints()
+    self.texture = self.frame:CreateTexture(nil, "ARTWORK")
+    self.texture:SetAllPoints()
     if (isAtlas) then
         ---@diagnostic disable-next-line: param-type-mismatch
-        t:SetAtlas(texture)
+        self.texture:SetAtlas(texture)
     else
-        t:SetTexture(texture)
+        self.texture:SetTexture(texture)
     end
 
     if (transform == "MIRROR_H" or transform == "MIRROR_V") then
@@ -57,12 +58,12 @@ function HUDSAOAlert:constructSAO(hud, talent, texture, isAtlas, transform, posi
         if transform == "MIRROR_V" then
             texTop, texBottom = 1, 0
         end
-        t:SetTexCoord(texLeft, texRight, texTop, texBottom)
+        self.texture:SetTexCoord(texLeft, texRight, texTop, texBottom)
     elseif (transform == "ROTATE_LEFT") then
-        t:SetRotation(math.rad(90))
+        self.texture:SetRotation(math.rad(90))
         self.flipWH = true
     elseif (transform == "ROTATE_RIGHT") then
-        t:SetRotation(math.rad(-90))
+        self.texture:SetRotation(math.rad(-90))
         self.flipWH = true
     end
     self.position = position
@@ -107,6 +108,10 @@ function HUDSAOAlert:constructSAO(hud, talent, texture, isAtlas, transform, posi
     animPulseSmall:SetSmoothing("IN_OUT")
     animPulseSmall:SetOrder(2)
     self.anim:SetLooping("REPEAT")
+end
+
+function HUDSAOAlert:SetColor(r, g, b)
+    self.texture:SetVertexColor(r, g, b, 1.0)
 end
 
 function HUDSAOAlert:Deactivate()

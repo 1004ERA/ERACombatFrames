@@ -553,7 +553,7 @@ function HUDPowerBarTick:create(owner, iconID, talent, tickValue, sBar)
     local drawLevel = sBar:GetDrawFrameLevel()
     x.tick = x.parentFrame:CreateLine(nil, "OVERLAY", nil, drawLevel)
     x.tick:SetColorTexture(1.0, 1.0, 1.0, 1.0)
-    x.tick:SetThickness(1)
+    x.tick:SetThickness(1.618)
     x.icon = x.parentFrame:CreateTexture(nil, "OVERLAY")
     x.icon:SetTexture(iconID)
 

@@ -16,6 +16,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local talent_hemostasis = ERALIBTalent:Create(96268)
     local talent_ossuary = ERALIBTalent:Create(96277)
     local talent_draw_ossuary = ERALIBTalent:CreateAnd(talents.draw, talent_ossuary)
+    local talent_apex = ERALIBTalent:Create(136915)
 
     --#endregion
     --------------------------------
@@ -64,6 +65,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
     local vBloodBuff = hud:AddAuraByPlayer(55233, false)
     local deathStrikeHealing = hud:AddAuraByPlayer(49998, false)
+    local apex = hud:AddAuraByPlayer(1264568, false, talent_apex)
 
     local vampStrike = hud:AddIconBoolean(206930, 5927645, talent_sanlayn)
 
@@ -135,6 +137,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
 
     draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
     hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Necropolis.tga", false, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
 
     --#endregion
     --------------------------------
@@ -142,7 +145,14 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     --------------------------------
     --#region RESOURCE
 
-    hud:AddResourceSlot(false):AddRunes(runes)
+    local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
+    function runesDisplay:RunesUpdated()
+        if (apex.auraIsActive) then
+            self:SetBorderColor(1.0, 0.0, 0.0)
+        else
+            self:SetBorderColor(1.0, 1.0, 1.0)
+        end
+    end
 
     local powerBar = hud:AddResourceSlot(false):AddPowerValue(power, 0.2, 0.7, 1.0)
     local tickOssuaryDraw = powerBar:AddTick(237517, talent_draw_ossuary, function() return 25 end)

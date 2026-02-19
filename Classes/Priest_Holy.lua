@@ -19,6 +19,7 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
     local talent_epiphany = ERALIBTalent:Create(103740)
     local talent_hfire = ERALIBTalent:Create(134283)
     local talent_swp = ERALIBTalent:CreateNot(talent_hfire)
+    local talent_apex = ERALIBTalent:Create(136993)
 
     --#endregion
     --------------------------------
@@ -47,6 +48,7 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
     local divinity = hud:AddAuraByPlayer(1215241, false, talent_divinity)
     local blaze = hud:AddAuraByPlayer(372616, false, talent_blaze)
     local lightweaver = hud:AddAuraByPlayer(390992, false, talent_lightweaver)
+    local apex = hud:AddAuraByPlayer(1262766, false, talent_apex)
 
     --#endregion
     --------------------------------
@@ -100,6 +102,8 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
 
     --------------------------------
     --#region ALERTS
+
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

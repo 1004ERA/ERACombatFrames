@@ -17,6 +17,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local talent_big_imp = ERALIBTalent:Create(136726)
     --local talent_big_summon = ERALIBTalent:CreateOr(talent_big_hunter,talent_big_imp)
     local talent_doom = ERALIBTalent:Create(136729)
+    local talent_apex = ERALIBTalent:Create(136978)
 
     --#endregion
     --------------------------------
@@ -47,6 +48,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local imps = hud:AddAuraByPlayer(296553, false)
     --local motherBolt = hud:AddIconBoolean(686, 841220, talent_diabolist)
     --local pitHand = hud:AddIconBoolean(105174, 135800, talent_diabolist)
+    local apex = hud:AddAuraByPlayer(1276166, false, talent_apex)
 
     local toss = hud:AddCooldown(89766)
     local commandDemonIsToss = hud:AddIconBoolean(119898, 236316)
@@ -75,7 +77,8 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     hud:AddEssentialsCooldown(siphon, nil, nil, 0.7, 0.0, 0.7)
 
-    hud:AddEssentialsCooldown(tyrant, nil, nil, 0.7, 0.5, 1.0)
+    local _, tyrantSlot = hud:AddEssentialsCooldown(tyrant, nil, nil, 0.7, 0.5, 1.0)
+    tyrantSlot:AddTimerBar(0.25, apex, nil, 0.0, 1.0, 0.0)
 
     -- defensive
     hud.defensiveGroup:AddBagItem(commonSpells.demonicHStone):SetTintWhenMissing(0.0, 1.0, 1.0)
@@ -104,6 +107,9 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     hud.powerboostGroup:AddCooldown(doomguard)
     hud.powerboostGroup:AddAura(bigImpDuration, 5178162, nil, false, true)
     hud.powerboostGroup:AddAura(bigHunterDuration, 136217, nil, false, true)
+
+    -- buffs
+    hud.buffGroup:AddAura(apex)
 
     --#endregion
     --------------------------------

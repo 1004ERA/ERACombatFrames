@@ -18,6 +18,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local talent_clawing = ERALIBTalent:Create(133523)
     local talent_feast = ERALIBTalent:Create(123411)
     local talent_commander = ERALIBTalent:Create(96283)
+    local talent_apex = ERALIBTalent:Create(136918)
 
     --#endregion
     --------------------------------
@@ -64,6 +65,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
     local undeath = hud:AddAuraByPlayer(444633, true, talent_rider)
     local succor = hud:AddAuraByPlayer(178819, false)
+    local apex = hud:AddAuraByPlayer(1242223, false, talent_apex)
 
     local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
 
@@ -81,7 +83,8 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     hud:AddEssentialsLeftAura(lesser):ShowStacksRatherThanDuration()
 
-    hud:AddEssentialsCooldown(putrefy, nil, nil, 0.3, 1.0, 0.1, false)
+    local _, putrefySlot = hud:AddEssentialsCooldown(putrefy, nil, nil, 0.3, 1.0, 0.1, false)
+    putrefySlot:AddTimerBar(0.25, apex, nil, 0.0, 0.6, 0.2)
 
     local strikestackIcon, strikestackSlot = hud:AddEssentialsAura(strikestack, 237530)
     strikestackIcon:ShowStacksRatherThanDuration()
@@ -128,6 +131,9 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     -- special
     hud.specialGroup:AddCooldown(ghoul)
+
+    -- buff
+    hud.buffGroup:AddAura(apex)
 
     --#endregion
     --------------------------------

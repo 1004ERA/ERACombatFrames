@@ -17,6 +17,7 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local talent_ardef = ERALIBTalent:Create(102445)
     local talent_spellwarding = ERALIBTalent:Create(111886)
     local talent_guardian = ERALIBTalent:Create(102456)
+    local talent_apex = ERALIBTalent:Create(137020)
 
     --#endregion
     --------------------------------
@@ -47,6 +48,7 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local deliverance = hud:AddAuraByPlayer(425518, false, talent_templar)
     local armament_sword = hud:AddAuraByPlayer(432502, false, talent_lightsmith)
     local armament_shield = hud:AddAuraByPlayer(432496, false, talent_lightsmith)
+    local apex = hud:AddAuraByPlayer(1268810, false, talent_apex)
 
     local hammerOfLight = hud:AddIconBoolean(toll.spellID, 5342121, ERALIBTalent:CreateAnd(talent_toll, talent_templar))
 
@@ -115,6 +117,8 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     shining.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(shining, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Denounce.tga", false, "NONE", "CENTER")
     hud:AddPublicBooleanOverlayAlert(nil, "Interface/Addons/ERACombatFrames/textures/alerts/Surge_of_Light.tga", false, hammerOfLight, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "NONE", "LEFT").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "MIRROR_H", "RIGHT")
 
     --#endregion
     --------------------------------
