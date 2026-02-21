@@ -59,6 +59,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field cdmAuraFetcher { [number]: HUDAuraLike }
 ---@field private cdmParsedTime number
 ---@field private cdmParsedCount integer
+---@field private cdmParseWarning boolean
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
 ---@field hasEnemyTarget boolean
@@ -248,6 +249,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.cdmAuraFetcher = {}
     x.cdmParsedTime = -1
     x.cdmParsedCount = 0
+    x.cdmParseWarning = false
 
     x.resourceFrame = CreateFrame("Frame", nil, UIParent)
     x.resourceBeforeHealth = {}
@@ -541,6 +543,7 @@ function HUDModule:SpecActive()
     end
     self.cdmParsedTime = -1
     self.cdmParsedCount = 0
+    self.cdmParseWarning = false
 end
 
 function HUDModule:ResetToIdle()
@@ -1156,8 +1159,8 @@ function HUDModule:updateData(t, combat)
 
     --#region AURAS
 
-    if (self.cdmParsedCount < 32 and (self.cdmParsedTime < 0 or t - self.cdmParsedTime >= 1.618)) then
-        -- on parse 32 fois avec 1.618 secondes de délai entre chaque parsing
+    if (self.cdmParsedTime < 0 or (self.cdmParsedCount < 32 and t - self.cdmParsedTime >= 1.618) or t - self.cdmParsedTime >= 4) then
+        -- on parse 32 fois avec 1.618 secondes de délai entre chaque parsing, puis on parse indéfiniment toutes les 4 secondes
         self.cdmParsedCount = self.cdmParsedCount + 1
         self.cdmParsedTime = t
         for _, aura in pairs(self.cdmAuraFetcher) do
@@ -1167,7 +1170,8 @@ function HUDModule:updateData(t, combat)
         self:parseCDMBuffDirect(BuffIconCooldownViewer)
         self:parseCDMBuffLinked(BuffBarCooldownViewer)
         self:parseCDMBuffLinked(BuffIconCooldownViewer)
-        if (self.cdmParsedCount == 13) then
+        if (self.cdmParsedCount == 13 and not self.cdmParseWarning) then
+            self.cdmParseWarning = true
             local missingCDM = nil
             for _, aura in pairs(self.cdmAuraFetcher) do
                 if (not aura.cdmFrameFound) then

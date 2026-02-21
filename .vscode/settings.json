@@ -33,6 +33,7 @@
         "BuffIconCooldownViewer",
         "EssentialCooldownViewer",
         "UtilityCooldownViewer",
-        "NONE"
+        "NONE",
+        "TALENT"
     ],
 }

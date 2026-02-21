@@ -308,7 +308,7 @@ function HUDSAOAlertMissingAura:create(hud, data, talent, texture, isAtlas, show
     local x = {}
     setmetatable(x, HUDSAOAlertMissingAura)
     ---@cast x HUDSAOAlertMissingAura
-    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.42, showOutOfCombat)
+    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.64, showOutOfCombat)
     x.data = data
     return x
 end
@@ -338,7 +338,7 @@ function HUDSAOAlertPublicBoolean:create(hud, talent, texture, isAtlas, data, tr
     local x = {}
     setmetatable(x, HUDSAOAlertPublicBoolean)
     ---@cast x HUDSAOAlertPublicBoolean
-    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.16, true)
+    x:constructAlertBooleanDelay(hud, ERALIBTalent_CombineMakeAnd(talent, data.talent), texture, isAtlas, transform, position, 0.32, true)
     x.data = data
     return x
 end

@@ -307,7 +307,7 @@ end
 ---@field currentCharges number
 ---@field hasCharges boolean
 ---@field isSpecialIf HUDPublicBoolean|nil
----@field private must_update_max_charges boolean
+---@field private last_update_charges number
 ---@field alphaDuration nil|LuaDurationObject -- inherited
 HUDCooldown = {}
 HUDCooldown.__index = HUDCooldown
@@ -325,50 +325,44 @@ function HUDCooldown:Create(spellID, hud, talent)
     x:constructTimer(hud, talent)
 
     x.spellID = spellID
-    x.must_update_max_charges = true
+    x.last_update_charges = -1
+    x.maxCharges = 1
 
     return x
 end
 
 function HUDCooldown:talentIsActive()
-    local charges = C_Spell.GetSpellCharges(self.spellID)
-    ---@diagnostic disable-next-line: param-type-mismatch
-    if (charges and issecretvalue(charges.maxCharges)) then
-        self.must_update_max_charges = true
-    else
-        self.must_update_max_charges = false
-        if (charges and charges.maxCharges > 1) then
-            self.hasCharges = true
-            self.maxCharges = charges.maxCharges
+    self:updateHasCharges(GetTime())
+end
+
+---@private
+---@param t number
+---@return SpellChargeInfo|nil
+function HUDCooldown:updateHasCharges(t)
+    if (t - self.last_update_charges >= 4) then
+        local charges = C_Spell.GetSpellCharges(self.spellID)
+        if (charges) then
+            ---@diagnostic disable-next-line: param-type-mismatch
+            if (issecretvalue(charges.maxCharges)) then
+                self.maxCharges = charges.maxCharges
+            else
+                self.hasCharges = charges.maxCharges > 1
+                self.maxCharges = charges.maxCharges
+                self.last_update_charges = t
+            end
+            return charges
         else
             self.hasCharges = false
-            self.maxCharges = 1
+            self.last_update_charges = t
         end
     end
+    return nil
 end
 
 function HUDCooldown:updateTimerDuration_dstr(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
 
-    local charges
-
-    if (self.must_update_max_charges) then
-        charges = C_Spell.GetSpellCharges(self.spellID)
-        if (charges) then
-            ---@diagnostic disable-next-line: param-type-mismatch
-            if (issecretvalue(charges.maxCharges)) then
-                -- on suppose qu'il y a des charges > 1
-                self.hasCharges = true
-                self.maxCharges = charges.maxCharges
-            else
-                self.hasCharges = charges.maxCharges > 1
-                self.maxCharges = charges.maxCharges
-                self.must_update_max_charges = false
-            end
-        else
-            self.hasCharges = false
-        end
-    end
+    local charges = self:updateHasCharges(t)
 
     if (self.hasCharges) then
         if (not charges) then

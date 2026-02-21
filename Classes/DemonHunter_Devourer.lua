@@ -6,8 +6,10 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     --------------------------------
     --#region TALENTS
 
-    local talent_nova = ERALIBTalent:Create(132289)
     local talent_voidfall = ERALIBTalent:Create(135667)
+    --local talent_voidscarred = ERALIBTalent:Create(? )
+    local talent_voidscarred_misc = ERALIBTalent:CreateOr(ERALIBTalent:Create(136622), ERALIBTalent:Create(136617))
+    local talent_nova = ERALIBTalent:Create(132289)
     local talent_immo_spontaneous = ERALIBTalent:Create(135730)
     local talent_immo_not_spontaneous = ERALIBTalent:CreateAnd(ERALIBTalent:Create(132286), ERALIBTalent:CreateNot(talent_immo_spontaneous))
     local talent_meta = ERALIBTalent:Create(132282)
@@ -36,10 +38,12 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     local reap = hud:AddCooldown(1226019)
     local immo = hud:AddCooldown(1241937, talent_immo_not_spontaneous)
     local blade = hud:AddCooldown(1245412)
+    local meta_blade = hud:AddCooldown(1245483, talent_voidscarred_misc)
     local glaive = hud:AddCooldown(185123)
     local blur = hud:AddCooldown(198589)
     local darkness = hud:AddCooldown(196718, talents.darkness)
     local hunt = hud:AddCooldown(1246167, talent_hunt)
+    local meta_hunt = hud:AddCooldown(1259431, ERALIBTalent:CreateAnd(talent_hunt, talent_voidscarred_misc))
     local nova = hud:AddCooldown(1234195, talent_nova)
     local shift = hud:AddCooldown(1234796)
     local retreat = hud:AddCooldown(198793)
@@ -48,6 +52,8 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     local misery = hud:AddCooldown(207684)
     local imprison = hud:AddCooldown(217832)
     local beam = hud:AddCooldown(473728)
+
+    local hasMeta = hud:AddAuraBoolean(collapstar)
 
     --#endregion
     --------------------------------
@@ -60,8 +66,11 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     hud:AddEssentialsLeftCooldown(shift)
     hud:AddEssentialsLeftCooldown(retreat)
 
-    local bladeIcon = hud:AddEssentialsCooldown(blade, nil, nil, 0.0, 1.0, 0.5)
+    local bladeIcon, bladeSlot = hud:AddEssentialsCooldown(blade, nil, nil, 0.0, 1.0, 0.5)
     bladeIcon.watchAdditionalOverlay = 1239123
+    local metaBlade = bladeSlot:AddOverlapingCooldown(meta_blade)
+    metaBlade.watchAdditionalOverlay = 1239123
+    metaBlade.showOnlyIf = hasMeta
 
     local reapIcon, reapSlot = hud:AddEssentialsCooldown(reap, nil, nil, 0.7, 0.4, 1.0)
     reapIcon:HideCountdown()
@@ -86,7 +95,10 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
 
     hud:AddEssentialsAura(immoBuff, nil, talent_immo_spontaneous)
 
-    hud:AddEssentialsRightCooldown(hunt)
+    local _, huntSlot = hud:AddEssentialsCooldown(hunt, nil, nil, 0.7, 0.2, 0.4)
+    local metaHunt = huntSlot:AddOverlapingCooldown(meta_hunt)
+    metaHunt.showOnlyIf = hasMeta
+
     hud:AddEssentialsRightCooldown(glaive)
     local voidfallIcon = hud:AddEssentialsRightAura(voidfall)
     voidfallIcon:ShowStacksRatherThanDuration()
