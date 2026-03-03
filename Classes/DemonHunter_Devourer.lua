@@ -68,7 +68,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
 
     local bladeIcon, bladeSlot = hud:AddEssentialsCooldown(blade, nil, nil, 0.0, 1.0, 0.5)
     bladeIcon.watchAdditionalOverlay = 1239123
-    local metaBlade = bladeSlot:AddOverlapingCooldown(meta_blade)
+    local metaBlade = bladeSlot:AddOverlapingCooldown(meta_blade, nil, nil, 0.0, 1.0, 0.5)
     metaBlade.watchAdditionalOverlay = 1239123
     metaBlade.showOnlyIf = hasMeta
 
@@ -96,7 +96,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     hud:AddEssentialsAura(immoBuff, nil, talent_immo_spontaneous)
 
     local _, huntSlot = hud:AddEssentialsCooldown(hunt, nil, nil, 0.7, 0.2, 0.4)
-    local metaHunt = huntSlot:AddOverlapingCooldown(meta_hunt)
+    local metaHunt = huntSlot:AddOverlapingCooldown(meta_hunt, nil, nil, 0.7, 0.2, 0.4)
     metaHunt.showOnlyIf = hasMeta
 
     hud:AddEssentialsRightCooldown(glaive)

@@ -49,8 +49,8 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     local reaverMark = hud:AddAuraByPlayer(442679, true, talent_aldrachi) --442624
     local reaverGlaive = hud:AddAuraByPlayer(442290, false, talent_aldrachi)
     local metaBuff = hud:AddAuraByPlayer(191427, false)                   --162264
-    local initiative = hud:AddAuraByPlayer(388108, false)
-    --local inertia = hud:AddAuraByPlayer(427640, false)
+    local initiative = hud:AddAuraByPlayer(388108, false, talent_initiative)
+    local inertia = hud:AddAuraByPlayer(427641, false, talent_inertia)
     local apex = hud:AddAuraByPlayer(1270898, false, talent_apex)
 
     --#endregion
@@ -67,6 +67,10 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     hud:AddEssentialsCooldown(felblade, nil, nil, 0.8, 1.0, 0.5)
 
     local _, bladeDanceSlot = hud:AddEssentialsCooldown(bladeDance, nil, nil, 1.0, 0.0, 0.0)
+    local metaBar = bladeDanceSlot:AddTimerBar(0.75, metaBuff, nil, 0.9, 0.5, 1.0)
+    --metaBar.doNotCutLongDuration = true
+    local inertiaBar = bladeDanceSlot:AddTimerBar(0.25, inertia, nil, 0.6, 0.0, 0.7)
+    inertiaBar.doNotCutLongDuration = true
 
     local reverMarkIcon, reaverMarkSlot = hud:AddEssentialsAura(reaverMark)
     reverMarkIcon.showRedIfMissingInCombat = true
@@ -78,6 +82,8 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
 
     local glaiveIcon, glaiveSlot = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
     glaiveIcon.watchAdditionalOverlay = 442294
+    local initiativeBar = glaiveSlot:AddTimerBar(0.25, initiative, nil, 0.7, 0.8, 0.0)
+    initiativeBar.doNotCutLongDuration = true
 
     hud:AddEssentialsCooldown(eyeBeam, nil, nil, 0.1, 0.9, 0.2)
 
@@ -85,11 +91,6 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
 
     hud:AddEssentialsRightCooldown(ebreak)
     hud:AddEssentialsRightCooldown(hunt)
-
-    local metaBar = bladeDanceSlot:AddTimerBar(0.75, metaBuff, nil, 0.9, 0.5, 1.0)
-    metaBar.doNotCutLongDuration = true
-    local initiativeBar = glaiveSlot:AddTimerBar(0.25, initiative, nil, 0.7, 0.8, 0.0)
-    initiativeBar.doNotCutLongDuration = true
 
     -- defensive
     hud.defensiveGroup:AddCooldown(blur)
@@ -105,6 +106,9 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
 
     -- powerboost
     hud.powerboostGroup:AddCooldown(meta)
+
+    -- buffs
+    hud.buffGroup:AddAura(metaBuff)
 
     --#endregion
     --------------------------------

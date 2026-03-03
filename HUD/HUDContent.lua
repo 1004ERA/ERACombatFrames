@@ -165,8 +165,11 @@ end
 ---@param data HUDCooldown
 ---@param iconID number|nil
 ---@param talent ERALIBTalent|nil
+---@param r number
+---@param g number
+---@param b number
 ---@return HUDCooldownIcon
-function HUDEssentialsSlot:AddOverlapingCooldown(data, iconID, talent)
+function HUDEssentialsSlot:AddOverlapingCooldown(data, iconID, talent, r, g, b)
     local icon = HUDCooldownIcon:create(self.hud:getEssentialFrame(), 8 * (1 + #self.icons), "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
     table.insert(self.icons, icon)
     return icon
@@ -411,6 +414,22 @@ end
 function HUDTimerBar:updateMaxDuration(maxTimer)
     self.bar:SetMinMaxValues(0, maxTimer)
 end
+
+--[[
+---@param t number
+function HUDTimerBar:ECF_TEST_SBOMB(t)
+    if (self.timer.spellID == 247454) then
+        if (ECF_TEST_T) then
+            if (ECF_TEST_T - math.floor(t) <= 0.05) then
+                return true
+            end
+        else
+            ECF_TEST_T = math.floor(t)
+        end
+    end
+    return false
+end
+]]
 
 ---comment
 ---@param t number

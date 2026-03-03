@@ -3,7 +3,7 @@ ERACombatFrames_initialized = false
 --[[
 
 
-/run print(C_Spell.GetSpellInfo("").spellID)
+/run local info = C_Spell.GetSpellInfo(""); print(info.spellID, info.name)
 
 ]]
 
@@ -188,6 +188,8 @@ function ERACombatFrames_event(event, ...)
             ERACombatFrames_PriestSetup(cFrame)
         elseif (classID == 6) then
             ERACombatFrames_DeathKnightSetup(cFrame)
+        elseif (classID == 7) then
+            ERACombatFrames_ShamanSetup(cFrame)
         elseif (classID == 8) then
             --ERACombatFrames_MageSetup(cFrame)
         elseif (classID == 9) then

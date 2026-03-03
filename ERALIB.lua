@@ -200,7 +200,16 @@ end
 
 function ERALIBTalentEquipmentCD:computeHasTalent(selectedTalentsById)
     local _, _, enable = GetInventoryItemCooldown("player", self.slot)
-    return enable and enable > 0
+    if (enable and enable > 0) then
+        local id = GetInventoryItemID("player", self.slot)
+        if (id == 248583) then
+            return false
+        else
+            return true
+        end
+    else
+        return false
+    end
 end
 
 ERALIBTalentInstance = {}

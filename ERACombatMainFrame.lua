@@ -9,6 +9,8 @@ end
 ---@field frame unknown
 ---@field Pack function
 ---@field playerGUID string
+---@field private lastReset number
+---@field private repeatReset number
 ---@field private inCombat boolean
 ---@field private inVehicle boolean
 ---@field hideAlertsForSpec (ERACombatSpecOptions|nil)[]
@@ -35,6 +37,7 @@ function ERACombatMainFrame:Create()
     c.updateableModules = {}
 
     c.talents_changed = 0
+    c.repeatReset = 0
 
     -- évènements
     local events = {}
@@ -137,8 +140,11 @@ function ERACombatMainFrame:Create()
         function(self, elapsed)
             if (#c.updateableModules > 0) then
                 local t = GetTime()
-                c:checkReset(t)
-                if c.talents_changed > 0 then
+                if (c.lastReset and t - c.lastReset >= 4 and c.repeatReset < 3) then
+                    c.lastReset = t
+                    c.repeatReset = c.repeatReset + 1
+                    c:checkModuleTalents()
+                elseif (c.talents_changed > 0) then
                     c:checkModuleTalents()
                 end
                 if (c.inCombat) then
@@ -291,15 +297,7 @@ function ERACombatMainFrame:resetToIdle(fullReset)
     end
     self:registerUpdateIdle()
     self.lastReset = GetTime()
-end
-
-function ERACombatMainFrame:checkReset(t)
-    if (self.lastReset and t - self.lastReset >= 4) then
-        self.lastReset = nil
-        for _, m in ipairs(self.activeModules) do
-            m:UpdateAfterReset(t)
-        end
-    end
+    self.repeatReset = 0
 end
 
 function ERACombatMainFrame:enterCombat(fromIdle)

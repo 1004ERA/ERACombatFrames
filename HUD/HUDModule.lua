@@ -62,6 +62,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private cdmParseWarning boolean
 ---@field duration0 LuaDurationObject
 ---@field PreUpdateData nil|fun(self:HUDModule, t:number, combat:boolean)
+---@field hideDefaultSpellAlerts boolean
 ---@field hasEnemyTarget boolean
 ---@field isInGroupOrRaid HUDPublicBooleanIsInGroupOrRaid
 ---@field curveHide96pctFull LuaCurveObject
@@ -532,6 +533,9 @@ function HUDModule:SpecInactive()
     BuffBarCooldownViewer:SetAlpha(1.0)
     EssentialCooldownViewer:SetAlpha(1.0)
     UtilityCooldownViewer:SetAlpha(1.0)
+    if (self.hideDefaultSpellAlerts) then
+        C_CVar.SetCVar("displaySpellActivationOverlays", "1")
+    end
 end
 
 function HUDModule:SpecActive()
@@ -544,6 +548,9 @@ function HUDModule:SpecActive()
     self.cdmParsedTime = -1
     self.cdmParsedCount = 0
     self.cdmParseWarning = false
+    if (self.hideDefaultSpellAlerts) then
+        C_CVar.SetCVar("displaySpellActivationOverlays", "0")
+    end
 end
 
 function HUDModule:ResetToIdle()
@@ -1731,6 +1738,19 @@ function HUDUtilityGroup:AddAura(data, iconID, talent, overlapPrevious, displayA
     return icon
 end
 
+---@param data HUDAuraLike
+---@param iconID number|nil
+---@param talent ERALIBTalent|nil
+---@param overlapPrevious boolean|nil
+---@param displayAsCooldown boolean|nil
+---@return HUDAuraLikeIcon
+function HUDUtilityGroup:AddAuraLike(data, iconID, talent, overlapPrevious, displayAsCooldown)
+    local frameLevel = self:manageOverlap_returnFrameLevel(overlapPrevious)
+    local icon = HUDAuraLikeIcon:create(self.frame, frameLevel, self.anchor, self.anchor, self.iconSize, data, iconID, talent, displayAsCooldown)
+    table.insert(self.icons, icon)
+    return icon
+end
+
 ---@param slot unknown
 ---@param initIconID number
 function HUDUtilityGroup:AddEquipment(slot, initIconID)
@@ -1813,11 +1833,11 @@ function HUDModule:AddAuraByPlayer(spellID, isTarget, talent)
 end
 
 ---@param slot integer
----@param cmd_spellID integer
+---@param cdm_spellID integer
 ---@param talent ERALIBTalent|nil
 ---@return HUDAuraTotem
-function HUDModule:AddAuraTotem(slot, cmd_spellID, talent)
-    return HUDAuraTotem:createTotem(slot, cmd_spellID, self, talent)
+function HUDModule:AddAuraTotem(slot, cdm_spellID, talent)
+    return HUDAuraTotem:createTotem(slot, cdm_spellID, self, talent)
 end
 ---@param slot integer
 ---@param talent ERALIBTalent|nil

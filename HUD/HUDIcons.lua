@@ -95,6 +95,7 @@ end
 ---@field showOnlyWhenUsableOrOverlay boolean
 ---@field preventDefaultOverlay boolean
 ---@field showOnlyIf HUDPublicBoolean|nil
+---@field overlayAlsoIf HUDPublicBoolean|nil
 HUDCooldownIcon = {}
 HUDCooldownIcon.__index = HUDCooldownIcon
 setmetatable(HUDCooldownIcon, { __index = HUDPieIcon })
@@ -164,6 +165,9 @@ function HUDCooldownIcon:Update(t, combat)
         else
             overlay = C_SpellActivationOverlay.IsSpellOverlayed(self.data.spellID)
         end
+    end
+    if ((not overlay) and self.overlayAlsoIf) then
+        overlay = self.overlayAlsoIf.value
     end
     self.icon:SetHighlight(overlay)
 
@@ -341,7 +345,6 @@ function HUDAuraLikeIcon:create(frame, frameLevel, point, relativePoint, size, d
     if (displayAsCooldown) then
         x.displayAsCooldown = true
     else
-        x.showRedIfMissingInCombat = true
         x.icon:SetupAura()
     end
     return x

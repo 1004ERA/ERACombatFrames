@@ -17,6 +17,7 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local talent_carver = ERALIBTalent:Create(112898)
     local talent_voidfall = ERALIBTalent:Create(135667)
     local talent_aldrachi = ERALIBTalent:Create(117512)
+    local talent_apex = ERALIBTalent:Create(137041)
 
     --#endregion
     --------------------------------
@@ -34,6 +35,7 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local reaverMark = hud:AddAuraByPlayer(442679, true, talent_aldrachi)
     local spikes = hud:AddAuraByPlayer(203720, false)
     local voidfall = hud:AddAuraByPlayer(1253304, false) --, talent_voidfall)
+    local apex = hud:AddAuraByPlayer(1270444, false, talent_apex)
 
     local fracture = hud:AddCooldown(263642)
     local devastation = hud:AddCooldown(212084)
@@ -77,6 +79,7 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local _, fractureSlot = hud:AddEssentialsCooldown(fracture, nil, nil, 0.6, 0.7, 0.6)
     local metaBar = fractureSlot:AddTimerBar(0.75, metaBuff, nil, 1.0, 0.0, 1.0)
     metaBar.doNotCutLongDuration = true
+    fractureSlot:AddTimerBar(0.25, apex, nil, 1.0, 1.0, 1.0)
 
     local reverMarkIcon, reaverMarkPlacement = hud:AddEssentialsAura(reaverMark)
     reverMarkIcon.showRedIfMissingInCombat = true

@@ -101,7 +101,7 @@ function ERACombatFrames_PaladinJudgment(hud, talents, spells, howID, mainWrath,
     jIcon.showOnlyIf = hasNeitherWrath
     jBar.showOnlyIf = hasNeitherWrath
     local how = hud:AddCooldown(howID, talents.how)
-    local howIcon = jSlot:AddOverlapingCooldown(how)
+    local howIcon = jSlot:AddOverlapingCooldown(how, nil, nil, 0.7, 0.7, 0.5)
     howIcon.showOnlyIf = hasAnyWrath
     jSlot:AddTimerBar(0.5, how, nil, 0.7, 0.7, 0.5).showOnlyIf = hasAnyWrath
     if (hideCountdown) then

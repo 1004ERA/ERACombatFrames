@@ -43,6 +43,11 @@ Classes/Paladin_Holy.lua
 Classes/Paladin_Protection.lua
 Classes/Paladin_Retribution.lua
 
+Classes/Shaman.lua
+Classes/Shaman_Elemental.lua
+Classes/Shaman_Enhancement.lua
+Classes/Shaman_Restoration.lua
+
 Classes/Warlock.lua
 Classes/Warlock_Affliction.lua
 Classes/Warlock_Demonology.lua

@@ -173,8 +173,8 @@ end
 ---@param mangleSlot HUDEssentialsSlot
 ---@param thrashSlot HUDEssentialsSlot
 function ERACombatFrames_Druid_GuardianOffSpec_step2(hud, talents, spells, mangleSlot, thrashSlot)
-    local mangleIcon = mangleSlot:AddOverlapingCooldown(spells.mangle)
+    local mangleIcon = mangleSlot:AddOverlapingCooldown(spells.mangle, nil, nil, 1.0, 1.0, 1.0)
     mangleIcon.showOnlyIf = hud.bearForm
-    local thrashIcon = thrashSlot:AddOverlapingCooldown(spells.thrash)
+    local thrashIcon = thrashSlot:AddOverlapingCooldown(spells.thrash, nil, nil, 1.0, 1.0, 1.0)
     thrashIcon.showOnlyIf = hud.bearForm
 end

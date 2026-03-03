@@ -92,16 +92,17 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
 
     local hrighteousIcon, mainSlot = hud:AddEssentialsCooldown(hrighteous, nil, nil, 1.0, 1.0, 1.0)
     hrighteousIcon:HideCountdown()
-    mainSlot:AddOverlapingCooldown(hblessed):HideCountdown()
+    mainSlot:AddOverlapingCooldown(hblessed, nil, nil, 1.0, 1.0, 1.0):HideCountdown()
     mainSlot:AddTimerBar(0.5, hblessed, nil, 1.0, 1.0, 1.0)
-    mainSlot:AddOverlapingCooldown(crustrike):HideCountdown()
+    mainSlot:AddOverlapingCooldown(crustrike, nil, nil, 1.0, 1.0, 1.0):HideCountdown()
     mainSlot:AddTimerBar(0.5, crustrike, nil, 1.0, 1.0, 1.0)
 
     mainSlot:AddTimerBar(0.25, shield, nil, 0.7, 0.3, 0.7).doNotCutLongDuration = true
 
     hud:AddEssentialsCooldown(captain, nil, nil, 1.0, 0.5, 0.0)
 
-    local _, consecrSlot = hud:AddEssentialsAuraLike(consecrDuration)
+    local consecrIcon, consecrSlot = hud:AddEssentialsAuraLike(consecrDuration)
+    consecrIcon.showRedIfMissingInCombat = true
     consecrSlot:AddTimerBar(0.5, consecr, nil, 0.66, 0.0, 0.0)
 
     local _, ardefSlot = hud:AddEssentialsCooldown(ardef, nil, nil, 1.0, 1.0, 1.0, false)
