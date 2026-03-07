@@ -18,14 +18,14 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     local talent_berserk = ERALIBTalent:CreateAnd(ERALIBTalent:Create(103162), ERALIBTalent:CreateNot(talent_ashamane))
     local talent_tenacity = ERALIBTalent:Create(103168)
     local talent_momentum = ERALIBTalent:Create(103179)
-    local talent_apex = ERALIBTalent:Create(103172)
+    local talent_craving = ERALIBTalent:Create(103172)
     local talent_francticfrenzy = ERALIBTalent:Create(134211)
     local talent_feralfrenzy = ERALIBTalent:CreateAnd(ERALIBTalent:Create(103175), ERALIBTalent:CreateNot(talent_francticfrenzy))
     local talent_convoke = ERALIBTalent:Create(103177)
     local talent_moonfire = ERALIBTalent:Create(103170)
     local talent_chomp = ERALIBTalent:Create(134212)
     local talent_hunger = ERALIBTalent:Create(103156)
-    local talent_apex = ERALIBTalent:Create(137045)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(137044), ERALIBTalent:Create(137045), ERALIBTalent:Create(137046))
 
     --#endregion
     --------------------------------
@@ -45,7 +45,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     local francticfrenzy = hud:AddCooldown(1273807, talent_francticfrenzy)
     local chomp = hud:AddCooldown(1244258, talent_chomp)
 
-    local apex = hud:AddAuraByPlayer(391881, false, talent_apex)
+    local craving = hud:AddAuraByPlayer(391881, false, talent_craving)
     local berserkashamane = hud:AddAuraByPlayer(106951, false)
     local coiled = hud:AddAuraByPlayer(449537, false, talent_coiled)
     local hunger = hud:AddAuraByPlayer(1244547, false, talent_hunger)
@@ -55,7 +55,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     local momentum = hud:AddAuraByPlayer(391875, false, talent_momentum) -- osef
     local ambush = hud:AddAuraByPlayer(384667, false, talent_ambush)
     local ravage = hud:AddAuraByPlayer(441583, false, talent_claw)
-    --local moonfire = hud:AddAuraByPlayer(?, false, talent_moonfire)
+    local moonfire = hud:AddAuraByPlayer(155625, true, talent_moonfire)
     local swiftness = hud:AddAuraByPlayer(16974, false)
     local furyBuff = hud:AddAuraByPlayer(5217, false)
     local rake = hud:AddAuraByPlayer(1822, true)
@@ -91,6 +91,8 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     hud:AddEssentialsCooldown(feralfrenzy, nil, nil, 0.0, 1.0, 1.0)
     hud:AddEssentialsCooldown(francticfrenzy, nil, nil, 0.0, 1.0, 1.0)
 
+    hud:AddDOT(moonfire, nil, nil, 0.0, 0.0, 1.0)
+
     local chompIcon = hud:AddEssentialsCooldown(chomp, nil, nil, 0.6, 0.4, 0.3)
     chompIcon.saturateWhenUsable = true
 
@@ -121,7 +123,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
     --#region ALERTS
 
     hud:AddAuraOverlayAlert(swiftness, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Natures_Grace.tga", false, "ROTATE_RIGHT", "TOP")
-    hud:AddAuraOverlayAlert(apex, nil, "Start-VersusSplash", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(craving, nil, "Start-VersusSplash", true, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(ravage, nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     --#endregion
@@ -134,7 +136,7 @@ function ERACombatFrames_Druid_Feral(cFrame, talents)
 
     local comboDisplay = hud:AddResourceSlot(false):AddPowerPoints(combo, 0.6, 0.8, 0.0, 1.0, 0.0, 0.0, nil, function() return 0 end)
     function comboDisplay:DisplayUpdated(t, combat)
-        if (apex.auraIsActive) then
+        if (craving.auraIsActive) then
             self:SetPointColor(0.0, 1.0, 0.0, false)
         else
             self:SetPointColor(1.0, 0.0, 0.0, false)

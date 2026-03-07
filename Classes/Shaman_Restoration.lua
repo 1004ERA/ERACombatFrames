@@ -21,7 +21,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
     local talent_rain_totem = ERALIBTalent:Create(117474)
     local talent_rain = ERALIBTalent:CreateAnd(ERALIBTalent:Create(101923), ERALIBTalent:CreateNot(talent_rain_totem))
     local talent_ascendance_or_proc = ERALIBTalent:CreateOr(talent_ascendance, ERALIBTalent:Create(101937))
-    local talent_apex = ERALIBTalent:Create(136975)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136975), ERALIBTalent:Create(136976), ERALIBTalent:Create(136977))
 
     --#endregion
     --------------------------------
@@ -72,6 +72,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
     -- control
 
     -- buffs
+    hud.buffGroup:AddAura(tidwave):ShowStacksRatherThanDuration()
     hud.buffGroup:AddAura(ascendanceDuration)
     hud.buffGroup:AddAura(spiritwalk)
 
@@ -89,7 +90,11 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
     riptideAssist:HideCountdown()
     riptideAssist:SetMainTextColor(0.0, 1.0, 0.0)
     function riptideAssist:GetMainText()
-        return tostring(coalescing.stacks)
+        if (talent_coalescing:PlayerHasTalent()) then
+            return tostring(coalescing.stacks)
+        else
+            return nil
+        end
     end
     hud.assistGroup:AddCooldown(rain).overlayAlsoIf = downpourUsable
     hud.assistGroup:AddCooldown(rain_totem).overlayAlsoIf = downpourUsable
@@ -100,7 +105,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
 
     -- essentials
 
-    hud:AddEssentialsLeftAura(tidwave):ShowStacksRatherThanDuration()
+    --hud:AddEssentialsLeftAura(tidwave):ShowStacksRatherThanDuration()
 
     local _, aswiftSlot = hud:AddEssentialsCooldown(aswift, nil, nil, 0.6, 0.8, 1.0)
     aswiftSlot:AddTimerBar(0.75, ancestors, nil, 0.0, 0.0, 1.0)
@@ -127,7 +132,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
 
     ascendanceDuration.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(unleashBuff, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fury_of_Stormrage.tga", false, "NONE", "TOP")
-    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "NONE", "LEFT")
+    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "NONE", "LEFT").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     --#endregion
     --------------------------------

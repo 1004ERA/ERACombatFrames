@@ -18,7 +18,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local talent_clawing = ERALIBTalent:Create(133523)
     local talent_feast = ERALIBTalent:Create(123411)
     local talent_commander = ERALIBTalent:Create(96283)
-    local talent_apex = ERALIBTalent:Create(136918)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136918), ERALIBTalent:Create(136919), ERALIBTalent:Create(136920))
 
     --#endregion
     --------------------------------

@@ -16,7 +16,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local talent_hemostasis = ERALIBTalent:Create(96268)
     local talent_ossuary = ERALIBTalent:Create(96277)
     local talent_draw_ossuary = ERALIBTalent:CreateAnd(talents.draw, talent_ossuary)
-    local talent_apex = ERALIBTalent:Create(136915)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136915), ERALIBTalent:Create(136916), ERALIBTalent:Create(136917))
 
     --#endregion
     --------------------------------
@@ -71,7 +71,6 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
 
     --#endregion
     --------------------------------
-    ---/run
 
     --------------------------------
     --#region DISPLAY

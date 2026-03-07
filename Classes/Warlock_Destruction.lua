@@ -25,7 +25,7 @@ function ERACombatFrames_Warlock_Destruction(cFrame, talents)
     local talent_instarof = ERALIBTalent:Create(91423)
     local talent_shadowburnImproved = ERALIBTalent:Create(91478)
     local talent_shadowburnproc = ERALIBTalent:Create(126004)
-    local talent_apex = ERALIBTalent:Create(136985)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136984), ERALIBTalent:Create(136985), ERALIBTalent:Create(136986))
 
     --#endregion
     --------------------------------

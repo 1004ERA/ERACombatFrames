@@ -17,7 +17,7 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local talent_carver = ERALIBTalent:Create(112898)
     local talent_voidfall = ERALIBTalent:Create(135667)
     local talent_aldrachi = ERALIBTalent:Create(117512)
-    local talent_apex = ERALIBTalent:Create(137041)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(137041), ERALIBTalent:Create(137042), ERALIBTalent:Create(137043))
 
     --#endregion
     --------------------------------

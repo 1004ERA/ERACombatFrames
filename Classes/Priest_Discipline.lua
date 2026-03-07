@@ -16,7 +16,7 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     local talent_evangelism = ERALIBTalent:Create(103702)
     local talent_shadowmend = ERALIBTalent:Create(103692)
     local talent_wealwoe = ERALIBTalent:Create(103698)
-    local talent_apex = ERALIBTalent:Create(136996)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136996), ERALIBTalent:Create(136997), ERALIBTalent:Create(136998))
 
     --#endregion
     --------------------------------

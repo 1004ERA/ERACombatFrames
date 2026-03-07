@@ -4,6 +4,7 @@ ERACombatFrames_initialized = false
 
 
 /run local info = C_Spell.GetSpellInfo(""); print(info.spellID, info.name)
+/run print(ECF_PRINT_TALENTS())
 
 ]]
 

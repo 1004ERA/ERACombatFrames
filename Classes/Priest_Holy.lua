@@ -19,7 +19,7 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
     local talent_epiphany = ERALIBTalent:Create(103740)
     local talent_hfire = ERALIBTalent:Create(134283)
     local talent_swp = ERALIBTalent:CreateNot(talent_hfire)
-    local talent_apex = ERALIBTalent:Create(136993)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136993), ERALIBTalent:Create(136994), ERALIBTalent:Create(136995))
 
     --#endregion
     --------------------------------

@@ -17,7 +17,7 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
     local talent_ardef = ERALIBTalent:Create(102445)
     local talent_spellwarding = ERALIBTalent:Create(111886)
     local talent_guardian = ERALIBTalent:Create(102456)
-    local talent_apex = ERALIBTalent:Create(137020)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(137020), ERALIBTalent:Create(137021), ERALIBTalent:Create(137022))
 
     --#endregion
     --------------------------------

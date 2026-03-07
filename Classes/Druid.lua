@@ -103,6 +103,7 @@ function ERACombatFrames_DruidCommonSpells(hud, talents, isBalance, isFeral, isG
 
     -- movement
     hud.movementGroup:AddCooldown(commonSpells.charge, 538771)
+    hud.movementGroup:AddCooldown(commonSpells.dash)
     hud.movementGroup:AddCooldown(commonSpells.tigerdash)
     hud.movementGroup:AddCooldown(commonSpells.stampede)
 

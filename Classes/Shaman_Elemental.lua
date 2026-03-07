@@ -28,7 +28,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     --#region DATA
 
     local power = hud:AddPowerLowIdle(Enum.PowerType.Maelstrom)
-    
+
     local thunder = hud:AddCooldown(51490)
     local lava = hud:AddCooldown(51505)
     local flshock = hud:AddCooldown(470411, talent_flshock)
@@ -100,7 +100,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
 
     hud:AddEssentialsCooldown(stormkeeper, nil, nil, 0.2, 0.2, 1.0)
 
-    hud:AddEssentialsRightAura(stormkeeper_stacks, 136099):ShowStacksRatherThanDuration() -- 135990
+    hud:AddEssentialsRightAura(stormkeeper_stacks, 839974):ShowStacksRatherThanDuration()  -- 135990 136099
 
     hud:AddEssentialsRightAura(surging, 136044):ShowStacksRatherThanDuration()
 

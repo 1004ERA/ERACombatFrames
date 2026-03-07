@@ -20,7 +20,8 @@ function ERACombatFrames_Shaman_Enhancement(cFrame, talents)
     local talent_conduit = ERALIBTalent:Create(117460)
     local talent_surging = ERALIBTalent:Create(125617)
     local talent_hothand = ERALIBTalent:Create(101809)
-    local talent_apex = ERALIBTalent:Create(136969)
+    local talent_primordial = ERALIBTalent:Create(101828)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136969), ERALIBTalent:Create(136970), ERALIBTalent:Create(136971))
 
     --#endregion
     --------------------------------
@@ -39,6 +40,7 @@ function ERACombatFrames_Shaman_Enhancement(cFrame, talents)
     local totemic = hud:AddCooldown(444995, talent_totemic)
     local lunge = hud:AddCooldown(196884)
 
+    local lshield = hud:AddAuraByPlayer(192106, false)
     local maelstrom = hud:AddAuraByPlayer(187880, false)
     local crashBuff = hud:AddAuraByPlayer(187874, false, talent_crash)
     local flame = hud:AddAuraByPlayer(188389, true)
@@ -49,8 +51,11 @@ function ERACombatFrames_Shaman_Enhancement(cFrame, talents)
     local discharge = hud:AddAuraByPlayer(455096, false, talent_stormbringer)
     local searing = hud:AddAuraByPlayer(445034, false, talent_totemic)
     local ascendanceDuration = hud:AddAuraByPlayer(114051, false, talent_ascendance_or_proc)
+    local raging_heal = hud:AddAuraByPlayer(384143, false, talent_10_maelstrom)
     local hothand = hud:AddAuraByPlayer(201900, false, talent_hothand)
     local apex = hud:AddAuraByPlayer(1262830, false, talent_apex)
+
+    local primordialUsable = hud:AddAuraBoolean(hud:AddAuraByPlayer(1218125, false, talent_primordial))
 
     --#endregion
     --------------------------------
@@ -77,15 +82,17 @@ function ERACombatFrames_Shaman_Enhancement(cFrame, talents)
 
     -- essentials
 
-    hud:AddEssentialsLeftCooldown(commonSpells.relocation, nil, talent_totemic)
+    hud:AddEssentialsLeftAura(surging, 136044):ShowStacksRatherThanDuration()
+    hud:AddEssentialsLeftAura(raging_heal):ShowStacksRatherThanDuration()
 
     hud:AddEssentialsCooldown(totemic, nil, nil, 0.5, 0.6, 0.0)
 
     local _, crashSlot = hud:AddEssentialsCooldown(crash, nil, nil, 0.4, 0.4, 1.0)
     crashSlot:AddTimerBar(0.75, crashBuff, nil, 1.0, 1.0, 1.0)
 
-    local _, stormSlot = hud:AddEssentialsCooldown(stormstrike, nil, nil, 0.5, 0.5, 1.0)
+    local _, stormSlot = hud:AddEssentialsCooldown(stormstrike, 1397637, nil, 0.5, 0.5, 1.0)
     stormSlot:AddTimerBar(0.75, ascendanceDuration, nil, 1.0, 0.0, 1.0)
+    stormSlot:AddTimerBar(0.25, apex, nil, 0.0, 1.0, 0.0)
 
     local _, lavaSlot = hud:AddEssentialsCooldown(lava, nil, nil, 1.0, 0.0, 0.0)
     lavaSlot:AddTimerBar(0.25, hothand, nil, 1.0, 0.5, 0.0).doNotCutLongDuration = true
@@ -98,17 +105,20 @@ function ERACombatFrames_Shaman_Enhancement(cFrame, talents)
     local _, dotSlot = hud:AddDOT(flame, 135805, nil, 1.0, 1.0, 0.0) -- 2175503 451164
     dotSlot:AddTimerBar(0.75, spiritwalk, nil, 0.7, 1.0, 0.7)
 
-    hud:AddEssentialsCooldown(sundering, nil, nil, 0.5, 0.5, 0.2)
+    local sunderingIcon = hud:AddEssentialsCooldown(sundering, nil, nil, 0.5, 0.5, 0.2)
+    sunderingIcon.overlayAlsoIf = primordialUsable
 
     hud:AddEssentialsRightAura(discharge):ShowStacksRatherThanDuration()
 
-    hud:AddEssentialsRightAura(surging, 136044):ShowStacksRatherThanDuration()
+    hud:AddEssentialsRightCooldown(commonSpells.relocation, nil, talent_totemic)
 
     --#endregion
     --------------------------------
 
     --------------------------------
     --#region ALERTS
+
+    hud.alertGroup:AddMissingAuraAlert(lshield)
 
     conduit.playSoundWhenApperars = 5495 -- 255412
     hothand.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST

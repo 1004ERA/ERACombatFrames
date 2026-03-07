@@ -17,7 +17,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local talent_big_imp = ERALIBTalent:Create(136726)
     --local talent_big_summon = ERALIBTalent:CreateOr(talent_big_hunter,talent_big_imp)
     local talent_doom = ERALIBTalent:Create(136729)
-    local talent_apex = ERALIBTalent:Create(136978)
+    local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(136978), ERALIBTalent:Create(136979), ERALIBTalent:Create(136980))
 
     --#endregion
     --------------------------------

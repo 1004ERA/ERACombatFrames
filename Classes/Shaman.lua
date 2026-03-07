@@ -91,5 +91,8 @@ function ERACombatFrames_ShamanCommonSpells(hud, talents, isHealer, talent_ances
     hud.specialGroup:AddCooldown(spells.tremor)
     hud.specialGroup:AddCooldown(spells.poison_cleansing)
 
+    local missingSkyfury = hud:AddSpellOverlayBoolean(462854)
+    hud.alertGroup:AddBooleanAlert(missingSkyfury, 4630367)
+
     return spells
 end
