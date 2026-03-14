@@ -159,6 +159,8 @@ end
 ---@field private rBorder number
 ---@field private gBorder number
 ---@field private bBorder number
+---@field fullRuneIcon integer
+---@field partialRuneIcon integer
 HUDRunesResource = {}
 HUDRunesResource.__index = HUDRunesResource
 setmetatable(HUDRunesResource, { __index = HUDResourceDisplay })
@@ -176,10 +178,12 @@ function HUDRunesResource:create(hud, data, resourceFrame, frameLevel)
     x:constructResource(hud, false)
     x.data = data
 
+    x:SetDefaultIcons()
+
     x.frame = CreateFrame("Frame", nil, resourceFrame)
     x.displays = {}
     for _ = 1, 6 do
-        local rd = HUDRuneDisplayItem:create(x.frame, hud.options.powerHeight)
+        local rd = HUDRuneDisplayItem:create(x.frame, hud.options.powerHeight, x)
         table.insert(x.displays, rd)
     end
     x.frameVisible = false
@@ -190,6 +194,20 @@ function HUDRunesResource:create(hud, data, resourceFrame, frameLevel)
     x.bBorder = 1.0
 
     return x
+end
+
+function HUDRunesResource:SetDefaultIcons()
+    -- rune : 1121021
+    -- rune violette forte : 252272
+    -- rune violette faible : 1323037
+    self.fullRuneIcon = 1121021
+    self.partialRuneIcon = 1323037
+end
+---@param full integer
+---@param partial integer
+function HUDRunesResource:SetRuneIcons(full, partial)
+    self.fullRuneIcon = full
+    self.partialRuneIcon = partial
 end
 
 function HUDRunesResource:ActivateResource(dynamic)
@@ -270,12 +288,12 @@ function HUDRunesResource:UpdateResource(t, combat)
         return
     end
 
+    self:UpdatingRunes(t, combat)
     for i = 1, 6 do
-        self.displays[i]:updateDisplay(self.data.runesOrdered[i])
+        self.displays[i]:updateDisplay(self.data.runesOrdered[i], self)
     end
-    self:RunesUpdated(t, combat)
 end
-function HUDRunesResource:RunesUpdated(t, combat)
+function HUDRunesResource:UpdatingRunes(t, combat)
 end
 
 ---@param r number
@@ -300,17 +318,16 @@ HUDRuneDisplayItem.__index = HUDRuneDisplayItem
 
 ---@param parentFrame Frame
 ---@param initSize number
+---@param ownerResource HUDRunesResource
 ---@return HUDRuneDisplayItem
-function HUDRuneDisplayItem:create(parentFrame, initSize)
+function HUDRuneDisplayItem:create(parentFrame, initSize, ownerResource)
     local x = {}
     setmetatable(x, HUDRuneDisplayItem)
     ---@cast x HUDRuneDisplayItem
 
     x.icon = ERAPieIcon:create(parentFrame, "CENTER", "CENTER", initSize, initSize)
-    -- rune : 1121021
-    -- rune violette forte : 252272
-    -- rune violette faible : 1323037
-    x.icon:SetIconTexture(1121021, true, false)
+
+    x.icon:SetIconTexture(ownerResource.fullRuneIcon, true, false)
 
     return x
 end
@@ -324,17 +341,18 @@ function HUDRuneDisplayItem:updateLayout(parentFrame, size, x)
 end
 
 ---@param data HUDRuneItem
-function HUDRuneDisplayItem:updateDisplay(data)
+---@param ownerResource HUDRunesResource
+function HUDRuneDisplayItem:updateDisplay(data, ownerResource)
     self.icon:SetValue(data.startTime, data.duration)
     if (data.somethingMayBeSecret) then
         self.icon:ShowDefaultCountdown()
     else
         local iconID
         if (data.isReady) then
-            iconID = 1121021
+            iconID = ownerResource.fullRuneIcon
             self.icon:HideDefaultCountdown()
         else
-            iconID = 1323037
+            iconID = ownerResource.partialRuneIcon
             if (data.duration - data.remainingTime < 0.1) then
                 self.icon:HideDefaultCountdown()
             else

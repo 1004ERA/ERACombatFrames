@@ -53,6 +53,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private channelInfo { [number]: ChannelTickInfo }
 ---@field private isCasting boolean
 ---@field private targetCasting boolean
+---@field private targetCastIsChanneling boolean
 ---@field private targetCasBar StatusBar
 ---@field private kicks HUDCooldown[]
 ---@field private bagItems HUDBagItem[]
@@ -221,7 +222,6 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.castBarSecret:Hide()
     x.castBarSecretVisible = false
     x.castBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 1.0, "Capacitance-Blacksmithing-TimerFill")
-    --x.castBar = x:createGCCBar(2, 1.0, 1.0, 1.0, 1.0, "ChallengeMode-TimerFill")
     x.castBar:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
     x.castBar:SetPoint("BOTTOMLEFT", x.timerFrameBack, "BOTTOMLEFT", 0, 0)
     x.castBackground = x.timerFrameBack:CreateTexture(nil, "BACKGROUND", nil, 0)
@@ -240,7 +240,8 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.castLine:Hide()
     x.castLineVisible = false
     x.kicks = {}
-    x.targetCasBar = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "Interface\\FontStyles\\FontStyleLegion")
+    x.targetCastIsChanneling = false
+    x.targetCasBar = x:createGCCBar(1, 1.0, 1.0, 1.0, 1.0, "ChallengeMode-TimerFill")
     x.targetCasBar:SetRotatesTexture(true)
     x.targetCasBar:SetPoint("BOTTOMRIGHT", x.timerFrameBack, "BOTTOMRIGHT", 0, 0)
     x.targetCasBar:SetSize(x.options.castBarWidth, ERA_HUDModule_TimerHeight)
@@ -1099,6 +1100,7 @@ function HUDModule:UpdateCombat(t)
         end
     end
     if (foundKick) then
+        local tarchanneling = false
         local targetCastDuration = nil
         ---@type ColorMixin
         local tarCastColor = nil
@@ -1107,6 +1109,7 @@ function HUDModule:UpdateCombat(t)
             targetCastDuration = UnitChannelDuration("target")
             ---@diagnostic disable-next-line: param-type-mismatch
             tarCastColor = C_CurveUtil.EvaluateColorFromBoolean(notInterruptible, HUDModule.colorTransparent, HUDModule.colorVisible)
+            tarchanneling = true
         else
             _, _, _, _, _, _, _, notInterruptible, tarCastlID = UnitCastingInfo("target")
             if (tarCastlID) then
@@ -1124,11 +1127,27 @@ function HUDModule:UpdateCombat(t)
                 self.targetCasting = true
                 self.targetCasBar:Show()
             end
+            if (tarchanneling) then
+                if (not self.targetCastIsChanneling) then
+                    self.targetCastIsChanneling = true
+                    self.targetCasBar:SetStatusBarTexture("Interface\\FontStyles\\FontStyleLegion")
+                end
+            else
+                if (self.targetCastIsChanneling) then
+                    self.targetCastIsChanneling = false
+                    self.targetCasBar:SetStatusBarTexture("ChallengeMode-TimerFill")
+                end
+            end
         else
             if (self.targetCasting) then
                 self.targetCasting = false
                 self.targetCasBar:Hide()
             end
+        end
+    else
+        if (self.targetCasting) then
+            self.targetCasting = false
+            self.targetCasBar:Hide()
         end
     end
 

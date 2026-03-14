@@ -67,7 +67,7 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     local commonSpells = ERACombatFrames_PriestCommonSpells(cFrame, hud, talents, false)
 
     -- assist
-    hud.assistGroup:AddCooldown(pws)
+    hud.assistGroup:AddCooldown(pws).watchIconChange = true
     hud.assistGroup:AddCooldown(pwRadiance)
     hud.assistGroup:AddCooldown(penance)
     hud.assistGroup:AddCooldown(dispell)
@@ -93,8 +93,10 @@ function ERACombatFrames_Priest_Discipline(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(shadowmend, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "ROTATE_RIGHT", "CENTER").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddPublicBooleanOverlayAlert(nil, "Interface/Addons/ERACombatFrames/textures/alerts/GenericTop_01.tga", false, apex, "NONE", "TOP"):SetColor(0.7, 0.2, 1.0)
+    hud:AddAuraOverlayAlert(shadowmend, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Nightfall.tga", false, "MIRROR_H", "RIGHT").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    local apexAlert = hud:AddPublicBooleanOverlayAlert(nil, "Interface/Addons/ERACombatFrames/textures/alerts/GenericTop_01.tga", false, apex, "NONE", "TOP")
+    apexAlert:SetColor(0.7, 0.2, 1.0)
+    apexAlert.playSoundWhenApperars = ECF_CDM_Sounds.Instruments_ChimeAsc
 
     --#endregion
     --------------------------------

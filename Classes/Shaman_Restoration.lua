@@ -108,7 +108,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
     --hud:AddEssentialsLeftAura(tidwave):ShowStacksRatherThanDuration()
 
     local _, aswiftSlot = hud:AddEssentialsCooldown(aswift, nil, nil, 0.6, 0.8, 1.0)
-    aswiftSlot:AddTimerBar(0.75, ancestors, nil, 0.0, 0.0, 1.0)
+    aswiftSlot:AddTimerBar(0.75, ancestors, nil, 0.0, 0.0, 1.0).doNotCutLongDuration = true
 
     hud:AddEssentialsCooldown(unleash, nil, nil, 0.0, 1.0, 0.0)
 

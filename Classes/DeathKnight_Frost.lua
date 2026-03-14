@@ -146,7 +146,7 @@ function ERACombatFrames_DeathKnight_Frost(cFrame, talents)
     --#region RESOURCE
 
     local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
-    function runesDisplay:RunesUpdated()
+    function runesDisplay:UpdatingRunes()
         if (feast.auraIsActive) then
             self:SetBorderColor(1.0, 0.0, 0.0)
         else

@@ -76,7 +76,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     -- essentials
 
     local _, aswiftSlot = hud:AddEssentialsCooldown(ancestral_swift, nil, nil, 0.6, 0.8, 1.0)
-    aswiftSlot:AddTimerBar(0.75, ancestors, nil, 0.0, 0.0, 1.0)
+    aswiftSlot:AddTimerBar(0.75, ancestors, nil, 0.0, 0.0, 1.0).doNotCutLongDuration = true
 
     local blastC, blastSlot = hud:AddEssentialsAura(blast_crit)
     blastC.showRedIfMissingInCombat = true
@@ -100,7 +100,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
 
     hud:AddEssentialsCooldown(stormkeeper, nil, nil, 0.2, 0.2, 1.0)
 
-    hud:AddEssentialsRightAura(stormkeeper_stacks, 839974):ShowStacksRatherThanDuration()  -- 135990 136099
+    hud:AddEssentialsRightAura(stormkeeper_stacks, 839974):ShowStacksRatherThanDuration() -- 135990 136099
 
     hud:AddEssentialsRightAura(surging, 136044):ShowStacksRatherThanDuration()
 
@@ -110,8 +110,8 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    conduit.playSoundWhenApperars = 5495 -- 255412
-    hud:AddAuraOverlayAlert(tempest, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fulmination.tga", false, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    conduit.playSoundWhenApperars = ECF_CDM_Sounds.Instruments_BellRing
+    hud:AddAuraOverlayAlert(tempest, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fulmination.tga", false, "NONE", "TOP")--.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

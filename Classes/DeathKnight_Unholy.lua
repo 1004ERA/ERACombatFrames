@@ -67,6 +67,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local succor = hud:AddAuraByPlayer(178819, false)
     local apex = hud:AddAuraByPlayer(1242223, false, talent_apex)
 
+    local scytheUsable = hud:AddIconBoolean(85948, 3997563, talent_scythe)
     local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
 
     --#endregion
@@ -158,11 +159,16 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     --#region RESOURCE
 
     local runesDisplay = hud:AddResourceSlot(false):AddRunes(runes)
-    function runesDisplay:RunesUpdated()
+    function runesDisplay:UpdatingRunes()
         if (feast.auraIsActive) then
             self:SetBorderColor(1.0, 0.0, 0.0)
         else
             self:SetBorderColor(1.0, 1.0, 1.0)
+        end
+        if (scytheUsable.value) then
+            self:SetRuneIcons(3997563, 3997561)
+        else
+            self:SetDefaultIcons()
         end
     end
 

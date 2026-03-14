@@ -78,7 +78,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     hud:AddEssentialsCooldown(siphon, nil, nil, 0.7, 0.0, 0.7)
 
     local _, tyrantSlot = hud:AddEssentialsCooldown(tyrant, nil, nil, 0.7, 0.5, 1.0)
-    tyrantSlot:AddTimerBar(0.25, apex, nil, 0.0, 1.0, 0.0)
+    tyrantSlot:AddTimerBar(0.25, apex, nil, 0.0, 1.0, 0.0) --.doNotCutLongDuration = true
 
     -- defensive
     hud.defensiveGroup:AddBagItem(commonSpells.demonicHStone):SetTintWhenMissing(0.0, 1.0, 1.0)

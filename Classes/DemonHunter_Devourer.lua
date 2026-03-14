@@ -36,6 +36,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     local immoBuff = hud:AddAuraByPlayer(1241937, false)
 
     local reap = hud:AddCooldown(1226019)
+    local collapstarCD = hud:AddCooldown(1221150, talent_collapstar)
     local immo = hud:AddCooldown(1241937, talent_immo_not_spontaneous)
     local blade = hud:AddCooldown(1245412)
     local meta_blade = hud:AddCooldown(1245483, talent_voidscarred_misc)
@@ -80,7 +81,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     end
     reapSlot:AddTimerBar(0.75, immoBuff, talent_immo_spontaneous, 1.0, 1.0, 1.0).doNotCutLongDuration = true
 
-    local beamIcon = hud:AddEssentialsCooldown(beam, nil, nil, 1.0, 0.0, 0.0)
+    local beamIcon, beamSlot = hud:AddEssentialsCooldown(beam, nil, nil, 1.0, 0.0, 0.0)
     function beamIcon:OverrideCombatVisibilityAlpha()
         if (C_Spell.IsSpellUsable(beam.spellID)) then
             return 1.0
@@ -88,6 +89,7 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
             return 0.0
         end
     end
+    beamSlot:AddTimerBar(0.25, collapstarCD, nil, 0.5, 0.5, 0.5).doNotCutLongDuration = true
 
     local _, immoSlot = hud:AddEssentialsCooldown(immo, nil, nil, 0.8, 0.6, 0.0)
     local immoBar = immoSlot:AddTimerBar(0.25, immoBuff, talent_immo_not_spontaneous, 1.0, 1.0, 1.0)
