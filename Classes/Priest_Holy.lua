@@ -87,6 +87,7 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
 
     local _, dotSlot = hud:AddDOT(swp, nil, nil, 1.0, 0.8, 0.0)
     dotSlot:AddOverlapingCooldown(hfire, nil, nil, 1.0, 0.8, 0.0)
+    dotSlot:AddTimerBar(0.5, hfire, nil, 1.0, 0.8, 0.0)
     dotSlot:AddTimerBar(0.75, naaru, nil, 1.0, 1.0, 1.0)
 
     hud:AddEssentialsCooldown(hwChastise, nil, nil, 1.0, 0.0, 0.0)
@@ -103,7 +104,8 @@ function ERACombatFrames_Priest_Holy(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    apex.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    --hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "ROTATE_RIGHT", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     --#endregion
     --------------------------------

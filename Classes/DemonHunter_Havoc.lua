@@ -81,6 +81,7 @@ function ERACombatFrames_DemonHunter_Havoc(cFrame, talents)
     reaverMarkSlot:AddTimerBar(0.25, reaverGlaive, nil, 0.6, 0.3, 0.7)
 
     local glaiveIcon, glaiveSlot = hud:AddEssentialsCooldown(throwGlaive, nil, nil, 0.5, 0.7, 0.5)
+    glaiveIcon.watchIconChange = true
     glaiveIcon.watchAdditionalOverlay = 442294
     local initiativeBar = glaiveSlot:AddTimerBar(0.25, initiative, nil, 0.7, 0.8, 0.0)
     initiativeBar.doNotCutLongDuration = true

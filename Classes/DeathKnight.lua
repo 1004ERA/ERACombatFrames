@@ -343,10 +343,10 @@ end
 ---@param data HUDRuneItem
 ---@param ownerResource HUDRunesResource
 function HUDRuneDisplayItem:updateDisplay(data, ownerResource)
-    self.icon:SetValue(data.startTime, data.duration)
     if (data.somethingMayBeSecret) then
         self.icon:ShowDefaultCountdown()
     else
+        self.icon:SetDurationNotSecret(data.startTime, data.duration)
         local iconID
         if (data.isReady) then
             iconID = ownerResource.fullRuneIcon

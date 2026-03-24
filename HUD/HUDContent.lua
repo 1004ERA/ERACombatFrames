@@ -171,6 +171,7 @@ end
 ---@return HUDCooldownIcon
 function HUDEssentialsSlot:AddOverlapingCooldown(data, iconID, talent, r, g, b)
     local icon = HUDCooldownIcon:create(self.hud:getEssentialFrame(), 8 * (1 + #self.icons), "TOP", "CENTER", self.hud.options.essentialsIconSize, data, iconID, talent)
+    icon:SetBorderColor(r, g, b)
     table.insert(self.icons, icon)
     return icon
 end
@@ -441,27 +442,24 @@ function HUDTimerBar:Update(t, combat)
             return
         end
         local alphaManaged = false
-        if (self.timer.timerDuration) then
-            if (self.doNotCutLongDuration) then
-                self.bar:SetValue(self.timer.timerDuration:GetRemainingDuration())
+        if (self.doNotCutLongDuration) then
+            self.bar:SetValue(self.timer.remainingDuration)
+        else
+            if (self.showPandemic) then
+                if (self.timer:managePandemic(self.bar)) then
+                    alphaManaged = true
+                else
+                    ---@diagnostic disable-next-line: param-type-mismatch
+                    self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curvePandemic))
+                end
             else
-                if (self.showPandemic) then
-                    if (self.timer:managePandemic(self.bar)) then
-                        alphaManaged = true
-                    else
-                        ---@diagnostic disable-next-line: param-type-mismatch
-                        self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curvePandemic))
-                    end
+                if (self.timer.timerDuration == self.hud.duration0) then
+                    self.bar:SetValue(self.timer.remainingDuration)
                 else
                     ---@diagnostic disable-next-line: param-type-mismatch
                     self.bar:SetValue(self.timer.timerDuration:EvaluateRemainingDuration(self.hud.curveTimer))
                 end
             end
-        elseif (self.timer.remainingDuration) then
-            self.bar:SetValue(self.timer.remainingDuration)
-        else
-            self.bar:SetValue(0)
-            return
         end
         if (not alphaManaged) then
             if (self.timer.alphaDuration) then

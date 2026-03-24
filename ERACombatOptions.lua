@@ -84,7 +84,7 @@ function ERACombatSpecOptions:Create()
     x.movementX = 222
     x.movementY = 0
     x.movementIconSize = 55
-    x.specialX = 222
+    x.specialX = 232
     x.specialY = -144
     x.specialIconSize = 44
     x.alertGroupX = 0

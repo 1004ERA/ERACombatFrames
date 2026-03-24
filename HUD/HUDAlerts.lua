@@ -145,7 +145,7 @@ function HUDSAOAlert:updateLayout(options)
             self.frame:SetSize(2 * options.alertSize, options.alertSize)
         end
     else
-        self.frame:SetSize(0.88 * options.alertSize, 0.88 * options.alertSize)
+        self.frame:SetSize(1.1 * options.alertSize, 1.1 * options.alertSize)
     end
 end
 

@@ -69,6 +69,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
 
     local scytheUsable = hud:AddIconBoolean(85948, 3997563, talent_scythe)
     local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
+    local sreaperUsable = hud:AddSpellUsableBoolean(sreaper.spellID, talent_sreaper)
 
     --#endregion
     --------------------------------
@@ -79,33 +80,34 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     -- essentials
 
     hud:AddEssentialsLeftAura(draw)
+    hud:AddEssentialsLeftAura(succor)
 
     hud:AddEssentialsLeftAura(runeStrength)
-
-    hud:AddEssentialsLeftAura(lesser):ShowStacksRatherThanDuration()
-
-    local _, putrefySlot = hud:AddEssentialsCooldown(putrefy, nil, nil, 0.3, 1.0, 0.1, false)
-    putrefySlot:AddTimerBar(0.25, apex, nil, 0.0, 0.6, 0.2)
-
-    local strikestackIcon, strikestackSlot = hud:AddEssentialsAura(strikestack, 237530)
-    strikestackIcon:ShowStacksRatherThanDuration()
-    strikestackSlot:AddTimerBar(0.5, scythe, nil, 0.4, 0.0, 0.0)
 
     hud:AddDOT(dot1, 7439189, nil, 1.0, 1.0, 0.0)
 
     local _, dndSlot = hud:AddEssentialsCooldown(dnd, nil, nil, 0.7, 0.0, 1.0, false)
     dndSlot:AddTimerBar(0.25, bloodqueen, nil, 1.0, 0.0, 0.0)
 
-    hud:AddEssentialsCooldown(sreaper, nil, nil, 0.0, 0.0, 1.0, false).saturateWhenUsable = true
+    local _, putrefySlot = hud:AddEssentialsCooldown(putrefy, nil, nil, 0.3, 1.0, 0.1, false)
+    putrefySlot:AddTimerBar(0.25, apex, nil, 0.0, 0.6, 0.2)
+
+    local sreaperIcon, _, sreaperBar = hud:AddEssentialsCooldown(sreaper, nil, nil, 0.0, 0.0, 1.0)
+    sreaperIcon.saturateWhenUsable = true
+    sreaperBar.showOnlyIf = sreaperUsable
 
     local _, transfoSlot = hud:AddEssentialsCooldown(transfo, nil, nil, 0.6, 0.5, 0.7)
     transfoSlot:AddTimerBar(0.25, transfoBuff, nil, 0.8, 0.5, 0.0).doNotCutLongDuration = true
 
+    local strikestackIcon, strikestackSlot = hud:AddEssentialsAura(strikestack, 237530)
+    strikestackIcon:ShowStacksRatherThanDuration()
+    strikestackIcon.showRedIfMissingInCombat = true
+    strikestackSlot:AddTimerBar(0.5, scythe, nil, 0.4, 0.0, 0.0)
+
     local _, undeathSlot, undeathBar = hud:AddEssentialsAura(undeath, nil, nil, 0.3, 0.8, 0.0):ShowStacksRatherThanDuration()
 
+    hud:AddEssentialsRightAura(lesser):ShowStacksRatherThanDuration()
     hud:AddEssentialsRightAura(clawing):ShowStacksRatherThanDuration()
-
-    local succorIcon = hud:AddEssentialsRightAura(succor)
 
     -- defensive
     hud.defensiveGroup:AddCooldown(pact)

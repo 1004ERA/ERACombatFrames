@@ -1884,6 +1884,13 @@ function HUDModule:AddSpellOverlayBoolean(spellID, talent)
     return HUDPublicBooleanSpellOverlay:create(self, talent, spellID)
 end
 
+---@param spellID integer
+---@param talent ERALIBTalent|nil
+---@return HUDPublicBooleanSpellUsable
+function HUDModule:AddSpellUsableBoolean(spellID, talent)
+    return HUDPublicBooleanSpellUsable:create(self, talent, spellID)
+end
+
 ---@param aura HUDAura
 ---@return HUDPublicBooleanAuraActive
 function HUDModule:AddAuraBoolean(aura)

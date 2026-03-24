@@ -2,6 +2,11 @@ ERACombatFrames_initialized = false
 
 --[[
 
+* à tester :
+- nouvelle API :
+-- pierre démo (HUDBagItemIcon) - OK
+-- trinkets (HUDEquipmentIcon)
+-- totem (HUDAuraTotem et HUDTotem)
 
 /run local info = C_Spell.GetSpellInfo(""); print(info.spellID, info.name)
 /run print(ECF_PRINT_TALENTS())
@@ -158,6 +163,7 @@ end
 ---@field AddPoint fun(self:LuaColorCurveObject, pointX:number, pointY:ColorMixin)
 ---@field ClearPoints fun(self:LuaColorCurveObject)
 
+--[[
 ---@class LuaDurationObject
 ---@field Reset fun(self:LuaDurationObject)
 ---@field IsZero fun(self:LuaDurationObject): boolean
@@ -167,6 +173,7 @@ end
 ---@field GetStartTime fun(self:LuaDurationObject): number
 ---@field GetTotalDuration fun(self:LuaDurationObject): number
 ---@field GetRemainingDuration fun(self:LuaDurationObject): number
+]]
 
 function ERACombatFrames_loaded()
     ERACombatFrameMain:RegisterEvent("ADDON_LOADED")

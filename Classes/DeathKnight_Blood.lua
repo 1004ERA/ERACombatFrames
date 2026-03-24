@@ -58,14 +58,14 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
     local draw = hud:AddAuraByPlayer(374598, false, talents.draw)
     local hemostasis = hud:AddAuraByPlayer(273946, false, talent_hemostasis)
     local fortitudeBuff = hud:AddAuraByPlayer(48792, false, talents.fortitude)
-    local chill = hud:AddAuraByPlayer(3915666, true, talents.chill)
+    --local chill = hud:AddAuraByPlayer(3915666, true, talents.chill)
     local bPlague = hud:AddAuraByPlayer(50842, true)
     local lichBuff = hud:AddAuraByPlayer(49039, false)
     local ossuary = hud:AddAuraByPlayer(219786, false)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
     local vBloodBuff = hud:AddAuraByPlayer(55233, false)
     local deathStrikeHealing = hud:AddAuraByPlayer(49998, false)
-    local apex = hud:AddAuraByPlayer(1264568, false, talent_apex)
+    local apex = hud:AddAuraByPlayer(1264506, false, talent_apex)
 
     local vampStrike = hud:AddIconBoolean(206930, 5927645, talent_sanlayn)
 
@@ -136,7 +136,7 @@ function ERACombatFrames_DeathKnight_Blood(cFrame, talents)
 
     draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
     hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
-    hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Necropolis.tga", false, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
+    --hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Necropolis.tga", false, "NONE", "CENTER").playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
 
     --#endregion
     --------------------------------

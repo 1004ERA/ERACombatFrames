@@ -60,7 +60,7 @@ function ERACombatFrames_Paladin_Protection(cFrame, talents)
 
     -- defensive
     hud.defensiveGroup:AddCooldown(guardian)
-    hud.defensiveGroup:AddCooldown(spellwarding)
+    --hud.defensiveGroup:AddCooldown(spellwarding)
 
     -- movement
 

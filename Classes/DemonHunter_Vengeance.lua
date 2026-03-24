@@ -17,6 +17,9 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local talent_carver = ERALIBTalent:Create(112898)
     local talent_voidfall = ERALIBTalent:Create(135667)
     local talent_aldrachi = ERALIBTalent:Create(117512)
+    local talent_not_aldrachi = ERALIBTalent:CreateNot(talent_aldrachi)
+    local talent_fblade_def = ERALIBTalent:Create(117493)
+    local talent_retreat_reset_fblade = ERALIBTalent:Create(123047)
     local talent_apex = ERALIBTalent:CreateOr(ERALIBTalent:Create(137041), ERALIBTalent:Create(137042), ERALIBTalent:Create(137043))
 
     --#endregion
@@ -28,13 +31,15 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local power = hud:AddPowerLowIdle(Enum.PowerType.Fury)
 
     local souls = hud:AddAuraByPlayer(203981, false)
+    local brandBuff = hud:AddAuraByPlayer(204021, false)
     local felfire = hud:AddAuraByPlayer(389724, false, talent_felfire)
+    local fbladeDef = hud:AddAuraByPlayer(442714, false, talent_fblade_def)
     local reaverGlaive = hud:AddAuraByPlayer(442290, false, talent_aldrachi)
     local metaBuff = hud:AddAuraByPlayer(187827, false)
     local frailty = hud:AddAuraByPlayer(389958, true)
     local reaverMark = hud:AddAuraByPlayer(442679, true, talent_aldrachi)
     local spikes = hud:AddAuraByPlayer(203720, false)
-    local voidfall = hud:AddAuraByPlayer(1253304, false) --, talent_voidfall)
+    local voidfall = hud:AddAuraByPlayer(1253304, false, talent_voidfall)
     local apex = hud:AddAuraByPlayer(1270444, false, talent_apex)
 
     local fracture = hud:AddCooldown(263642)
@@ -60,6 +65,8 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     local meta = hud:AddCooldown(187827)
     local imprison = hud:AddCooldown(217832, talents.imprison)
 
+    local reaverGlaiveUsable = hud:AddIconBoolean(204157, 5927616, talent_aldrachi)
+
     --#endregion
     --------------------------------
 
@@ -68,19 +75,13 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
 
     -- essentials
 
+    hud:AddEssentialsLeftCooldown(glaive, nil, talent_not_aldrachi)
     hud:AddEssentialsLeftCooldown(retreat)
-    hud:AddEssentialsLeftCooldown(sigFlame)
     hud:AddEssentialsLeftCooldown(iStrike)
-    local glaiveIcon = hud:AddEssentialsLeftCooldown(glaive, nil, nil)
+
+    local glaiveIcon = hud:AddEssentialsLeftCooldown(glaive, nil, talent_aldrachi)
+    glaiveIcon.watchIconChange = true
     glaiveIcon.watchAdditionalOverlay = 442294
-
-    hud:AddEssentialsCooldown(felblade, nil, nil, 0.8, 1.0, 0.5)
-
-    local _, fractureSlot = hud:AddEssentialsCooldown(fracture, nil, nil, 0.6, 0.7, 0.6)
-    local metaBar = fractureSlot:AddTimerBar(0.75, metaBuff, nil, 1.0, 0.0, 1.0)
-    metaBar.doNotCutLongDuration = true
-    fractureSlot:AddTimerBar(0.25, apex, nil, 1.0, 1.0, 1.0)
-
     local reverMarkIcon, reaverMarkPlacement = hud:AddEssentialsAura(reaverMark)
     reverMarkIcon.showRedIfMissingInCombat = true
     reverMarkIcon:HideCountdown()
@@ -89,17 +90,27 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     end
     reaverMarkPlacement:AddTimerBar(0.25, reaverGlaive, nil, 0.6, 0.3, 0.7)
 
-    hud:AddEssentialsCooldown(devastation, nil, nil, 0.2, 0.7, 0.0)
+    local _, fbladeSlot = hud:AddEssentialsCooldown(felblade, nil, nil, 0.8, 1.0, 0.5)
+    fbladeSlot:AddTimerBar(0.25, fbladeDef, talent_retreat_reset_fblade, 0.5, 0.5, 0.5).doNotCutLongDuration = true
+
+    local _, fractureSlot = hud:AddEssentialsCooldown(fracture, nil, nil, 0.6, 0.7, 0.6)
+    local metaBar = fractureSlot:AddTimerBar(0.75, metaBuff, nil, 1.0, 0.0, 1.0)
+    metaBar.doNotCutLongDuration = true
+    fractureSlot:AddTimerBar(0.25, apex, nil, 0.0, 1.0, 1.0)
 
     local _, bombSlot = hud:AddEssentialsCooldown(bomb, nil, nil, 0.7, 0.0, 0.7)
 
     hud:AddEssentialsCooldown(immo, nil, nil, 0.8, 0.6, 0.0)
+
+    local _, brandSlot = hud:AddEssentialsCooldown(brand, nil, nil, 0.2, 0.7, 0.0)
+    brandSlot:AddTimerBar(0.75, brandBuff, nil, 0.7, 1.0, 0.6).doNotCutLongDuration = true
 
     local _, spikesSlot = hud:AddEssentialsCooldown(spikesCooldown, nil, nil, 1.0, 1.0, 0.0)
     local spikesBar = spikesSlot:AddTimerBar(0.25, spikes, nil, 1.0, 0.0, 0.0)
     spikesBar.doNotCutLongDuration = true
 
     hud:AddEssentialsRightCooldown(carver)
+    hud:AddEssentialsRightCooldown(sigFlame)
     hud:AddEssentialsRightCooldown(sigSpite)
     local voidfallIcon = hud:AddEssentialsRightAura(voidfall)
     voidfallIcon:ShowStacksRatherThanDuration()
@@ -119,8 +130,17 @@ function ERACombatFrames_DemonHunter_Vengeance(cFrame, talents)
     hud.controlGroup:AddCooldown(imprison)
 
     -- powerboost
-    hud.powerboostGroup:AddCooldown(brand)
+    hud.powerboostGroup:AddCooldown(devastation)
     hud.powerboostGroup:AddCooldown(meta)
+
+    --#endregion
+    --------------------------------
+
+    --------------------------------
+    --#region ALERTS
+
+    --hud:AddPublicBooleanOverlayAlert(nil, "talents-heroclass-demonhunter-aldrachireaver", true, reaverGlaiveUsable, "NONE", "CENTER")
+    hud:AddPublicBooleanOverlayAlert(nil, "talents-animations-class-demonhunter", true, reaverGlaiveUsable, "NONE", "CENTER")
 
     --#endregion
     --------------------------------

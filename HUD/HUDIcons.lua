@@ -186,7 +186,7 @@ function HUDCooldownIcon:Update(t, combat)
         ---@diagnostic disable-next-line: param-type-mismatch
         self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
     end
-    self.icon:SetValue(self.data.swipeDuration:GetStartTime(), self.data.swipeDuration:GetTotalDuration())
+    self.icon:SetDuration(self.data.swipeDuration)
 
     --self.icon:SetMainText(string.format("%i", self.data.swipeDuration:GetRemainingDuration()), true)
     if (self.GetMainText) then
@@ -279,7 +279,7 @@ end
 ---@param t number
 ---@param combat boolean
 function HUDEquipmentIcon:Update(t, combat)
-    self.icon:SetValue(self.data.startTime, self.data.totalDuration)
+    self.icon:SetDurationNotSecret(self.data.startTime, self.data.totalDuration)
     local alpha
     if (combat) then
         alpha = 1.0
@@ -361,9 +361,9 @@ function HUDAuraLikeIcon:Update(t, combat)
     if (self.data.auraIsActive) then
         self.icon:SetVisibilityAlpha(1.0, false)
         self.icon:SetTint(1.0, 1.0, 1.0, false)
-        self.icon:SetValue(self.data.startTime, self.data.totalDuration)
+        self.icon:SetDuration(self.data.timerDuration)
     else
-        self.icon:SetValue(0, 0)
+        self.icon:SetDurationAvailable()
         if (combat) then
             if (self.showRedIfMissingInCombat) then
                 self.icon:SetTint(1.0, 0.0, 0.0, false)
@@ -485,7 +485,7 @@ function HUDAuraIcon:Update(t, combat)
             self.icon:SetMainText(self:GetMainText(), true)
         end
     end
-    self.icon:SetValue(self.data.startTime, self.data.totalDuration)
+    self.icon:SetDuration(self.data.timerDuration)
 
     if (self.watchIconChange and self.data.icon) then
         self.icon:SetIconTexture(self.data.icon, false, true)
@@ -565,13 +565,13 @@ function HUDBagItemIcon:Update(t, combat)
             ---@diagnostic disable-next-line: param-type-mismatch
             self.icon:SetVisibilityAlpha(self.data.timerDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
         end
-        self.icon:SetValue(self.data.startTime, self.data.totalDuration)
+        self.icon:SetDuration(self.data.timerDuration)
         self.icon:SetSecondaryText(self.data.stacks, true)
         self.icon:SetTint(1.0, 1.0, 1.0, false)
     else
         self.icon:SetVisibilityAlpha(1.0, false)
         self.icon:SetSecondaryText(nil, false)
-        self.icon:SetValue(0, 1)
+        self.icon:SetDurationAvailable()
         self.icon:SetTint(self.rTintIfMissing, self.gTintIfMissing, self.bTintIfMissing, false)
     end
 end

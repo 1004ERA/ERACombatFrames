@@ -251,10 +251,10 @@ end
 ---@class (exact) HUDTimer : HUDDataItem
 ---@field private __index HUDTimer
 ---@field protected constructTimer fun(self:HUDTimer, hud:HUDModule, talent:ERALIBTalent|nil)
----@field protected updateTimerDuration_dstr fun(self:HUDTimer, t:number): LuaDurationObject|nil, number|nil, number|nil, number|nil
+---@field protected updateTimerDuration_returnZeroDurationIfSecret fun(self:HUDTimer, t:number): LuaDurationObject, number|nil, number|nil, number|nil
 ---@field managePandemic fun(self:HUDTimer, bar:StatusBar): boolean
----@field timerDuration nil|LuaDurationObject
----@field remainingDuration nil|number
+---@field timerDuration LuaDurationObject
+---@field remainingDuration number
 ---@field totalDuration number
 ---@field startTime number
 ---@field alphaDuration nil|LuaDurationObject
@@ -267,23 +267,22 @@ function HUDTimer:constructTimer(hud, talent)
 end
 
 function HUDTimer:Update(t)
-    local dur, startTime, totDur, remDur = self:updateTimerDuration_dstr(t)
+    local dur, startTime, totDur, remDur = self:updateTimerDuration_returnZeroDurationIfSecret(t)
     self.timerDuration = dur
-    self.remainingDuration = remDur
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    self.startTime = startTime
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    self.totalDuration = totDur
-    if (dur) then
-        if (not remDur) then
-            self.remainingDuration = dur:GetRemainingDuration()
-        end
-        if (not totDur) then
-            self.totalDuration = dur:GetTotalDuration()
-        end
-        if (not startTime) then
-            self.startTime = dur:GetStartTime()
-        end
+    if (startTime) then
+        self.startTime = startTime
+    else
+        self.startTime = dur:GetStartTime()
+    end
+    if (totDur) then
+        self.totalDuration = totDur
+    else
+        self.totalDuration = dur:GetTotalDuration()
+    end
+    if (remDur) then
+        self.remainingDuration = remDur
+    else
+        self.remainingDuration = dur:GetRemainingDuration()
     end
 end
 
@@ -359,7 +358,7 @@ function HUDCooldown:updateHasCharges(t)
     return nil
 end
 
-function HUDCooldown:updateTimerDuration_dstr(t)
+function HUDCooldown:updateTimerDuration_returnZeroDurationIfSecret(t)
     self.cdData = C_Spell.GetSpellCooldown(self.spellID)
 
     local charges = self:updateHasCharges(t)
@@ -407,6 +406,7 @@ end
 
 ---@class (exact) HUDEquipmentCooldown : HUDTimer
 ---@field private __index HUDCooldown
+---@field private eqduration DurationObject
 ---@field slot unknown
 HUDEquipmentCooldown = {}
 HUDEquipmentCooldown.__index = HUDEquipmentCooldown
@@ -422,16 +422,19 @@ function HUDEquipmentCooldown:create(slot, hud)
     ---@cast x HUDEquipmentCooldown
     x:constructTimer(hud, ERALIBTalent:CreateEquipmentCD(slot))
     x.slot = slot
+    x.eqduration = C_DurationUtil:CreateDuration()
     return x
 end
 
-function HUDEquipmentCooldown:updateTimerDuration_dstr(t)
+function HUDEquipmentCooldown:updateTimerDuration_returnZeroDurationIfSecret(t)
     local s, d, enabled = GetInventoryItemCooldown("player", self.slot)
-    if (not enabled) then
+    if ((not enabled) or issecretvalue(s) or issecretvalue(d)) then
         s = 0
         d = 1
+        return self.hud.duration0, 0, 1
     end
-    return nil, s, d, nil
+    self.eqduration:SetTimeFromStart(s, d)
+    return self.eqduration, s, d, nil
 end
 
 --#endregion
@@ -540,7 +543,7 @@ function HUDAura:auraFound(dur, a)
 end
 ]]
 
-function HUDAura:updateTimerDuration_dstr(t)
+function HUDAura:updateTimerDuration_returnZeroDurationIfSecret(t)
     if (self.cdmFrame and self.cdmFrame.auraInstanceID) then
         if (not self.auraIsActive) then
             self.auraIsActive = true
@@ -612,6 +615,7 @@ end
 ---@class (exact) HUDAuraTotem : HUDAuraLike
 ---@field private __index HUDAuraTotem
 ---@field private slot integer
+---@field private totemDur DurationObject
 ---@field auraIsActive boolean -- hérité
 HUDAuraTotem = {}
 HUDAuraTotem.__index = HUDAuraTotem
@@ -629,28 +633,38 @@ function HUDAuraTotem:createTotem(slot, spellID, hud, talent)
     ---@cast x HUDAuraTotem
     x:constructAuraLike(spellID, hud, talent)
     x.slot = slot
+    x.totemDur = C_DurationUtil:CreateDuration()
     return x
 end
 
-function HUDAuraTotem:updateTimerDuration_dstr(t)
+function HUDAuraTotem:updateTimerDuration_returnZeroDurationIfSecret(t)
     local haveTotem, _, startTime, duration, _, _, _ = GetTotemInfo(self.slot)
     ---@diagnostic disable-next-line: param-type-mismatch
     if (issecretvalue(haveTotem)) then
         -- self.cdmFrame.totemData.duration et self.cdmFrame.totemData.expirationTime
         if (self.cdmFrame and self.cdmFrame.totemData) then
             self.auraIsActive = true
-            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
         else
             self.auraIsActive = false
-            return nil, startTime, duration, 0
+            return self.hud.duration0, startTime, duration, 0
         end
     else
-        self.auraIsActive = haveTotem
         if (haveTotem) then
-            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+            self.auraIsActive = true
+        else
+            self.auraIsActive = false
+            return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
+        end
+    end
+    if ((issecretvalue(startTime) or issecretvalue(duration))) then
+        if (GetTotemDuration) then
+            return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
         else
             return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
         end
+    else
+        self.totemDur:SetTimeFromStart(startTime, duration)
+        return self.totemDur, startTime, duration, GetTotemTimeLeft(self.slot)
     end
 end
 
@@ -663,6 +677,7 @@ end
 ---@class (exact) HUDTotem : HUDTimer
 ---@field private __index HUDTotem
 ---@field private slot integer
+---@field private totemDur DurationObject
 ---@field totemIsActive boolean
 HUDTotem = {}
 HUDTotem.__index = HUDTotem
@@ -680,18 +695,24 @@ function HUDTotem:createTotem(slot, hud, talent)
     x:constructTimer(hud, talent)
     x.slot = slot
     x.totemIsActive = false
+    x.totemDur = C_DurationUtil:CreateDuration()
     return x
 end
 
-function HUDTotem:updateTimerDuration_dstr(t)
+function HUDTotem:updateTimerDuration_returnZeroDurationIfSecret(t)
     local haveTotem, _, startTime, duration, _, _, _ = GetTotemInfo(self.slot)
     self.totemIsActive = haveTotem
     ---@diagnostic disable-next-line: param-type-mismatch
-    if (issecretvalue(haveTotem)) then
-        return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+    if (issecretvalue(haveTotem) or issecretvalue(startTime) or issecretvalue(duration)) then
+        if (GetTotemDuration) then
+            return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
+        else
+            return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
+        end
     else
         if (haveTotem) then
-            return nil, startTime, duration, GetTotemTimeLeft(self.slot)
+            self.totemDur:SetTimeFromStart(startTime, duration)
+            return self.totemDur, startTime, duration, GetTotemTimeLeft(self.slot)
         else
             return self.hud.duration0, startTime, duration, 0
         end
@@ -716,7 +737,7 @@ end
 ---@field hasItem boolean
 ---@field private bagID integer
 ---@field private slot integer
----@field private duration LuaDurationObject
+---@field private bagduration LuaDurationObject
 HUDBagItem = {}
 HUDBagItem.__index = HUDBagItem
 setmetatable(HUDBagItem, { __index = HUDTimer })
@@ -736,7 +757,7 @@ function HUDBagItem:create(itemID, hud, talent)
     x.bagID = -1
     x.slot = -1
     x.hasItem = false
-    x.duration = C_DurationUtil.CreateDuration()
+    x.bagduration = C_DurationUtil.CreateDuration()
     hud:addBagItem(x)
     return x
 end
@@ -772,14 +793,14 @@ function HUDBagItem:bagUpdate()
     end
 end
 
-function HUDBagItem:updateTimerDuration_dstr(t)
+function HUDBagItem:updateTimerDuration_returnZeroDurationIfSecret(t)
     if (self.hasItem) then
         self.stacks = C_Item.GetItemCount(self.itemID, false, true, false, false)
         -- voir aussi : C_Container.GetItemCooldown et C_Item.GetItemCooldown
         local start, duration, enable = C_Container.GetContainerItemCooldown(self.bagID, self.slot)
-        if (start and duration and enable) then
-            self.duration:SetTimeFromStart(start, duration)
-            return self.duration
+        if (start and duration and enable and not (issecretvalue(start) or issecretvalue(duration))) then
+            self.bagduration:SetTimeFromStart(start, duration)
+            return self.bagduration
         else
             return self.hud.duration0
         end
@@ -880,6 +901,31 @@ end
 ---@return boolean
 function HUDPublicBooleanSpellOverlay:getValue(t, combat)
     return C_SpellActivationOverlay.IsSpellOverlayed(self.spellID)
+end
+
+---@class (exact) HUDPublicBooleanSpellUsable : HUDPublicBoolean
+---@field private __index HUDPublicBooleanSpellUsable
+---@field private spellID number
+HUDPublicBooleanSpellUsable = {}
+HUDPublicBooleanSpellUsable.__index = HUDPublicBooleanSpellUsable
+setmetatable(HUDPublicBooleanSpellUsable, { __index = HUDPublicBoolean })
+---@param hud HUDModule
+---@param talent ERALIBTalent|nil
+---@param spellID number
+function HUDPublicBooleanSpellUsable:create(hud, talent, spellID)
+    local x = {}
+    setmetatable(x, HUDPublicBooleanSpellUsable)
+    ---@cast x HUDPublicBooleanSpellUsable
+    x:constructBoolean(hud, talent)
+    x.spellID = spellID
+    return x
+end
+---@param t number
+---@param combat boolean
+---@return boolean
+function HUDPublicBooleanSpellUsable:getValue(t, combat)
+    local u = C_Spell.IsSpellUsable(self.spellID)
+    return u
 end
 
 ---@class (exact) HUDPublicBooleanAuraActive : HUDPublicBoolean

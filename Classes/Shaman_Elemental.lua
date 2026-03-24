@@ -16,6 +16,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     local talent_stormkeeper = ERALIBTalent:Create(101859)
     local talent_ascendant = ERALIBTalent:Create(101860)
     local talent_voltaic = ERALIBTalent:Create(101883)
+    local talent_aoeblast = ERALIBTalent:Create(101884)
     local talent_flshock = ERALIBTalent:CreateNot(talent_voltaic)
     local talent_fire_elem = ERALIBTalent:Create(101864)
     local talent_surging = ERALIBTalent:Create(125617)
@@ -42,6 +43,7 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     local blast_mastery = hud:AddAuraByPlayer(173184, false, talent_blast)
     local blast_crit = hud:AddAuraByPlayer(118522, false, talent_blast)
     local blast_haste = hud:AddAuraByPlayer(173183, false, talent_blast)
+    local blast_aoe = hud:AddAuraByPlayer(1259471, false, talent_aoeblast)
     local shield = hud:AddAuraByPlayer(192106, false)
     local fireElem = hud:AddAuraTotem(1, 378255, talent_fire_elem)
     local spiritwalk = hud:AddAuraByPlayer(79206, false, talents.spiritwalk)
@@ -111,7 +113,8 @@ function ERACombatFrames_Shaman_Elemental(cFrame, talents)
     --#region ALERTS
 
     conduit.playSoundWhenApperars = ECF_CDM_Sounds.Instruments_BellRing
-    hud:AddAuraOverlayAlert(tempest, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fulmination.tga", false, "NONE", "TOP")--.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(tempest, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fulmination.tga", false, "NONE", "TOP") --.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(blast_aoe, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Backlash.tga", false, "NONE", "CENTER")
 
     --#endregion
     --------------------------------

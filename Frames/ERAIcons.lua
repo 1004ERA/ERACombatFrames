@@ -355,10 +355,18 @@ function ERAPieIcon:ShowDefaultCountdown()
 end
 
 ---comment
----@param start number
+---@param duration DurationObject
+function ERAPieIcon:SetDuration(duration)
+    self.swipe:SetCooldownFromDurationObject(duration)
+end
+---comment
+---@param startTime number
 ---@param duration number
-function ERAPieIcon:SetValue(start, duration)
-    self.swipe:SetCooldown(start, duration)
+function ERAPieIcon:SetDurationNotSecret(startTime, duration)
+    self.swipe:SetCooldown(startTime, duration)
+end
+function ERAPieIcon:SetDurationAvailable()
+    self.swipe:SetCooldown(0, 1)
 end
 
 ---comment
