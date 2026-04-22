@@ -53,9 +53,11 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     local toss = hud:AddCooldown(89766)
     local commandDemonIsToss = hud:AddIconBoolean(119898, 236316)
     toss.isSpecialIf = commandDemonIsToss
-    local alternativeSpellLock = hud:AddCooldown(132409, talent_big_hunter)
-    local alternativeSpellLockIsActive = hud:AddAuraBoolean(bigHunterDuration)
-    alternativeSpellLock.isSpecialIf = alternativeSpellLockIsActive
+    local alternativeDevourMagic = hud:AddCooldown(388215, talent_big_hunter)
+    local alternativeDevourMagicIsActive = hud:AddAuraBoolean(bigHunterDuration)
+    local alternativeSingeMagic = hud:AddCooldown(132411, talent_big_imp)
+    local alternativeSingeMagicIsActive = hud:AddAuraBoolean(bigImpDuration)
+    --alternativeSpellLock.isSpecialIf = alternativeSpellLockIsActive
 
     --#endregion
     --------------------------------
@@ -94,12 +96,13 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
     -- special
     hud.specialGroup:AddCooldown(commonSpells.instapet)
     --hud.specialGroup:AddCooldown(commonSpells.soulburn)
+    hud.specialGroup:AddCooldown(alternativeSingeMagic).showOnlyIf = alternativeSingeMagicIsActive
 
     -- control
     hud.controlGroup:AddCooldown(toss).showOnlyIf = commandDemonIsToss
     hud:AddKickInfo(toss)
     hud.controlGroup:AddCooldown(commonSpells.commandDemonKick, nil, nil, true).showOnlyIf = commonSpells.commandDemonIsKick
-    hud.controlGroup:AddCooldown(alternativeSpellLock).showOnlyIf = alternativeSpellLockIsActive
+    hud.controlGroup:AddCooldown(alternativeDevourMagic).showOnlyIf = alternativeDevourMagicIsActive
     hud.controlGroup:AddCooldown(commonSpells.coil)
     hud.controlGroup:AddCooldown(commonSpells.shadowfury)
     hud.controlGroup:AddCooldown(commonSpells.howl)
