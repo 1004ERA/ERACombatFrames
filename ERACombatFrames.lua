@@ -97,16 +97,19 @@ function ECF_TEST()
         end
     end
 
-    ]]
-
-    --#endregion
-    --------------------------------
     local h = GetHaste()
     print("GetHaste", issecretvalue(h), h)
     local crb = GetCombatRatingBonus(CR_HASTE_MELEE)
     print("CRB", issecretvalue(crb), crb)
     local ush = UnitSpellHaste("player")
     print("USH", issecretvalue(ush), ush)
+
+    ]]
+
+    --#endregion
+    --------------------------------
+    local gcd = C_Spell.GetSpellCooldown(61304)
+    print(issecretvalue(gcd.duration), gcd.duration)
 end
 
 function ECF_PRINT_CDM()
