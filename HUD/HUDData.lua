@@ -375,7 +375,7 @@ function HUDCooldown:updateTimerDuration_returnZeroDurationIfSecret(t)
             if ((not self.cdData) or self.cdData.isOnGCD == true) then
                 self.cooldownDuration = self.hud.duration0
             else
-                self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+                self.cooldownDuration = C_Spell.GetSpellCooldownDuration(self.spellID, true)
                 if (not self.cooldownDuration) then
                     self.cooldownDuration = self.hud.duration0
                 end
@@ -389,7 +389,7 @@ function HUDCooldown:updateTimerDuration_returnZeroDurationIfSecret(t)
     if ((not self.cdData) or self.cdData.isOnGCD == true) then
         self.swipeDuration = self.hud.duration0
     else
-        self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID)
+        self.swipeDuration = C_Spell.GetSpellCooldownDuration(self.spellID, true)
         if (not self.swipeDuration) then
             self.swipeDuration = self.hud.duration0
         end

@@ -35,6 +35,7 @@ ERA_HUDModule_TimerHeight = 1004
 ---@field private resourceBeforeHealth HUDResourceSlot[]
 ---@field private resourceAfterHealth HUDResourceSlot[]
 ---@field private resourceVisibilityChangedDynamic boolean
+---@field private lastHaste number
 ---@field private baseGCD number
 ---@field private totalGCD number
 ---@field private gcdBar StatusBar
@@ -211,6 +212,7 @@ function HUDModule:Create(cFrame, baseGCD, spec)
     x.timerFrameFront = CreateFrame("Frame", nil, x.essentialsFrame)
     x.timerFrameFront:SetPoint("BOTTOM", x.essentialsFrame, "CENTER", 0, 0)
     x.baseGCD = baseGCD
+    x.lastHaste = 0
     x.gcdLines = {}
     x.baseLine = x:createGCDLine()
     x.baseLine:SetStartPoint("BOTTOMLEFT", x.timerFrameFront, 0, 1)
@@ -908,7 +910,13 @@ function HUDModule:UpdateCombat(t)
         gcdDuration = 1
         pixelPerSecondWithoutHaste = self.options.gcdHeight
     else
-        gcdDuration = self.baseGCD / (1 + GetHaste() / 100)
+        local h = GetHaste()
+        if (issecretvalue(h)) then
+            h = self.lastHaste
+        else
+            self.lastHaste = h
+        end
+        gcdDuration = self.baseGCD / (1 + h / 100)
         pixelPerSecondWithoutHaste = self.options.gcdHeight / self.baseGCD
     end
     local pixelPerSecond = self.options.gcdHeight / gcdDuration

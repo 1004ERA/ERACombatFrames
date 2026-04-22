@@ -13,7 +13,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local talent_transfo = ERALIBTalent:Create(96322)
     local talent_army = ERALIBTalent:Create(96333)
     local talent_sreaper = ERALIBTalent:Create(96314)
-    local talent_pestilence = ERALIBTalent:Create(133513)
+    local talent_blightfall = ERALIBTalent:Create(133513)
     local talent_dnd = ERALIBTalent:CreateNotTalent(96289)
     local talent_clawing = ERALIBTalent:Create(133523)
     local talent_feast = ERALIBTalent:Create(123411)
@@ -63,6 +63,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local strikestack = hud:AddAuraByPlayer(1254252, false)
     local draw = hud:AddAuraByPlayer(374598, false, talents.draw)
     local runeStrength = hud:AddAuraByPlayer(53365, false)
+    local blightfall = hud:AddAuraByPlayer(1271974, false, talent_blightfall)
     local undeath = hud:AddAuraByPlayer(444633, true, talent_rider)
     local succor = hud:AddAuraByPlayer(178819, false)
     local apex = hud:AddAuraByPlayer(1242223, false, talent_apex)
@@ -150,6 +151,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
     hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrikeProc, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddAuraOverlayAlert(blightfall, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Dark_Transformation.tga", false, "NONE", "TOP")
 
     local notDot2 = hud:AddAuraBoolean(dot2)
     notDot2.reverse = true

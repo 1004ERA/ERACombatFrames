@@ -183,8 +183,9 @@ function HUDCooldownIcon:Update(t, combat)
             self.icon:SetVisibilityAlpha(1.0, false)
         end
     else
+        --self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
         ---@diagnostic disable-next-line: param-type-mismatch
-        self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideLessThanOnePointFive), true)
+        self.icon:SetVisibilityAlpha(self.data.swipeDuration:EvaluateRemainingDuration(self.hud.curveHideNoDuration), true)
     end
     self.icon:SetDuration(self.data.swipeDuration)
 
