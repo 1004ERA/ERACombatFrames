@@ -69,7 +69,9 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     hud:AddEssentialsAura(succulent)
 
-    hud:AddEssentialsAura(boltInstant):ShowStacksRatherThanDuration()
+    local boltIcon, boltSlot = hud:AddEssentialsAura(boltInstant)
+    boltIcon:ShowStacksRatherThanDuration()
+    boltSlot:AddTimerBar(0.5, boltInstant, nil, 1.0, 1.0, 1.0)
 
     hud:AddEssentialsCooldown(stalkers, nil, nil, 0.7, 0.0, 0.0)
 
@@ -95,6 +97,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
 
     -- control
     hud.controlGroup:AddCooldown(toss).showOnlyIf = commandDemonIsToss
+    hud:AddKickInfo(toss)
     hud.controlGroup:AddCooldown(commonSpells.commandDemonKick, nil, nil, true).showOnlyIf = commonSpells.commandDemonIsKick
     hud.controlGroup:AddCooldown(alternativeSpellLock).showOnlyIf = alternativeSpellLockIsActive
     hud.controlGroup:AddCooldown(commonSpells.coil)
@@ -138,7 +141,7 @@ function ERACombatFrames_Warlock_Demonology(cFrame, talents)
         end
     end
 
-    local impsBar = hud:AddResourceSlot(false):AddStacksBar(imps, 0.8, 0.8, 0.0, nil, function() return 15 end, function() return 0 end)
+    local impsBar = hud:AddResourceSlot(false):AddStacksBar(imps, 0.0, 0.8, 0.6, nil, function() return 15 end, function() return 0 end)
     impsBar.heightMultiplier = 0.666
     function impsBar:OverrideVisibilityAlpha(aura, t, combat)
         if (combat) then

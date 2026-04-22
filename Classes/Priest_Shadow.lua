@@ -137,9 +137,24 @@ function ERACombatFrames_Priest_Shadow(cFrame, talents)
     --#region RESOURCE
 
     local insaDisplay = hud:AddResourceSlot(false):AddPowerValue(insa, 0.8, 0.0, 0.8)
-    insaDisplay:AddTick(7569529, talent_normal_madness, function() return 50 end)
-    insaDisplay:AddTick(7569529, talent_cheap_madness, function() return 45 end)
-    insaDisplay:AddTick(7569529, talent_expensive_madness, function() return 55 end)
+    local tick = insaDisplay:AddTick(7569529, nil, function()
+        local infoTable = C_Spell.GetSpellPowerCost(335467)
+        if (infoTable) then
+            for _, info in ipairs(infoTable) do
+                if (info.type == Enum.PowerType.Insanity) then
+                    return info.cost
+                end
+            end
+        end
+        if (talent_cheap_madness:PlayerHasTalent()) then
+            return 45
+        elseif (talent_expensive_madness:PlayerHasTalent()) then
+            return 55
+        else
+            return 50
+        end
+    end)
+    tick.continuouslyCheckValue = true
 
     --#endregion
     --------------------------------

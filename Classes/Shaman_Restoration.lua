@@ -130,7 +130,7 @@ function ERACombatFrames_Shaman_Restoration(cFrame, talents)
     --------------------------------
     --#region ALERTS
 
-    ascendanceDuration.playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    ascendanceDuration.playSoundWhenApperars = ECF_CDM_Sounds.Instruments_Guitar_Chug -- SOUNDKIT.ALARM_CLOCK_WARNING_2
     hud:AddAuraOverlayAlert(unleashBuff, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Fury_of_Stormrage.tga", false, "NONE", "TOP")
     hud:AddAuraOverlayAlert(apex, nil, "Interface/Addons/ERACombatFrames/textures/alerts/Daybreak.tga", false, "NONE", "LEFT").playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 

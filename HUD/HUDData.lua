@@ -657,11 +657,7 @@ function HUDAuraTotem:updateTimerDuration_returnZeroDurationIfSecret(t)
         end
     end
     if ((issecretvalue(startTime) or issecretvalue(duration))) then
-        if (GetTotemDuration) then
-            return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
-        else
-            return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
-        end
+        return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
     else
         self.totemDur:SetTimeFromStart(startTime, duration)
         return self.totemDur, startTime, duration, GetTotemTimeLeft(self.slot)
@@ -704,11 +700,7 @@ function HUDTotem:updateTimerDuration_returnZeroDurationIfSecret(t)
     self.totemIsActive = haveTotem
     ---@diagnostic disable-next-line: param-type-mismatch
     if (issecretvalue(haveTotem) or issecretvalue(startTime) or issecretvalue(duration)) then
-        if (GetTotemDuration) then
-            return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
-        else
-            return self.hud.duration0, startTime, duration, GetTotemTimeLeft(self.slot)
-        end
+        return GetTotemDuration(self.slot), startTime, duration, GetTotemTimeLeft(self.slot)
     else
         if (haveTotem) then
             self.totemDur:SetTimeFromStart(startTime, duration)

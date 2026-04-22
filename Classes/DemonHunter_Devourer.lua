@@ -158,9 +158,9 @@ function ERACombatFrames_DemonHunter_Devourer(cFrame, talents)
     collapstarBuildBar.constantTickColor = CreateColor(0.0, 0.0, 1.0, 1.0)
     function collapstarBuildBar:AdditionalBarUpdate(t, combat, bar, current)
         if (C_SpellActivationOverlay.IsSpellOverlayed(1221150)) then
-            bar:SetBarColor(0.0, 1.0, 0.0, false)
+            bar:SetBarColor(0.0, 1.0, 1.0, false)
         else
-            bar:SetBarColor(0.8, 0.7, 1.0, false)
+            bar:SetBarColor(0.6, 0.4, 0.8, false)
         end
     end
 

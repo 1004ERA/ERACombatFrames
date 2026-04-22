@@ -1,4 +1,4 @@
-## Interface: 120000, 120001
+## Interface: 120000, 120001, 120005
 ## Title: ERACombatFrames
 ## Notes: ERA's Combat Interface
 ## SavedVariables: ERACombatOptionsVariables

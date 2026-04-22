@@ -68,7 +68,9 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     local apex = hud:AddAuraByPlayer(1242223, false, talent_apex)
 
     local scytheUsable = hud:AddIconBoolean(85948, 3997563, talent_scythe)
-    local vampStrike = hud:AddIconBoolean(55090, 5927645, talent_sanlayn)
+    local isNotTransformed = hud:AddAuraBoolean(transfoBuff)
+    isNotTransformed.reverse = true
+    local vampStrikeProc = hud:AddPublicBooleanAnd(hud:AddIconBoolean(55090, 5927645, talent_sanlayn), isNotTransformed)
     local sreaperUsable = hud:AddSpellUsableBoolean(sreaper.spellID, talent_sreaper)
 
     --#endregion
@@ -147,7 +149,7 @@ function ERACombatFrames_DeathKnight_Unholy(cFrame, talents)
     succor.playSoundWhenApperars = SOUNDKIT.UI_PERSONAL_LOOT_BANNER
     draw.playSoundWhenApperars = SOUNDKIT.UI_ORDERHALL_TALENT_READY_TOAST
 
-    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrike, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
+    hud:AddPublicBooleanOverlayAlert(nil, "CovenantChoice-Celebration-Venthyr-DetailLine", true, vampStrikeProc, "NONE", "TOP").playSoundWhenApperars = SOUNDKIT.ALARM_CLOCK_WARNING_2
 
     local notDot2 = hud:AddAuraBoolean(dot2)
     notDot2.reverse = true

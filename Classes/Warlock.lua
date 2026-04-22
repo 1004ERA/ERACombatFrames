@@ -24,7 +24,7 @@ function ERACombatFrames_WarlockSetup(cFrame)
 end
 
 ---@class (exact) WarlockCommonSpells
----@field commandDemonIsKick HUDPublicBooleanSpellIcon
+---@field commandDemonIsKick HUDPublicBoolean
 ---@field commandDemonKick HUDCooldown
 ---@field resolve HUDCooldown
 ---@field instapet HUDCooldown

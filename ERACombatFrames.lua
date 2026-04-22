@@ -8,7 +8,7 @@ ERACombatFrames_initialized = false
 -- trinkets (HUDEquipmentIcon)
 -- totem (HUDAuraTotem et HUDTotem)
 
-/run local info = C_Spell.GetSpellInfo(""); print(info.spellID, info.name)
+/run local info = C_Spell.GetSpellInfo(""); print(info.spellID, info.name, info.iconID)
 /run print(ECF_PRINT_TALENTS())
 
 ]]
